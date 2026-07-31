@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { Inspector } from "@/components/graph/Inspector";
-import { ORGS, childKindLabel, kindLabel, type GraphNode } from "@/lib/graph-data";
+import { ORGS, childKindLabel, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/graph")({
@@ -28,19 +28,19 @@ export const Route = createFileRoute("/graph")({
 
 function GraphPage() {
   const [orgKey, setOrgKey] = useState<string>("netflix");
-  const [path, setPath] = useState<GraphNode[]>([ORGS.netflix]);
+  const [path, setPath] = useState<GraphNode[]>([getOrg("netflix")]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("nykst.org") : null;
-    if (stored && ORGS[stored]) {
+    if (stored && stored in ORGS) {
       setOrgKey(stored);
-      setPath([ORGS[stored]]);
+      setPath([getOrg(stored)]);
       setSelected(null);
     }
   }, []);
 
-  const center = path[path.length - 1];
+  const center = path[path.length - 1] ?? getOrg(orgKey);
 
   const onSelect = (node: GraphNode) => {
     if (node.children?.length) {
@@ -53,7 +53,7 @@ function GraphPage() {
 
   const switchOrg = (key: string) => {
     setOrgKey(key);
-    setPath([ORGS[key]]);
+    setPath([getOrg(key)]);
     setSelected(null);
     if (typeof window !== "undefined") localStorage.setItem("nykst.org", key);
   };

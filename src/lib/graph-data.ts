@@ -244,10 +244,16 @@ export const stripeGraph: GraphNode = {
   ],
 };
 
-export const ORGS: Record<string, GraphNode> = {
+export const ORGS = {
   netflix: netflixGraph,
   stripe: stripeGraph,
-};
+} satisfies Record<string, GraphNode>;
+
+export type OrgKey = keyof typeof ORGS;
+
+export function getOrg(key: string): GraphNode {
+  return (ORGS as Record<string, GraphNode>)[key] ?? ORGS.netflix;
+}
 
 export const kindLabel: Record<NodeKind, string> = {
   org: "Organization",
