@@ -13,13 +13,14 @@ const kindColor: Record<NodeKind, string> = {
 
 interface Props {
   center: GraphNode;
+  nodes: GraphNode[];
   childKind: NodeKind;
   onSelect: (node: GraphNode) => void;
   selectedId?: string | undefined;
 }
 
-export function GraphCanvas({ center, childKind, onSelect, selectedId }: Props) {
-  const children = center.children ?? [];
+export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: Props) {
+  const children = nodes;
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
 
