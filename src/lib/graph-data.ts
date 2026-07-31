@@ -1,13 +1,11 @@
 export type NodeKind = "org" | "domain" | "capability" | "service" | "module" | "file";
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  kind: NodeKind;
-  summary: string;
-  metrics?: { label: string; value: string }[];
-  children?: GraphNode[];
-  detail?: FileDetail;
+export interface BlastRadius {
+  services: number;
+  modules: number;
+  files: number;
+  teams: number;
+  level: "Low" | "Moderate" | "High" | "Critical";
 }
 
 export interface FileDetail {
@@ -16,243 +14,334 @@ export interface FileDetail {
   loc: number;
   classes: string[];
   functions: string[];
-  dependencies: string[];
   tests: string[];
   history: { when: string; who: string; what: string }[];
-  owners: string[];
 }
 
-const f = (
+export interface GraphNode {
+  id: string;
+  label: string;
+  kind: NodeKind;
+  summary: string;
+  metrics?: { label: string; value: string }[];
+  owners: string[];
+  dependencies: string[];
+  dependents: string[];
+  blast: BlastRadius;
+  detail?: FileDetail;
+  children?: GraphNode[];
+  /** false when this node is a terminal leaf (a file) */
+  expandable: boolean;
+}
+
+/* ------------------------------------------------------------------ */
+/* deterministic pseudo-randomness so a given org always looks the same */
+/* ------------------------------------------------------------------ */
+
+function hash(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function rng(seed: string) {
+  let s = hash(seed) || 1;
+  return () => {
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s >>>= 0;
+    return s / 4294967296;
+  };
+}
+
+function pick<T>(r: () => number, arr: T[]) {
+  return arr[Math.floor(r() * arr.length)] as T;
+}
+
+function sample<T>(r: () => number, arr: T[], n: number) {
+  const copy = [...arr];
+  const out: T[] = [];
+  while (out.length < Math.min(n, copy.length)) {
+    out.push(copy.splice(Math.floor(r() * copy.length), 1)[0] as T);
+  }
+  return out;
+}
+
+function between(r: () => number, a: number, b: number) {
+  return a + Math.floor(r() * (b - a + 1));
+}
+
+/* ------------------------------------------------------------------ */
+/* vocabulary                                                          */
+/* ------------------------------------------------------------------ */
+
+const DOMAINS = [
+  ["Platform Engineering", "Runtime, CI/CD, observability and paved roads used by every team."],
+  ["Content Delivery", "Moving assets from origin to the viewer with the least possible latency."],
+  ["User Identity", "Accounts, profiles, devices, sessions and entitlements."],
+  ["Payments & Billing", "Plans, invoicing, metering, dunning and revenue recognition."],
+  ["Data & Analytics", "Event pipelines, warehouses, metrics and experimentation."],
+  ["Search & Discovery", "Indexing, query understanding, ranking and personalization."],
+  ["Security & Compliance", "AuthZ, secrets, audit trails and regulatory controls."],
+  ["Growth & Messaging", "Lifecycle campaigns, notifications and onboarding surfaces."],
+  ["Core APIs", "Public and internal API surfaces, gateways and SDK generation."],
+];
+
+const CAPABILITIES = [
+  ["Service Runtime", "How services are packaged, scheduled and scaled."],
+  ["Observability", "Traces, metrics and logs across every request path."],
+  ["Delivery Pipeline", "Build, test, promote and roll back safely."],
+  ["Access Control", "Who may do what, verified at every boundary."],
+  ["Data Ingestion", "Getting events in reliably, exactly once."],
+  ["Configuration", "Feature flags, dynamic config and rollout control."],
+  ["Storage Layer", "Durable state, replication and lifecycle policies."],
+  ["Edge Routing", "Steering traffic to the healthiest region."],
+];
+
+const SERVICES = [
+  ["Gateway", "Terminates traffic and enforces contracts at the edge."],
+  ["Scheduler", "Places and rebalances workloads across the fleet."],
+  ["Registry", "Source of truth for services, versions and owners."],
+  ["Orchestrator", "Coordinates multi-step workflows and retries."],
+  ["Collector", "Fans in telemetry from every runtime."],
+  ["Policy Engine", "Evaluates rules before an action is allowed."],
+  ["Sync Worker", "Reconciles desired and observed state."],
+  ["Query Service", "Serves low-latency reads over the shared store."],
+];
+
+const MODULES = [
+  ["Authentication", "Verifies who is asking, on which device, under which plan."],
+  ["Request Handler", "Normalizes, validates and routes inbound requests."],
+  ["Error Handler", "Maps internal failures to client-safe errors."],
+  ["Rate Limiter", "Per-device and per-account token bucket enforcement."],
+  ["Persistence", "Repository layer over the primary datastore."],
+  ["Instrumentation", "Latency, saturation and failure metrics."],
+  ["Cache Layer", "Read-through caching with invalidation hooks."],
+  ["Config Loader", "Resolves layered configuration at boot."],
+];
+
+const FILES: [string, string, string[], string[]][] = [
+  ["Handler", "Entry point for inbound calls.", ["Handler"], ["handle()", "dispatch()", "close()"]],
+  ["Controller", "Coordinates the use case.", ["Controller"], ["execute()", "validate()"]],
+  ["Service", "Business rules for this module.", ["Service"], ["run()", "resolve()", "retry()"]],
+  ["Repository", "Datastore access.", ["Repository"], ["get()", "put()", "list()", "evict()"]],
+  ["Validator", "Schema and invariant checks.", ["Validator"], ["validate()", "assertShape()"]],
+  ["Client", "Outbound calls to peers.", ["Client"], ["send()", "withRetry()"]],
+  ["Metrics", "Instrumentation hooks.", ["Meter"], ["observe()", "increment()"]],
+];
+
+const TEAMS = [
+  "@platform",
+  "@identity-core",
+  "@edge",
+  "@data-eng",
+  "@payments",
+  "@sre",
+  "@api-guild",
+  "@security",
+];
+
+const PEOPLE = ["m.raines", "s.okafor", "l.chen", "a.iyer", "d.novak", "r.silva", "k.tanaka"];
+
+const WHEN = ["2d ago", "5d ago", "1w ago", "3w ago", "2mo ago", "5mo ago"];
+
+const WHAT = [
+  "Add ES256 key rotation window",
+  "Cache lookups for 5m",
+  "Drop legacy fallback path",
+  "Return typed error codes",
+  "Shard by device family",
+  "Backfill missing indexes",
+  "Reduce p99 by batching writes",
+];
+
+const LANGS = ["TypeScript", "Go", "Kotlin", "Python", "Rust"];
+
+/* ------------------------------------------------------------------ */
+/* generation                                                          */
+/* ------------------------------------------------------------------ */
+
+const CHILD_KIND: Record<NodeKind, NodeKind> = {
+  org: "domain",
+  domain: "capability",
+  capability: "service",
+  service: "module",
+  module: "file",
+  file: "file",
+};
+
+function blastFor(r: () => number, kind: NodeKind): BlastRadius {
+  const scale: Record<NodeKind, number> = {
+    org: 1,
+    domain: 220,
+    capability: 60,
+    service: 18,
+    module: 6,
+    file: 2,
+  };
+  const s = scale[kind];
+  const services = Math.max(1, Math.round(s * (0.6 + r())));
+  const modules = services * between(r, 3, 7);
+  const files = modules * between(r, 4, 9);
+  const teams = Math.max(1, Math.round(services / between(r, 2, 6)));
+  const level =
+    services > 80
+      ? "Critical"
+      : services > 20
+        ? "High"
+        : services > 6
+          ? "Moderate"
+          : ("Low" as const);
+  return { services, modules, files, teams, level: level as BlastRadius["level"] };
+}
+
+function titleCaseSlug(s: string) {
+  return s
+    .replace(/[-_]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function makeNode(
+  parentId: string,
+  kind: NodeKind,
   label: string,
   summary: string,
-  detail: Omit<FileDetail, "path">,
-  path: string,
-): GraphNode => ({
-  id: path,
-  label,
-  kind: "file",
-  summary,
-  detail: { path, ...detail },
-});
+  index: number,
+  siblings: string[],
+): GraphNode {
+  const id = `${parentId}/${kind}:${label}`;
+  const r = rng(id);
+  const peers = siblings.filter((s) => s !== label);
+  return {
+    id,
+    label,
+    kind,
+    summary,
+    owners: sample(r, TEAMS, between(r, 1, 2)),
+    dependencies: sample(r, peers, Math.min(peers.length, between(r, 1, 3))),
+    dependents: sample(r, peers, Math.min(peers.length, between(r, 1, 3))),
+    blast: blastFor(r, kind),
+    expandable: kind !== "file",
+    metrics:
+      kind === "file"
+        ? undefined
+        : [
+            { label: CHILD_LABEL[kind], value: String(between(r, 5, 9)) },
+            { label: "Coverage", value: `${between(r, 62, 96)}%` },
+            { label: "p99", value: `${between(r, 12, 240)}ms` },
+          ],
+    ...(kind === "file"
+      ? {
+          detail: fileDetail(label, index, r),
+        }
+      : {}),
+  };
+}
 
-const authFiles: GraphNode[] = [
-  f(
-    "JWTHandler.ts",
-    "Signs, rotates and verifies playback JWTs.",
-    {
-      language: "TypeScript",
-      loc: 412,
-      classes: ["JWTHandler", "KeyRing"],
-      functions: ["sign()", "verify()", "rotateKeys()", "decodeUnsafe()", "isExpired()"],
-      dependencies: ["jose", "SessionStore.ts", "config/keys", "TokenValidator.ts"],
-      tests: ["JWTHandler.spec.ts — 24 cases", "keyRotation.integration.ts — 6 cases"],
-      history: [
-        { when: "2d ago", who: "m.raines", what: "Add ES256 key rotation window" },
-        { when: "3w ago", who: "s.okafor", what: "Cache JWKS lookups for 5m" },
-        { when: "2mo ago", who: "l.chen", what: "Drop legacy HS256 fallback" },
-      ],
-      owners: ["@identity-core", "m.raines"],
-    },
-    "src/auth/JWTHandler.ts",
-  ),
-  f(
-    "AuthController.ts",
-    "Entry point for playback auth requests.",
-    {
-      language: "TypeScript",
-      loc: 268,
-      classes: ["AuthController"],
-      functions: ["authorize()", "refresh()", "revoke()"],
-      dependencies: ["JWTHandler.ts", "AuthMiddleware.ts", "SessionStore.ts"],
-      tests: ["AuthController.spec.ts — 18 cases"],
-      history: [{ when: "5d ago", who: "a.iyer", what: "Return 403 detail codes" }],
-      owners: ["@identity-core"],
-    },
-    "src/auth/AuthController.ts",
-  ),
-  f(
-    "TokenValidator.ts",
-    "Validates opaque and bearer tokens at the edge.",
-    {
-      language: "TypeScript",
-      loc: 190,
-      classes: ["TokenValidator"],
-      functions: ["validate()", "introspect()"],
-      dependencies: ["JWTHandler.ts", "redis"],
-      tests: ["TokenValidator.spec.ts — 11 cases"],
-      history: [{ when: "1w ago", who: "s.okafor", what: "Add introspection cache" }],
-      owners: ["@identity-core"],
-    },
-    "src/auth/TokenValidator.ts",
-  ),
-  f(
-    "SessionStore.ts",
-    "Distributed session persistence for devices.",
-    {
-      language: "TypeScript",
-      loc: 331,
-      classes: ["SessionStore", "SessionRecord"],
-      functions: ["get()", "put()", "evict()", "listByUser()"],
-      dependencies: ["redis", "metrics"],
-      tests: ["SessionStore.spec.ts — 15 cases"],
-      history: [{ when: "4d ago", who: "l.chen", what: "Shard by device family" }],
-      owners: ["@identity-core", "@platform"],
-    },
-    "src/auth/SessionStore.ts",
-  ),
-  f(
-    "AuthMiddleware.ts",
-    "Request pipeline guard for playback routes.",
-    {
-      language: "TypeScript",
-      loc: 144,
-      classes: ["AuthMiddleware"],
-      functions: ["handle()", "attachPrincipal()"],
-      dependencies: ["TokenValidator.ts", "logging"],
-      tests: ["AuthMiddleware.spec.ts — 9 cases"],
-      history: [{ when: "3w ago", who: "a.iyer", what: "Skip auth on health probes" }],
-      owners: ["@identity-core"],
-    },
-    "src/auth/AuthMiddleware.ts",
-  ),
-];
-
-const leaf = (label: string, summary: string, kind: NodeKind): GraphNode => ({
-  id: `${kind}:${label}`,
-  label,
-  kind,
-  summary,
-});
-
-const playbackApiModules: GraphNode[] = [
-  {
-    id: "module:authentication",
-    label: "Authentication",
-    kind: "module",
-    summary: "Verifies who is asking for a stream, on which device, under which plan.",
-    metrics: [
-      { label: "Files", value: "5" },
-      { label: "Coverage", value: "91%" },
-      { label: "Owners", value: "identity-core" },
-    ],
-    children: authFiles,
-  },
-  leaf("Request Handler", "Normalizes, validates and routes inbound playback requests.", "module"),
-  leaf("Video Handler", "Resolves manifests and stream variants for a title.", "module"),
-  leaf("Error Handler", "Maps internal failures to client-safe playback errors.", "module"),
-  leaf("Rate Limiter", "Per-device and per-account token bucket enforcement.", "module"),
-  leaf("Logging", "Structured request logging with trace propagation.", "module"),
-  leaf("Metrics", "Latency, start-time and failure instrumentation.", "module"),
-];
-
-const playbackServices: GraphNode[] = [
-  {
-    id: "service:playback-api",
-    label: "Playback API",
-    kind: "service",
-    summary: "Public surface that authorizes and starts every playback session.",
-    metrics: [
-      { label: "Modules", value: "7" },
-      { label: "p99", value: "84ms" },
-      { label: "RPS", value: "412k" },
-    ],
-    children: playbackApiModules,
-  },
-  leaf("DRM Service", "License issuance and key delivery per device class.", "service"),
-  leaf("Session Manager", "Tracks concurrent streams and resume positions.", "service"),
-  leaf("Subtitle Service", "Timed-text selection, rendering hints and fallbacks.", "service"),
-  leaf("Audio Service", "Audio track negotiation and loudness normalization.", "service"),
-  leaf("Device Compatibility", "Capability matrix across TVs, mobile and browsers.", "service"),
-  leaf("Playback Telemetry", "QoE events, rebuffer ratio and start-time reporting.", "service"),
-];
-
-const contentCapabilities: GraphNode[] = [
-  {
-    id: "cap:playback",
-    label: "Playback",
-    kind: "capability",
-    summary: "Everything required to turn a title into a playing stream on a device.",
-    metrics: [
-      { label: "Services", value: "7" },
-      { label: "Repos", value: "23" },
-      { label: "Health", value: "Good" },
-    ],
-    children: playbackServices,
-  },
-  leaf("Video Encoding", "Ladder generation, per-title encoding and QC pipelines.", "capability"),
-  leaf("Video Storage", "Durable object storage of masters and encoded renditions.", "capability"),
-  leaf("CDN Routing", "Steering viewers to the optimal edge location.", "capability"),
-  leaf("Bandwidth Optimization", "Adaptive bitrate policy and network probing.", "capability"),
-  leaf("Edge Cache", "Open Connect cache fill and eviction strategy.", "capability"),
-  leaf("Quality Selection", "Per-session quality ladder and device constraints.", "capability"),
-];
-
-export const netflixGraph: GraphNode = {
-  id: "org:netflix",
-  label: "Netflix",
-  kind: "org",
-  summary: "9 core domains discovered across 1,284 repositories.",
-  metrics: [
-    { label: "Repos", value: "1,284" },
-    { label: "Services", value: "3,918" },
-    { label: "Domains", value: "9" },
-  ],
-  children: [
-    {
-      id: "domain:content-delivery",
-      label: "Content Delivery",
-      kind: "domain",
-      summary:
-        "Moving encoded video from origin to the viewer's screen with the least possible latency.",
-      metrics: [
-        { label: "Capabilities", value: "7" },
-        { label: "Repos", value: "214" },
-        { label: "Owners", value: "11 teams" },
-      ],
-      children: contentCapabilities,
-    },
-    leaf("Streaming", "Live and on-demand stream orchestration.", "domain"),
-    leaf("Recommendation", "Ranking, personalization and row generation.", "domain"),
-    leaf("Billing", "Plans, invoicing, dunning and tax.", "domain"),
-    leaf("User Identity", "Accounts, profiles, devices and entitlements.", "domain"),
-    leaf("Search", "Catalog indexing, query understanding and ranking.", "domain"),
-    leaf("Advertising", "Ad decisioning, pacing and measurement.", "domain"),
-    leaf("Analytics", "Event pipelines, warehouses and experimentation.", "domain"),
-    leaf("Platform Engineering", "Runtime, CI/CD, observability and paved roads.", "domain"),
-  ],
+const CHILD_LABEL: Record<NodeKind, string> = {
+  org: "Domains",
+  domain: "Capabilities",
+  capability: "Services",
+  service: "Modules",
+  module: "Files",
+  file: "Symbols",
 };
 
-export const stripeGraph: GraphNode = {
-  id: "org:stripe",
-  label: "Stripe",
-  kind: "org",
-  summary: "8 core domains discovered across 942 repositories.",
-  metrics: [
-    { label: "Repos", value: "942" },
-    { label: "Services", value: "2,610" },
-    { label: "Domains", value: "8" },
-  ],
-  children: [
-    leaf("Payments", "Charges, intents, methods and settlement.", "domain"),
-    leaf("Checkout", "Hosted and embedded payment surfaces.", "domain"),
-    leaf("Billing", "Subscriptions, metering, invoicing and revenue.", "domain"),
-    leaf("Identity", "KYC, verification and account onboarding.", "domain"),
-    leaf("Radar", "Fraud signals, rules engine and risk scoring.", "domain"),
-    leaf("Treasury", "Balances, payouts and money movement.", "domain"),
-    leaf("Connect", "Multi-party platforms and marketplaces.", "domain"),
-    leaf("API Platform", "Gateways, SDK generation and versioning.", "domain"),
-  ],
-};
+function fileDetail(label: string, index: number, r: () => number): FileDetail {
+  const base = FILES[index % FILES.length]!;
+  return {
+    path: `src/${label.replace(/\.[a-z]+$/, "").toLowerCase()}/${label}`,
+    language: pick(r, LANGS),
+    loc: between(r, 84, 620),
+    classes: base[2].map((c) => `${c}`),
+    functions: base[3],
+    tests: [`${label.replace(/\.[a-z]+$/, "")}.spec — ${between(r, 4, 28)} cases`],
+    history: sample(r, WHEN, 3)
+      .sort()
+      .map((when) => ({ when, who: pick(r, PEOPLE), what: pick(r, WHAT) })),
+  };
+}
 
-export const ORGS = {
-  netflix: netflixGraph,
-  stripe: stripeGraph,
-} satisfies Record<string, GraphNode>;
+function poolFor(kind: NodeKind): [string, string][] {
+  switch (kind) {
+    case "domain":
+      return DOMAINS as [string, string][];
+    case "capability":
+      return CAPABILITIES as [string, string][];
+    case "service":
+      return SERVICES as [string, string][];
+    case "module":
+      return MODULES as [string, string][];
+    default:
+      return [];
+  }
+}
 
-export type OrgKey = keyof typeof ORGS;
+const cache = new Map<string, GraphNode[]>();
 
-export function getOrg(key: string): GraphNode {
-  return (ORGS as Record<string, GraphNode>)[key] ?? ORGS.netflix;
+/** Lazily generates (and memoizes) the children of any node. */
+export function childrenOf(node: GraphNode): GraphNode[] {
+  if (!node.expandable) return [];
+  const hit = cache.get(node.id);
+  if (hit) return hit;
+
+  const kind = CHILD_KIND[node.kind];
+  const r = rng(`${node.id}#children`);
+
+  let entries: [string, string][];
+  if (kind === "file") {
+    const prefix = node.label.split(" ")[0] ?? "Core";
+    entries = sample(r, FILES, between(r, 4, 6)).map(
+      (f) => [`${prefix}${f[0]}.ts`, f[1]] as [string, string],
+    );
+  } else if (node.kind === "org") {
+    entries = DOMAINS as [string, string][];
+  } else {
+    const pool = poolFor(kind);
+    const chosen = sample(r, pool, between(r, 5, 7));
+    const qualifier = node.label.split(" ")[0];
+    entries = chosen.map(([n, s]) => [`${qualifier} ${n}`, s] as [string, string]);
+  }
+
+  const labels = entries.map((e) => e[0]);
+  const built = entries.map(([label, summary], i) =>
+    makeNode(node.id, kind, label, summary, i, labels),
+  );
+  cache.set(node.id, built);
+  return built;
+}
+
+/** Root node for any connected organization. */
+export function buildOrg(slug: string): GraphNode {
+  const name = titleCaseSlug(slug || "acme");
+  const r = rng(`org:${slug}`);
+  return {
+    id: `org:${slug}`,
+    label: name,
+    kind: "org",
+    summary: `${DOMAINS.length} core domains discovered across ${between(r, 120, 1800).toLocaleString()} repositories.`,
+    owners: sample(r, TEAMS, 2),
+    dependencies: [],
+    dependents: [],
+    blast: blastFor(r, "org"),
+    expandable: true,
+    metrics: [
+      { label: "Repos", value: between(r, 120, 1800).toLocaleString() },
+      { label: "Services", value: between(r, 400, 4000).toLocaleString() },
+      { label: "Domains", value: String(DOMAINS.length) },
+    ],
+  };
+}
+
+export function getOrg(slug: string): GraphNode {
+  return buildOrg(slug);
 }
 
 export const kindLabel: Record<NodeKind, string> = {
@@ -266,18 +355,9 @@ export const kindLabel: Record<NodeKind, string> = {
 
 export const childKindLabel: Record<NodeKind, string> = {
   org: "Core domains",
-  domain: "What this domain does",
+  domain: "Capabilities",
   capability: "Services",
   service: "Modules",
   module: "Files",
   file: "Structure",
 };
-
-export function findPath(root: GraphNode, id: string): GraphNode[] | null {
-  if (root.id === id) return [root];
-  for (const child of root.children ?? []) {
-    const sub = findPath(child, id);
-    if (sub) return [root, ...sub];
-  }
-  return null;
-}
