@@ -118,7 +118,7 @@ export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: 
 
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const hasChildren = !!p.node.children?.length;
+          const hasChildren = p.node.expandable;
           const w = Math.min(200, Math.max(112, p.node.label.length * 9 + 44));
           return (
             <g

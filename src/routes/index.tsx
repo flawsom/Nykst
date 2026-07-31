@@ -1,6 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ORGS } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
