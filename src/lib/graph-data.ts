@@ -219,7 +219,7 @@ function makeNode(
   const id = `${parentId}/${kind}:${label}`;
   const r = rng(id);
   const peers = siblings.filter((s) => s !== label);
-  return {
+  const node: GraphNode = {
     id,
     label,
     kind,
@@ -229,20 +229,17 @@ function makeNode(
     dependents: sample(r, peers, Math.min(peers.length, between(r, 1, 3))),
     blast: blastFor(r, kind),
     expandable: kind !== "file",
-    metrics:
-      kind === "file"
-        ? undefined
-        : [
-            { label: CHILD_LABEL[kind], value: String(between(r, 5, 9)) },
-            { label: "Coverage", value: `${between(r, 62, 96)}%` },
-            { label: "p99", value: `${between(r, 12, 240)}ms` },
-          ],
-    ...(kind === "file"
-      ? {
-          detail: fileDetail(label, index, r),
-        }
-      : {}),
   };
+  if (kind === "file") {
+    node.detail = fileDetail(label, index, r);
+  } else {
+    node.metrics = [
+      { label: CHILD_LABEL[kind], value: String(between(r, 5, 9)) },
+      { label: "Coverage", value: `${between(r, 62, 96)}%` },
+      { label: "p99", value: `${between(r, 12, 240)}ms` },
+    ];
+  }
+  return node;
 }
 
 const CHILD_LABEL: Record<NodeKind, string> = {
