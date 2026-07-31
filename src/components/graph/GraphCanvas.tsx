@@ -15,7 +15,7 @@ interface Props {
   center: GraphNode;
   childKind: NodeKind;
   onSelect: (node: GraphNode) => void;
-  selectedId?: string;
+  selectedId?: string | undefined;
 }
 
 export function GraphCanvas({ center, childKind, onSelect, selectedId }: Props) {
