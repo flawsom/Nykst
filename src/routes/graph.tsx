@@ -186,7 +186,7 @@ function GraphPage() {
 
         <Inspector
           node={inspected}
-          children={inspected.expandable ? childrenOf(inspected) : []}
+          related={inspected.expandable ? childrenOf(inspected) : []}
           onClose={() => setSelected(null)}
           onOpen={drill}
         />

@@ -9,12 +9,12 @@ const levelTone: Record<string, string> = {
 
 export function Inspector({
   node,
-  children,
+  related,
   onClose,
   onOpen,
 }: {
   node: GraphNode;
-  children: GraphNode[];
+  related: GraphNode[];
   onClose: () => void;
   onOpen: (n: GraphNode) => void;
 }) {
@@ -95,11 +95,11 @@ export function Inspector({
           </>
         )}
 
-        {children.length > 0 && (
+        {related.length > 0 && (
           <div>
-            <Heading>Connected · {children.length}</Heading>
+            <Heading>Connected · {related.length}</Heading>
             <ul className="mt-2 space-y-1">
-              {children.map((c) => (
+              {related.map((c) => (
                 <li key={c.id}>
                   <button
                     onClick={() => onOpen(c)}
