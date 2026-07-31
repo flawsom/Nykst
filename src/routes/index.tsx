@@ -34,11 +34,12 @@ const providers = [
 function Landing() {
   const navigate = useNavigate();
   const [provider, setProvider] = useState("github");
-  const [org, setOrg] = useState("netflix");
+  const [org, setOrg] = useState("");
 
   const connect = () => {
+    const slug = org.trim() || "acme";
     if (typeof window !== "undefined") {
-      localStorage.setItem("nykst.org", org);
+      localStorage.setItem("nykst.org", slug);
       localStorage.setItem("nykst.provider", provider);
     }
     navigate({ to: "/graph" });
@@ -113,26 +114,30 @@ function Landing() {
           </div>
 
           <div className="mt-5">
-            <span className="text-muted-foreground text-[11px] tracking-widest uppercase">
-              Detected organizations
-            </span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {Object.entries(ORGS).map(([key, node]) => (
-                <button
-                  key={key}
-                  onClick={() => setOrg(key)}
-                  className={cn(
-                    "rounded-full border px-4 py-1.5 text-sm transition-all",
-                    org === key
-                      ? "border-primary text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {node.label}
-                </button>
-              ))}
+            <label
+              htmlFor="org"
+              className="text-muted-foreground text-[11px] tracking-widest uppercase"
+            >
+              Your organization
+            </label>
+            <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3 py-2.5">
+              <span className="text-muted-foreground font-mono text-xs">
+                {provider === "azure" ? "dev.azure.com/" : `${provider}.com/`}
+              </span>
+              <input
+                id="org"
+                value={org}
+                onChange={(e) => setOrg(e.target.value)}
+                placeholder="your-org"
+                className="placeholder:text-muted-foreground/60 min-w-0 flex-1 bg-transparent text-sm outline-none"
+              />
             </div>
+            <p className="text-muted-foreground mt-2 text-[11px]">
+              Nykst reads every repository in this organization and builds the graph from the code
+              itself.
+            </p>
           </div>
+
 
           <button
             onClick={connect}
