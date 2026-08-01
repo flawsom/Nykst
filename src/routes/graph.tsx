@@ -39,6 +39,7 @@ function GraphPage() {
   const [provider, setProvider] = useState("github");
   const [pathIds, setPathIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
+  const [dossier, setDossier] = useState<GraphNode | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
