@@ -180,8 +180,10 @@ function GraphPage() {
             nodes={centerChildren}
             childKind={childKind}
             onSelect={drill}
+            onInspect={setDossier}
             selectedId={selected?.id}
           />
+
         </section>
 
         <Inspector
