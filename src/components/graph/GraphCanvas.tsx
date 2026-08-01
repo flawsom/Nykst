@@ -122,7 +122,15 @@ export function GraphCanvas({
           >
             {center.kind}
           </text>
+          <InfoBadge
+            x={cx}
+            y={cy + 46}
+            color={kindColor[center.kind]}
+            label={center.label}
+            onClick={() => onInspect(center)}
+          />
         </g>
+
 
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
