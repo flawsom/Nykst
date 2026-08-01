@@ -16,10 +16,18 @@ interface Props {
   nodes: GraphNode[];
   childKind: NodeKind;
   onSelect: (node: GraphNode) => void;
+  onInspect: (node: GraphNode) => void;
   selectedId?: string | undefined;
 }
 
-export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: Props) {
+export function GraphCanvas({
+  center,
+  nodes,
+  childKind,
+  onSelect,
+  onInspect,
+  selectedId,
+}: Props) {
   const children = nodes;
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -114,12 +122,20 @@ export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: 
           >
             {center.kind}
           </text>
+          <InfoBadge
+            x={cx}
+            y={cy + 46}
+            color={kindColor[center.kind]}
+            label={center.label}
+            onClick={() => onInspect(center)}
+          />
         </g>
+
 
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           const hasChildren = p.node.expandable;
-          const w = Math.min(200, Math.max(112, p.node.label.length * 9 + 44));
+          const w = Math.min(230, Math.max(140, p.node.label.length * 9 + 78));
           return (
             <g
               key={p.node.id}
@@ -128,7 +144,6 @@ export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: 
               style={{ transitionDelay: `${i * 30}ms`, opacity: mounted ? 1 : 0 }}
               onMouseEnter={() => setHovered(p.node.id)}
               onMouseLeave={() => setHovered(null)}
-              onClick={() => onSelect(p.node)}
             >
               <rect
                 x={-w / 2}
@@ -140,21 +155,40 @@ export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: 
                 stroke={active ? kindColor[childKind] : "var(--border)"}
                 strokeWidth={active ? 1.6 : 1}
                 className="transition-all duration-200"
+                onClick={() => onSelect(p.node)}
               />
-              <circle cx={-w / 2 + 18} cy={0} r={4} fill={kindColor[childKind]} />
-              <text x={-w / 2 + 32} y={4} className="fill-foreground text-[13px] font-medium">
-                {truncate(p.node.label, 20)}
+              <circle
+                cx={-w / 2 + 18}
+                cy={0}
+                r={4}
+                fill={kindColor[childKind]}
+                onClick={() => onSelect(p.node)}
+              />
+              <text
+                x={-w / 2 + 32}
+                y={4}
+                className="fill-foreground text-[13px] font-medium"
+                onClick={() => onSelect(p.node)}
+              >
+                {truncate(p.node.label, 18)}
               </text>
               {hasChildren && (
                 <circle
-                  cx={w / 2 - 14}
+                  cx={w / 2 - 40}
                   cy={0}
                   r={3}
                   fill={kindColor[childKind]}
                   fillOpacity={0.55}
                 />
               )}
+              <InfoBadge
+                x={w / 2 - 20}
+                color={kindColor[childKind]}
+                label={p.node.label}
+                onClick={() => onInspect(p.node)}
+              />
             </g>
+
           );
         })}
       </svg>
@@ -164,4 +198,42 @@ export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: 
 
 function truncate(s: string, n: number) {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
+function InfoBadge({
+  x,
+  y = 0,
+  color,
+  label,
+  onClick,
+}: {
+  x: number;
+  y?: number;
+  color: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <g
+      transform={`translate(${x}, ${y})`}
+      className="cursor-pointer"
+      role="button"
+      tabIndex={0}
+      aria-label={`Details for ${label}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      <circle r={10} fill="var(--surface-2)" stroke={color} strokeOpacity={0.6} strokeWidth={1} />
+      <text
+        textAnchor="middle"
+        y={4}
+        className="fill-foreground text-[11px] font-semibold"
+        style={{ pointerEvents: "none" }}
+      >
+        i
+      </text>
+    </g>
+  );
 }

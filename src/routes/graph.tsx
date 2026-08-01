@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { Inspector } from "@/components/graph/Inspector";
+import { NodeDossier } from "@/components/graph/NodeDossier";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ function GraphPage() {
   const [provider, setProvider] = useState("github");
   const [pathIds, setPathIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
+  const [dossier, setDossier] = useState<GraphNode | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -180,8 +182,10 @@ function GraphPage() {
             nodes={centerChildren}
             childKind={childKind}
             onSelect={drill}
+            onInspect={setDossier}
             selectedId={selected?.id}
           />
+
         </section>
 
         <Inspector
@@ -191,6 +195,13 @@ function GraphPage() {
           onOpen={drill}
         />
       </div>
+
+      <NodeDossier
+        node={dossier}
+        open={dossier !== null}
+        onClose={() => setDossier(null)}
+        onOpenNode={jumpTo}
+      />
     </main>
   );
 }
