@@ -199,3 +199,41 @@ export function GraphCanvas({
 function truncate(s: string, n: number) {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
+
+function InfoBadge({
+  x,
+  y = 0,
+  color,
+  label,
+  onClick,
+}: {
+  x: number;
+  y?: number;
+  color: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <g
+      transform={`translate(${x}, ${y})`}
+      className="cursor-pointer"
+      role="button"
+      tabIndex={0}
+      aria-label={`Details for ${label}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      <circle r={10} fill="var(--surface-2)" stroke={color} strokeOpacity={0.6} strokeWidth={1} />
+      <text
+        textAnchor="middle"
+        y={4}
+        className="fill-foreground text-[11px] font-semibold"
+        style={{ pointerEvents: "none" }}
+      >
+        i
+      </text>
+    </g>
+  );
+}
