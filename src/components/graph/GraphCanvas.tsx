@@ -16,10 +16,18 @@ interface Props {
   nodes: GraphNode[];
   childKind: NodeKind;
   onSelect: (node: GraphNode) => void;
+  onInspect: (node: GraphNode) => void;
   selectedId?: string | undefined;
 }
 
-export function GraphCanvas({ center, nodes, childKind, onSelect, selectedId }: Props) {
+export function GraphCanvas({
+  center,
+  nodes,
+  childKind,
+  onSelect,
+  onInspect,
+  selectedId,
+}: Props) {
   const children = nodes;
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
