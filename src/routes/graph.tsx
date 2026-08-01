@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { Inspector } from "@/components/graph/Inspector";
+import { NodeDossier } from "@/components/graph/NodeDossier";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
@@ -194,6 +195,13 @@ function GraphPage() {
           onOpen={drill}
         />
       </div>
+
+      <NodeDossier
+        node={dossier}
+        open={dossier !== null}
+        onClose={() => setDossier(null)}
+        onOpenNode={jumpTo}
+      />
     </main>
   );
 }
