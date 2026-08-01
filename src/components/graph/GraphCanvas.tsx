@@ -127,7 +127,7 @@ export function GraphCanvas({
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           const hasChildren = p.node.expandable;
-          const w = Math.min(200, Math.max(112, p.node.label.length * 9 + 44));
+          const w = Math.min(230, Math.max(140, p.node.label.length * 9 + 78));
           return (
             <g
               key={p.node.id}
@@ -136,7 +136,6 @@ export function GraphCanvas({
               style={{ transitionDelay: `${i * 30}ms`, opacity: mounted ? 1 : 0 }}
               onMouseEnter={() => setHovered(p.node.id)}
               onMouseLeave={() => setHovered(null)}
-              onClick={() => onSelect(p.node)}
             >
               <rect
                 x={-w / 2}
@@ -148,21 +147,40 @@ export function GraphCanvas({
                 stroke={active ? kindColor[childKind] : "var(--border)"}
                 strokeWidth={active ? 1.6 : 1}
                 className="transition-all duration-200"
+                onClick={() => onSelect(p.node)}
               />
-              <circle cx={-w / 2 + 18} cy={0} r={4} fill={kindColor[childKind]} />
-              <text x={-w / 2 + 32} y={4} className="fill-foreground text-[13px] font-medium">
-                {truncate(p.node.label, 20)}
+              <circle
+                cx={-w / 2 + 18}
+                cy={0}
+                r={4}
+                fill={kindColor[childKind]}
+                onClick={() => onSelect(p.node)}
+              />
+              <text
+                x={-w / 2 + 32}
+                y={4}
+                className="fill-foreground text-[13px] font-medium"
+                onClick={() => onSelect(p.node)}
+              >
+                {truncate(p.node.label, 18)}
               </text>
               {hasChildren && (
                 <circle
-                  cx={w / 2 - 14}
+                  cx={w / 2 - 40}
                   cy={0}
                   r={3}
                   fill={kindColor[childKind]}
                   fillOpacity={0.55}
                 />
               )}
+              <InfoBadge
+                x={w / 2 - 20}
+                color={kindColor[childKind]}
+                label={p.node.label}
+                onClick={() => onInspect(p.node)}
+              />
             </g>
+
           );
         })}
       </svg>
