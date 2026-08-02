@@ -455,12 +455,12 @@ export function NodeDossier({
                 </>
               )}
 
-              {section === "classes" && (
-                <Block title="Classes" items={active.detail?.classes ?? []} mono />
-              )}
-              {section === "functions" && (
-                <Block title="Functions" items={active.detail?.functions ?? []} mono />
-              )}
+              {section === "classes" && <ClassesView node={active} />}
+              {section === "functions" && <FunctionsView node={active} />}
+              {section === "lines" && <LinesView node={active} />}
+              {section === "issues" && <IssuesView node={active} />}
+              {section === "incidents" && <IncidentsView node={active} />}
+
               {section === "tests" && <Block title="Tests" items={active.detail?.tests ?? []} />}
               {section === "history" && (
                 <ul className="space-y-3">
