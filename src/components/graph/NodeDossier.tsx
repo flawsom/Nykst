@@ -277,9 +277,14 @@ export function NodeDossier({
       const rows = descendantsOfKind(active, s.kind);
       if (rows.length) out.push({ id: s.id, label: SECTION_LABEL[s.kind], count: rows.length });
     }
+    const cls = classesOf(active);
+    const fns = functionsOf(active);
+    if (cls.length) out.push({ id: "classes", label: "Classes", count: cls.length });
+    if (fns.length) out.push({ id: "functions", label: "Functions", count: fns.length });
+    out.push({ id: "lines", label: "Lines", count: linesOf(active).total });
+    out.push({ id: "issues", label: "Issues", count: issuesOf(active).length });
+    out.push({ id: "incidents", label: "Incidents", count: incidentsOf(active).length });
     if (active.detail) {
-      out.push({ id: "classes", label: "Classes", count: active.detail.classes.length });
-      out.push({ id: "functions", label: "Functions", count: active.detail.functions.length });
       out.push({ id: "tests", label: "Tests", count: active.detail.tests.length });
       out.push({ id: "history", label: "History", count: active.detail.history.length });
     }
@@ -290,6 +295,7 @@ export function NodeDossier({
     });
     out.push({ id: "owners", label: "Owners", count: active.owners.length });
     out.push({ id: "ask", label: "Ask AI", count: 0 });
+
     return out;
   }, [active]);
 
