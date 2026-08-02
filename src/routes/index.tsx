@@ -1,21 +1,21 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst — Google Maps for Software Systems" },
+      { title: "Nykst — System Navigator for Software Organizations" },
       {
         name: "description",
         content:
-          "Nykst maps your organization's codebase into a living software graph: domains, capabilities, services, modules and files — navigable in seconds.",
+          "Nykst is a system navigator: connect your org and explore domains, capabilities, services, modules and files as one living software graph.",
       },
-      { property: "og:title", content: "Nykst — Google Maps for Software Systems" },
+      { property: "og:title", content: "Nykst — System Navigator for Software Organizations" },
       {
         property: "og:description",
         content:
-          "Connect GitHub, GitLab or Bitbucket and Nykst analyzes your codebase into a navigable software graph.",
+          "Connect GitHub, GitLab, Bitbucket or Azure DevOps and navigate your entire system as a graph.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -31,10 +31,35 @@ const providers = [
   { id: "azure", name: "Azure DevOps", hint: "Repos & Pipelines" },
 ];
 
+const features = [
+  ["System navigator", "Move through your organization the way you move through a map — never folders."],
+  ["Derived, not declared", "We read code, commits and ownership to infer domains and capabilities."],
+  ["Drill to a single file", "Domain → capability → service → module → file, each re-centering the graph."],
+  ["Dossier on every node", "Health, risk, blast radius, classes, functions, lines, issues, incidents."],
+  ["Impact before change", "See dependencies, dependents and predicted blast radius up front."],
+  ["Ask AI in context", "Question any node about ownership, risk and impact without leaving the graph."],
+];
+
 function Landing() {
   const navigate = useNavigate();
   const [provider, setProvider] = useState("github");
   const [org, setOrg] = useState("");
+  const [user, setUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUser(localStorage.getItem("nykst.user"));
+  }, []);
+
+  const login = () => {
+    const name = "engineer@nykst.dev";
+    localStorage.setItem("nykst.user", name);
+    setUser(name);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("nykst.user");
+    setUser(null);
+  };
 
   const connect = () => {
     const slug = org.trim() || "acme";
@@ -53,17 +78,45 @@ function Landing() {
       />
       <div className="pointer-events-none absolute inset-0 bg-grid" />
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      <header className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-6">
         <div className="flex items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2.5 rounded-full" />
           <span className="text-[15px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </div>
-        <Link
-          to="/graph"
-          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-        >
-          Open graph →
-        </Link>
+        <nav className="flex items-center gap-4 text-sm">
+          <a
+            href="#extension"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Editor extension
+          </a>
+          <Link
+            to="/graph"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Open graph →
+          </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-muted-foreground hidden font-mono text-xs sm:inline">
+                {user}
+              </span>
+              <button
+                onClick={logout}
+                className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={login}
+              className="bg-primary text-primary-foreground hover:bg-primary-glow rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              Log in
+            </button>
+          )}
+        </nav>
       </header>
 
       <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-24">
@@ -74,7 +127,7 @@ function Landing() {
           className="animate-rise text-gradient mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-tight md:text-6xl"
           style={{ animationDelay: "80ms" }}
         >
-          Google Maps for your software system.
+          The system navigator for your software organization.
         </h1>
         <p
           className="animate-rise text-muted-foreground mt-6 max-w-xl text-base leading-relaxed"
@@ -138,7 +191,6 @@ function Landing() {
             </p>
           </div>
 
-
           <button
             onClick={connect}
             className="bg-primary text-primary-foreground hover:bg-primary-glow mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors"
@@ -147,21 +199,50 @@ function Landing() {
           </button>
         </div>
 
-        <div className="mt-16 grid gap-6 md:grid-cols-3">
-          {[
-            ["Derived, not declared", "We read the code, commits and ownership to infer domains."],
-            ["Graph as navigation", "Every drill-down re-centers the graph on what you clicked."],
-            ["File-level truth", "Classes, functions, dependencies, tests, history and owners."],
-          ].map(([title, body], i) => (
-            <div
-              key={title}
-              className="animate-rise border-border bg-card/50 rounded-xl border p-5"
-              style={{ animationDelay: `${320 + i * 80}ms` }}
+        <div className="mt-20">
+          <h2 className="text-muted-foreground text-[11px] tracking-[0.3em] uppercase">
+            What Nykst does
+          </h2>
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {features.map(([title, body], i) => (
+              <div
+                key={title}
+                className="animate-rise border-border bg-card/50 rounded-xl border p-5"
+                style={{ animationDelay: `${320 + i * 60}ms` }}
+              >
+                <h3 className="text-sm font-medium">{title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          id="extension"
+          className="border-border bg-card/70 mt-16 flex flex-wrap items-center justify-between gap-5 rounded-2xl border p-6 backdrop-blur"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
+          <div className="max-w-lg">
+            <h2 className="text-sm font-medium">Nykst inside your editor</h2>
+            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+              Install the extension to open any file's node, dependencies and blast radius from VS
+              Code or JetBrains — the same graph, without switching context.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="#extension"
+              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
             >
-              <h3 className="text-sm font-medium">{title}</h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{body}</p>
-            </div>
-          ))}
+              Download for VS Code
+            </a>
+            <a
+              href="#extension"
+              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
+            >
+              Download for JetBrains
+            </a>
+          </div>
         </div>
       </section>
     </main>
