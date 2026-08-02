@@ -787,3 +787,199 @@ function Block({ title, items, mono }: { title: string; items: string[]; mono?: 
     </div>
   );
 }
+
+/* ---------------- new sections ---------------- */
+
+function SimpleTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
+  if (!rows.length) return <p className="text-muted-foreground text-sm">Nothing here yet.</p>;
+  return (
+    <div className="border-border overflow-hidden rounded-lg border">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface text-muted-foreground text-[10px] tracking-[0.18em] uppercase">
+          <tr>
+            {head.map((h) => (
+              <th key={h} className="px-3 py-2.5 font-normal">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-border border-t">
+              {r.map((c, j) => (
+                <td key={j} className="px-3 py-2.5">
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ClassesView({ node }: { node: GraphNode }) {
+  const rows = classesOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Classes <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Class", "File", "Lines", "Methods"]}
+        rows={rows.map((c) => [
+          <span className="text-primary font-mono text-[12px]">{c.name}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{c.file}</span>,
+          c.loc,
+          c.methods,
+        ])}
+      />
+    </div>
+  );
+}
+
+function FunctionsView({ node }: { node: GraphNode }) {
+  const rows = functionsOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Functions <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Function", "File"]}
+        rows={rows.map((f) => [
+          <span className="font-mono text-[12px]">{f.name}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{f.file}</span>,
+        ])}
+      />
+    </div>
+  );
+}
+
+function LinesView({ node }: { node: GraphNode }) {
+  const l = linesOf(node);
+  const bar = [
+    { label: "Code", value: l.code, tone: "var(--node-file)" },
+    { label: "Comments", value: l.comments, tone: "var(--node-module)" },
+    { label: "Blank", value: l.blank, tone: "var(--node-service)" },
+  ];
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Total lines" value={l.total} />
+        <Stat label="Code" value={l.code} />
+        <Stat label="Comments" value={l.comments} />
+        <Stat label="Files" value={l.files} />
+      </div>
+      <div>
+        <Label>Composition</Label>
+        <div className="bg-surface-2 mt-2 flex h-2 overflow-hidden rounded-full">
+          {bar.map((b) => (
+            <div
+              key={b.label}
+              style={{ width: `${(b.value / Math.max(1, l.total)) * 100}%`, background: b.tone }}
+            />
+          ))}
+        </div>
+        <div className="text-muted-foreground mt-2 flex flex-wrap gap-4 text-[11px]">
+          {bar.map((b) => (
+            <span key={b.label} className="flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full" style={{ background: b.tone }} />
+              {b.label} · {b.value.toLocaleString()}
+            </span>
+          ))}
+        </div>
+      </div>
+      <Block title="Languages" items={l.languages} />
+    </div>
+  );
+}
+
+const SEV_TONE: Record<string, string> = {
+  Low: "var(--node-file)",
+  Medium: "var(--node-module)",
+  High: "var(--node-capability)",
+  Critical: "var(--primary)",
+  SEV3: "var(--node-module)",
+  SEV2: "var(--node-capability)",
+  SEV1: "var(--primary)",
+};
+
+function IssuesView({ node }: { node: GraphNode }) {
+  const rows = issuesOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Open issues <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Issue", "Area", "Severity", "Age", "Owner"]}
+        rows={rows.map((i) => [
+          i.title,
+          <span className="text-muted-foreground">{i.area}</span>,
+          <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />,
+          <span className="text-muted-foreground text-[11px]">{i.age}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{i.owner}</span>,
+        ])}
+      />
+    </div>
+  );
+}
+
+function IncidentsView({ node }: { node: GraphNode }) {
+  const rows = incidentsOf(node);
+  const f = forecastOf(node);
+  return (
+    <div className="space-y-7">
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium">
+          Past incidents <span className="text-muted-foreground">({rows.length})</span>
+        </h3>
+        <SimpleTable
+          head={["ID", "Incident", "Severity", "When", "Duration", "Impact", "Trigger", "Resolved by"]}
+          rows={rows.map((i) => [
+            <span className="font-mono text-[11px]">{i.id}</span>,
+            i.title,
+            <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />,
+            <span className="text-muted-foreground text-[11px]">{i.when}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.duration}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.impact}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.trigger}</span>,
+            <span className="text-muted-foreground font-mono text-[11px]">{i.resolvedBy}</span>,
+          ])}
+        />
+      </div>
+
+      <div className="border-border bg-surface rounded-lg border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Label>Predicted blast radius — pattern match</Label>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Recurring trigger “{f.dominant}” on {node.label}. {f.likelihood}% likelihood of a
+              similar incident within the next {f.window}.
+            </p>
+          </div>
+          <Badge
+            value={`${f.likelihood}% risk`}
+            tone={f.likelihood > 70 ? "var(--primary)" : "var(--node-capability)"}
+          />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Services at risk" value={f.predicted.services} />
+          <Stat label="Modules" value={f.predicted.modules} />
+          <Stat label="Files" value={f.predicted.files} />
+          <Stat label="Teams paged" value={f.predicted.teams} />
+        </div>
+        <ul className="mt-4 space-y-1.5">
+          {f.signals.map((s) => (
+            <li key={s} className="text-muted-foreground border-border border-l pl-3 text-[12px]">
+              {s}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
