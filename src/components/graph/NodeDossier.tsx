@@ -80,6 +80,9 @@ type SectionId =
   | "file"
   | "classes"
   | "functions"
+  | "lines"
+  | "issues"
+  | "incidents"
   | "dependencies"
   | "tests"
   | "history"
@@ -102,6 +105,139 @@ const SECTION_LABEL: Record<NodeKind, string> = {
   module: "Modules",
   file: "Files",
 };
+
+/* ---------------- aggregated code intelligence ---------------- */
+
+function fileRows(n: GraphNode) {
+  if (n.kind === "file") return [{ node: n, parent: n }];
+  return descendantsOfKind(n, "file", 80);
+}
+
+type ClassRow = { name: string; file: string; loc: number; methods: number };
+
+function classesOf(n: GraphNode): ClassRow[] {
+  const out: ClassRow[] = [];
+  for (const { node } of fileRows(n)) {
+    const d = node.detail;
+    if (!d) continue;
+    for (const c of d.classes) {
+      const s = score(`${node.id}#${c}`);
+      out.push({
+        name: c,
+        file: node.label,
+        loc: 40 + Math.round(s * 320),
+        methods: d.functions.length,
+      });
+    }
+  }
+  return out;
+}
+
+function functionsOf(n: GraphNode) {
+  const out: { name: string; file: string }[] = [];
+  for (const { node } of fileRows(n)) {
+    for (const f of node.detail?.functions ?? []) out.push({ name: f, file: node.label });
+  }
+  return out;
+}
+
+function linesOf(n: GraphNode) {
+  const files = fileRows(n);
+  const known = files.reduce((a, f) => a + (f.detail_loc ?? f.node.detail?.loc ?? 0), 0);
+  const total = n.kind === "file" ? known : Math.max(known, n.blast.files * 120);
+  const s = score(`${n.id}#lines`);
+  const code = Math.round(total * (0.7 + s * 0.12));
+  const comments = Math.round(total * 0.12);
+  const blank = Math.max(0, total - code - comments);
+  return {
+    total,
+    code,
+    comments,
+    blank,
+    files: n.kind === "file" ? 1 : n.blast.files,
+    languages: ["TypeScript", "Go", "Kotlin", "Python"].slice(0, 2 + Math.floor(s * 3)),
+  };
+}
+
+const ISSUE_KINDS = [
+  ["Cyclic dependency detected", "Architecture", "High"],
+  ["Missing test coverage on error paths", "Quality", "Medium"],
+  ["Deprecated API still referenced", "Maintenance", "Medium"],
+  ["Unbounded retry loop", "Reliability", "Critical"],
+  ["Secrets read at module scope", "Security", "High"],
+  ["Hot path allocates per request", "Performance", "Medium"],
+  ["Ownership unclear — no CODEOWNERS entry", "Governance", "Low"],
+] as const;
+
+function issuesOf(n: GraphNode) {
+  const s = score(`${n.id}#issues`);
+  const count = 2 + Math.floor(s * 4);
+  return Array.from({ length: count }, (_, i) => {
+    const k = ISSUE_KINDS[Math.floor(score(`${n.id}#issue${i}`) * ISSUE_KINDS.length)]!;
+    return {
+      id: `${n.id}-issue-${i}`,
+      title: k[0],
+      area: k[1],
+      severity: k[2] as string,
+      age: `${1 + Math.floor(score(`${n.id}#age${i}`) * 90)}d open`,
+      owner: n.owners[i % n.owners.length] ?? n.owners[0]!,
+    };
+  });
+}
+
+const INCIDENT_TITLES = [
+  "Elevated p99 latency after config rollout",
+  "Partial outage — dependency timeout cascade",
+  "Auth token rotation caused 401 spike",
+  "Cache stampede on cold region",
+  "Queue backlog after schema migration",
+  "Region failover did not drain cleanly",
+];
+
+function incidentsOf(n: GraphNode) {
+  const s = score(`${n.id}#inc`);
+  const count = 2 + Math.floor(s * 3);
+  const sev = ["SEV3", "SEV2", "SEV1"];
+  return Array.from({ length: count }, (_, i) => {
+    const r = score(`${n.id}#inc${i}`);
+    return {
+      id: `INC-${1000 + Math.floor(r * 8999)}`,
+      title: INCIDENT_TITLES[Math.floor(r * INCIDENT_TITLES.length)]!,
+      severity: sev[Math.floor(score(`${n.id}#sev${i}`) * sev.length)]!,
+      when: `${1 + Math.floor(score(`${n.id}#when${i}`) * 11)}mo ago`,
+      duration: `${8 + Math.floor(r * 180)}m`,
+      impact: `${Math.max(1, Math.round(n.blast.services * (0.1 + r * 0.4)))} services`,
+      trigger: ["Deploy", "Config change", "Traffic spike", "Dependency failure"][
+        Math.floor(score(`${n.id}#trig${i}`) * 4)
+      ]!,
+      resolvedBy: n.owners[i % n.owners.length] ?? n.owners[0]!,
+    };
+  });
+}
+
+function forecastOf(n: GraphNode) {
+  const incidents = incidentsOf(n);
+  const s = score(`${n.id}#forecast`);
+  const dominant = incidents[0]!.trigger;
+  const likelihood = Math.round(28 + s * 61);
+  return {
+    dominant,
+    likelihood,
+    window: `${2 + Math.floor(s * 8)} weeks`,
+    predicted: {
+      services: Math.max(1, Math.round(n.blast.services * (0.3 + s * 0.5))),
+      modules: Math.max(1, Math.round(n.blast.modules * (0.25 + s * 0.4))),
+      files: Math.max(1, Math.round(n.blast.files * (0.2 + s * 0.35))),
+      teams: n.blast.teams,
+    },
+    signals: [
+      `${incidents.filter((i) => i.trigger === dominant).length} past incidents share trigger "${dominant}"`,
+      `${n.dependents.length} downstream consumers amplify failures`,
+      `Risk level currently ${riskOf(n)} with health ${healthOf(n)}`,
+    ],
+  };
+}
+
 
 export function NodeDossier({
   node,
