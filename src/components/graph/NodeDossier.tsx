@@ -80,6 +80,9 @@ type SectionId =
   | "file"
   | "classes"
   | "functions"
+  | "lines"
+  | "issues"
+  | "incidents"
   | "dependencies"
   | "tests"
   | "history"
@@ -102,6 +105,139 @@ const SECTION_LABEL: Record<NodeKind, string> = {
   module: "Modules",
   file: "Files",
 };
+
+/* ---------------- aggregated code intelligence ---------------- */
+
+function fileRows(n: GraphNode) {
+  if (n.kind === "file") return [{ node: n, parent: n }];
+  return descendantsOfKind(n, "file", 80);
+}
+
+type ClassRow = { name: string; file: string; loc: number; methods: number };
+
+function classesOf(n: GraphNode): ClassRow[] {
+  const out: ClassRow[] = [];
+  for (const { node } of fileRows(n)) {
+    const d = node.detail;
+    if (!d) continue;
+    for (const c of d.classes) {
+      const s = score(`${node.id}#${c}`);
+      out.push({
+        name: c,
+        file: node.label,
+        loc: 40 + Math.round(s * 320),
+        methods: d.functions.length,
+      });
+    }
+  }
+  return out;
+}
+
+function functionsOf(n: GraphNode) {
+  const out: { name: string; file: string }[] = [];
+  for (const { node } of fileRows(n)) {
+    for (const f of node.detail?.functions ?? []) out.push({ name: f, file: node.label });
+  }
+  return out;
+}
+
+function linesOf(n: GraphNode) {
+  const files = fileRows(n);
+  const known = files.reduce((a, f) => a + (f.node.detail?.loc ?? 0), 0);
+  const total = n.kind === "file" ? known : Math.max(known, n.blast.files * 120);
+  const s = score(`${n.id}#lines`);
+  const code = Math.round(total * (0.7 + s * 0.12));
+  const comments = Math.round(total * 0.12);
+  const blank = Math.max(0, total - code - comments);
+  return {
+    total,
+    code,
+    comments,
+    blank,
+    files: n.kind === "file" ? 1 : n.blast.files,
+    languages: ["TypeScript", "Go", "Kotlin", "Python"].slice(0, 2 + Math.floor(s * 3)),
+  };
+}
+
+const ISSUE_KINDS = [
+  ["Cyclic dependency detected", "Architecture", "High"],
+  ["Missing test coverage on error paths", "Quality", "Medium"],
+  ["Deprecated API still referenced", "Maintenance", "Medium"],
+  ["Unbounded retry loop", "Reliability", "Critical"],
+  ["Secrets read at module scope", "Security", "High"],
+  ["Hot path allocates per request", "Performance", "Medium"],
+  ["Ownership unclear — no CODEOWNERS entry", "Governance", "Low"],
+] as const;
+
+function issuesOf(n: GraphNode) {
+  const s = score(`${n.id}#issues`);
+  const count = 2 + Math.floor(s * 4);
+  return Array.from({ length: count }, (_, i) => {
+    const k = ISSUE_KINDS[Math.floor(score(`${n.id}#issue${i}`) * ISSUE_KINDS.length)]!;
+    return {
+      id: `${n.id}-issue-${i}`,
+      title: k[0],
+      area: k[1],
+      severity: k[2] as string,
+      age: `${1 + Math.floor(score(`${n.id}#age${i}`) * 90)}d open`,
+      owner: n.owners[i % n.owners.length] ?? n.owners[0]!,
+    };
+  });
+}
+
+const INCIDENT_TITLES = [
+  "Elevated p99 latency after config rollout",
+  "Partial outage — dependency timeout cascade",
+  "Auth token rotation caused 401 spike",
+  "Cache stampede on cold region",
+  "Queue backlog after schema migration",
+  "Region failover did not drain cleanly",
+];
+
+function incidentsOf(n: GraphNode) {
+  const s = score(`${n.id}#inc`);
+  const count = 2 + Math.floor(s * 3);
+  const sev = ["SEV3", "SEV2", "SEV1"];
+  return Array.from({ length: count }, (_, i) => {
+    const r = score(`${n.id}#inc${i}`);
+    return {
+      id: `INC-${1000 + Math.floor(r * 8999)}`,
+      title: INCIDENT_TITLES[Math.floor(r * INCIDENT_TITLES.length)]!,
+      severity: sev[Math.floor(score(`${n.id}#sev${i}`) * sev.length)]!,
+      when: `${1 + Math.floor(score(`${n.id}#when${i}`) * 11)}mo ago`,
+      duration: `${8 + Math.floor(r * 180)}m`,
+      impact: `${Math.max(1, Math.round(n.blast.services * (0.1 + r * 0.4)))} services`,
+      trigger: ["Deploy", "Config change", "Traffic spike", "Dependency failure"][
+        Math.floor(score(`${n.id}#trig${i}`) * 4)
+      ]!,
+      resolvedBy: n.owners[i % n.owners.length] ?? n.owners[0]!,
+    };
+  });
+}
+
+function forecastOf(n: GraphNode) {
+  const incidents = incidentsOf(n);
+  const s = score(`${n.id}#forecast`);
+  const dominant = incidents[0]!.trigger;
+  const likelihood = Math.round(28 + s * 61);
+  return {
+    dominant,
+    likelihood,
+    window: `${2 + Math.floor(s * 8)} weeks`,
+    predicted: {
+      services: Math.max(1, Math.round(n.blast.services * (0.3 + s * 0.5))),
+      modules: Math.max(1, Math.round(n.blast.modules * (0.25 + s * 0.4))),
+      files: Math.max(1, Math.round(n.blast.files * (0.2 + s * 0.35))),
+      teams: n.blast.teams,
+    },
+    signals: [
+      `${incidents.filter((i) => i.trigger === dominant).length} past incidents share trigger "${dominant}"`,
+      `${n.dependents.length} downstream consumers amplify failures`,
+      `Risk level currently ${riskOf(n)} with health ${healthOf(n)}`,
+    ],
+  };
+}
+
 
 export function NodeDossier({
   node,
@@ -141,9 +277,14 @@ export function NodeDossier({
       const rows = descendantsOfKind(active, s.kind);
       if (rows.length) out.push({ id: s.id, label: SECTION_LABEL[s.kind], count: rows.length });
     }
+    const cls = classesOf(active);
+    const fns = functionsOf(active);
+    if (cls.length) out.push({ id: "classes", label: "Classes", count: cls.length });
+    if (fns.length) out.push({ id: "functions", label: "Functions", count: fns.length });
+    out.push({ id: "lines", label: "Lines", count: linesOf(active).total });
+    out.push({ id: "issues", label: "Issues", count: issuesOf(active).length });
+    out.push({ id: "incidents", label: "Incidents", count: incidentsOf(active).length });
     if (active.detail) {
-      out.push({ id: "classes", label: "Classes", count: active.detail.classes.length });
-      out.push({ id: "functions", label: "Functions", count: active.detail.functions.length });
       out.push({ id: "tests", label: "Tests", count: active.detail.tests.length });
       out.push({ id: "history", label: "History", count: active.detail.history.length });
     }
@@ -154,6 +295,7 @@ export function NodeDossier({
     });
     out.push({ id: "owners", label: "Owners", count: active.owners.length });
     out.push({ id: "ask", label: "Ask AI", count: 0 });
+
     return out;
   }, [active]);
 
@@ -241,14 +383,22 @@ export function NodeDossier({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {stack.length > 0 && (
-                    <button
-                      onClick={() => setStack((s) => s.slice(0, -1))}
-                      className="border-border hover:bg-surface flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs"
-                    >
-                      <CornerUpLeft className="size-3.5" /> Back
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      if (stack.length) {
+                        setStack((s) => s.slice(0, -1));
+                        setSection("overview");
+                        setQuery("");
+                      } else {
+                        reset();
+                        onClose();
+                      }
+                    }}
+                    className="border-border hover:bg-surface flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs"
+                  >
+                    <CornerUpLeft className="size-3.5" />
+                    {stack.length ? "Back" : "Back to graph"}
+                  </button>
                   <button
                     onClick={() => {
                       reset();
@@ -260,6 +410,7 @@ export function NodeDossier({
                     Open in graph
                   </button>
                 </div>
+
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Pill label="Health" value={`${healthOf(active)}`} tone={healthTone(healthOf(active))} />
@@ -304,12 +455,12 @@ export function NodeDossier({
                 </>
               )}
 
-              {section === "classes" && (
-                <Block title="Classes" items={active.detail?.classes ?? []} mono />
-              )}
-              {section === "functions" && (
-                <Block title="Functions" items={active.detail?.functions ?? []} mono />
-              )}
+              {section === "classes" && <ClassesView node={active} />}
+              {section === "functions" && <FunctionsView node={active} />}
+              {section === "lines" && <LinesView node={active} />}
+              {section === "issues" && <IssuesView node={active} />}
+              {section === "incidents" && <IncidentsView node={active} />}
+
               {section === "tests" && <Block title="Tests" items={active.detail?.tests ?? []} />}
               {section === "history" && (
                 <ul className="space-y-3">
@@ -632,6 +783,202 @@ function Block({ title, items, mono }: { title: string; items: string[]; mono?: 
             {i}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- new sections ---------------- */
+
+function SimpleTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
+  if (!rows.length) return <p className="text-muted-foreground text-sm">Nothing here yet.</p>;
+  return (
+    <div className="border-border overflow-hidden rounded-lg border">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface text-muted-foreground text-[10px] tracking-[0.18em] uppercase">
+          <tr>
+            {head.map((h) => (
+              <th key={h} className="px-3 py-2.5 font-normal">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-border border-t">
+              {r.map((c, j) => (
+                <td key={j} className="px-3 py-2.5">
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ClassesView({ node }: { node: GraphNode }) {
+  const rows = classesOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Classes <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Class", "File", "Lines", "Methods"]}
+        rows={rows.map((c) => [
+          <span className="text-primary font-mono text-[12px]">{c.name}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{c.file}</span>,
+          c.loc,
+          c.methods,
+        ])}
+      />
+    </div>
+  );
+}
+
+function FunctionsView({ node }: { node: GraphNode }) {
+  const rows = functionsOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Functions <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Function", "File"]}
+        rows={rows.map((f) => [
+          <span className="font-mono text-[12px]">{f.name}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{f.file}</span>,
+        ])}
+      />
+    </div>
+  );
+}
+
+function LinesView({ node }: { node: GraphNode }) {
+  const l = linesOf(node);
+  const bar = [
+    { label: "Code", value: l.code, tone: "var(--node-file)" },
+    { label: "Comments", value: l.comments, tone: "var(--node-module)" },
+    { label: "Blank", value: l.blank, tone: "var(--node-service)" },
+  ];
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Total lines" value={l.total} />
+        <Stat label="Code" value={l.code} />
+        <Stat label="Comments" value={l.comments} />
+        <Stat label="Files" value={l.files} />
+      </div>
+      <div>
+        <Label>Composition</Label>
+        <div className="bg-surface-2 mt-2 flex h-2 overflow-hidden rounded-full">
+          {bar.map((b) => (
+            <div
+              key={b.label}
+              style={{ width: `${(b.value / Math.max(1, l.total)) * 100}%`, background: b.tone }}
+            />
+          ))}
+        </div>
+        <div className="text-muted-foreground mt-2 flex flex-wrap gap-4 text-[11px]">
+          {bar.map((b) => (
+            <span key={b.label} className="flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full" style={{ background: b.tone }} />
+              {b.label} · {b.value.toLocaleString()}
+            </span>
+          ))}
+        </div>
+      </div>
+      <Block title="Languages" items={l.languages} />
+    </div>
+  );
+}
+
+const SEV_TONE: Record<string, string> = {
+  Low: "var(--node-file)",
+  Medium: "var(--node-module)",
+  High: "var(--node-capability)",
+  Critical: "var(--primary)",
+  SEV3: "var(--node-module)",
+  SEV2: "var(--node-capability)",
+  SEV1: "var(--primary)",
+};
+
+function IssuesView({ node }: { node: GraphNode }) {
+  const rows = issuesOf(node);
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">
+        Open issues <span className="text-muted-foreground">({rows.length})</span>
+      </h3>
+      <SimpleTable
+        head={["Issue", "Area", "Severity", "Age", "Owner"]}
+        rows={rows.map((i) => [
+          i.title,
+          <span className="text-muted-foreground">{i.area}</span>,
+          <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />,
+          <span className="text-muted-foreground text-[11px]">{i.age}</span>,
+          <span className="text-muted-foreground font-mono text-[11px]">{i.owner}</span>,
+        ])}
+      />
+    </div>
+  );
+}
+
+function IncidentsView({ node }: { node: GraphNode }) {
+  const rows = incidentsOf(node);
+  const f = forecastOf(node);
+  return (
+    <div className="space-y-7">
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium">
+          Past incidents <span className="text-muted-foreground">({rows.length})</span>
+        </h3>
+        <SimpleTable
+          head={["ID", "Incident", "Severity", "When", "Duration", "Impact", "Trigger", "Resolved by"]}
+          rows={rows.map((i) => [
+            <span className="font-mono text-[11px]">{i.id}</span>,
+            i.title,
+            <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />,
+            <span className="text-muted-foreground text-[11px]">{i.when}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.duration}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.impact}</span>,
+            <span className="text-muted-foreground text-[11px]">{i.trigger}</span>,
+            <span className="text-muted-foreground font-mono text-[11px]">{i.resolvedBy}</span>,
+          ])}
+        />
+      </div>
+
+      <div className="border-border bg-surface rounded-lg border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Label>Predicted blast radius — pattern match</Label>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Recurring trigger “{f.dominant}” on {node.label}. {f.likelihood}% likelihood of a
+              similar incident within the next {f.window}.
+            </p>
+          </div>
+          <Badge
+            value={`${f.likelihood}% risk`}
+            tone={f.likelihood > 70 ? "var(--primary)" : "var(--node-capability)"}
+          />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Services at risk" value={f.predicted.services} />
+          <Stat label="Modules" value={f.predicted.modules} />
+          <Stat label="Files" value={f.predicted.files} />
+          <Stat label="Teams paged" value={f.predicted.teams} />
+        </div>
+        <ul className="mt-4 space-y-1.5">
+          {f.signals.map((s) => (
+            <li key={s} className="text-muted-foreground border-border border-l pl-3 text-[12px]">
+              {s}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
