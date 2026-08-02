@@ -143,7 +143,7 @@ function functionsOf(n: GraphNode) {
 
 function linesOf(n: GraphNode) {
   const files = fileRows(n);
-  const known = files.reduce((a, f) => a + (f.detail_loc ?? f.node.detail?.loc ?? 0), 0);
+  const known = files.reduce((a, f) => a + (f.node.detail?.loc ?? 0), 0);
   const total = n.kind === "file" ? known : Math.max(known, n.blast.files * 120);
   const s = score(`${n.id}#lines`);
   const code = Math.round(total * (0.7 + s * 0.12));
