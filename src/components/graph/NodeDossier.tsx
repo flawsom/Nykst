@@ -383,14 +383,22 @@ export function NodeDossier({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {stack.length > 0 && (
-                    <button
-                      onClick={() => setStack((s) => s.slice(0, -1))}
-                      className="border-border hover:bg-surface flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs"
-                    >
-                      <CornerUpLeft className="size-3.5" /> Back
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      if (stack.length) {
+                        setStack((s) => s.slice(0, -1));
+                        setSection("overview");
+                        setQuery("");
+                      } else {
+                        reset();
+                        onClose();
+                      }
+                    }}
+                    className="border-border hover:bg-surface flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs"
+                  >
+                    <CornerUpLeft className="size-3.5" />
+                    {stack.length ? "Back" : "Back to graph"}
+                  </button>
                   <button
                     onClick={() => {
                       reset();
@@ -402,6 +410,7 @@ export function NodeDossier({
                     Open in graph
                   </button>
                 </div>
+
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Pill label="Health" value={`${healthOf(active)}`} tone={healthTone(healthOf(active))} />
