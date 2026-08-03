@@ -1,6 +1,9 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { ConnectionProgress } from "@/components/graph/ConnectionProgress";
+import { ROLES, getRoleId, setRoleId, type RoleId } from "@/lib/access";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,9 +48,12 @@ function Landing() {
   const [provider, setProvider] = useState("github");
   const [org, setOrg] = useState("");
   const [user, setUser] = useState<string | null>(null);
+  const [role, setRole] = useState<RoleId>("engineer");
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     setUser(localStorage.getItem("nykst.user"));
+    setRole(getRoleId());
   }, []);
 
   const login = () => {
@@ -61,17 +67,30 @@ function Landing() {
     setUser(null);
   };
 
+  const chooseRole = (id: RoleId) => {
+    setRole(id);
+    setRoleId(id);
+  };
+
   const connect = () => {
     const slug = org.trim() || "acme";
     if (typeof window !== "undefined") {
       localStorage.setItem("nykst.org", slug);
       localStorage.setItem("nykst.provider", provider);
     }
-    navigate({ to: "/graph" });
+    setConnecting(true);
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden">
+      {connecting && (
+        <ConnectionProgress
+          provider={providers.find((p) => p.id === provider)?.name ?? provider}
+          org={org.trim() || "acme"}
+          onDone={() => navigate({ to: "/graph" })}
+        />
+      )}
+
       <div
         className="pointer-events-none absolute inset-0"
         style={{ background: "var(--gradient-hero)" }}
@@ -190,6 +209,38 @@ function Landing() {
               itself.
             </p>
           </div>
+
+          <div className="mt-5">
+            <span className="text-muted-foreground text-[11px] tracking-widest uppercase">
+              Your role in this organization
+            </span>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {ROLES.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => chooseRole(r.id)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2.5 text-left transition-all",
+                    role === r.id
+                      ? "border-primary bg-secondary"
+                      : "border-border bg-surface hover:bg-surface-2",
+                  )}
+                >
+                  <span className="flex items-center justify-between text-sm font-medium">
+                    {r.name}
+                    <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+                      {r.can.viewAllDomains ? "All domains" : `${r.domains.length} domains`}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground mt-0.5 block text-[11px] leading-relaxed">
+                    {r.blurb}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+
 
           <button
             onClick={connect}
