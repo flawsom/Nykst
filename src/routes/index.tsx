@@ -210,6 +210,38 @@ function Landing() {
             </p>
           </div>
 
+          <div className="mt-5">
+            <span className="text-muted-foreground text-[11px] tracking-widest uppercase">
+              Your role in this organization
+            </span>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {ROLES.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => chooseRole(r.id)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2.5 text-left transition-all",
+                    role === r.id
+                      ? "border-primary bg-secondary"
+                      : "border-border bg-surface hover:bg-surface-2",
+                  )}
+                >
+                  <span className="flex items-center justify-between text-sm font-medium">
+                    {r.name}
+                    <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+                      {r.can.viewAllDomains ? "All domains" : `${r.domains.length} domains`}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground mt-0.5 block text-[11px] leading-relaxed">
+                    {r.blurb}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+
+
           <button
             onClick={connect}
             className="bg-primary text-primary-foreground hover:bg-primary-glow mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors"
