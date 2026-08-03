@@ -48,9 +48,12 @@ function Landing() {
   const [provider, setProvider] = useState("github");
   const [org, setOrg] = useState("");
   const [user, setUser] = useState<string | null>(null);
+  const [role, setRole] = useState<RoleId>("engineer");
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     setUser(localStorage.getItem("nykst.user"));
+    setRole(getRoleId());
   }, []);
 
   const login = () => {
@@ -64,17 +67,30 @@ function Landing() {
     setUser(null);
   };
 
+  const chooseRole = (id: RoleId) => {
+    setRole(id);
+    setRoleId(id);
+  };
+
   const connect = () => {
     const slug = org.trim() || "acme";
     if (typeof window !== "undefined") {
       localStorage.setItem("nykst.org", slug);
       localStorage.setItem("nykst.provider", provider);
     }
-    navigate({ to: "/graph" });
+    setConnecting(true);
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden">
+      {connecting && (
+        <ConnectionProgress
+          provider={providers.find((p) => p.id === provider)?.name ?? provider}
+          org={org.trim() || "acme"}
+          onDone={() => navigate({ to: "/graph" })}
+        />
+      )}
+
       <div
         className="pointer-events-none absolute inset-0"
         style={{ background: "var(--gradient-hero)" }}
