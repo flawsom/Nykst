@@ -175,7 +175,8 @@ function issuesOf(n: GraphNode) {
   const s = score(`${n.id}#issues`);
   const count = 2 + Math.floor(s * 4);
   return Array.from({ length: count }, (_, i) => {
-    const k = ISSUE_KINDS[Math.floor(score(`${n.id}#issue${i}`) * ISSUE_KINDS.length)]!;
+    const offset = Math.floor(score(`${n.id}#issue-kind-${i}-${i * 7 + 3}`) * ISSUE_KINDS.length);
+    const k = ISSUE_KINDS[(offset + i) % ISSUE_KINDS.length]!;
     return {
       id: `${n.id}-issue-${i}`,
       title: k[0],
