@@ -8,6 +8,8 @@ import {
   type NodeKind,
 } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
+import type { RoleDef } from "@/lib/access";
+import { knownRemedy, linkedTo, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
 import { ChevronRight, CornerUpLeft, Search, Sparkles } from "lucide-react";
 
 /* deterministic scoring derived from the node identity */
@@ -244,11 +246,13 @@ export function NodeDossier({
   open,
   onClose,
   onOpenNode,
+  role,
 }: {
   node: GraphNode | null;
   open: boolean;
   onClose: () => void;
   onOpenNode: (n: GraphNode) => void;
+  role: RoleDef;
 }) {
   const [stack, setStack] = useState<GraphNode[]>([]);
   const [section, setSection] = useState<SectionId>("overview");
@@ -283,7 +287,8 @@ export function NodeDossier({
     if (fns.length) out.push({ id: "functions", label: "Functions", count: fns.length });
     out.push({ id: "lines", label: "Lines", count: linesOf(active).total });
     out.push({ id: "issues", label: "Issues", count: issuesOf(active).length });
-    out.push({ id: "incidents", label: "Incidents", count: incidentsOf(active).length });
+    if (role.can.viewIncidents)
+      out.push({ id: "incidents", label: "Incidents", count: incidentsOf(active).length });
     if (active.detail) {
       out.push({ id: "tests", label: "Tests", count: active.detail.tests.length });
       out.push({ id: "history", label: "History", count: active.detail.history.length });
@@ -297,7 +302,7 @@ export function NodeDossier({
     out.push({ id: "ask", label: "Ask AI", count: 0 });
 
     return out;
-  }, [active]);
+  }, [active, role]);
 
   if (!node || !active) return null;
 
@@ -458,8 +463,13 @@ export function NodeDossier({
               {section === "classes" && <ClassesView node={active} />}
               {section === "functions" && <FunctionsView node={active} />}
               {section === "lines" && <LinesView node={active} />}
-              {section === "issues" && <IssuesView node={active} />}
-              {section === "incidents" && <IncidentsView node={active} />}
+              {section === "issues" && <IssuesView node={active} role={role} />}
+              {section === "incidents" &&
+                (role.can.viewIncidents ? (
+                  <IncidentsView node={active} />
+                ) : (
+                  <Restricted what="Incidents" role={role} />
+                ))}
 
               {section === "tests" && <Block title="Tests" items={active.detail?.tests ?? []} />}
               {section === "history" && (

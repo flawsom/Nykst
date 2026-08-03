@@ -222,7 +222,9 @@ function GraphPage() {
 
         <Inspector
           node={inspected}
-          related={inspected.expandable ? childrenOf(inspected) : []}
+          related={
+            inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
+          }
           onClose={() => setSelected(null)}
           onOpen={drill}
         />
