@@ -917,23 +917,140 @@ const SEV_TONE: Record<string, string> = {
   SEV1: "var(--primary)",
 };
 
-function IssuesView({ node }: { node: GraphNode }) {
+function Restricted({ what, role }: { what: string; role: RoleDef }) {
+  return (
+    <div className="border-border bg-surface rounded-lg border p-5">
+      <h3 className="text-sm font-medium">{what} are restricted</h3>
+      <p className="text-muted-foreground mt-1.5 text-sm">
+        Your role ({role.name}) does not include access to {what.toLowerCase()} for this node. Ask an
+        org owner to widen your scope.
+      </p>
+    </div>
+  );
+}
+
+function IssuesView({ node, role }: { node: GraphNode; role: RoleDef }) {
   const rows = issuesOf(node);
+  const { resolve, resolvedIds } = useRemediation();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const linked = linkedTo(node);
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium">
-        Open issues <span className="text-muted-foreground">({rows.length})</span>
+        Issues <span className="text-muted-foreground">({rows.length})</span>
       </h3>
-      <SimpleTable
-        head={["Issue", "Area", "Severity", "Age", "Owner"]}
-        rows={rows.map((i) => [
-          i.title,
-          <span className="text-muted-foreground">{i.area}</span>,
-          <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />,
-          <span className="text-muted-foreground text-[11px]">{i.age}</span>,
-          <span className="text-muted-foreground font-mono text-[11px]">{i.owner}</span>,
-        ])}
-      />
+      <p className="text-muted-foreground text-[12px]">
+        Every issue is linked to what it depends on. Once you solve a pattern, Nykst remembers it —
+        the next identical pattern arrives already solved and only needs approval.
+      </p>
+
+      <div className="space-y-2">
+        {rows.map((i) => {
+          const issue: IssueLike = i;
+          const known = knownRemedy(issue);
+          const done = resolvedIds.includes(i.id);
+          const expanded = openId === i.id;
+          return (
+            <div key={i.id} className="border-border bg-surface rounded-lg border">
+              <button
+                onClick={() => setOpenId(expanded ? null : i.id)}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+              >
+                <Badge value={i.severity} tone={SEV_TONE[i.severity] ?? "var(--node-module)"} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm">{i.title}</span>
+                  <span className="text-muted-foreground block text-[11px]">
+                    {i.area} · {i.age} · {i.owner}
+                  </span>
+                </span>
+                {done ? (
+                  <Badge value="Resolved" tone="var(--node-file)" />
+                ) : known ? (
+                  <Badge value="Known fix — approval needed" tone="var(--node-module)" />
+                ) : null}
+                <ChevronRight
+                  className={cn(
+                    "text-muted-foreground size-4 shrink-0 transition-transform",
+                    expanded && "rotate-90",
+                  )}
+                />
+              </button>
+
+              {expanded && (
+                <div className="border-border space-y-4 border-t px-3 py-3">
+                  <div>
+                    <Label>Remediation plan</Label>
+                    <ol className="mt-2 space-y-1.5">
+                      {stepsFor(issue).map((st, n) => (
+                        <li key={st} className="text-muted-foreground text-[12px]">
+                          <span className="text-primary font-mono">{n + 1}.</span> {st}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  <div>
+                    <Label>Connected to</Label>
+                    <ul className="mt-2 space-y-1">
+                      {linked.map((l) => (
+                        <li
+                          key={l}
+                          className="text-muted-foreground border-border border-l pl-3 text-[12px]"
+                        >
+                          {l}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {known && (
+                    <div className="border-border bg-card rounded-md border p-3">
+                      <Label>Pattern match — already solved</Label>
+                      <p className="text-muted-foreground mt-1.5 text-[12px]">
+                        This exact pattern was solved on{" "}
+                        <span className="text-foreground">{known.provenOn}</span> and applied{" "}
+                        {known.appliedCount}× since. Nykst can replay the same fix here.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          disabled={!role.can.approveAutoFix || done}
+                          onClick={() => resolve(issue, node)}
+                          className="bg-primary text-primary-foreground hover:bg-primary-glow rounded-md px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40"
+                        >
+                          {done ? "Applied" : "Approve & apply known fix"}
+                        </button>
+                        {!role.can.approveAutoFix && (
+                          <span className="text-muted-foreground self-center text-[11px]">
+                            {role.name} cannot approve auto-fixes — request an owner or architect.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!done && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        disabled={!role.can.resolveIssues}
+                        onClick={() => resolve(issue, node)}
+                        className="border-border bg-surface-2 hover:bg-surface rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
+                      >
+                        Mark solved & remember this pattern
+                      </button>
+                      {!role.can.resolveIssues && (
+                        <span className="text-muted-foreground self-center text-[11px]">
+                          Read-only role.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
