@@ -1,6 +1,9 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { ConnectionProgress } from "@/components/graph/ConnectionProgress";
+import { ROLES, getRoleId, setRoleId, type RoleId } from "@/lib/access";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
