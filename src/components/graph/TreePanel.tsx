@@ -7,16 +7,25 @@ interface Props {
   activeId: string;
   openIds: Set<string>;
   onSelect: (node: GraphNode) => void;
+  /** access filter — nodes outside the viewer's scope are never listed */
+  visible?: (n: GraphNode) => boolean;
 }
 
-export function TreePanel({ root, activeId, openIds, onSelect }: Props) {
+export function TreePanel({ root, activeId, openIds, onSelect, visible }: Props) {
   return (
     <aside className="border-border bg-card/40 hidden w-[248px] shrink-0 overflow-y-auto border-r backdrop-blur md:block">
       <div className="border-border text-muted-foreground border-b px-4 py-3 text-[10px] tracking-[0.24em] uppercase">
         System tree
       </div>
       <div className="py-2">
-        <TreeRow node={root} depth={0} activeId={activeId} openIds={openIds} onSelect={onSelect} />
+        <TreeRow
+          node={root}
+          depth={0}
+          activeId={activeId}
+          openIds={openIds}
+          onSelect={onSelect}
+          visible={visible}
+        />
       </div>
     </aside>
   );
@@ -28,16 +37,20 @@ function TreeRow({
   activeId,
   openIds,
   onSelect,
+  visible,
 }: {
   node: GraphNode;
   depth: number;
   activeId: string;
   openIds: Set<string>;
   onSelect: (n: GraphNode) => void;
+  visible?: (n: GraphNode) => boolean;
 }) {
   const [open, setOpen] = useState(openIds.has(node.id) || depth === 0);
   const expanded = open || openIds.has(node.id);
-  const kids = expanded && node.expandable ? childrenOf(node) : [];
+  const all = expanded && node.expandable ? childrenOf(node) : [];
+  const kids = visible ? all.filter(visible) : all;
+  const hidden = all.length - kids.length;
 
   return (
     <div>
@@ -78,8 +91,17 @@ function TreeRow({
             activeId={activeId}
             openIds={openIds}
             onSelect={onSelect}
+            visible={visible}
           />
         ))}
+      {expanded && hidden > 0 && (
+        <div
+          className="text-muted-foreground/70 py-1 text-[11px] italic"
+          style={{ paddingLeft: `${24 + depth * 12}px` }}
+        >
+          {hidden} restricted
+        </div>
+      )}
     </div>
   );
 }
