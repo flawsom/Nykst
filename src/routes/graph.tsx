@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { Inspector } from "@/components/graph/Inspector";
 import { NodeDossier } from "@/components/graph/NodeDossier";
+import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
+import { ROLES, canView, setRoleId, useRole, type RoleId } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
 
@@ -64,8 +66,14 @@ function GraphPage() {
     return out;
   }, [root, pathIds]);
 
+  const role = useRole();
   const center = path[path.length - 1]!;
-  const centerChildren = useMemo(() => childrenOf(center), [center]);
+  const allChildren = useMemo(() => childrenOf(center), [center]);
+  const centerChildren = useMemo(
+    () => allChildren.filter((n) => canView(role, n)),
+    [allChildren, role],
+  );
+  const restricted = allChildren.length - centerChildren.length;
   const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
 
   const drill = (node: GraphNode) => {
@@ -129,6 +137,21 @@ function GraphPage() {
           ))}
         </nav>
 
+        <label className="border-border bg-surface flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs">
+          <span className="text-muted-foreground">Role</span>
+          <select
+            value={role.id}
+            onChange={(e) => setRoleId(e.target.value as RoleId)}
+            className="bg-transparent text-xs outline-none"
+          >
+            {ROLES.map((r) => (
+              <option key={r.id} value={r.id} className="bg-card">
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="border-border text-muted-foreground flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs">
           <span className="bg-primary size-1.5 rounded-full" />
           {root.label}
@@ -137,7 +160,13 @@ function GraphPage() {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <TreePanel root={root} activeId={inspected.id} openIds={openIds} onSelect={jumpTo} />
+        <TreePanel
+          root={root}
+          activeId={inspected.id}
+          openIds={openIds}
+          onSelect={jumpTo}
+          visible={(n) => canView(role, n)}
+        />
 
         <section className="relative min-w-0 flex-1">
           <div className="pointer-events-none absolute top-5 left-6 z-10 max-w-sm">
@@ -162,6 +191,9 @@ function GraphPage() {
 
           <div className="text-muted-foreground pointer-events-none absolute bottom-5 left-6 z-10 text-[11px] tracking-[0.22em] uppercase">
             {childKindLabel[center.kind]} · {centerChildren.length}
+            {restricted > 0 && (
+              <span className="text-primary"> · {restricted} restricted by role</span>
+            )}
           </div>
 
           {path.length > 1 && (
@@ -196,8 +228,11 @@ function GraphPage() {
         />
       </div>
 
+      <OnboardingTour />
+
       <NodeDossier
         node={dossier}
+        role={role}
         open={dossier !== null}
         onClose={() => setDossier(null)}
         onOpenNode={jumpTo}
