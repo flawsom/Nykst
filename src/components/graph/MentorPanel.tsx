@@ -58,6 +58,61 @@ const sevTone: Record<string, string> = {
   Critical: "var(--primary)",
 };
 
+/* ---------------- evidence ---------------- */
+
+export interface Evidence {
+  kind: "node" | "file" | "incident" | "metric";
+  label: string;
+  /** graph node this evidence points at, when it is navigable */
+  node?: GraphNode;
+}
+
+const EV_TONE: Record<Evidence["kind"], string> = {
+  node: "var(--node-capability)",
+  file: "var(--node-file)",
+  incident: "var(--primary)",
+  metric: "var(--node-module)",
+};
+
+/** Sample descendant nodes / file paths this insight was derived from. */
+function evidenceSources(node: GraphNode, kids: GraphNode[]) {
+  const nodes = kids.slice(0, 3);
+  const files: string[] = [];
+  const walk = (n: GraphNode, depth: number) => {
+    if (files.length >= 4 || depth > 2) return;
+    for (const c of childrenOf(n)) {
+      if (files.length >= 4) return;
+      if (!c.expandable) files.push(c.detail?.path ?? c.label);
+      else walk(c, depth + 1);
+    }
+  };
+  if (!node.expandable) files.push(node.detail?.path ?? node.label);
+  else walk(node, 0);
+  return { nodes, files };
+}
+
+const INCIDENT_PATTERNS = [
+  "Retry storm during partner degradation",
+  "Auth token expiry cascade",
+  "Cache stampede after deploy",
+  "Schema drift on a shared contract",
+  "Config rollout with no kill switch",
+];
+
+function incidentsOf(node: GraphNode) {
+  const count = 1 + Math.floor(score(`${node.id}#inc`) * 3);
+  return Array.from({ length: count }, (_, i) => {
+    const p = INCIDENT_PATTERNS[Math.floor(score(`${node.id}#inc-${i}`) * INCIDENT_PATTERNS.length)]!;
+    const days = 8 + Math.floor(score(`${node.id}#inc-age-${i}`) * 300);
+    return {
+      id: `${node.id}-inc-${i}`,
+      pattern: p,
+      when: `${days}d ago`,
+      minutes: 12 + Math.floor(score(`${node.id}#inc-min-${i}`) * 180),
+    };
+  });
+}
+
 /* ---------------- role voice ---------------- */
 
 type Voice = "technical" | "executive" | "guided";
@@ -74,106 +129,207 @@ const VOICE_LABEL: Record<Voice, string> = {
   guided: "Guided tour",
 };
 
-function briefFor(voice: Voice, node: GraphNode, kids: GraphNode[], issues: IssueLike[]) {
+/* ---------------- problem tracker ---------------- */
+
+interface Tracker {
+  id: string;
+  title: string;
+  count: string;
+  tone: string;
+  headline: string;
+  detail: string[];
+  evidence: Evidence[];
+}
+
+function trackersFor(
+  voice: Voice,
+  node: GraphNode,
+  kids: GraphNode[],
+  issues: (IssueLike & { severity: string })[],
+  resolvedIds: string[],
+): Tracker[] {
   const b = node.blast;
-  const kidWord = childKindLabel[node.kind].toLowerCase();
-  const worst = issues[0];
-
-  if (voice === "executive") {
-    return [
-      {
-        h: "What this is",
-        p: `${node.label} is one of your ${kindLabel[node.kind].toLowerCase()} areas. It covers ${kids.length} ${kidWord} and is run by ${b.teams} team${b.teams > 1 ? "s" : ""}.`,
-      },
-      {
-        h: "Why it matters",
-        p: `A change here reaches ${b.services.toLocaleString()} services. That is ${b.level.toLowerCase()} exposure — ${
-          b.level === "Critical" || b.level === "High"
-            ? "plan changes here with the owning teams before committing dates."
-            : "changes can move without org-wide coordination."
-        }`,
-      },
-      {
-        h: "Where the money leaks",
-        p: worst
-          ? `${BUSINESS_MEANING[worst.title] ?? worst.title} Accountable: ${worst.owner}.`
-          : "No material risks flagged in this area right now.",
-      },
-      {
-        h: "Your next decision",
-        p: `${issues.length} open finding${issues.length === 1 ? "" : "s"} in this area. You can approve the known fixes below without reading any code.`,
-      },
-    ];
-  }
-
-  if (voice === "guided") {
-    return [
-      {
-        h: "Where you are",
-        p: `${node.label} — a ${kindLabel[node.kind].toLowerCase()} in this organization. ${node.summary}`,
-      },
-      {
-        h: "What to do next",
-        p: `Click any of the ${kids.length} ${kidWord} on the canvas to go one level deeper, or use the "i" badge for a full dossier.`,
-      },
-      {
-        h: "Who runs it",
-        p: `Owned by ${node.owners.join(" and ")}.`,
-      },
-    ];
-  }
+  const { nodes, files } = evidenceSources(node, kids);
+  const incidents = incidentsOf(node);
+  const open = issues.filter((i) => !resolvedIds.includes(i.id));
+  const errorPaths = issues.filter(
+    (i) => i.area === "Reliability" || i.area === "Quality" || i.title.includes("error"),
+  );
+  const security = issues.filter((i) => i.area === "Security" || i.area === "Governance");
+  const nodeEv: Evidence[] = nodes.map((n) => ({ kind: "node", label: n.label, node: n }));
+  const fileEv: Evidence[] = files.map((f) => ({ kind: "file", label: f }));
 
   return [
     {
-      h: "Surface",
-      p: `${node.label} exposes ${kids.length} ${kidWord}, pulls ${node.dependencies.length} upstream dependenc${node.dependencies.length === 1 ? "y" : "ies"} and is consumed by ${node.dependents.length} downstream node${node.dependents.length === 1 ? "" : "s"}.`,
+      id: "problems",
+      title: "Open problems",
+      count: `${open.length}`,
+      tone: open.length ? "var(--primary)" : "var(--node-file)",
+      headline: open.length
+        ? voice === "executive"
+          ? (BUSINESS_MEANING[open[0]!.title] ?? open[0]!.title)
+          : `Highest severity: ${open[0]!.title} (${open[0]!.severity})`
+        : "Nothing open in this area.",
+      detail: open
+        .slice(0, 4)
+        .map((i) =>
+          voice === "executive"
+            ? `${BUSINESS_MEANING[i.title] ?? i.title} — ${i.owner}`
+            : `${i.title} · ${i.area} · ${i.severity} · ${i.owner}`,
+        ),
+      evidence: [...nodeEv, ...fileEv.slice(0, 2)],
     },
     {
-      h: "Blast radius",
-      p: `${b.level} — ${b.services} services · ${b.modules} modules · ${b.files} files · ${b.teams} teams. Upstream: ${node.dependencies.slice(0, 3).join(", ") || "none"}. Downstream: ${node.dependents.slice(0, 3).join(", ") || "none"}.`,
+      id: "errors",
+      title: "Error & failure paths",
+      count: `${errorPaths.length}`,
+      tone: "var(--node-capability)",
+      headline: errorPaths.length
+        ? voice === "executive"
+          ? "Failures here can reach customers before anyone is paged."
+          : `${errorPaths.length} finding${errorPaths.length === 1 ? "" : "s"} sit on failure handling paths.`
+        : "No unguarded failure paths flagged.",
+      detail: errorPaths.slice(0, 3).map((i) => `${i.title} — ${stepsFor(i)[0]}`),
+      evidence: fileEv.length ? fileEv : nodeEv,
     },
     {
-      h: "Change guidance",
-      p: worst
-        ? `Start at "${worst.title}" (${worst.area}, ${(worst as { severity?: string }).severity ?? "Medium"}). Verify dependents before rollout; ${node.owners[0]} reviews.`
-        : `No blocking findings. Standard review path: ${node.owners.join(", ")}.`,
+      id: "blast",
+      title: "Blast radius",
+      count: b.level,
+      tone: sevTone[b.level === "Moderate" ? "Medium" : b.level] ?? "var(--node-module)",
+      headline:
+        voice === "executive"
+          ? `A change here reaches ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""}.`
+          : `${b.services} services · ${b.modules} modules · ${b.files} files · ${b.teams} teams.`,
+      detail: [
+        `Upstream: ${node.dependencies.slice(0, 4).join(", ") || "none tracked"}`,
+        `Downstream: ${node.dependents.slice(0, 4).join(", ") || "none tracked"}`,
+      ],
+      evidence: [
+        { kind: "metric", label: `${b.services} services` },
+        { kind: "metric", label: `${b.teams} teams` },
+        ...nodeEv.slice(0, 2),
+      ],
+    },
+    {
+      id: "incidents",
+      title: "Past incident patterns",
+      count: `${incidents.length}`,
+      tone: "var(--node-service)",
+      headline: incidents.length
+        ? `Recurring trigger: ${incidents[0]!.pattern}.`
+        : "No incident history recorded here.",
+      detail: incidents.map((i) => `${i.pattern} · ${i.when} · ${i.minutes}m impact`),
+      evidence: [
+        ...incidents.map((i) => ({ kind: "incident" as const, label: `${i.pattern} (${i.when})` })),
+        ...nodeEv.slice(0, 1),
+      ],
+    },
+    {
+      id: "ownership",
+      title: "Ownership & exposure",
+      count: `${node.owners.length}`,
+      tone: "var(--node-domain)",
+      headline: security.length
+        ? voice === "executive"
+          ? "There is a compliance-shaped risk with no clear accountable team."
+          : `${security.length} security/governance finding${security.length === 1 ? "" : "s"} in scope.`
+        : `Accountable: ${node.owners.join(" and ")}.`,
+      detail: [
+        `Owners: ${node.owners.join(", ")}`,
+        ...security.slice(0, 2).map((i) => `${i.title} — ${i.owner}`),
+      ],
+      evidence: [
+        ...node.owners.map((o) => ({ kind: "metric" as const, label: o })),
+        ...nodeEv.slice(0, 2),
+      ],
     },
   ];
 }
 
-function answerFor(voice: Voice, q: string, node: GraphNode, kids: GraphNode[]) {
+/* ---------------- ask ---------------- */
+
+function answerFor(
+  voice: Voice,
+  q: string,
+  node: GraphNode,
+  kids: GraphNode[],
+): { text: string; evidence: Evidence[] } {
   const b = node.blast;
   const low = q.toLowerCase();
   const exec = voice === "executive";
+  const { nodes, files } = evidenceSources(node, kids);
+  const nodeEv: Evidence[] = nodes.map((n) => ({ kind: "node", label: n.label, node: n }));
+  const fileEv: Evidence[] = files.slice(0, 3).map((f) => ({ kind: "file", label: f }));
+  const incEv: Evidence[] = incidentsOf(node).map((i) => ({
+    kind: "incident",
+    label: `${i.pattern} (${i.when})`,
+  }));
+  const blastEv: Evidence[] = [
+    { kind: "metric", label: `${b.services} services` },
+    { kind: "metric", label: `blast ${b.level}` },
+  ];
 
   if (low.includes("break") || low.includes("change") || low.includes("impact") || low.includes("risk"))
-    return exec
-      ? `Touching ${node.label} affects ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""} — ${b.level.toLowerCase()} exposure. Practically: expect coordination across those teams and a longer release window.`
-      : `Blast radius ${b.level}: ${b.services} services, ${b.modules} modules, ${b.files} files, ${b.teams} teams. Downstream consumers: ${node.dependents.slice(0, 4).join(", ") || "none tracked"}. Gate the change behind dependent verification.`;
+    return {
+      text: exec
+        ? `Touching ${node.label} affects ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""} — ${b.level.toLowerCase()} exposure. Expect coordination across those teams and a longer release window.`
+        : `Blast radius ${b.level}: ${b.services} services, ${b.modules} modules, ${b.files} files, ${b.teams} teams. Downstream consumers: ${node.dependents.slice(0, 4).join(", ") || "none tracked"}. Gate the change behind dependent verification.`,
+      evidence: [...blastEv, ...nodeEv, ...incEv.slice(0, 1)],
+    };
 
   if (low.includes("depend"))
-    return exec
-      ? `${node.label} relies on ${node.dependencies.length} other area${node.dependencies.length === 1 ? "" : "s"} and ${node.dependents.length} area${node.dependents.length === 1 ? "" : "s"} rely on it. The more inbound reliance, the harder this is to replace.`
-      : `Upstream: ${node.dependencies.join(", ") || "none"}. Downstream: ${node.dependents.join(", ") || "none"}.`;
+    return {
+      text: exec
+        ? `${node.label} relies on ${node.dependencies.length} other area${node.dependencies.length === 1 ? "" : "s"} and ${node.dependents.length} area${node.dependents.length === 1 ? "" : "s"} rely on it.`
+        : `Upstream: ${node.dependencies.join(", ") || "none"}. Downstream: ${node.dependents.join(", ") || "none"}.`,
+      evidence: [
+        ...node.dependencies.slice(0, 3).map((d) => ({ kind: "node" as const, label: d })),
+        ...nodeEv.slice(0, 2),
+      ],
+    };
 
   if (low.includes("own") || low.includes("who") || low.includes("review"))
-    return `Accountable: ${node.owners.join(" and ")}${exec ? "." : ` — route PRs and incident pages here.`}`;
+    return {
+      text: `Accountable: ${node.owners.join(" and ")}${exec ? "." : ` — route PRs and incident pages here.`}`,
+      evidence: [
+        ...node.owners.map((o) => ({ kind: "metric" as const, label: o })),
+        ...fileEv.slice(0, 2),
+      ],
+    };
 
   if (low.includes("issue") || low.includes("problem") || low.includes("fix")) {
     const list = issuesOf(node);
-    return exec
-      ? `${list.length} open findings. Highest impact: ${BUSINESS_MEANING[list[0]!.title] ?? list[0]!.title}`
-      : `${list.length} open: ${list.map((i) => `${i.title} (${i.severity})`).join("; ")}.`;
+    return {
+      text: exec
+        ? `${list.length} open findings. Highest impact: ${BUSINESS_MEANING[list[0]!.title] ?? list[0]!.title}`
+        : `${list.length} open: ${list.map((i) => `${i.title} (${i.severity})`).join("; ")}.`,
+      evidence: [...fileEv, ...nodeEv.slice(0, 2), ...incEv.slice(0, 1)],
+    };
   }
 
-  if (low.includes("what") || low.includes("do"))
-    return exec
-      ? `${node.summary} It groups ${kids.length} ${childKindLabel[node.kind].toLowerCase()} and is one of your ${b.teams}-team areas.`
-      : `${node.summary} Children: ${kids.slice(0, 5).map((k) => k.label).join(", ") || "none"}.`;
+  if (low.includes("incident") || low.includes("outage") || low.includes("history"))
+    return {
+      text: `Recorded patterns on ${node.label}: ${incidentsOf(node)
+        .map((i) => `${i.pattern} (${i.when}, ${i.minutes}m)`)
+        .join("; ")}.`,
+      evidence: [...incEv, ...nodeEv.slice(0, 1)],
+    };
 
-  return exec
-    ? `${node.label}: ${node.summary} ${b.teams} team${b.teams > 1 ? "s" : ""} own it, ${b.services} services depend on it.`
-    : `${node.label} — ${kindLabel[node.kind].toLowerCase()}. ${node.summary} ${node.dependencies.length} upstream / ${node.dependents.length} downstream.`;
+  if (low.includes("what") || low.includes("do"))
+    return {
+      text: exec
+        ? `${node.summary} It groups ${kids.length} ${childKindLabel[node.kind].toLowerCase()} and is one of your ${b.teams}-team areas.`
+        : `${node.summary} Children: ${kids.slice(0, 5).map((k) => k.label).join(", ") || "none"}.`,
+      evidence: [...nodeEv, ...fileEv.slice(0, 2)],
+    };
+
+  return {
+    text: exec
+      ? `${node.label}: ${node.summary} ${b.teams} team${b.teams > 1 ? "s" : ""} own it, ${b.services} services depend on it.`
+      : `${node.label} — ${kindLabel[node.kind].toLowerCase()}. ${node.summary} ${node.dependencies.length} upstream / ${node.dependents.length} downstream.`,
+    evidence: [...nodeEv, ...blastEv.slice(0, 1)],
+  };
 }
 
 function suggestionsFor(voice: Voice) {
@@ -181,6 +337,56 @@ function suggestionsFor(voice: Voice) {
     return ["Why does this matter?", "What is the risk here?", "Who is accountable?"];
   if (voice === "guided") return ["What does this do?", "Who owns it?", "What connects to it?"];
   return ["What breaks if I change it?", "Show dependencies", "What issues are open?"];
+}
+
+/* ---------------- evidence strip ---------------- */
+
+function EvidenceStrip({
+  items,
+  onOpen,
+}: {
+  items: Evidence[];
+  onOpen: (n: GraphNode) => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-2.5">
+      <div className="text-muted-foreground text-[9px] tracking-[0.24em] uppercase">
+        Source evidence
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {items.map((e, i) => {
+          const inner = (
+            <>
+              <span
+                className="size-1 shrink-0 rounded-full"
+                style={{ background: EV_TONE[e.kind] }}
+              />
+              <span className="truncate">{e.label}</span>
+            </>
+          );
+          return e.node ? (
+            <button
+              key={`${e.label}-${i}`}
+              onClick={() => onOpen(e.node!)}
+              title={`${e.kind} · click to open in graph`}
+              className="border-border bg-surface-2 hover:bg-secondary flex max-w-[150px] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors"
+            >
+              {inner}
+            </button>
+          ) : (
+            <span
+              key={`${e.label}-${i}`}
+              title={e.kind}
+              className="border-border bg-surface flex max-w-[150px] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]"
+            >
+              {inner}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /* ---------------- panel ---------------- */
@@ -198,16 +404,22 @@ export function MentorPanel({
 }) {
   const voice = voiceOf(role);
   const issues = useMemo(() => issuesOf(node), [node]);
-  const brief = useMemo(() => briefFor(voice, node, related, issues), [voice, node, related, issues]);
   const [tab, setTab] = useState<"brief" | "ask">("brief");
+  const [openCard, setOpenCard] = useState<string | null>("problems");
   const [q, setQ] = useState("");
-  const [thread, setThread] = useState<{ q: string; a: string }[]>([]);
+  const [thread, setThread] = useState<{ q: string; a: string; evidence: Evidence[] }[]>([]);
   const { resolve, remedies, resolvedIds } = useRemediation();
+
+  const trackers = useMemo(
+    () => trackersFor(voice, node, related, issues, resolvedIds),
+    [voice, node, related, issues, resolvedIds],
+  );
 
   const ask = (text: string) => {
     const query = text.trim();
     if (!query) return;
-    setThread((t) => [...t, { q: query, a: answerFor(voice, query, node, related) }]);
+    const res = answerFor(voice, query, node, related);
+    setThread((t) => [...t, { q: query, a: res.text, evidence: res.evidence }]);
     setQ("");
   };
 
@@ -235,28 +447,67 @@ export function MentorPanel({
                 tab === t ? "bg-secondary text-foreground" : "text-muted-foreground",
               )}
             >
-              {t === "brief" ? "Briefing" : "Ask"}
+              {t === "brief" ? "Problem tracker" : "Ask"}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5">
         {tab === "brief" ? (
           <>
-            {brief.map((b) => (
-              <div key={b.h}>
-                <h3 className="text-muted-foreground text-[10px] tracking-[0.24em] uppercase">
-                  {b.h}
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed">{b.p}</p>
-              </div>
-            ))}
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              Tracked signals for this {kindLabel[node.kind].toLowerCase()}. Click a box for the
+              detail and the evidence it came from.
+            </p>
+
+            {trackers.map((t) => {
+              const open = openCard === t.id;
+              return (
+                <div key={t.id} className="border-border bg-surface rounded-lg border">
+                  <button
+                    onClick={() => setOpenCard(open ? null : t.id)}
+                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors"
+                  >
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ background: t.tone }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-medium">{t.title}</span>
+                      <span className="text-muted-foreground block truncate text-[11px]">
+                        {t.headline}
+                      </span>
+                    </span>
+                    <span className="border-border bg-surface-2 rounded-full border px-2 py-0.5 text-[10px]">
+                      {t.count}
+                    </span>
+                  </button>
+
+                  {open && (
+                    <div className="border-border border-t px-3 py-2.5">
+                      <ul className="space-y-1">
+                        {t.detail.length ? (
+                          t.detail.map((d) => (
+                            <li key={d} className="text-[11px] leading-relaxed">
+                              {d}
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-muted-foreground text-[11px]">Nothing tracked.</li>
+                        )}
+                      </ul>
+                      <EvidenceStrip items={t.evidence} onOpen={onOpen} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {voice !== "guided" && (
-              <div>
+              <div className="pt-2">
                 <h3 className="text-muted-foreground text-[10px] tracking-[0.24em] uppercase">
-                  {voice === "executive" ? "Decisions waiting on you" : "Open issues"}
+                  {voice === "executive" ? "Decisions waiting on you" : "Fix queue"}
                 </h3>
                 <ul className="mt-2 space-y-2">
                   {issues.map((i) => {
@@ -267,6 +518,19 @@ export function MentorPanel({
                       : known
                         ? role.can.approveAutoFix
                         : role.can.resolveIssues;
+                    const { files } = evidenceSources(node, related);
+                    const evidence: Evidence[] = [
+                      { kind: "node", label: node.label, node },
+                      ...files.slice(0, 2).map((f) => ({ kind: "file" as const, label: f })),
+                      ...(known
+                        ? [
+                            {
+                              kind: "incident" as const,
+                              label: `Pattern proven on ${known.provenOn}`,
+                            },
+                          ]
+                        : []),
+                    ];
                     return (
                       <li
                         key={i.id}
@@ -301,6 +565,10 @@ export function MentorPanel({
                           </p>
                         )}
 
+                        <div className="ml-3.5">
+                          <EvidenceStrip items={evidence} onOpen={onOpen} />
+                        </div>
+
                         <div className="mt-2 ml-3.5">
                           {solved ? (
                             <span className="text-muted-foreground text-[11px]">
@@ -330,7 +598,7 @@ export function MentorPanel({
             )}
 
             {related.length > 0 && (
-              <div>
+              <div className="pt-2">
                 <h3 className="text-muted-foreground text-[10px] tracking-[0.24em] uppercase">
                   Go deeper · {related.length}
                 </h3>
@@ -365,7 +633,8 @@ export function MentorPanel({
 
             {thread.length === 0 && (
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Ask anything about {node.label}. Answers are written for a {role.name.toLowerCase()}.
+                Ask anything about {node.label}. Every answer cites the graph nodes, files and
+                incident patterns it used.
               </p>
             )}
 
@@ -375,6 +644,7 @@ export function MentorPanel({
                   {t.q}
                 </div>
                 <div className="text-sm leading-relaxed">{t.a}</div>
+                <EvidenceStrip items={t.evidence} onOpen={onOpen} />
               </div>
             ))}
           </div>
