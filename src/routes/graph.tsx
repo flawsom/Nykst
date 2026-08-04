@@ -220,12 +220,12 @@ function GraphPage() {
 
         </section>
 
-        <Inspector
+        <MentorPanel
           node={inspected}
+          role={role}
           related={
             inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
           }
-          onClose={() => setSelected(null)}
           onOpen={drill}
         />
       </div>
