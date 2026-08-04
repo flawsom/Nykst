@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
-import { Inspector } from "@/components/graph/Inspector";
+import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeDossier } from "@/components/graph/NodeDossier";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
