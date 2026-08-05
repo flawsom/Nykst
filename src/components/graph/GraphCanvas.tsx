@@ -137,6 +137,17 @@ export function GraphCanvas({
           >
             {center.kind}
           </text>
+          {technical && (
+            <text
+              x={cx}
+              y={cy + 122}
+              textAnchor="middle"
+              className="fill-muted-foreground font-mono text-[11px]"
+            >
+              {truncate(techLine(center), 62)}
+            </text>
+          )}
+
           <InfoBadge
             x={cx}
             y={cy + 46}
