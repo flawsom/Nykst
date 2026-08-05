@@ -18,6 +18,20 @@ interface Props {
   onSelect: (node: GraphNode) => void;
   onInspect: (node: GraphNode) => void;
   selectedId?: string | undefined;
+  /** engineers see repo/technical metadata on every node */
+  technical?: boolean;
+}
+
+/** Repo-shaped identifier so engineers can map a node to source. */
+function repoOf(node: GraphNode) {
+  const seg = node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${node.owners[0]?.replace("@", "") ?? "org"}/${seg}`;
+}
+
+function techLine(node: GraphNode) {
+  if (!node.expandable && node.detail)
+    return `${node.detail.language} · ${node.detail.loc} LOC · ${node.detail.path}`;
+  return `${repoOf(node)} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
 }
 
 export function GraphCanvas({
@@ -27,6 +41,7 @@ export function GraphCanvas({
   onSelect,
   onInspect,
   selectedId,
+  technical = false,
 }: Props) {
   const children = nodes;
   const [mounted, setMounted] = useState(false);
