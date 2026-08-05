@@ -209,13 +209,14 @@ function GraphPage() {
           )}
 
           <GraphCanvas
-            key={center.id}
+            key={`${center.id}-${role.id}`}
             center={center}
             nodes={centerChildren}
             childKind={childKind}
             onSelect={drill}
             onInspect={setDossier}
             selectedId={selected?.id}
+            technical={role.id === "engineer" || role.id === "architect"}
           />
 
         </section>

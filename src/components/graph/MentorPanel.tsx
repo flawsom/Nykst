@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/graph-data";
 import type { RoleDef } from "@/lib/access";
 import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
+import { useChatMemory } from "@/lib/chat-memory";
+import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
 /* deterministic scoring, identical approach to the dossier */
@@ -404,11 +406,14 @@ export function MentorPanel({
 }) {
   const voice = voiceOf(role);
   const issues = useMemo(() => issuesOf(node), [node]);
-  const [tab, setTab] = useState<"brief" | "ask">("brief");
+  const canCode = voice === "technical";
+  const [tab, setTab] = useState<"brief" | "ask" | "code">("brief");
   const [openCard, setOpenCard] = useState<string | null>("problems");
   const [q, setQ] = useState("");
+  const [menu, setMenu] = useState(false);
   const [thread, setThread] = useState<{ q: string; a: string; evidence: Evidence[] }[]>([]);
   const { resolve, remedies, resolvedIds } = useRemediation();
+  const memory = useChatMemory(node.label);
 
   const trackers = useMemo(
     () => trackersFor(voice, node, related, issues, resolvedIds),
@@ -420,7 +425,28 @@ export function MentorPanel({
     if (!query) return;
     const res = answerFor(voice, query, node, related);
     setThread((t) => [...t, { q: query, a: res.text, evidence: res.evidence }]);
+    memory.addTurn({
+      q: query,
+      a: res.text,
+      evidence: res.evidence.map((e) => ({ kind: e.kind, label: e.label })),
+    });
     setQ("");
+  };
+
+  const openChat = (id: string) => {
+    memory.setActiveId(id);
+    const c = memory.chats.find((x) => x.id === id);
+    setThread((c?.turns ?? []).map((t) => ({ q: t.q, a: t.a, evidence: t.evidence as Evidence[] })));
+    setMenu(false);
+  };
+
+  const tabs = canCode
+    ? (["brief", "ask", "code"] as const)
+    : (["brief", "ask"] as const);
+  const TAB_LABEL: Record<string, string> = {
+    brief: "Problem tracker",
+    ask: "Ask",
+    code: "Virtual code",
   };
 
   return (
@@ -438,7 +464,7 @@ export function MentorPanel({
         </p>
 
         <div className="border-border bg-surface mt-3 flex rounded-lg border p-0.5 text-[11px]">
-          {(["brief", "ask"] as const).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -447,11 +473,12 @@ export function MentorPanel({
                 tab === t ? "bg-secondary text-foreground" : "text-muted-foreground",
               )}
             >
-              {t === "brief" ? "Problem tracker" : "Ask"}
+              {TAB_LABEL[t]}
             </button>
           ))}
         </div>
       </div>
+
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5">
         {tab === "brief" ? (
@@ -617,8 +644,84 @@ export function MentorPanel({
               </div>
             )}
           </>
+        ) : tab === "code" ? (
+          <VirtualCodeLab node={node} />
         ) : (
           <div className="space-y-4">
+            <div className="border-border bg-surface flex items-center gap-2 rounded-lg border px-2.5 py-1.5">
+              <span className="text-muted-foreground min-w-0 flex-1 truncate text-[11px]">
+                {memory.active ? memory.active.title : "New chat"}
+              </span>
+              <button
+                onClick={() => {
+                  memory.startNew();
+                  setThread([]);
+                  setMenu(false);
+                }}
+                className="text-muted-foreground hover:text-foreground text-[11px] transition-colors"
+              >
+                + New
+              </button>
+              <button
+                onClick={() => setMenu((m) => !m)}
+                aria-label="Chat history"
+                className="text-muted-foreground hover:text-foreground px-1 text-[14px] leading-none transition-colors"
+              >
+                ⋯
+              </button>
+            </div>
+
+            {menu && (
+              <div className="border-border bg-surface rounded-lg border p-1.5">
+                <div className="text-muted-foreground px-2 py-1 text-[10px] tracking-[0.24em] uppercase">
+                  Chat memory · {memory.chats.length}
+                </div>
+                {memory.chats.length === 0 && (
+                  <p className="text-muted-foreground px-2 py-1 text-[11px]">
+                    No saved conversations yet.
+                  </p>
+                )}
+                {memory.chats.map((c) => (
+                  <div
+                    key={c.id}
+                    className={cn(
+                      "hover:bg-surface-2 flex items-center gap-1 rounded-md px-2 py-1",
+                      c.id === memory.activeId && "bg-surface-2",
+                    )}
+                  >
+                    <button
+                      onClick={() => openChat(c.id)}
+                      className="min-w-0 flex-1 truncate text-left text-[11px]"
+                    >
+                      {c.title}
+                      <span className="text-muted-foreground"> · {c.nodeLabel}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        memory.remove(c.id);
+                        if (c.id === memory.activeId) setThread([]);
+                      }}
+                      aria-label={`Delete ${c.title}`}
+                      className="text-muted-foreground hover:text-foreground text-[11px]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {memory.chats.length > 0 && (
+                  <button
+                    onClick={() => {
+                      memory.clearAll();
+                      setThread([]);
+                    }}
+                    className="text-muted-foreground hover:text-foreground mt-1 px-2 py-1 text-[11px]"
+                  >
+                    Clear all memory
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-1.5">
               {suggestionsFor(voice).map((s) => (
                 <button
@@ -633,8 +736,8 @@ export function MentorPanel({
 
             {thread.length === 0 && (
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Ask anything about {node.label}. Every answer cites the graph nodes, files and
-                incident patterns it used.
+                Ask anything about {node.label}. Answers cite the graph nodes, files and incident
+                patterns they used, and every conversation is remembered.
               </p>
             )}
 
@@ -649,6 +752,7 @@ export function MentorPanel({
             ))}
           </div>
         )}
+
       </div>
 
       {tab === "ask" && (

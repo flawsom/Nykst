@@ -18,6 +18,20 @@ interface Props {
   onSelect: (node: GraphNode) => void;
   onInspect: (node: GraphNode) => void;
   selectedId?: string | undefined;
+  /** engineers see repo/technical metadata on every node */
+  technical?: boolean;
+}
+
+/** Repo-shaped identifier so engineers can map a node to source. */
+function repoOf(node: GraphNode) {
+  const seg = node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${node.owners[0]?.replace("@", "") ?? "org"}/${seg}`;
+}
+
+function techLine(node: GraphNode) {
+  if (!node.expandable && node.detail)
+    return `${node.detail.language} · ${node.detail.loc} LOC · ${node.detail.path}`;
+  return `${repoOf(node)} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
 }
 
 export function GraphCanvas({
@@ -27,6 +41,7 @@ export function GraphCanvas({
   onSelect,
   onInspect,
   selectedId,
+  technical = false,
 }: Props) {
   const children = nodes;
   const [mounted, setMounted] = useState(false);
@@ -122,6 +137,17 @@ export function GraphCanvas({
           >
             {center.kind}
           </text>
+          {technical && (
+            <text
+              x={cx}
+              y={cy + 122}
+              textAnchor="middle"
+              className="fill-muted-foreground font-mono text-[11px]"
+            >
+              {truncate(techLine(center), 62)}
+            </text>
+          )}
+
           <InfoBadge
             x={cx}
             y={cy + 46}
@@ -135,7 +161,11 @@ export function GraphCanvas({
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           const hasChildren = p.node.expandable;
-          const w = Math.min(230, Math.max(140, p.node.label.length * 9 + 78));
+          const w = Math.min(
+            technical ? 268 : 230,
+            Math.max(technical ? 190 : 140, p.node.label.length * 9 + 78),
+          );
+          const h = technical ? 54 : 42;
           return (
             <g
               key={p.node.id}
@@ -147,9 +177,9 @@ export function GraphCanvas({
             >
               <rect
                 x={-w / 2}
-                y={-21}
+                y={-h / 2}
                 width={w}
-                height={42}
+                height={h}
                 rx={12}
                 fill={active ? "var(--surface-2)" : "var(--surface)"}
                 stroke={active ? kindColor[childKind] : "var(--border)"}
@@ -159,23 +189,33 @@ export function GraphCanvas({
               />
               <circle
                 cx={-w / 2 + 18}
-                cy={0}
+                cy={technical ? -7 : 0}
                 r={4}
                 fill={kindColor[childKind]}
                 onClick={() => onSelect(p.node)}
               />
               <text
                 x={-w / 2 + 32}
-                y={4}
+                y={technical ? -3 : 4}
                 className="fill-foreground text-[13px] font-medium"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, 18)}
+                {truncate(p.node.label, technical ? 22 : 18)}
               </text>
+              {technical && (
+                <text
+                  x={-w / 2 + 32}
+                  y={14}
+                  className="fill-muted-foreground font-mono text-[9px]"
+                  onClick={() => onSelect(p.node)}
+                >
+                  {truncate(techLine(p.node), 34)}
+                </text>
+              )}
               {hasChildren && (
                 <circle
                   cx={w / 2 - 40}
-                  cy={0}
+                  cy={technical ? -7 : 0}
                   r={3}
                   fill={kindColor[childKind]}
                   fillOpacity={0.55}
@@ -183,10 +223,12 @@ export function GraphCanvas({
               )}
               <InfoBadge
                 x={w / 2 - 20}
+                y={technical ? -7 : 0}
                 color={kindColor[childKind]}
                 label={p.node.label}
                 onClick={() => onInspect(p.node)}
               />
+
             </g>
 
           );
