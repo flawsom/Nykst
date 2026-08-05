@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/graph-data";
 import type { RoleDef } from "@/lib/access";
 import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
+import { useChatMemory } from "@/lib/chat-memory";
+import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
 /* deterministic scoring, identical approach to the dossier */
