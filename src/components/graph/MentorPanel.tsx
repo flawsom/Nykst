@@ -406,11 +406,14 @@ export function MentorPanel({
 }) {
   const voice = voiceOf(role);
   const issues = useMemo(() => issuesOf(node), [node]);
-  const [tab, setTab] = useState<"brief" | "ask">("brief");
+  const canCode = voice === "technical";
+  const [tab, setTab] = useState<"brief" | "ask" | "code">("brief");
   const [openCard, setOpenCard] = useState<string | null>("problems");
   const [q, setQ] = useState("");
+  const [menu, setMenu] = useState(false);
   const [thread, setThread] = useState<{ q: string; a: string; evidence: Evidence[] }[]>([]);
   const { resolve, remedies, resolvedIds } = useRemediation();
+  const memory = useChatMemory(node.label);
 
   const trackers = useMemo(
     () => trackersFor(voice, node, related, issues, resolvedIds),
@@ -422,7 +425,28 @@ export function MentorPanel({
     if (!query) return;
     const res = answerFor(voice, query, node, related);
     setThread((t) => [...t, { q: query, a: res.text, evidence: res.evidence }]);
+    memory.addTurn({
+      q: query,
+      a: res.text,
+      evidence: res.evidence.map((e) => ({ kind: e.kind, label: e.label })),
+    });
     setQ("");
+  };
+
+  const openChat = (id: string) => {
+    memory.setActiveId(id);
+    const c = memory.chats.find((x) => x.id === id);
+    setThread((c?.turns ?? []).map((t) => ({ q: t.q, a: t.a, evidence: t.evidence as Evidence[] })));
+    setMenu(false);
+  };
+
+  const tabs = canCode
+    ? (["brief", "ask", "code"] as const)
+    : (["brief", "ask"] as const);
+  const TAB_LABEL: Record<string, string> = {
+    brief: "Problem tracker",
+    ask: "Ask",
+    code: "Virtual code",
   };
 
   return (
@@ -440,7 +464,7 @@ export function MentorPanel({
         </p>
 
         <div className="border-border bg-surface mt-3 flex rounded-lg border p-0.5 text-[11px]">
-          {(["brief", "ask"] as const).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -449,11 +473,12 @@ export function MentorPanel({
                 tab === t ? "bg-secondary text-foreground" : "text-muted-foreground",
               )}
             >
-              {t === "brief" ? "Problem tracker" : "Ask"}
+              {TAB_LABEL[t]}
             </button>
           ))}
         </div>
       </div>
+
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5">
         {tab === "brief" ? (
