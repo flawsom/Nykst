@@ -163,17 +163,23 @@ function Landing() {
           ) : (
             <button
               onClick={login}
-              className="bg-primary text-primary-foreground hover:bg-primary-glow rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+              className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
             >
               Log in
             </button>
           )}
+          <button
+            onClick={() => setPreRegister(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Pre-register
+          </button>
         </nav>
       </header>
 
       <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-24">
         <p className="animate-rise text-primary text-xs tracking-[0.3em] uppercase">
-          Software infrastructure for software
+          Software intelligence
         </p>
         <h1
           className="animate-rise text-gradient mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-tight md:text-6xl"
@@ -189,6 +195,32 @@ function Landing() {
           living graph — core domains, capabilities, services, modules, down to a single file. No
           folder browsing. No guesswork.
         </p>
+
+        <div
+          className="animate-rise mt-8 flex flex-wrap items-center gap-3"
+          style={{ animationDelay: "200ms" }}
+        >
+          <button
+            onClick={() => setPreRegister(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary-glow lift hover:lift-hover rounded-xl px-5 py-3 text-sm font-semibold"
+          >
+            Pre-register for early access
+          </button>
+          <span className="text-muted-foreground text-xs">
+            Two minutes. Nine questions. We read every answer.
+          </span>
+        </div>
+
+        <div
+          className="animate-rise text-muted-foreground mt-10 flex flex-wrap gap-x-8 gap-y-2 font-mono text-[11px]"
+          style={{ animationDelay: "220ms" }}
+        >
+          <span>14 core domains derived</span>
+          <span>128 repositories parsed</span>
+          <span>214 services mapped</span>
+          <span>299,600 files indexed</span>
+        </div>
+
 
         <div
           className="animate-rise border-border bg-card/70 mt-14 max-w-3xl rounded-2xl border p-6 backdrop-blur"
