@@ -24,6 +24,7 @@ interface Props {
 
 /** Repo-shaped identifier so engineers can map a node to source. */
 function repoOf(node: GraphNode) {
+  if (node.repo) return node.repo;
   const seg = node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return `${node.owners[0]?.replace("@", "") ?? "org"}/${seg}`;
 }
@@ -31,8 +32,9 @@ function repoOf(node: GraphNode) {
 function techLine(node: GraphNode) {
   if (!node.expandable && node.detail)
     return `${node.detail.language} · ${node.detail.loc} LOC · ${node.detail.path}`;
-  return `${repoOf(node)} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
+  return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
 }
+
 
 export function GraphCanvas({
   center,
