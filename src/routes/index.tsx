@@ -52,6 +52,8 @@ function Landing() {
   const [user, setUser] = useState<string | null>(null);
   const [role, setRole] = useState<RoleId>("engineer");
   const [connecting, setConnecting] = useState(false);
+  const [preRegister, setPreRegister] = useState(false);
+
 
   useEffect(() => {
     setUser(localStorage.getItem("nykst.user"));
