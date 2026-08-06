@@ -48,8 +48,21 @@ export const ROLES: RoleDef[] = [
   {
     id: "engineer",
     name: "Engineer",
-    blurb: "Scoped to the domains their teams own. Can resolve issues in scope.",
-    domains: ["Platform Engineering", "Core APIs", "Data & Analytics"],
+    blurb: "Full technical depth across every domain their org builds and operates.",
+    domains: [
+      "Core Platform",
+      "Identity & Access",
+      "Payments & Billing",
+      "API & Integrations",
+      "Data Platform",
+      "Search & Discovery",
+      "Notifications & Messaging",
+      "Infrastructure & Delivery",
+      "Observability & Reliability",
+      "Web Application",
+      "Mobile & SDKs",
+      "AI & ML Services",
+    ],
     can: {
       viewAllDomains: false,
       viewIncidents: true,
@@ -62,7 +75,7 @@ export const ROLES: RoleDef[] = [
     id: "viewer",
     name: "Viewer",
     blurb: "Read-only navigation of public domains. No incidents, no remediation.",
-    domains: ["Platform Engineering", "Core APIs"],
+    domains: ["Core Platform", "Web Application", "API & Integrations"],
     can: {
       viewAllDomains: false,
       viewIncidents: false,
@@ -71,6 +84,7 @@ export const ROLES: RoleDef[] = [
       manageAccess: false,
     },
   },
+
 ];
 
 const KEY = "nykst.role";
