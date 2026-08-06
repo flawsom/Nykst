@@ -665,6 +665,8 @@ const DOMAIN_SPECS: DomainSpec[] = [
   },
 ];
 
+const VISIBLE_DOMAINS = new Set(["Core Platform", "Growth & Analytics", "AI & ML Services"]);
+
 const SERVICE_SUMMARY: Record<string, string> = {
   api: "HTTP service owning the read/write surface for this capability.",
   gateway: "Edge entry point: terminates traffic, authenticates and routes downstream.",
@@ -1167,8 +1169,9 @@ export function childrenOf(node: GraphNode): GraphNode[] {
   let built: GraphNode[] = [];
 
   if (node.kind === "org") {
-    const labels = DOMAIN_SPECS.map((d) => d.name);
-    built = DOMAIN_SPECS.map((d) =>
+    const visible = DOMAIN_SPECS.filter((d) => VISIBLE_DOMAINS.has(d.name));
+    const labels = visible.map((d) => d.name);
+    built = visible.map((d) =>
       makeNode(node.id, "domain", d.name, d.summary, labels, {
         owner: d.team,
         repo: `${org}/${slug(d.name)}`,
@@ -1246,7 +1249,7 @@ export function buildOrg(slugName: string): GraphNode {
     id: `org:${slugName}`,
     label: name,
     kind: "org",
-    summary: `${DOMAIN_SPECS.length} core domains derived from ${repos} repositories, ${services} deployed services and ${(services * 1400).toLocaleString()} analyzed files.`,
+    summary: `${VISIBLE_DOMAINS.size} core domains derived from ${repos} repositories, ${services} deployed services and ${(services * 1400).toLocaleString()} analyzed files.`,
     owners: ["@platform-core", "@sre"],
     dependencies: [],
     dependents: [],
@@ -1258,7 +1261,7 @@ export function buildOrg(slugName: string): GraphNode {
       { label: "Repositories", value: String(repos) },
       { label: "Services", value: String(services) },
       { label: "Engineers", value: String(engineers) },
-      { label: "Domains", value: String(DOMAIN_SPECS.length) },
+      { label: "Domains", value: String(VISIBLE_DOMAINS.size) },
       { label: "Deploys / week", value: String(between(r, 180, 420)) },
       { label: "Median PR age", value: `${between(r, 6, 34)}h` },
     ],
