@@ -95,11 +95,40 @@ function Landing() {
         />
       )}
 
+      {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
+
       <div
         className="pointer-events-none absolute inset-0"
         style={{ background: "var(--gradient-hero)" }}
       />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <span
+          className="aurora size-[520px]"
+          style={{ background: "var(--primary)", opacity: 0.18, top: "-14%", left: "-8%" }}
+        />
+        <span
+          className="aurora size-[420px]"
+          style={{
+            background: "var(--node-capability)",
+            opacity: 0.14,
+            top: "22%",
+            right: "-10%",
+            animationDelay: "-6s",
+          }}
+        />
+        <span
+          className="aurora size-[380px]"
+          style={{
+            background: "var(--node-service)",
+            opacity: 0.12,
+            bottom: "-12%",
+            left: "34%",
+            animationDelay: "-11s",
+          }}
+        />
+      </div>
       <div className="pointer-events-none absolute inset-0 bg-grid" />
+
 
       <header className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-6">
         <div className="flex items-center gap-2.5">
