@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pre_registrations: {
+        Row: {
+          closing_thoughts: string | null
+          company_size: string | null
+          created_at: string
+          dream_feature: string | null
+          email: string
+          first_name: string
+          frustration: string | null
+          hardest_parts: string[]
+          id: string
+          role: string | null
+          time_understanding_code: string | null
+          would_use: string | null
+        }
+        Insert: {
+          closing_thoughts?: string | null
+          company_size?: string | null
+          created_at?: string
+          dream_feature?: string | null
+          email: string
+          first_name: string
+          frustration?: string | null
+          hardest_parts?: string[]
+          id?: string
+          role?: string | null
+          time_understanding_code?: string | null
+          would_use?: string | null
+        }
+        Update: {
+          closing_thoughts?: string | null
+          company_size?: string | null
+          created_at?: string
+          dream_feature?: string | null
+          email?: string
+          first_name?: string
+          frustration?: string | null
+          hardest_parts?: string[]
+          id?: string
+          role?: string | null
+          time_understanding_code?: string | null
+          would_use?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
