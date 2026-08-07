@@ -6,16 +6,13 @@ export interface CodeFinding {
   line: number;
   title: string;
   why: string;
-  /** what the virtual fix would do */
   fix: string;
-  /** applied by the "virtual fix" action */
   apply: (code: string) => string;
 }
 
 export interface VirtualRun {
   findings: CodeFinding[];
   fits: boolean;
-  /** structural context the check was run against */
   context: {
     scope: string;
     allowedModules: string[];
@@ -23,6 +20,19 @@ export interface VirtualRun {
     owners: string[];
     blast: string;
   };
+}
+
+export interface ExecStep {
+  label: string;
+  status: "ok" | "fail" | "warn" | "pending";
+  detail?: string;
+}
+
+export interface ExecResult {
+  steps: ExecStep[];
+  passed: boolean;
+  durationMs: number;
+  output: string[];
 }
 
 function subtreeFiles(node: GraphNode, limit = 12): string[] {
@@ -195,5 +205,220 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
       owners: node.owners,
       blast: `${node.blast.level} · ${node.blast.services} services`,
     },
+  };
+}
+
+/* ------------------------- prompt → code generation ------------------------- */
+
+const INTENT_RULES: { match: RegExp; build: (node: GraphNode, prompt: string) => string }[] = [
+  {
+    match: /retry|backoff|resilien|robust/i,
+    build: (node) => `export async function call${pascal(node.label)}(input: unknown): Promise<unknown> {
+  const maxAttempts = 5;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch("/${slug(node.label)}", { method: "POST", body: JSON.stringify(input) });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+      await new Promise((r) => setTimeout(r, 2 ** attempt * 200));
+    }
+  }
+  throw lastError;
+}`,
+  },
+  {
+    match: /cache|memo|store|fast|quick/i,
+    build: (node) => `const cache = new Map<string, unknown>();
+
+export function getCached(key: string, compute: () => unknown): unknown {
+  if (cache.has(key)) return cache.get(key);
+  const value = compute();
+  cache.set(key, value);
+  return value;
+}
+
+export function invalidate(key: string): void {
+  cache.delete(key);
+}`,
+  },
+  {
+    match: /auth|token|permission|rbac|role/i,
+    build: (node) => `export interface Principal { id: string; roles: string[]; org: string }
+
+export function canAccess(principal: Principal, action: string): boolean {
+  const allowed = ["read", "write", "admin"];
+  if (!allowed.includes(action)) return false;
+  return principal.roles.some((r) => r === "admin" || r === action);
+}`,
+  },
+  {
+    match: /webhook|event|emit|dispatch|publish/i,
+    build: (node) => `export interface WebhookEvent { type: string; payload: unknown; ts: number }
+
+export async function emit(event: WebhookEvent): Promise<void> {
+  try {
+    await fetch("/${slug(node.label)}/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event),
+    });
+  } catch (err) {
+    console.error("webhook emit failed", err);
+    throw err;
+  }
+}`,
+  },
+  {
+    match: /valid|schema|parse|check|zod/i,
+    build: (node) => `export function validate(input: unknown): { ok: true; data: unknown } | { ok: false; errors: string[] } {
+  if (input == null || typeof input !== "object") {
+    return { ok: false, errors: ["expected an object"] };
+  }
+  const obj = input as Record<string, unknown>;
+  const errors: string[] = [];
+  if (typeof obj.id !== "string") errors.push("id must be a string");
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, data: obj };
+}`,
+  },
+  {
+    match: /queue|job|worker|task|schedule/i,
+    build: (node) => `export interface Job { id: string; payload: unknown; attempts: number }
+
+export async function processJob(job: Job): Promise<void> {
+  if (job.attempts > 3) throw new Error("max retries exceeded");
+  try {
+    await handlePayload(job.payload);
+  } catch (err) {
+    job.attempts++;
+    throw err;
+  }
+}
+
+async function handlePayload(_payload: unknown): Promise<void> {}`,
+  },
+];
+
+function pascal(s: string) {
+  return s
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join("");
+}
+
+const FALLBACK = (node: GraphNode, prompt: string) => `// ${prompt}
+export function handle${pascal(node.label)}(input: unknown): unknown {
+  return input;
+}`;
+
+/** Turns a plain-language prompt into a code stub for the given node. */
+export function generateCode(prompt: string, node: GraphNode): string {
+  const rule = INTENT_RULES.find((r) => r.match.test(prompt));
+  return (rule ?? { build: FALLBACK }).build(node, prompt.trim());
+}
+
+/* ------------------------- simulated execution ------------------------- */
+
+/** Simulates running the code against the org structure and returns a verdict. */
+export function simulateExecution(code: string, node: GraphNode, check: VirtualRun): ExecResult {
+  const steps: ExecStep[] = [];
+  const output: string[] = [];
+  const start = performance.now();
+
+  steps.push({
+    label: "Parse TypeScript",
+    status: "pending",
+    detail: "syntax + type check",
+  });
+  steps.push({
+    label: `Resolve imports against ${node.label}`,
+    status: "pending",
+    detail: `${check.context.allowedModules.length} allowed modules`,
+  });
+  steps.push({
+    label: "Run unit tests",
+    status: "pending",
+    detail: "virtual test harness",
+  });
+  steps.push({
+    label: "Check blast radius",
+    status: "pending",
+    detail: check.context.blast,
+  });
+  steps.push({
+    label: "Fit organization structure",
+    status: "pending",
+    detail: check.context.scope,
+  });
+
+  const errors = check.findings.filter((f) => f.severity === "error");
+  const warnings = check.findings.filter((f) => f.severity === "warning");
+
+  // step 0 — parse
+  const hasSyntax = /\bexport\b/.test(code) && /[{};:]/.test(code);
+  steps[0]!.status = hasSyntax ? "ok" : "fail";
+  if (!hasSyntax) {
+    steps[0]!.detail = "syntax error — no export or malformed code";
+    output.push("✗ Parse failed: code does not look like valid TypeScript");
+  } else {
+    output.push("✓ Parsed successfully");
+  }
+
+  // step 1 — imports
+  const importErrors = errors.filter((e) => e.id.startsWith("imp-"));
+  steps[1]!.status = importErrors.length ? "fail" : "ok";
+  if (importErrors.length) {
+    steps[1]!.detail = `${importErrors.length} boundary violation(s)`;
+    output.push(`✗ ${importErrors.length} import(s) cross the boundary of ${node.label}`);
+  } else {
+    output.push("✓ All imports resolve within declared dependencies");
+  }
+
+  // step 2 — tests
+  const hasAsync = /\basync\b/.test(code);
+  const hasTry = /try\s*\{/.test(code);
+  if (hasAsync && !hasTry) {
+    steps[2]!.status = "warn";
+    steps[2]!.detail = "async without try/catch";
+    output.push("⚠ Tests pass but async paths are unguarded");
+  } else if (errors.length) {
+    steps[2]!.status = "fail";
+    output.push("✗ Tests fail due to structural errors");
+  } else {
+    steps[2]!.status = "ok";
+    output.push("✓ Virtual tests pass");
+  }
+
+  // step 3 — blast radius
+  const blastErrors = errors.filter((e) => e.id.startsWith("loop-") || e.id.startsWith("env-"));
+  steps[3]!.status = blastErrors.length ? "fail" : warnings.length ? "warn" : "ok";
+  if (blastErrors.length) {
+    steps[3]!.detail = `${blastErrors.length} blast risk(s)`;
+    output.push(`✗ ${blastErrors.length} finding(s) threaten ${node.blast.services} downstream services`);
+  } else {
+    output.push(`✓ Blast radius contained — ${node.blast.level}`);
+  }
+
+  // step 4 — fit
+  steps[4]!.status = check.fits ? "ok" : "fail";
+  if (check.fits) {
+    output.push(`✓ Fits the structure of ${node.label} — safe to inject`);
+  } else {
+    steps[4]!.detail = `${errors.length} blocking error(s)`;
+    output.push(`✗ Does not fit ${node.label} — ${errors.length} structural error(s) block injection`);
+  }
+
+  const passed = check.fits && hasSyntax && importErrors.length === 0 && blastErrors.length === 0;
+
+  return {
+    steps,
+    passed,
+    durationMs: Math.round(performance.now() - start + 12 + Math.random() * 80),
+    output,
   };
 }
