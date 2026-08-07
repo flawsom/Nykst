@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import type { GraphNode } from "@/lib/graph-data";
 import {
   generateCode,
@@ -19,7 +19,8 @@ import {
   XCircle,
   Eye,
   Loader2,
-  Wand2,
+  PenLine,
+  X,
 } from "lucide-react";
 
 type Tab = "code" | "terminal" | "files" | "preview";
@@ -29,14 +30,49 @@ const SAMPLE_PROMPT = "Add retry with exponential backoff to the API call";
 export function VirtualCodeLab({ node }: { node: GraphNode }) {
   const [prompt, setPrompt] = useState(SAMPLE_PROMPT);
   const [code, setCode] = useState("");
+  const [streamingCode, setStreamingCode] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [run, setRun] = useState<VirtualRun | null>(null);
   const [exec, setExec] = useState<ExecResult | null>(null);
   const [tab, setTab] = useState<Tab>("code");
   const [injected, setInjected] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [running, setRunning] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const streamRef = useRef<number | null>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
 
   const context = useMemo(() => runVirtualCheck("", node).context, [node]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) window.clearInterval(streamRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showPrompt && promptRef.current) {
+      promptRef.current.focus();
+    }
+  }, [showPrompt]);
+
+  const streamCode = useCallback((full: string) => {
+    if (streamRef.current) window.clearInterval(streamRef.current);
+    setStreamingCode("");
+    setIsStreaming(true);
+    let i = 0;
+    const chunk = Math.max(1, Math.ceil(full.length / 120));
+    streamRef.current = window.setInterval(() => {
+      i += chunk;
+      if (i >= full.length) {
+        setStreamingCode(full);
+        setIsStreaming(false);
+        if (streamRef.current) window.clearInterval(streamRef.current);
+      } else {
+        setStreamingCode(full.slice(0, i));
+      }
+    }, 16);
+  }, []);
 
   const generate = () => {
     const text = prompt.trim();
@@ -45,11 +81,13 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
     setInjected(false);
     setRun(null);
     setExec(null);
+    setShowPrompt(false);
+    setTab("code");
     window.setTimeout(() => {
       const generated = generateCode(text, node);
       setCode(generated);
       setGenerating(false);
-      setTab("code");
+      streamCode(generated);
     }, 600);
   };
 
@@ -90,39 +128,10 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
 
   const verdict = exec ?? (run ? { passed: run.fits, steps: [], output: [], durationMs: 0 } : null);
 
+  const displayedCode = isStreaming ? streamingCode : code;
+
   return (
     <div className="flex h-full flex-col">
-      {/* prompt bar */}
-      <div className="border-border bg-surface/60 border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Wand2 className="text-primary size-4 shrink-0" />
-          <input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && generate()}
-            placeholder="Describe what you want the code to do…"
-            className="placeholder:text-muted-foreground/60 min-w-0 flex-1 bg-transparent text-[13px] outline-none"
-          />
-          <button
-            onClick={generate}
-            disabled={generating || !prompt.trim()}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50"
-          >
-            {generating ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="size-3.5" />
-            )}
-            Generate
-          </button>
-        </div>
-        <p className="text-muted-foreground mt-1.5 text-[10px] leading-relaxed">
-          Write in plain English. Nykst generates code for{" "}
-          <span className="text-foreground">{context.scope}</span>, then runs it virtually against
-          your org structure before injecting.
-        </p>
-      </div>
-
       {/* tab bar */}
       <div className="border-border bg-surface/40 flex items-center gap-1 border-b px-3 py-1.5">
         {(
@@ -147,14 +156,73 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
         ))}
         <div className="flex-1" />
         <button
+          onClick={() => setShowPrompt(true)}
+          disabled={generating || isStreaming}
+          className="border-border bg-surface hover:bg-surface-2 flex items-center gap-1.5 rounded-md border px-3 py-1 text-[11px] font-medium transition-colors disabled:opacity-50"
+        >
+          <PenLine className="size-3.5" />
+          Write
+        </button>
+        <button
           onClick={runCode}
-          disabled={running || !code.trim()}
+          disabled={running || !code.trim() || isStreaming}
           className="bg-primary text-primary-foreground hover:bg-primary-glow flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50"
         >
           {running ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
           {running ? "Running…" : "Run"}
         </button>
       </div>
+
+      {/* prompt overlay */}
+      {showPrompt && (
+        <div className="border-border bg-surface/80 border-b px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PenLine className="text-primary size-4" />
+              <span className="text-[12px] font-medium">Write a prompt</span>
+            </div>
+            <button
+              onClick={() => setShowPrompt(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <textarea
+            ref={promptRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                generate();
+              }
+            }}
+            placeholder="Describe what you want the code to do…  e.g. 'Add retry with exponential backoff to the API call'"
+            rows={3}
+            className="border-border bg-surface-2 mt-3 w-full resize-none rounded-lg border p-3 text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground/50"
+          />
+          <div className="mt-2.5 flex items-center justify-between">
+            <p className="text-muted-foreground text-[10px] leading-relaxed">
+              Nykst generates code for{" "}
+              <span className="text-foreground">{context.scope}</span>, then runs it virtually
+              against your org structure before injecting.
+            </p>
+            <button
+              onClick={generate}
+              disabled={generating || !prompt.trim()}
+              className="bg-primary text-primary-foreground hover:bg-primary-glow flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-medium transition-colors disabled:opacity-50"
+            >
+              {generating ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
+              Generate
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* content */}
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -164,7 +232,13 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
               <span className="text-muted-foreground font-mono">
                 {node.label.toLowerCase().replace(/\s+/g, "-")}.ts
               </span>
-              {run && run.findings.length > 0 && (
+              {isStreaming && (
+                <span className="text-primary flex items-center gap-1.5 text-[10px]">
+                  <Loader2 className="size-3 animate-spin" />
+                  generating…
+                </span>
+              )}
+              {run && run.findings.length > 0 && !isStreaming && (
                 <button
                   onClick={applyAll}
                   className="border-border bg-surface-2 hover:bg-secondary rounded-md border px-2 py-0.5 text-[10px] transition-colors"
@@ -173,30 +247,48 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
                 </button>
               )}
             </div>
-            {code.trim() ? (
-              <textarea
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setRun(null);
-                  setExec(null);
-                  setInjected(false);
-                }}
-                spellCheck={false}
-                className="border-border bg-surface-2 w-full flex-1 resize-none border-0 p-3 font-mono text-[11px] leading-relaxed outline-none"
-                style={{ minHeight: "200px" }}
-              />
+            {displayedCode.trim() ? (
+              <div className="relative min-h-0 flex-1">
+                <pre className="bg-surface-2 h-full overflow-auto p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+                  {displayedCode}
+                  {isStreaming && (
+                    <span className="text-primary inline-block w-2 animate-pulse">▋</span>
+                  )}
+                </pre>
+                {!isStreaming && (
+                  <textarea
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      setRun(null);
+                      setExec(null);
+                      setInjected(false);
+                    }}
+                    spellCheck={false}
+                    className="absolute inset-0 h-full w-full resize-none bg-transparent p-3 font-mono text-[11px] leading-relaxed text-transparent caret-white outline-none"
+                    style={{ caretColor: "var(--foreground)" }}
+                  />
+                )}
+              </div>
+            ) : generating ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+                <Loader2 className="text-primary size-8 animate-spin" />
+                <p className="text-muted-foreground text-sm">
+                  Generating code for {node.label}…
+                </p>
+              </div>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
                 <FileCode2 className="text-muted-foreground/40 size-10" />
                 <p className="text-muted-foreground text-sm">
-                  Write a prompt above and hit Generate to create code for {node.label}.
+                  Click <span className="text-foreground font-medium">Write</span> to describe what
+                  you want, then generate code for {node.label}.
                 </p>
               </div>
             )}
 
             {/* findings */}
-            {run && run.findings.length > 0 && (
+            {run && run.findings.length > 0 && !isStreaming && (
               <div className="border-border bg-surface/60 border-t px-3 py-2">
                 <div className="space-y-1.5">
                   {run.findings.map((f) => (
