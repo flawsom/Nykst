@@ -168,57 +168,70 @@ function GraphPage() {
           visible={(n) => canView(role, n)}
         />
 
-        <section className="relative min-w-0 flex-1">
-          <div className="pointer-events-none absolute top-5 left-6 z-10 max-w-sm">
-            <span className="text-primary text-[11px] tracking-[0.28em] uppercase">
-              {kindLabel[center.kind]}
-            </span>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{center.label}</h1>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{center.summary}</p>
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="border-border bg-card/60 border-b px-5 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <span className="text-primary text-[11px] tracking-[0.28em] uppercase">
+                  {kindLabel[center.kind]}
+                </span>
+                <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight">
+                  {center.label}
+                </h1>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-muted-foreground text-[11px] tracking-[0.22em] uppercase">
+                  {childKindLabel[center.kind]} · {centerChildren.length}
+                  {restricted > 0 && (
+                    <span className="text-primary"> · {restricted} restricted</span>
+                  )}
+                </span>
+                {path.length > 1 && (
+                  <button
+                    onClick={() => {
+                      setPathIds(pathIds.slice(0, -1));
+                      setSelected(null);
+                    }}
+                    className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+                  >
+                    ← Zoom out
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {center.summary && (
+              <p className="text-muted-foreground mt-1.5 max-w-2xl text-[12px] leading-relaxed">
+                {center.summary}
+              </p>
+            )}
+
             {center.metrics && (
-              <div className="mt-4 flex gap-5">
+              <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
                 {center.metrics.map((m) => (
-                  <div key={m.label}>
-                    <div className="text-sm font-medium">{m.value}</div>
-                    <div className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                  <div key={m.label} className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-semibold">{m.value}</span>
+                    <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
                       {m.label}
-                    </div>
+                    </span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="text-muted-foreground pointer-events-none absolute bottom-5 left-6 z-10 text-[11px] tracking-[0.22em] uppercase">
-            {childKindLabel[center.kind]} · {centerChildren.length}
-            {restricted > 0 && (
-              <span className="text-primary"> · {restricted} restricted by role</span>
-            )}
+          <div className="relative min-h-0 flex-1">
+            <GraphCanvas
+              key={`${center.id}-${role.id}`}
+              center={center}
+              nodes={centerChildren}
+              childKind={childKind}
+              onSelect={drill}
+              onInspect={setDossier}
+              selectedId={selected?.id}
+              technical={role.id === "engineer" || role.id === "architect"}
+            />
           </div>
-
-          {path.length > 1 && (
-            <button
-              onClick={() => {
-                setPathIds(pathIds.slice(0, -1));
-                setSelected(null);
-              }}
-              className="border-border bg-surface hover:bg-surface-2 absolute top-5 right-6 z-10 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-            >
-              ← Zoom out
-            </button>
-          )}
-
-          <GraphCanvas
-            key={`${center.id}-${role.id}`}
-            center={center}
-            nodes={centerChildren}
-            childKind={childKind}
-            onSelect={drill}
-            onInspect={setDossier}
-            selectedId={selected?.id}
-            technical={role.id === "engineer" || role.id === "architect"}
-          />
-
         </section>
 
         <MentorPanel
