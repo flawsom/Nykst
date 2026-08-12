@@ -91,7 +91,7 @@ function Landing() {
         <ConnectionProgress
           provider={providers.find((p) => p.id === provider)?.name ?? provider}
           org={org.trim() || "acme"}
-          onDone={() => navigate({ to: "/graph" })}
+          onDone={() => navigate({ to: "/projects" })}
         />
       )}
 
