@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeDossier } from "@/components/graph/NodeDossier";
+import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { IntelligenceDashboard } from "@/components/graph/IntelligenceDashboard";
-import { canView, useRole } from "@/lib/access";
+import { ROLES, canView, setRoleId, useRole, type RoleId } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Network, ShieldAlert, Sparkles, Layers } from "lucide-react";
 
 export const Route = createFileRoute("/graph")({
   head: () => ({
@@ -16,14 +16,22 @@ export const Route = createFileRoute("/graph")({
       { title: "Software Graph & Intelligence Core — Nykst" },
       {
         name: "description",
-        content: "Navigate your organization's software graph and enterprise intelligence memory core.",
+        content:
+          "Navigate your organization's software graph and enterprise intelligence memory core.",
       },
     ],
   }),
-  component: GraphAndIntelligencePage,
+  component: GraphPage,
 });
 
-function GraphAndIntelligencePage() {
+const PROVIDER_LABEL: Record<string, string> = {
+  github: "GitHub",
+  gitlab: "GitLab",
+  bitbucket: "Bitbucket",
+  azure: "Azure DevOps",
+};
+
+function GraphPage() {
   const [orgSlug, setOrgSlug] = useState("acme");
   const [provider, setProvider] = useState("github");
   const [pathIds, setPathIds] = useState<string[]>([]);
@@ -92,119 +100,158 @@ function GraphAndIntelligencePage() {
   const inspected = selected ?? center;
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Header */}
-      <header className="border-border flex items-center justify-between gap-4 border-b px-6 py-3 bg-card/80 backdrop-blur sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/"
-            className="border-border bg-surface hover:bg-surface-2 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-          >
-            <ArrowLeft className="size-3.5" /> Back to Home
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-sm font-semibold text-foreground">Nykst Software Intelligence</span>
-            <span className="border-border bg-surface rounded-full border px-2.5 py-0.5 font-mono text-[11px] text-muted-foreground hidden sm:inline">
-              {provider} / {orgSlug}
+    <main className="min-h-screen bg-background text-foreground flex flex-col overflow-y-auto">
+      <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3 shrink-0 bg-card/90 backdrop-blur sticky top-0 z-40">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5">
+          <span className="glow-ring bg-primary block size-2 rounded-full" />
+          <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
+        </Link>
+
+        <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto text-sm">
+          {path.map((node, i) => (
+            <span key={node.id} className="flex shrink-0 items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground/60 text-xs">/</span>}
+              <button
+                onClick={() => {
+                  setPathIds(pathIds.slice(0, i));
+                  setSelected(null);
+                }}
+                className={cn(
+                  "rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                  i === path.length - 1
+                    ? "bg-secondary text-secondary-foreground font-semibold"
+                    : "text-muted-foreground hover:bg-surface hover:text-foreground",
+                )}
+              >
+                {node.label}
+              </button>
             </span>
+          ))}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-3 text-xs">
+          <div className="border-border bg-surface hidden items-center gap-1.5 rounded-lg border px-2.5 py-1 md:flex">
+            <span className="text-muted-foreground font-mono text-[11px]">
+              {PROVIDER_LABEL[provider] ?? provider} / {orgSlug}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {ROLES.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setRoleId(r.id)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  role.id === r.id
+                    ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                    : "text-muted-foreground hover:bg-surface hover:text-foreground",
+                )}
+                title={r.blurb}
+              >
+                {r.name}
+              </button>
+            ))}
           </div>
         </div>
-
-        <nav className="flex items-center gap-3 text-xs">
-          <span className="text-muted-foreground font-mono">14 Domains Mapped • 128 Repositories Indexed</span>
-        </nav>
       </header>
 
-      {/* Main Content Layout */}
-      <div className="flex-1 p-6 space-y-10 max-w-[1600px] mx-auto w-full">
-        {/* SECTION 1: OVERVIEW (Graph Section) */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
+      {/* SECTION 1: ORIGINAL GRAPH NAVIGATOR */}
+      <div className="flex min-h-[640px] flex-1 p-5 gap-5">
+        <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
+
+        <section className="border-border bg-card/60 flex min-w-0 flex-1 flex-col rounded-2xl border p-5 backdrop-blur shadow-lg">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-border border-b pb-4">
             <div>
-              <span className="text-primary font-mono text-[11px] uppercase tracking-widest">
-                Section 1: Living Software Graph Overview
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
+                  {kindLabel(center.kind)}
+                </span>
+                {restricted > 0 && (
+                  <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-mono">
+                    {restricted} restricted for {role.name.toLowerCase()}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-gradient mt-1 text-2xl font-semibold tracking-tight">
+                {center.label}
+              </h1>
+            </div>
+
+            {center.repo && (
+              <span className="border-border bg-surface rounded-lg border px-2.5 py-1 font-mono text-xs text-muted-foreground">
+                {center.repo}
               </span>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                Interactive Graph Navigation ({kindLabel(center.kind)}: {center.label})
-              </h2>
-            </div>
-            <div className="text-muted-foreground font-mono text-xs">
-              {centerChildren.length} {childKindLabel(childKind)} mapped
-            </div>
+            )}
           </div>
 
-          <div className="border-border bg-card/60 rounded-2xl border overflow-hidden backdrop-blur shadow-2xl">
-            <div className="grid h-[600px] lg:grid-cols-12">
-              {/* Left Tree Panel */}
-              <div className="border-border hidden flex-col border-r lg:col-span-3 lg:flex">
-                <div className="border-border border-b px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  System Tree Navigator
-                </div>
-                <div className="flex-1 overflow-y-auto p-3">
-                  <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
-                </div>
-              </div>
+          {center.summary && (
+            <p className="text-muted-foreground mt-1.5 max-w-2xl text-[12px] leading-relaxed">
+              {center.summary}
+            </p>
+          )}
 
-              {/* Center Graph Canvas */}
-              <div className="relative flex flex-col lg:col-span-6 bg-background/50">
-                <div className="border-border border-b px-4 py-3 flex items-center justify-between bg-surface/40">
-                  <span className="text-xs font-medium font-mono text-muted-foreground">
-                    Path: {path.map((n) => n.label).join(" → ")}
+          {center.metrics && (
+            <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+              {center.metrics.map((m) => (
+                <div key={m.label} className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-semibold">{m.value}</span>
+                  <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
+                    {m.label}
                   </span>
-                  {path.length > 1 && (
-                    <button
-                      onClick={() => {
-                        setPathIds((p) => p.slice(0, -1));
-                        setSelected(null);
-                      }}
-                      className="text-primary text-xs hover:underline"
-                    >
-                      ← Up one level
-                    </button>
-                  )}
                 </div>
-
-                <div className="relative flex-1">
-                  <GraphCanvas
-                    center={center}
-                    childrenNodes={centerChildren}
-                    restricted={restricted}
-                    onDrill={drill}
-                    onSelect={(n) => setSelected(n === selected ? null : n)}
-                    selectedId={inspected.id}
-                  />
-                </div>
-              </div>
-
-              {/* Right Dossier & Mentor Panel */}
-              <div className="border-border flex flex-col border-l lg:col-span-3">
-                <div className="border-border border-b px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Node Dossier & AI Mentor
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  <NodeDossier node={inspected} onOpenDossier={setDossier} />
-                  <MentorPanel node={inspected} />
-                </div>
-              </div>
+              ))}
             </div>
+          )}
+
+          <div className="relative min-h-[420px] flex-1 mt-4">
+            <GraphCanvas
+              key={`${center.id}-${role.id}`}
+              center={center}
+              nodes={centerChildren}
+              childKind={childKind}
+              onSelect={drill}
+              onInspect={setDossier}
+              selectedId={selected?.id}
+              technical={role.id === "engineer" || role.id === "architect"}
+            />
           </div>
         </section>
 
-        {/* SECTION 2: INTELLIGENCE DASHBOARD (Below Overview) */}
-        <section className="space-y-4 pt-4 border-t border-border">
-          <div>
+        <MentorPanel
+          node={inspected}
+          role={role}
+          related={
+            inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
+          }
+          onOpen={drill}
+        />
+      </div>
+
+      {/* SECTION 2: INTELLIGENCE DASHBOARD (Clean File/Folder Explorer & Ask AI) */}
+      <div className="px-5 pb-10">
+        <div className="border-t border-border pt-6 mt-4">
+          <div className="mb-4">
             <span className="text-primary font-mono text-[11px] uppercase tracking-widest">
-              Section 2: Enterprise Intelligence Memory Core
+              Enterprise Intelligence Memory Core
             </span>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Memory Files, Folders & AI Architect Assistant
+              Files, Folders & Ask AI Assistant
             </h2>
           </div>
-
-          <IntelligenceDashboard projectName="Nykst Enterprise Core" repo={`${provider}/${orgSlug}/enterprise-core`} />
-        </section>
+          <IntelligenceDashboard />
+        </div>
       </div>
+
+      <OnboardingTour />
+
+      <NodeDossier
+        node={dossier}
+        role={role}
+        open={dossier !== null}
+        onClose={() => setDossier(null)}
+        onOpenNode={jumpTo}
+      />
     </main>
   );
 }
