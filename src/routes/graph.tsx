@@ -13,13 +13,13 @@ import { Sparkles } from "lucide-react";
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
-      { title: "Software Graph — Nykst" },
+      { title: "Software Graph & Navigator — Nykst" },
       {
         name: "description",
         content:
           "Navigate your organization's software graph: drill from core domains into capabilities, services, modules and individual files, with dependencies and blast radius.",
       },
-      { property: "og:title", content: "Software Graph — Nykst" },
+      { property: "og:title", content: "Software Graph & Navigator — Nykst" },
       {
         property: "og:description",
         content: "Drill from core domains down to a single file, one click at a time.",
@@ -55,7 +55,6 @@ function GraphPage() {
 
   const root = useMemo(() => getOrg(orgSlug), [orgSlug]);
 
-  // rebuild the concrete node path from stored ids
   const path = useMemo(() => {
     const out: GraphNode[] = [root];
     for (const id of pathIds) {
@@ -87,7 +86,6 @@ function GraphPage() {
   };
 
   const jumpTo = (node: GraphNode) => {
-    // walk down from root to find the node's ancestry using its id prefix
     const chain: string[] = [];
     let cursor: GraphNode = root;
     while (cursor.id !== node.id) {
@@ -110,8 +108,8 @@ function GraphPage() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
+      <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3 shrink-0">
+        <Link to="/" className="flex items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2 rounded-full" />
           <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </Link>
@@ -145,7 +143,7 @@ function GraphPage() {
             </span>
           </div>
 
-          {/* Intelligence Dashboard Link right next to Org slug */}
+          {/* Intelligence Dashboard Link */}
           <Link
             to="/intelligence"
             className="bg-primary/10 border border-primary/40 hover:bg-primary/20 text-primary px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -173,10 +171,11 @@ function GraphPage() {
         </div>
       </header>
 
+      {/* SOFTWARE NAVIGATOR SECTION */}
       <div className="flex min-h-0 flex-1 p-5 gap-5">
         <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
 
-        <section className="border-border bg-card/60 flex min-w-0 flex-1 flex-col rounded-2xl border p-5 backdrop-blur">
+        <section className="border-border bg-card/60 flex min-w-0 flex-1 flex-col rounded-2xl border p-5 backdrop-blur shadow-lg">
           <div className="flex flex-wrap items-baseline justify-between gap-3 border-border border-b pb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -220,7 +219,7 @@ function GraphPage() {
             </div>
           )}
 
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-[420px] flex-1 mt-4">
             <GraphCanvas
               key={`${center.id}-${role.id}`}
               center={center}
@@ -231,6 +230,12 @@ function GraphPage() {
               selectedId={selected?.id}
               technical={role.id === "engineer" || role.id === "architect"}
             />
+          </div>
+
+          {/* Software Navigator Footer Info */}
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
+            <span>Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})</span>
+            <span>Click any node or tree item to drill deeper</span>
           </div>
         </section>
 
