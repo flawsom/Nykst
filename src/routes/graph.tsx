@@ -9,6 +9,7 @@ import { IntelligenceDashboard } from "@/components/graph/IntelligenceDashboard"
 import { ROLES, canView, setRoleId, useRole, type RoleId } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
+import { Sparkles, Network, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/graph")({
   head: () => ({
@@ -37,6 +38,7 @@ function GraphPage() {
   const [pathIds, setPathIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [dossier, setDossier] = useState<GraphNode | null>(null);
+  const [rightPanelTab, setRightPanelTab] = useState<"mentor" | "intelligence">("mentor");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -100,7 +102,7 @@ function GraphPage() {
   const inspected = selected ?? center;
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col overflow-y-auto">
+    <main className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
       <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3 shrink-0 bg-card/90 backdrop-blur sticky top-0 z-40">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2 rounded-full" />
@@ -156,10 +158,11 @@ function GraphPage() {
         </div>
       </header>
 
-      {/* SECTION 1: ORIGINAL GRAPH NAVIGATOR */}
-      <div className="flex min-h-[640px] flex-1 p-5 gap-5">
+      {/* TOP SECTION: GRAPH NAVIGATOR & RIGHT PANEL (Mentor / Intelligence Swap) */}
+      <div className="flex flex-1 p-5 gap-5 h-[calc(100vh-60px)] overflow-hidden">
         <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
 
+        {/* Center Graph Canvas */}
         <section className="border-border bg-card/60 flex min-w-0 flex-1 flex-col rounded-2xl border p-5 backdrop-blur shadow-lg">
           <div className="flex flex-wrap items-baseline justify-between gap-3 border-border border-b pb-4">
             <div>
@@ -218,28 +221,47 @@ function GraphPage() {
           </div>
         </section>
 
-        <MentorPanel
-          node={inspected}
-          role={role}
-          related={
-            inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
-          }
-          onOpen={drill}
-        />
-      </div>
-
-      {/* SECTION 2: INTELLIGENCE DASHBOARD (Clean File/Folder Explorer & Ask AI) */}
-      <div className="px-5 pb-10">
-        <div className="border-t border-border pt-6 mt-4">
-          <div className="mb-4">
-            <span className="text-primary font-mono text-[11px] uppercase tracking-widest">
-              Enterprise Intelligence Memory Core
-            </span>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Files, Folders & Ask AI Assistant
-            </h2>
+        {/* RIGHT SIDEBAR: SWAPPABLE PANEL (AI Mentor vs Intelligence Dashboard) */}
+        <div className="w-80 flex flex-col gap-2 shrink-0">
+          <div className="grid grid-cols-2 gap-1 bg-surface p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setRightPanelTab("mentor")}
+              className={cn(
+                "py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5",
+                rightPanelTab === "mentor"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <MessageSquare className="size-3.5" /> AI Mentor
+            </button>
+            <button
+              onClick={() => setRightPanelTab("intelligence")}
+              className={cn(
+                "py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5",
+                rightPanelTab === "intelligence"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Sparkles className="size-3.5" /> Intelligence
+            </button>
           </div>
-          <IntelligenceDashboard />
+
+          <div className="flex-1 overflow-hidden">
+            {rightPanelTab === "mentor" ? (
+              <MentorPanel
+                node={inspected}
+                role={role}
+                related={
+                  inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
+                }
+                onOpen={drill}
+              />
+            ) : (
+              <IntelligenceDashboard />
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-// Nykst Intelligence Core v1.0.1 - Triggering Vercel Build
 import { useState } from "react";
 import { 
   Network, 
@@ -9,9 +8,8 @@ import {
   Folder, 
   FileCode, 
   Sparkles, 
-  RefreshCw, 
-  ArrowRight,
-  Database
+  RefreshCw,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,123 +33,88 @@ interface MemoryModule {
 const MEMORIES: MemoryModule[] = [
   {
     id: "structural",
-    title: "1. Intelligence Memory",
-    subtitle: "Global Structural Baseline",
+    title: "1. Intelligence",
+    subtitle: "Structural Baseline",
     icon: Network,
-    description: "Live dependency graphs, API contracts, and multi-repo linkage map.",
+    description: "Live dependency graphs and API contracts.",
     files: [
       {
         name: "DependencyGraph.json",
         path: "/memory/structural/DependencyGraph.json",
         size: "42 KB",
-        summary: "Live node adjacency matrix across connected repositories",
-        content: "{\n  \"org\": \"enterprise-core\",\n  \"nodes\": 214,\n  \"edges\": 1428,\n  \"syncStatus\": \"active 24/7\",\n  \"apiContracts\": \"verified\"\n}"
+        summary: "Live node adjacency matrix across repositories",
+        content: "{\n  \"org\": \"enterprise-core\",\n  \"nodes\": 214,\n  \"edges\": 1428,\n  \"syncStatus\": \"active\"\n}"
       },
       {
         name: "ApiContracts.ts",
         path: "/memory/structural/ApiContracts.ts",
         size: "18 KB",
-        summary: "gRPC and REST endpoint specifications preventing drift",
+        summary: "gRPC and REST endpoint specifications",
         content: "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}"
-      },
-      {
-        name: "MultiRepoLinkage.yaml",
-        path: "/memory/structural/MultiRepoLinkage.yaml",
-        size: "12 KB",
-        summary: "Cross-repository module mapping rules",
-        content: "repos:\n  - name: streaming-engine\n    linkedModules: [\"cdn-edge\", \"playback-api\"]\n  - name: payments-api\n    linkedModules: [\"ledger-sync\", \"webhook-router\"]"
       }
     ]
   },
   {
     id: "vault",
-    title: "2. Failure & Resolution Vault",
+    title: "2. Failure Vault",
     subtitle: "Immune System Data",
     icon: ShieldAlert,
-    description: "Historical software breaks, stack traces, and verified human patches.",
+    description: "Historical software breaks and verified patches.",
     files: [
       {
         name: "ERR_CONCURRENCY_092.json",
         path: "/memory/vault/ERR_CONCURRENCY_092.json",
         size: "8.4 KB",
-        summary: "Deadlock stack trace in SessionStore.ts & mutex fix",
-        content: "{\n  \"incidentId\": \"ERR_CONCURRENCY_092\",\n  \"component\": \"SessionStore.ts\",\n  \"rootCause\": \"Race condition in TTL update\",\n  \"patchApplied\": \"Mutex lock around session writes\",\n  \"status\": \"Immunized\"\n}"
-      },
-      {
-        name: "ERR_JWT_MISMATCH_412.json",
-        path: "/memory/vault/ERR_JWT_MISMATCH_412.json",
-        size: "6.1 KB",
-        summary: "RS256 algorithm fallback failure in AuthMiddleware",
-        content: "{\n  \"incidentId\": \"ERR_JWT_MISMATCH_412\",\n  \"component\": \"AuthMiddleware.ts\",\n  \"patchApplied\": \"Strict algorithm header enforcement\",\n  \"status\": \"Immunized\"\n}"
+        summary: "Deadlock stack trace in SessionStore.ts & fix",
+        content: "{\n  \"incidentId\": \"ERR_CONCURRENCY_092\",\n  \"component\": \"SessionStore.ts\",\n  \"patchApplied\": \"Mutex lock around session writes\"\n}"
       }
     ]
   },
   {
     id: "behavioral",
-    title: "3. Behavioral Preference",
-    subtitle: "RLHF & Alignment Logs",
+    title: "3. Behavioral",
+    subtitle: "RLHF & Alignment",
     icon: Cpu,
-    description: "Tracked record of human engineering choices and coding standards.",
+    description: "Engineering choices and coding standards.",
     files: [
       {
         name: "CodingStandards.yaml",
         path: "/memory/behavioral/CodingStandards.yaml",
         size: "14 KB",
         summary: "Team style preferences and monad/async rules",
-        content: "preferences:\n  errorHandling: \"Explicit Result monads for core, try-catch for edge\"\n  strictCasts: true\n  riskTolerance: \"Strict\"\n"
-      },
-      {
-        name: "RlhfWeights.json",
-        path: "/memory/behavioral/RlhfWeights.json",
-        size: "9.2 KB",
-        summary: "Active reinforcement learning reward weights",
-        content: "{\n  \"model\": \"nykst-architect-v2\",\n  \"safetyPreference\": 0.98,\n  \"totalPatchesEvaluated\": 312\n}"
+        content: "preferences:\n  errorHandling: \"Explicit Result monads\"\n  strictCasts: true\n"
       }
     ]
   },
   {
     id: "treepub",
-    title: "4. Tree-Split Learning",
-    subtitle: "High- vs Low-Quality Pipeline",
+    title: "4. Tree-Split",
+    subtitle: "Quality Pipeline",
     icon: GitBranch,
-    description: "Pipeline separating clean production code from quarantined workarounds.",
+    description: "Separating clean code from quarantined workarounds.",
     files: [
       {
         name: "PositiveCorpusIndex.json",
         path: "/memory/treepub/PositiveCorpusIndex.json",
         size: "22 KB",
-        summary: "List of clean 100% typed production files (94.2%)",
-        content: "{\n  \"corpusType\": \"positive\",\n  \"filesCount\": 3840,\n  \"typeCoverage\": \"100%\"\n}"
-      },
-      {
-        name: "QuarantinedWorkarounds.json",
-        path: "/memory/treepub/QuarantinedWorkarounds.json",
-        size: "5.5 KB",
-        summary: "Quarantined anti-patterns for negative reinforcement",
-        content: "{\n  \"corpusType\": \"negative_reinforcement\",\n  \"quarantinedFiles\": [\"legacy_auth_hack.js\", \"temp_bypass_cors.ts\"]\n}"
+        summary: "List of clean 100% typed production files",
+        content: "{\n  \"corpusType\": \"positive\",\n  \"filesCount\": 3840\n}"
       }
     ]
   },
   {
     id: "instruction",
-    title: "5. Instruction-Tuning",
-    subtitle: "Contextual QA & Prompt Logs",
+    title: "5. Instruction",
+    subtitle: "Contextual QA & ADRs",
     icon: BookOpen,
-    description: "Developer prompts, ADRs, and internal documentation for AI architect.",
+    description: "Developer prompts, ADRs, and internal documentation.",
     files: [
       {
         name: "ADR-042-AuthFederation.md",
         path: "/memory/instruction/ADR-042-AuthFederation.md",
         size: "16 KB",
-        summary: "Architecture Decision Record for OIDC and session clustering",
-        content: "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14\n\nContext: Decentralized authentication across microservices without single-point bottlenecks."
-      },
-      {
-        name: "InternalRunbooks.md",
-        path: "/memory/instruction/InternalRunbooks.md",
-        size: "24 KB",
-        summary: "Incident response runbooks and failover protocols",
-        content: "# Incident Response Runbook\n\n1. Check dependency graph for downstream blast radius.\n2. Verify failure vault for historical immunity patches."
+        summary: "Architecture Decision Record for OIDC",
+        content: "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14"
       }
     ]
   }
@@ -160,7 +123,7 @@ const MEMORIES: MemoryModule[] = [
 export function IntelligenceDashboard() {
   const [activeModule, setActiveModule] = useState<MemoryModule>(MEMORIES[0]!);
   const [activeFile, setActiveFile] = useState<MemoryFile>(activeModule.files[0]!);
-  const [query, setQuery] = useState("Analyze this memory file and explain its architectural significance.");
+  const [query, setQuery] = useState("Analyze this memory file.");
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -175,41 +138,14 @@ export function IntelligenceDashboard() {
     setAiResult(null);
     setTimeout(() => {
       setLoading(false);
-      setAiResult(`[Nykst AI Architect Analysis of ${activeFile.name}]
-1. File Purpose: ${activeFile.summary}
-2. Structural Relevance: Directly tied to enterprise memory index ${activeModule.subtitle}.
-3. Verification Status: 100% synchronized with live repository AST and commit history. Zero drift detected.`);
-    }, 800);
+      setAiResult(`[Nykst AI Architect Analysis]\nFile: ${activeFile.name}\nRelevance: 100% synchronized with live repository AST. Zero drift detected.`);
+    }, 700);
   };
 
   return (
-    <div className="border-border bg-card/95 rounded-2xl border backdrop-blur overflow-hidden shadow-2xl">
-      {/* Header */}
-      <div className="border-border flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4 bg-surface/80">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              Enterprise Intelligence Memory Core
-            </h2>
-            <span className="border-border bg-card rounded-full border px-2.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-              Live File & Folder Inspector
-            </span>
-          </div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            Click any memory category below to browse its files and folders, inspect contents, and click 'Ask AI' instantly.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs text-emerald-400">
-            <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Synchronized
-          </span>
-        </div>
-      </div>
-
-      {/* 5 Memory Categories Selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 border-b border-border bg-surface/30">
+    <div className="flex flex-col h-full bg-card/90 rounded-xl border border-border p-3.5 space-y-3 overflow-y-auto text-xs">
+      {/* Module Selector */}
+      <div className="grid grid-cols-5 gap-1 bg-surface p-1 rounded-lg border border-border">
         {MEMORIES.map((m) => {
           const Icon = m.icon;
           const isSelected = activeModule.id === m.id;
@@ -218,123 +154,84 @@ export function IntelligenceDashboard() {
               key={m.id}
               onClick={() => handleSelectModule(m)}
               className={cn(
-                "p-3.5 text-left border-r border-border last:border-r-0 transition-all flex flex-col justify-between",
-                isSelected ? "bg-primary/15 border-b-2 border-b-primary" : "hover:bg-surface-2/60"
+                "p-1.5 rounded-md flex flex-col items-center justify-center transition-all",
+                isSelected ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               )}
+              title={m.title}
             >
-              <div>
-                <div className="flex items-center justify-between">
-                  <Icon className={cn("size-4", isSelected ? "text-primary" : "text-muted-foreground")} />
-                  <span className="font-mono text-[10px] text-muted-foreground">{m.files.length} files</span>
-                </div>
-                <h3 className={cn("mt-1.5 text-xs font-semibold leading-tight", isSelected ? "text-foreground" : "text-muted-foreground")}>
-                  {m.title}
-                </h3>
-              </div>
+              <Icon className="size-3.5" />
+              <span className="text-[9px] mt-0.5 truncate w-full text-center">{m.id}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Files & Folders Explorer + File Preview & Ask AI */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
-        {/* Left: Files and Folders List */}
-        <div className="border-border lg:col-span-4 border-r bg-surface/20 p-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
-                {activeModule.subtitle}
-              </span>
-              <span className="font-mono text-[11px] text-primary">Folders & Files</span>
-            </div>
-            <p className="text-muted-foreground text-xs mb-3 leading-relaxed">
-              {activeModule.description}
-            </p>
+      <div>
+        <div className="font-semibold text-foreground">{activeModule.title}</div>
+        <p className="text-muted-foreground text-[11px] mt-0.5">{activeModule.description}</p>
+      </div>
 
-            <div className="space-y-1.5">
-              {activeModule.files.map((file) => {
-                const isSelected = activeFile.path === file.path;
-                return (
-                  <button
-                    key={file.path}
-                    onClick={() => setActiveFile(file)}
-                    className={cn(
-                      "w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all",
-                      isSelected
-                        ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                        : "bg-card/70 border border-border text-foreground hover:bg-card"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <FileCode className={cn("size-4 shrink-0", isSelected ? "text-primary-foreground" : "text-primary")} />
-                      <span className="truncate font-mono">{file.name}</span>
-                    </div>
-                    <span className={cn("font-mono text-[10px]", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                      {file.size}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* Files List */}
+      <div className="space-y-1">
+        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Files & Folders</span>
+        {activeModule.files.map((file) => {
+          const isSelected = activeFile.path === file.path;
+          return (
+            <button
+              key={file.path}
+              onClick={() => setActiveFile(file)}
+              className={cn(
+                "w-full flex items-center justify-between p-2 rounded-lg text-left transition-all font-mono text-[11px]",
+                isSelected ? "bg-secondary text-secondary-foreground border border-primary/40 font-medium" : "bg-surface/60 border border-border text-foreground hover:bg-surface"
+              )}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <FileCode className="size-3.5 text-primary shrink-0" />
+                <span className="truncate">{file.name}</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground">{file.size}</span>
+            </button>
+          );
+        })}
+      </div>
 
-          <div className="mt-4 border-t border-border pt-3 text-[11px] text-muted-foreground font-mono">
-            Path: <span className="text-foreground">{activeFile.path}</span>
-          </div>
+      {/* File Content Preview */}
+      <div className="space-y-1">
+        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">File Content</span>
+        <div className="bg-surface border border-border rounded-lg p-2.5 font-mono text-[10px] text-foreground overflow-x-auto max-h-28 shadow-inner">
+          <pre>{activeFile.content}</pre>
+        </div>
+      </div>
+
+      {/* Ask AI Section */}
+      <div className="mt-auto border-t border-border pt-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-foreground flex items-center gap-1">
+            <Sparkles className="size-3.5 text-primary" /> Ask AI Architect
+          </span>
+        </div>
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 bg-surface border border-border rounded-lg px-2.5 py-1 text-[11px] text-foreground outline-none focus:border-primary font-mono"
+          />
+          <button
+            onClick={handleAskAi}
+            disabled={loading}
+            className="bg-primary text-primary-foreground hover:bg-primary-glow px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 shrink-0"
+          >
+            {loading ? <RefreshCw className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+            Ask
+          </button>
         </div>
 
-        {/* Right: File Content Preview & Ask AI Button */}
-        <div className="lg:col-span-8 p-5 flex flex-col justify-between bg-card/40 space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-border pb-2.5">
-              <div>
-                <span className="font-mono text-xs text-primary font-semibold">{activeFile.name}</span>
-                <p className="text-muted-foreground text-xs mt-0.5">{activeFile.summary}</p>
-              </div>
-              <span className="font-mono text-[11px] text-muted-foreground border border-border px-2 py-0.5 rounded-md bg-surface">
-                Indexed Artifact
-              </span>
-            </div>
-
-            {/* File Content */}
-            <div className="border-border bg-surface/90 rounded-xl border p-3.5 font-mono text-xs text-foreground overflow-x-auto max-h-40 leading-relaxed shadow-inner">
-              <pre>{activeFile.content}</pre>
-            </div>
+        {aiResult && (
+          <div className="bg-surface border border-border rounded-lg p-2.5 text-[11px] font-mono text-foreground whitespace-pre-line leading-relaxed shadow-sm">
+            {aiResult}
           </div>
-
-          {/* Ask AI Section with Clickable Button */}
-          <div className="border-border bg-surface/60 rounded-xl border p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Sparkles className="size-4 text-primary" /> Ask AI about this file
-              </span>
-              <span className="font-mono text-[11px] text-muted-foreground">Instant Codebase QA</span>
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground outline-none focus:border-primary font-mono"
-              />
-              <button
-                onClick={handleAskAi}
-                disabled={loading}
-                className="bg-primary text-primary-foreground hover:bg-primary-glow px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0"
-              >
-                {loading ? <RefreshCw className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-                Ask AI
-              </button>
-            </div>
-
-            {aiResult && (
-              <div className="border-border bg-card rounded-xl border p-3 text-xs font-mono text-foreground whitespace-pre-line leading-relaxed shadow-sm">
-                {aiResult}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
