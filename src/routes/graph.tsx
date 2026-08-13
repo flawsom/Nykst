@@ -1,43 +1,29 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeDossier } from "@/components/graph/NodeDossier";
-import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
-import { ROLES, canView, setRoleId, useRole, type RoleId } from "@/lib/access";
+import { IntelligenceDashboard } from "@/components/graph/IntelligenceDashboard";
+import { canView, useRole } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
+import { ArrowLeft, Network, ShieldAlert, Sparkles, Layers } from "lucide-react";
 
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
-      { title: "Software Graph — Nykst" },
+      { title: "Software Graph & Intelligence Core — Nykst" },
       {
         name: "description",
-        content:
-          "Navigate your organization's software graph: drill from core domains into capabilities, services, modules and individual files, with dependencies and blast radius.",
+        content: "Navigate your organization's software graph and enterprise intelligence memory core.",
       },
-      { property: "og:title", content: "Software Graph — Nykst" },
-      {
-        property: "og:description",
-        content: "Drill from core domains down to a single file, one click at a time.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: GraphPage,
+  component: GraphAndIntelligencePage,
 });
 
-const PROVIDER_LABEL: Record<string, string> = {
-  github: "GitHub",
-  gitlab: "GitLab",
-  bitbucket: "Bitbucket",
-  azure: "Azure DevOps",
-};
-
-function GraphPage() {
+function GraphAndIntelligencePage() {
   const [orgSlug, setOrgSlug] = useState("acme");
   const [provider, setProvider] = useState("github");
   const [pathIds, setPathIds] = useState<string[]>([]);
@@ -54,7 +40,6 @@ function GraphPage() {
 
   const root = useMemo(() => getOrg(orgSlug), [orgSlug]);
 
-  // rebuild the concrete node path from stored ids
   const path = useMemo(() => {
     const out: GraphNode[] = [root];
     for (const id of pathIds) {
@@ -86,7 +71,6 @@ function GraphPage() {
   };
 
   const jumpTo = (node: GraphNode) => {
-    // walk down from root to find the node's ancestry using its id prefix
     const chain: string[] = [];
     let cursor: GraphNode = root;
     while (cursor.id !== node.id) {
@@ -108,151 +92,119 @@ function GraphPage() {
   const inspected = selected ?? center;
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden">
-      <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="glow-ring bg-primary block size-2 rounded-full" />
-          <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
-        </Link>
-
-        <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto text-sm">
-          {path.map((node, i) => (
-            <span key={node.id} className="flex shrink-0 items-center gap-1.5">
-              {i > 0 && <span className="text-muted-foreground/50">/</span>}
-              <button
-                onClick={() => {
-                  setPathIds(pathIds.slice(0, i));
-                  setSelected(null);
-                }}
-                className={cn(
-                  "rounded-md px-2 py-1 transition-colors",
-                  i === path.length - 1
-                    ? "text-foreground bg-secondary"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {node.label}
-              </button>
-            </span>
-          ))}
-        </nav>
-
-        <label className="border-border bg-surface flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs">
-          <span className="text-muted-foreground">Role</span>
-          <select
-            value={role.id}
-            onChange={(e) => setRoleId(e.target.value as RoleId)}
-            className="bg-transparent text-xs outline-none"
+    <main className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Header */}
+      <header className="border-border flex items-center justify-between gap-4 border-b px-6 py-3 bg-card/80 backdrop-blur sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/"
+            className="border-border bg-surface hover:bg-surface-2 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
           >
-            {ROLES.map((r) => (
-              <option key={r.id} value={r.id} className="bg-card">
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="border-border text-muted-foreground flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs">
-          <span className="bg-primary size-1.5 rounded-full" />
-          {root.label}
-          <span className="text-muted-foreground/60">· {PROVIDER_LABEL[provider] ?? provider}</span>
+            <ArrowLeft className="size-3.5" /> Back to Home
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <span className="glow-ring bg-primary block size-2 rounded-full" />
+            <span className="text-sm font-semibold text-foreground">Nykst Software Intelligence</span>
+            <span className="border-border bg-surface rounded-full border px-2.5 py-0.5 font-mono text-[11px] text-muted-foreground hidden sm:inline">
+              {provider} / {orgSlug}
+            </span>
+          </div>
         </div>
+
+        <nav className="flex items-center gap-3 text-xs">
+          <span className="text-muted-foreground font-mono">14 Domains Mapped • 128 Repositories Indexed</span>
+        </nav>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <TreePanel
-          root={root}
-          activeId={inspected.id}
-          openIds={openIds}
-          onSelect={jumpTo}
-          visible={(n) => canView(role, n)}
-        />
-
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="border-border bg-card/60 border-b px-5 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <span className="text-primary text-[11px] tracking-[0.28em] uppercase">
-                  {kindLabel[center.kind]}
-                </span>
-                <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight">
-                  {center.label}
-                </h1>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="text-muted-foreground text-[11px] tracking-[0.22em] uppercase">
-                  {childKindLabel[center.kind]} · {centerChildren.length}
-                  {restricted > 0 && (
-                    <span className="text-primary"> · {restricted} restricted</span>
-                  )}
-                </span>
-                {path.length > 1 && (
-                  <button
-                    onClick={() => {
-                      setPathIds(pathIds.slice(0, -1));
-                      setSelected(null);
-                    }}
-                    className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-                  >
-                    ← Zoom out
-                  </button>
-                )}
-              </div>
+      {/* Main Content Layout */}
+      <div className="flex-1 p-6 space-y-10 max-w-[1600px] mx-auto w-full">
+        {/* SECTION 1: OVERVIEW (Graph Section) */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-primary font-mono text-[11px] uppercase tracking-widest">
+                Section 1: Living Software Graph Overview
+              </span>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Interactive Graph Navigation ({kindLabel(center.kind)}: {center.label})
+              </h2>
             </div>
-
-            {center.summary && (
-              <p className="text-muted-foreground mt-1.5 max-w-2xl text-[12px] leading-relaxed">
-                {center.summary}
-              </p>
-            )}
-
-            {center.metrics && (
-              <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
-                {center.metrics.map((m) => (
-                  <div key={m.label} className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-semibold">{m.value}</span>
-                    <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                      {m.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="text-muted-foreground font-mono text-xs">
+              {centerChildren.length} {childKindLabel(childKind)} mapped
+            </div>
           </div>
 
-          <div className="relative min-h-0 flex-1">
-            <GraphCanvas
-              key={`${center.id}-${role.id}`}
-              center={center}
-              nodes={centerChildren}
-              childKind={childKind}
-              onSelect={drill}
-              onInspect={setDossier}
-              selectedId={selected?.id}
-              technical={role.id === "engineer" || role.id === "architect"}
-            />
+          <div className="border-border bg-card/60 rounded-2xl border overflow-hidden backdrop-blur shadow-2xl">
+            <div className="grid h-[600px] lg:grid-cols-12">
+              {/* Left Tree Panel */}
+              <div className="border-border hidden flex-col border-r lg:col-span-3 lg:flex">
+                <div className="border-border border-b px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  System Tree Navigator
+                </div>
+                <div className="flex-1 overflow-y-auto p-3">
+                  <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
+                </div>
+              </div>
+
+              {/* Center Graph Canvas */}
+              <div className="relative flex flex-col lg:col-span-6 bg-background/50">
+                <div className="border-border border-b px-4 py-3 flex items-center justify-between bg-surface/40">
+                  <span className="text-xs font-medium font-mono text-muted-foreground">
+                    Path: {path.map((n) => n.label).join(" → ")}
+                  </span>
+                  {path.length > 1 && (
+                    <button
+                      onClick={() => {
+                        setPathIds((p) => p.slice(0, -1));
+                        setSelected(null);
+                      }}
+                      className="text-primary text-xs hover:underline"
+                    >
+                      ← Up one level
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative flex-1">
+                  <GraphCanvas
+                    center={center}
+                    childrenNodes={centerChildren}
+                    restricted={restricted}
+                    onDrill={drill}
+                    onSelect={(n) => setSelected(n === selected ? null : n)}
+                    selectedId={inspected.id}
+                  />
+                </div>
+              </div>
+
+              {/* Right Dossier & Mentor Panel */}
+              <div className="border-border flex flex-col border-l lg:col-span-3">
+                <div className="border-border border-b px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Node Dossier & AI Mentor
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <NodeDossier node={inspected} onOpenDossier={setDossier} />
+                  <MentorPanel node={inspected} />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <MentorPanel
-          node={inspected}
-          role={role}
-          related={
-            inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
-          }
-          onOpen={drill}
-        />
+        {/* SECTION 2: INTELLIGENCE DASHBOARD (Below Overview) */}
+        <section className="space-y-4 pt-4 border-t border-border">
+          <div>
+            <span className="text-primary font-mono text-[11px] uppercase tracking-widest">
+              Section 2: Enterprise Intelligence Memory Core
+            </span>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              Memory Files, Folders & AI Architect Assistant
+            </h2>
+          </div>
+
+          <IntelligenceDashboard projectName="Nykst Enterprise Core" repo={`${provider}/${orgSlug}/enterprise-core`} />
+        </section>
       </div>
-
-      <OnboardingTour />
-
-      <NodeDossier
-        node={dossier}
-        role={role}
-        open={dossier !== null}
-        onClose={() => setDossier(null)}
-        onOpenNode={jumpTo}
-      />
     </main>
   );
 }
