@@ -165,7 +165,7 @@ function GraphPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
-                  {kindLabel(center.kind)}
+                  {kindLabel[center.kind]}
                 </span>
                 {restricted > 0 && (
                   <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-mono">
