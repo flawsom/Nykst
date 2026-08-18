@@ -9,13 +9,13 @@ import { Network, Database, Cpu, GitBranch, BookOpen, ShieldAlert, Sparkles, Che
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst — The Holy Grail of Software Intelligence" },
+      { title: "Nykst — System Navigator for Software Organizations" },
       {
         name: "description",
         content:
           "Nykst is the definitive system navigator for software organizations. Experience living software graphs, persistent memory, and autonomous reasoning.",
       },
-      { property: "og:title", content: "Nykst — The Holy Grail of Software Intelligence" },
+      { property: "og:title", content: "Nykst — System Navigator for Software Organizations" },
       {
         property: "og:description",
         content:
@@ -40,6 +40,8 @@ interface Pillar {
   title: string;
   tagline: string;
   icon: any;
+  reasoning: string;
+  example: string;
   what: string;
   how: string;
   why: string;
@@ -51,72 +53,88 @@ const PILLARS: Pillar[] = [
     title: "System Understanding",
     tagline: "Total enterprise omniscience across millions of lines",
     icon: Network,
-    what: "A transcendent AST synthesis engine that dissolves repository boundaries, ingesting hundreds of disparate microservices, cross-repo API contracts, and hidden dependencies into a singular, living organizational ontology.",
-    how: "Nykst connects read-only to your git infrastructure, performing deep topological parsing to map the exact neurological network of your enterprise from high-level domains down to individual atomic functions in real time.",
-    why: "Monolithic complexity destroys human intuition. Nykst restores absolute clarity, ensuring that no engineer ever operates in blind isolation again."
+    reasoning: "Software acts as a single organic ecosystem, yet organizations treat it as isolated silos of files. True system understanding dissolves repository boundaries, fusing disparate microservices into a unified neurological map.",
+    example: "A developer modifies a field in a shared utility library inside Repo A. Nykst instantly calculates and visualizes how this change silently alters a data transformation pipeline in Repo B's billing service and impacts a legacy reporting tool in Repo C that hasn't been touched in three years.",
+    what: "A continuous AST synthesis engine that ingests every repository, cross-repo API contract, and shared dependency simultaneously.",
+    how: "Nykst crawls your git infrastructure in read-only mode, constructing a multi-layered topological ontology from core domains down to atomic functions.",
+    why: "Engineers never operate in blind isolation, eliminating accidental cascading failures across service boundaries."
   },
   {
     id: "persistent-memory",
     title: "Persistent System Memory",
     tagline: "An infallible institutional immune system",
     icon: Database,
-    what: "The permanent cognitive core of your engineering organization. It captures structural baselines, API contracts, historical regressions, and multi-repo linkages into an immutable memory vault that never forgets.",
-    how: "Operating 24/7 as a background cognitive layer, Nykst records every architectural evolution, dependency shift, and verified human patch, indexing them against your exact enterprise telemetry.",
-    why: "Institutional brain drain is the silent killer of hyper-growth startups. When key engineers leave, their wisdom remains permanently locked inside Nykst's memory vault."
+    reasoning: "In engineering, institutional knowledge is the only asset that depreciates when employees leave. Persistent memory captures every architectural evolution, ensuring that the wisdom of past engineers remains permanently embedded in the system.",
+    example: "A critical production race condition occurs at 3 AM. Instead of paging a retired founder or searching through fragmented Slack threads, Nykst instantly recalls a nearly identical incident from 2021, displays the exact human patch that resolved it, and warns why the current PR re-introduces that exact vulnerability.",
+    what: "The permanent cognitive core storing structural baselines, API contracts, historical regressions, and multi-repo linkages over time.",
+    how: "Maintains a 24/7 background memory index recording every architectural shift, dependency modification, and verified human patch.",
+    why: "Institutional brain drain is neutralized; your team retains an infallible, permanent memory of how your software evolved."
   },
   {
     id: "change-intelligence",
     title: "Change Intelligence",
     tagline: "Prophetic blast radius calculation before code touches main",
     icon: GitBranch,
-    what: "An omniscient preview engine that intercepts pull requests and computes the exact ripple effects of any proposed code modification across downstream services, API consumers, and team boundaries before a single line is merged.",
-    how: "By instantly cross-referencing incoming AST diffs with live dependency graphs, Nykst simulates downstream repercussions with mathematical certainty.",
-    why: "Eliminates catastrophic production outages and silent regressions, turning chaotic code reviews into friction-free, deterministic governance."
+    reasoning: "Most catastrophic outages stem from 'safe' changes. Change Intelligence replaces subjective code reviews with deterministic impact calculations before a single line is merged.",
+    example: "You propose renaming an internal API endpoint. Nykst flags that a partner's webhook—managed in a completely external repository—relies on that exact signature, preemptively averting a million-dollar integration failure.",
+    what: "Real-time analysis of pull requests and commits against the living organizational graph to calculate exact blast radius.",
+    how: "Interception of PR diffs to instantly evaluate incoming dependency changes, affected downstream services, and public API contracts.",
+    why: "Slashing code review friction while eliminating silent regressions and production incidents."
   },
   {
     id: "consequences-simulation",
     title: "Consequences Simulation",
     tagline: "Deterministic reality-testing powered by your enterprise data",
     icon: Cpu,
-    what: "A quantum-grade virtual sandbox that simulates complex architectural refactors, database migrations, and concurrency locks against your company's actual traffic patterns and data models.",
-    how: "Nykst constructs isolated execution models using your repository's exact AST structure and historical failure vault, running high-fidelity simulations of system stress.",
-    why: "Fear of legacy code paralyzes engineering velocity. With Nykst, your teams test monumental system overhauls with 100% predictability before touching production."
+    reasoning: "Refactoring legacy code is paralyzed by the fear of unknown side-effects. Consequences simulation acts as a time machine, allowing teams to test monumental architectural shifts in a risk-free virtual sandbox.",
+    example: "You want to migrate a core service from REST to gRPC. Nykst simulates the migration against your actual production traffic logs and dependency models, predicting that while latency drops by 40%, memory pressure on your load balancer will spike by 15% during peak hours.",
+    what: "A virtual sandbox environment that simulates code modifications and refactorings against real traffic and dependency patterns.",
+    how: "Leveraging repository AST models and historical failure vaults to run high-fidelity simulations of system concurrency and load.",
+    why: "Unlocks fearless engineering velocity, enabling massive architectural overhauls with 100% predictability."
   },
   {
     id: "company-aware-dev",
     title: "Company-Aware Development",
     tagline: "AI that thinks like your most elite staff engineers",
     icon: Sparkles,
-    what: "Autonomous code generation and refactoring governed strictly by your organization's unique ethos, custom design patterns, error monads, and architectural decision records (ADRs).",
-    how: "Nykst continuously absorbs your team's behavioral preferences and coding philosophy, ensuring that every AI-generated intervention aligns flawlessly with your internal standards.",
-    why: "Generic AI produces generic tech debt. Nykst generates bespoke, immaculate code that respects your enterprise DNA from day one."
+    reasoning: "Generic LLMs are trained on average internet code, generating generic technical debt. Company-aware development binds AI generation strictly to your organization's unique design philosophy and architectural standards.",
+    example: "You prompt the AI for a database connection handler. Instead of returning generic boilerplate, Nykst generates a wrapper that automatically implements your company's custom retry logic, circuit breakers, and telemetry decorators—exactly as your principal engineers mandate.",
+    what: "AI-assisted generation and refactoring governed strictly by your custom coding standards, monad patterns, and ADRs.",
+    how: "Nykst indexes team behavioral preferences and coding styles, aligning every generated patch with enterprise conventions.",
+    why: "Ensures AI output is production-ready and native to your codebase from the first commit."
   },
   {
     id: "reality-checking",
     title: "Continuously Reality Checking",
     tagline: "Absolute synchronization between documentation and reality",
     icon: CheckCircle2,
-    what: "An automated cognitive watchdog that eradicates architectural drift by continuously auditing live codebases against documentation, API contracts, and team declarations in real time.",
-    how: "Nykst performs continuous background reconciliation between actual AST nodes and architectural runbooks, instantly flagging orphaned endpoints or undocumented dependencies.",
-    why: "Documentation is universally dead on arrival. Nykst ensures your enterprise blueprint is eternally alive, truthful, and self-auditing."
+    reasoning: "The biggest lie in software engineering is the static architecture diagram. Continuous reality checking enforces automated synchronization, ensuring that reality and documentation never drift apart.",
+    example: "Your official documentation states that 'Service A never communicates directly with Service B.' Nykst detects a PR introducing a direct database query across those boundaries and blocks the merge for policy violation before human review even begins.",
+    what: "Automated, real-time auditing detecting architectural drift between documentation, PRs, and deployed code.",
+    how: "Continuous background reconciliation between live AST nodes and architectural runbooks, flagging orphaned endpoints instantly.",
+    why: "Eradicates stale documentation and maintains a 100% truthful, verifiable enterprise blueprint."
   },
   {
     id: "organizational-learning",
     title: "Organizational Learning",
     tagline: "A self-improving cognitive engine that compounds daily",
     icon: BookOpen,
-    what: "A self-optimizing learning pipeline that autonomously separates pristine production-grade code from quarantined anti-patterns, compounding your organization's engineering intelligence every single day.",
-    how: "Using advanced tree-split reinforcement, Nykst rewards elite architectural patterns while weaponizing past historical bugs as negative reinforcement vectors for future generation.",
-    why: "Your competitors are trapped in linear progress. Nykst puts your engineering organization on an exponential compounding curve of velocity and resilience."
+    reasoning: "Mistakes are expensive; repeating them is inexcusable. Organizational learning turns historical bugs and successful patches into compounding automated guardrails.",
+    example: "A developer attempts a workaround that mirrors an anti-pattern causing a 2-hour outage last year. Nykst instantly intercepts the commit, flags the historical incident, and suggests the approved 'Gold Standard' pattern established by the architecture board.",
+    what: "A self-improving active learning pipeline separating clean production code from quarantined workarounds.",
+    how: "Using tree-split reinforcement to reward elite patterns while weaponizing past regressions as negative reinforcement vectors.",
+    why: "Puts your engineering organization on an exponential compounding curve of resilience and velocity."
   },
   {
     id: "autonomous-reasoning",
     title: "Autonomous System Reasoning",
     tagline: "An elite principal architect available 24/7",
     icon: ShieldAlert,
-    what: "A sovereign AI architectural intelligence capable of reasoning across your entire multi-repo ecosystem to answer profound design questions, diagnose complex deadlocks, and architect solutions instantly.",
-    how: "Powered by unified graph context, instruction-tuning memory, and historical failure vaults, Nykst reasons through complex engineering dilemmas with visionary clarity.",
-    why: "Onboarding months of tribal knowledge is compressed into minutes. Complex architectural roadblocks vanish the moment they are encountered."
+    reasoning: "The ultimate bottleneck in software engineering is human context-switching across millions of lines of code. Autonomous reasoning removes this bottleneck entirely.",
+    example: "You ask Nykst: 'Why is our checkout flow failing intermittently for users in São Paulo?' Nykst reasons across four repositories, identifies a timezone-sensitive date parser in a shared library, and points to the exact commit where the logic diverged from global standards.",
+    what: "A sovereign AI architectural intelligence capable of reasoning across multi-repo ecosystems to solve complex design challenges.",
+    how: "Combining global graph context with instruction-tuning memory and historical runbooks to answer deep architectural queries.",
+    why: "Compresses months of onboarding into minutes and resolves complex roadblocks in seconds."
   }
 ];
 
@@ -256,19 +274,21 @@ function Landing() {
 
       <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-24">
         <p className="animate-rise text-primary text-xs tracking-[0.3em] uppercase font-mono">
-          The Holy Grail of Software Intelligence
+          System Intelligence & Organizational Navigation
         </p>
         <h1
           className="animate-rise text-gradient mt-6 max-w-4xl text-5xl leading-[1.05] font-semibold tracking-tight md:text-6xl"
           style={{ animationDelay: "80ms" }}
         >
-          Operating software enterprises through absolute intelligence.
+          The system navigator for your software organization.
         </h1>
         <p
           className="animate-rise text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed"
           style={{ animationDelay: "160ms" }}
         >
-          Connect your organization once. Nykst dissolves repository boundaries, fusing your entire enterprise into an omniscient living graph backed by persistent memory, predictive simulation, and sovereign AI reasoning.
+          Connect your organization once. Nykst analyzes the codebase itself and renders it as a
+          living graph — core domains, capabilities, services, modules, down to a single file. No
+          folder browsing. No guesswork.
         </p>
 
         <div
@@ -282,7 +302,7 @@ function Landing() {
             Pre-register for early access
           </button>
           <span className="text-muted-foreground text-xs font-mono">
-            Two minutes. Nine questions. Shaping the future of software.
+            Two minutes. Nine questions. We read every answer.
           </span>
         </div>
 
@@ -302,7 +322,8 @@ function Landing() {
         >
           <h2 className="text-sm font-medium">Connect your organization</h2>
           <p className="text-muted-foreground mt-1 text-xs">
-            Nykst installs read-only and derives the enterprise graph autonomously — zero manual configuration required.
+            Nykst installs read-only and derives the graph itself — we never ask you to describe your
+            architecture.
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -343,7 +364,8 @@ function Landing() {
               />
             </div>
             <p className="text-muted-foreground mt-2 text-[11px]">
-              Nykst reads every repository in this organization and builds the sovereign intelligence graph from the code itself.
+              Nykst reads every repository in this organization and builds the graph from the code
+              itself.
             </p>
           </div>
 
@@ -385,17 +407,17 @@ function Landing() {
           </button>
         </div>
 
-        {/* 8 PILLARS SECTION WITH HOLY GRAIL INTERACTIVE Q&A */}
+        {/* 8 PILLARS SECTION WITH DEEP REASONING & MIND-BLOWING EXAMPLES */}
         <div className="mt-28">
           <div className="max-w-2xl">
             <span className="text-primary text-xs tracking-[0.3em] uppercase font-mono">
-              The 8 Pillars of Nykst
+              Core Capabilities
             </span>
             <h2 className="text-3xl font-semibold tracking-tight mt-2 text-foreground">
-              The Architecture of Software Omniscience
+              The 8 Pillars of Nykst
             </h2>
             <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
-              Click on any foundational pillar below to discover how Nykst redefines software engineering from the ground up.
+              Select any pillar below to explore the deep architectural reasoning, real-world examples, and technical derivation behind how Nykst powers your engineering organization.
             </p>
           </div>
 
@@ -431,44 +453,53 @@ function Landing() {
               })}
             </div>
 
-            {/* Interactive Pillar Q&A Display Card */}
+            {/* Interactive Pillar Detailed Display Card */}
             <div className="lg:col-span-7 border-border bg-card/95 rounded-2xl border p-8 backdrop-blur shadow-2xl space-y-6">
               <div className="flex items-center gap-3 border-b border-border pb-4">
                 <div className="p-3 rounded-xl bg-primary/25 border border-primary/50 text-primary shadow-inner">
                   <IconComponent className="size-6" />
                 </div>
                 <div>
-                  <span className="text-xs font-mono text-primary uppercase tracking-widest font-semibold">Holy Grail Pillar</span>
+                  <span className="text-xs font-mono text-primary uppercase tracking-widest font-semibold">Architectural Pillar</span>
                   <h3 className="text-2xl font-semibold text-foreground tracking-tight">{currentPillar.title}</h3>
                 </div>
               </div>
 
               <div className="space-y-6 text-sm leading-relaxed">
+                {/* Deep Reasoning */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-primary font-mono flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-primary animate-pulse" /> What is this?
+                    <span className="size-2 rounded-full bg-primary" /> Deep Reasoning
                   </h4>
-                  <p className="text-foreground/90 pl-3 border-l-2 border-primary/40 font-normal">
-                    {currentPillar.what}
+                  <p className="text-foreground/90 pl-3 border-l-2 border-primary/40 font-normal leading-relaxed">
+                    {currentPillar.reasoning}
                   </p>
                 </div>
 
+                {/* Perfect Mind-blowing Example */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-primary font-mono flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-primary animate-pulse" /> How does it work with your organization?
+                    <span className="size-2 rounded-full bg-primary" /> Real-World Impact & Example
                   </h4>
-                  <p className="text-foreground/90 pl-3 border-l-2 border-primary/40 font-normal">
-                    {currentPillar.how}
-                  </p>
+                  <div className="bg-surface/85 border border-border rounded-xl p-4 text-foreground/90 font-mono text-xs leading-relaxed">
+                    {currentPillar.example}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-primary font-mono flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-primary animate-pulse" /> Why does it matter?
-                  </h4>
-                  <p className="text-foreground/90 pl-3 border-l-2 border-primary/40 font-normal">
-                    {currentPillar.why}
-                  </p>
+                {/* Brief Derivation (What, How, Why) */}
+                <div className="border-t border-border pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <span className="font-semibold text-primary block mb-1 font-mono uppercase tracking-wider">What it is</span>
+                    <p className="text-muted-foreground leading-relaxed">{currentPillar.what}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary block mb-1 font-mono uppercase tracking-wider">How it works</span>
+                    <p className="text-muted-foreground leading-relaxed">{currentPillar.how}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary block mb-1 font-mono uppercase tracking-wider">Why it matters</span>
+                    <p className="text-muted-foreground leading-relaxed">{currentPillar.why}</p>
+                  </div>
                 </div>
               </div>
             </div>
