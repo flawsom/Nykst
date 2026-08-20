@@ -187,7 +187,7 @@ function Landing() {
           folder browsing. No guesswork.
         </p>
 
-        {/* Pre-register & Advantages Section */}
+        {/* Pre-register & Distinct Green Advantages Section */}
         <div
           className="animate-rise mt-8 flex flex-wrap items-center gap-4"
           style={{ animationDelay: "200ms" }}
@@ -201,9 +201,9 @@ function Landing() {
 
           <button
             onClick={() => setAdvantages(true)}
-            className="border-border bg-surface hover:bg-surface-2 text-foreground border rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/50 rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors flex items-center gap-2 shadow-md shadow-emerald-600/20"
           >
-            <Sparkles className="size-4 text-primary" /> Advantages of using Nykst
+            <Sparkles className="size-4 text-emerald-200" /> Advantages of using Nykst
           </button>
         </div>
 
