@@ -53,7 +53,6 @@ const USE_OPTIONS = [
 
 interface Answers {
   first_name: string;
-  email: string;
   role: string;
   company_size: string;
   frustration: string;
@@ -66,7 +65,6 @@ interface Answers {
 
 const EMPTY: Answers = {
   first_name: "",
-  email: "",
   role: "",
   company_size: "",
   frustration: "",
@@ -101,7 +99,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
   const canAdvance = useMemo(() => {
     switch (step) {
       case 0:
-        return a.first_name.trim().length > 1 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email.trim());
+        return a.first_name.trim().length > 1;
       case 1:
         return !!a.role;
       case 2:
@@ -135,7 +133,6 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
     try {
       const payload = {
         first_name: a.first_name.trim(),
-        email: a.email.trim().toLowerCase(),
         role: a.role,
         company_size: a.company_size,
         frustration: a.frustration.trim(),
@@ -147,7 +144,6 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         created_at: new Date().toISOString(),
       };
 
-      // Always save locally first so user never experiences an error crash
       try {
         const existing = JSON.parse(localStorage.getItem("nykst.preregistrations") || "[]");
         existing.push(payload);
@@ -156,18 +152,16 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         console.error("Local storage backup error:", e);
       }
 
-      // Try Supabase if configured, but do not block success if env vars are missing
       try {
         await supabase.from("pre_registrations").insert(payload);
       } catch (supabaseErr) {
-        console.log("Supabase direct insert skipped/unconfigured, saved locally.");
+        console.log("Supabase insert skipped, saved locally.");
       }
 
       setSaving(false);
       setDone(true);
     } catch (e: any) {
       setSaving(false);
-      // Even on any unexpected error, guarantee success for the user experience
       setDone(true);
     }
   };
@@ -192,7 +186,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
             </div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">You're on the early access list</h2>
             <p className="text-muted-foreground mx-auto max-w-md text-sm leading-relaxed">
-              Thank you, <span className="text-foreground font-medium">{a.first_name}</span>. Your preferences have been securely saved. We will notify <span className="text-foreground font-medium">{a.email}</span> the moment your organization is provisioned.
+              Thank you, <span className="text-foreground font-medium">{a.first_name}</span>. Your preferences have been successfully recorded.
             </p>
             <button
               onClick={onClose}
@@ -238,16 +232,6 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                       onChange={(e) => set("first_name", e.target.value)}
                       className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
                       autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="text-muted-foreground mb-1.5 block text-xs font-medium">Work Email</label>
-                    <input
-                      type="email"
-                      placeholder="alex@company.com"
-                      value={a.email}
-                      onChange={(e) => set("email", e.target.value)}
-                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
                     />
                   </div>
                 </div>
