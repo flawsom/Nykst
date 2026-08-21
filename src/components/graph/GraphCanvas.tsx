@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { GraphNode, NodeKind } from "@/lib/graph-data";
 
@@ -18,11 +18,14 @@ interface Props {
   onSelect: (node: GraphNode) => void;
   onInspect: (node: GraphNode) => void;
   selectedId?: string | undefined;
-  /** engineers see repo/technical metadata on every node */
   technical?: boolean;
 }
 
-/** Repo-shaped identifier so engineers can map a node to source. */
+function truncate(s: string, max: number) {
+  if (s.length <= max) return s;
+  return s.slice(0, max - 1) + "…";
+}
+
 function repoOf(node: GraphNode) {
   if (node.repo) return node.repo;
   const seg = node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -35,6 +38,16 @@ function techLine(node: GraphNode) {
   return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
 }
 
+function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
+  return (
+    <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
+      <rect x={-46} y={-12} width={92} height={24} rx={12} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
+      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-medium">
+        {truncate(label, 14)}
+      </text>
+    </g>
+  );
+}
 
 export function GraphCanvas({
   center,
@@ -43,7 +56,7 @@ export function GraphCanvas({
   onSelect,
   onInspect,
   selectedId,
-  technical = false,
+  technical = true,
 }: Props) {
   const children = nodes;
   const [mounted, setMounted] = useState(false);
@@ -55,39 +68,43 @@ export function GraphCanvas({
     return () => clearTimeout(t);
   }, [center.id]);
 
-  const W = 1000;
-  const H = 700;
+  const W = 1100;
+  const H = 750;
   const cx = W / 2;
   const cy = H / 2;
 
+  // Perfect circular arrangement with dynamic radius to ensure zero touching or overlap
   const points = useMemo(() => {
     const n = Math.max(children.length, 1);
-    const rx = n > 8 ? 360 : 320;
-    const ry = n > 8 ? 250 : 225;
+    // Expand radius for larger node counts to guarantee picture-perfect spacing
+    const radiusX = n > 8 ? 390 : 340;
+    const radiusY = n > 8 ? 280 : 240;
+
     return children.map((child, i) => {
       const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
       return {
         node: child,
-        x: cx + Math.cos(angle) * rx,
-        y: cy + Math.sin(angle) * ry,
+        x: cx + Math.cos(angle) * radiusX,
+        y: cy + Math.sin(angle) * radiusY,
       };
     });
   }, [children, cx, cy]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden select-none">
       <div className="pointer-events-none absolute inset-0 bg-grid" />
       <svg viewBox={`0 0 ${W} ${H}`} className="relative h-full w-full" role="img">
         <defs>
           <radialGradient id="haloGrad">
-            <stop offset="0%" stopColor={kindColor[center.kind]} stopOpacity="0.35" />
+            <stop offset="0%" stopColor={kindColor[center.kind]} stopOpacity="0.4" />
             <stop offset="100%" stopColor={kindColor[center.kind]} stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        <circle cx={cx} cy={cy} r={190} fill="url(#haloGrad)" className="animate-halo" />
+        <circle cx={cx} cy={cy} r={210} fill="url(#haloGrad)" className="animate-halo" />
 
-        {points.map((p, i) => {
+        {/* Clean radial connecting lines */}
+        {points.map((p) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           return (
             <line
@@ -97,37 +114,37 @@ export function GraphCanvas({
               x2={mounted ? p.x : cx}
               y2={mounted ? p.y : cy}
               stroke={active ? kindColor[childKind] : "var(--border)"}
-              strokeWidth={active ? 1.8 : 1}
-              className={cn("transition-all duration-500", active && "edge-flow")}
-              style={{ transitionDelay: `${i * 24}ms`, opacity: mounted ? 1 : 0 }}
+              strokeWidth={active ? 2 : 1}
+              strokeOpacity={active ? 0.9 : 0.4}
+              className="transition-all duration-300"
             />
           );
         })}
 
-        {/* center node */}
+        {/* Center node */}
         <g className="animate-node-in" style={{ transformOrigin: `${cx}px ${cy}px` }}>
           <circle
             cx={cx}
             cy={cy}
-            r={78}
+            r={84}
             fill="var(--surface)"
             stroke={kindColor[center.kind]}
-            strokeWidth={1.6}
+            strokeWidth={2}
           />
           <circle
             cx={cx}
             cy={cy}
-            r={94}
+            r={100}
             fill="none"
             stroke={kindColor[center.kind]}
-            strokeOpacity={0.25}
-            strokeDasharray="2 7"
+            strokeOpacity={0.3}
+            strokeDasharray="3 8"
           />
           <text
             x={cx}
-            y={cy - 4}
+            y={cy - 6}
             textAnchor="middle"
-            className="fill-foreground text-[18px] font-semibold"
+            className="fill-foreground text-[18px] font-bold tracking-tight"
           >
             {truncate(center.label, 16)}
           </text>
@@ -135,149 +152,78 @@ export function GraphCanvas({
             x={cx}
             y={cy + 18}
             textAnchor="middle"
-            className="fill-muted-foreground text-[11px] tracking-widest uppercase"
+            className="fill-primary text-[11px] tracking-widest uppercase font-mono font-semibold"
           >
             {center.kind}
           </text>
-          {technical && (
-            <text
-              x={cx}
-              y={cy + 122}
-              textAnchor="middle"
-              className="fill-muted-foreground font-mono text-[11px]"
-            >
-              {truncate(techLine(center), 62)}
-            </text>
-          )}
+          <text
+            x={cx}
+            y={cy + 130}
+            textAnchor="middle"
+            className="fill-muted-foreground font-mono text-[11px]"
+          >
+            {truncate(techLine(center), 68)}
+          </text>
 
           <InfoBadge
             x={cx}
-            y={cy + 46}
+            y={cy + 48}
             color={kindColor[center.kind]}
-            label={center.label}
+            label="Inspect Details"
             onClick={() => onInspect(center)}
           />
         </g>
 
-
+        {/* Surrounding circular nodes */}
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const hasChildren = p.node.expandable;
-          const w = Math.min(
-            technical ? 268 : 230,
-            Math.max(technical ? 190 : 140, p.node.label.length * 9 + 78),
-          );
-          const h = technical ? 54 : 42;
+          const w = 240;
+          const h = 52;
           return (
             <g
               key={p.node.id}
               transform={`translate(${mounted ? p.x : cx}, ${mounted ? p.y : cy})`}
-              className="cursor-pointer transition-transform duration-500 ease-out"
+              className="cursor-pointer transition-transform duration-500 ease-out group"
               style={{ transitionDelay: `${i * 30}ms`, opacity: mounted ? 1 : 0 }}
               onMouseEnter={() => setHovered(p.node.id)}
               onMouseLeave={() => setHovered(null)}
+              onClick={() => onSelect(p.node)}
             >
               <rect
                 x={-w / 2}
                 y={-h / 2}
                 width={w}
                 height={h}
-                rx={12}
+                rx={14}
                 fill={active ? "var(--surface-2)" : "var(--surface)"}
                 stroke={active ? kindColor[childKind] : "var(--border)"}
-                strokeWidth={active ? 1.6 : 1}
-                className="transition-all duration-200"
-                onClick={() => onSelect(p.node)}
+                strokeWidth={active ? 2 : 1}
+                className="transition-all duration-300 shadow-xl"
               />
               <circle
-                cx={-w / 2 + 18}
-                cy={technical ? -7 : 0}
-                r={4}
+                cx={-w / 2 + 20}
+                cy={-6}
+                r={5}
                 fill={kindColor[childKind]}
-                onClick={() => onSelect(p.node)}
               />
               <text
-                x={-w / 2 + 32}
-                y={technical ? -3 : 4}
-                className="fill-foreground text-[13px] font-medium"
-                onClick={() => onSelect(p.node)}
+                x={-w / 2 + 36}
+                y={-4}
+                className="fill-foreground text-[13px] font-semibold tracking-tight"
               >
-                {truncate(p.node.label, technical ? 22 : 18)}
+                {truncate(p.node.label, 22)}
               </text>
-              {technical && (
-                <text
-                  x={-w / 2 + 32}
-                  y={14}
-                  className="fill-muted-foreground font-mono text-[9px]"
-                  onClick={() => onSelect(p.node)}
-                >
-                  {truncate(techLine(p.node), 34)}
-                </text>
-              )}
-              {hasChildren && (
-                <circle
-                  cx={w / 2 - 40}
-                  cy={technical ? -7 : 0}
-                  r={3}
-                  fill={kindColor[childKind]}
-                  fillOpacity={0.55}
-                />
-              )}
-              <InfoBadge
-                x={w / 2 - 20}
-                y={technical ? -7 : 0}
-                color={kindColor[childKind]}
-                label={p.node.label}
-                onClick={() => onInspect(p.node)}
-              />
-
+              <text
+                x={-w / 2 + 36}
+                y={14}
+                className="fill-muted-foreground font-mono text-[10px]"
+              >
+                {truncate(techLine(p.node), 38)}
+              </text>
             </g>
-
           );
         })}
       </svg>
     </div>
-  );
-}
-
-function truncate(s: string, n: number) {
-  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
-}
-
-function InfoBadge({
-  x,
-  y = 0,
-  color,
-  label,
-  onClick,
-}: {
-  x: number;
-  y?: number;
-  color: string;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <g
-      transform={`translate(${x}, ${y})`}
-      className="cursor-pointer"
-      role="button"
-      tabIndex={0}
-      aria-label={`Details for ${label}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-    >
-      <circle r={10} fill="var(--surface-2)" stroke={color} strokeOpacity={0.6} strokeWidth={1} />
-      <text
-        textAnchor="middle"
-        y={4}
-        className="fill-foreground text-[11px] font-semibold"
-        style={{ pointerEvents: "none" }}
-      >
-        i
-      </text>
-    </g>
   );
 }
