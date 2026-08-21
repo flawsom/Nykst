@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
-import { Eye, Code, Layers, Cpu, GitCommit, Shield, Zap, Terminal } from "lucide-react";
+import { Eye, Code, Layers, Cpu, GitCommit, Shield, Zap } from "lucide-react";
 
 type TabId = "code" | "architecture" | "dependencies" | "changes" | "security" | "performance";
 
@@ -122,7 +122,7 @@ export function NodeInspector({
                       ))
                     ) : (
                       <div className="bg-card p-2.5 rounded-lg border border-border text-foreground">
-                        class {node.label.replace(/[^a-zA-Z0-9]/g, "")}Controller {{/* Core logic handlers */}}
+                        class {node.label.replace(/[^a-zA-Z0-9]/g, "")}Controller {/* Core logic handlers */}
                       </div>
                     )}
                     {node.detail?.functions?.map((f, i) => (

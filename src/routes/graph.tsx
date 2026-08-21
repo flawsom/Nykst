@@ -140,9 +140,9 @@ function GraphPage() {
         <TreePanel
           root={root}
           openIds={openIds}
-          selectedId={inspected.id}
+          activeId={inspected.id}
           onSelect={jumpTo}
-          role={role}
+          visible={(n) => canView(role, n)}
         />
 
         <section className="flex flex-1 flex-col min-w-0 p-5 overflow-y-auto">
@@ -187,7 +187,6 @@ function GraphPage() {
             />
           </div>
 
-          {/* Software Navigator Footer Info */}
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
             <span>Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})</span>
             <span>Click any node, eye icon 👁, or tree item to drill deeper</span>

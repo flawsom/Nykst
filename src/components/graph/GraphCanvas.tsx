@@ -41,8 +41,8 @@ function techLine(node: GraphNode) {
 function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
   return (
     <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
-      <rect x={-42} y={-10} width={84} height={20} rx={10} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
-      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[9px] font-mono font-medium">
+      <rect x={-36} y={-9} width={72} height={18} rx={9} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
+      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[8px] font-mono font-medium">
         👁 {label}
       </text>
     </g>
@@ -75,8 +75,8 @@ export function GraphCanvas({
 
   const points = useMemo(() => {
     const n = Math.max(children.length, 1);
-    const radiusX = n > 8 ? 390 : 340;
-    const radiusY = n > 8 ? 280 : 240;
+    const radiusX = n > 8 ? 400 : 350;
+    const radiusY = n > 8 ? 290 : 250;
 
     return children.map((child, i) => {
       const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
@@ -222,9 +222,9 @@ export function GraphCanvas({
                 {truncate(techLine(p.node), 34)}
               </text>
 
-              {/* Subtle, perfectly proportioned Eye Inspect Button */}
+              {/* Tiny, elegant Eye Inspect Button */}
               <g
-                transform={`translate(${w / 2 - 22}, 0)`}
+                transform={`translate(${w / 2 - 20}, 0)`}
                 className="cursor-pointer group/eye"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -234,7 +234,7 @@ export function GraphCanvas({
                 <circle
                   cx={0}
                   cy={0}
-                  r={10}
+                  r={8}
                   fill="var(--surface-2)"
                   stroke={kindColor[childKind]}
                   strokeWidth={0.8}
@@ -244,7 +244,7 @@ export function GraphCanvas({
                   x={0}
                   y={3}
                   textAnchor="middle"
-                  className="fill-primary text-[9px]"
+                  className="fill-primary text-[7px]"
                 >
                   👁
                 </text>
