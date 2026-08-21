@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { GraphNode, NodeKind } from "@/lib/graph-data";
+import { Eye } from "lucide-react";
 
 const kindColor: Record<NodeKind, string> = {
   org: "var(--primary)",
@@ -41,9 +42,9 @@ function techLine(node: GraphNode) {
 function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
   return (
     <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
-      <rect x={-46} y={-12} width={92} height={24} rx={12} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
-      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-medium">
-        {truncate(label, 14)}
+      <rect x={-52} y={-12} width={104} height={24} rx={12} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
+      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-medium flex items-center gap-1">
+        👁 {label}
       </text>
     </g>
   );
@@ -73,10 +74,8 @@ export function GraphCanvas({
   const cx = W / 2;
   const cy = H / 2;
 
-  // Perfect circular arrangement with dynamic radius to ensure zero touching or overlap
   const points = useMemo(() => {
     const n = Math.max(children.length, 1);
-    // Expand radius for larger node counts to guarantee picture-perfect spacing
     const radiusX = n > 8 ? 390 : 340;
     const radiusY = n > 8 ? 280 : 240;
 
@@ -103,7 +102,6 @@ export function GraphCanvas({
 
         <circle cx={cx} cy={cy} r={210} fill="url(#haloGrad)" className="animate-halo" />
 
-        {/* Clean radial connecting lines */}
         {points.map((p) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           return (
@@ -169,7 +167,7 @@ export function GraphCanvas({
             x={cx}
             y={cy + 48}
             color={kindColor[center.kind]}
-            label="Inspect Details"
+            label="Inspect (Eye)"
             onClick={() => onInspect(center)}
           />
         </g>
@@ -183,11 +181,10 @@ export function GraphCanvas({
             <g
               key={p.node.id}
               transform={`translate(${mounted ? p.x : cx}, ${mounted ? p.y : cy})`}
-              className="cursor-pointer transition-transform duration-500 ease-out group"
+              className="transition-transform duration-500 ease-out group"
               style={{ transitionDelay: `${i * 30}ms`, opacity: mounted ? 1 : 0 }}
               onMouseEnter={() => setHovered(p.node.id)}
               onMouseLeave={() => setHovered(null)}
-              onClick={() => onSelect(p.node)}
             >
               <rect
                 x={-w / 2}
@@ -198,28 +195,61 @@ export function GraphCanvas({
                 fill={active ? "var(--surface-2)" : "var(--surface)"}
                 stroke={active ? kindColor[childKind] : "var(--border)"}
                 strokeWidth={active ? 2 : 1}
-                className="transition-all duration-300 shadow-xl"
+                className="transition-all duration-300 shadow-xl cursor-pointer"
+                onClick={() => onSelect(p.node)}
               />
               <circle
                 cx={-w / 2 + 20}
                 cy={-6}
                 r={5}
                 fill={kindColor[childKind]}
+                className="cursor-pointer"
+                onClick={() => onSelect(p.node)}
               />
               <text
                 x={-w / 2 + 36}
                 y={-4}
-                className="fill-foreground text-[13px] font-semibold tracking-tight"
+                className="fill-foreground text-[13px] font-semibold tracking-tight cursor-pointer"
+                onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, 22)}
+                {truncate(p.node.label, 18)}
               </text>
               <text
                 x={-w / 2 + 36}
                 y={14}
-                className="fill-muted-foreground font-mono text-[10px]"
+                className="fill-muted-foreground font-mono text-[10px] cursor-pointer"
+                onClick={() => onSelect(p.node)}
               >
-                {truncate(techLine(p.node), 38)}
+                {truncate(techLine(p.node), 32)}
               </text>
+
+              {/* Eye Inspect Button on each node */}
+              <g
+                transform={`translate(${w / 2 - 28}, 0)`}
+                className="cursor-pointer group/eye"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInspect(p.node);
+                }}
+              >
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={14}
+                  fill="var(--surface-2)"
+                  stroke={kindColor[childKind]}
+                  strokeWidth={1}
+                  className="transition-transform group-hover/eye:scale-110"
+                />
+                <text
+                  x={0}
+                  y={4}
+                  textAnchor="middle"
+                  className="fill-primary text-[10px]"
+                >
+                  👁
+                </text>
+              </g>
             </g>
           );
         })}

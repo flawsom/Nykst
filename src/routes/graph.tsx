@@ -1,13 +1,12 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
-import { NodeDossier } from "@/components/graph/NodeDossier";
+import { NodeInspector } from "@/components/graph/NodeInspector";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
-import { ROLES, canView, setRoleId, useRole, type RoleId } from "@/lib/access";
+import { canView, useRole } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
-import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/graph")({
@@ -30,13 +29,6 @@ export const Route = createFileRoute("/graph")({
   }),
   component: GraphPage,
 });
-
-const PROVIDER_LABEL: Record<string, string> = {
-  github: "GitHub",
-  gitlab: "GitLab",
-  bitbucket: "Bitbucket",
-  azure: "Azure DevOps",
-};
 
 function GraphPage() {
   const [orgSlug, setOrgSlug] = useState("acme");
@@ -73,7 +65,6 @@ function GraphPage() {
     () => allChildren.filter((n) => canView(role, n)),
     [allChildren, role],
   );
-  const restricted = allChildren.length - centerChildren.length;
   const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
 
   const drill = (node: GraphNode) => {
@@ -119,16 +110,12 @@ function GraphPage() {
             <span key={node.id} className="flex shrink-0 items-center gap-1.5">
               {i > 0 && <span className="text-muted-foreground/60 text-xs">/</span>}
               <button
-                onClick={() => {
-                  setPathIds(pathIds.slice(0, i));
-                  setSelected(null);
-                }}
-                className={cn(
-                  "rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                onClick={() => setPathIds(pathIds.slice(0, i))}
+                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                   i === path.length - 1
-                    ? "bg-secondary text-secondary-foreground font-semibold"
-                    : "text-muted-foreground hover:bg-surface hover:text-foreground",
-                )}
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 {node.label}
               </button>
@@ -136,68 +123,36 @@ function GraphPage() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3 text-xs">
-          <div className="border-border bg-surface hidden items-center gap-1.5 rounded-lg border px-2.5 py-1 md:flex">
-            <span className="text-muted-foreground font-mono text-[11px]">
-              {PROVIDER_LABEL[provider] ?? provider} / {orgSlug}
-            </span>
-          </div>
-
-          {/* Intelligence Dashboard Link */}
+        <div className="flex items-center gap-3 shrink-0">
           <Link
             to="/intelligence"
-            className="bg-primary/10 border border-primary/40 hover:bg-primary/20 text-primary px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
           </Link>
-
-          <div className="flex items-center gap-1">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setRoleId(r.id)}
-                className={cn(
-                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
-                  role.id === r.id
-                    ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                    : "text-muted-foreground hover:bg-surface hover:text-foreground",
-                )}
-                title={r.blurb}
-              >
-                {r.name}
-              </button>
-            ))}
-          </div>
+          <span className="text-muted-foreground font-mono text-xs">
+            {orgSlug} ({provider})
+          </span>
         </div>
       </header>
 
-      {/* SOFTWARE NAVIGATOR SECTION */}
-      <div className="flex min-h-0 flex-1 p-5 gap-5">
-        <TreePanel root={root} openIds={openIds} activeId={center.id} onSelect={jumpTo} />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <TreePanel
+          root={root}
+          openIds={openIds}
+          selectedId={inspected.id}
+          onSelect={jumpTo}
+          role={role}
+        />
 
-        <section className="border-border bg-card/60 flex min-w-0 flex-1 flex-col rounded-2xl border p-5 backdrop-blur shadow-lg">
-          <div className="flex flex-wrap items-baseline justify-between gap-3 border-border border-b pb-4">
+        <section className="flex flex-1 flex-col min-w-0 p-5 overflow-y-auto">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
-                  {kindLabel[center.kind]}
-                </span>
-                {restricted > 0 && (
-                  <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-mono">
-                    {restricted} restricted for {role.name.toLowerCase()}
-                  </span>
-                )}
-              </div>
-              <h1 className="text-gradient mt-1 text-2xl font-semibold tracking-tight">
-                {center.label}
-              </h1>
-            </div>
-
-            {center.repo && (
-              <span className="border-border bg-surface rounded-lg border px-2.5 py-1 font-mono text-xs text-muted-foreground">
-                {center.repo}
+              <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
+                {kindLabel[center.kind]}
               </span>
-            )}
+              <h1 className="text-2xl font-bold tracking-tight mt-0.5">{center.label}</h1>
+            </div>
           </div>
 
           {center.summary && (
@@ -228,14 +183,14 @@ function GraphPage() {
               onSelect={drill}
               onInspect={setDossier}
               selectedId={selected?.id}
-              technical={role.id === "engineer" || role.id === "architect"}
+              technical={true}
             />
           </div>
 
           {/* Software Navigator Footer Info */}
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
             <span>Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})</span>
-            <span>Click any node or tree item to drill deeper</span>
+            <span>Click any node, eye icon 👁, or tree item to drill deeper</span>
           </div>
         </section>
 
@@ -251,12 +206,10 @@ function GraphPage() {
 
       <OnboardingTour />
 
-      <NodeDossier
+      <NodeInspector
         node={dossier}
-        role={role}
         open={dossier !== null}
         onClose={() => setDossier(null)}
-        onOpenNode={jumpTo}
       />
     </main>
   );
