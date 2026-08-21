@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { GraphNode, NodeKind } from "@/lib/graph-data";
-import { Eye } from "lucide-react";
 
 const kindColor: Record<NodeKind, string> = {
   org: "var(--primary)",
@@ -42,8 +41,8 @@ function techLine(node: GraphNode) {
 function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
   return (
     <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
-      <rect x={-52} y={-12} width={104} height={24} rx={12} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
-      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-medium flex items-center gap-1">
+      <rect x={-42} y={-10} width={84} height={20} rx={10} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
+      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[9px] font-mono font-medium">
         👁 {label}
       </text>
     </g>
@@ -167,7 +166,7 @@ export function GraphCanvas({
             x={cx}
             y={cy + 48}
             color={kindColor[center.kind]}
-            label="Inspect (Eye)"
+            label="Inspect"
             onClick={() => onInspect(center)}
           />
         </g>
@@ -176,7 +175,7 @@ export function GraphCanvas({
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           const w = 240;
-          const h = 52;
+          const h = 48;
           return (
             <g
               key={p.node.id}
@@ -191,41 +190,41 @@ export function GraphCanvas({
                 y={-h / 2}
                 width={w}
                 height={h}
-                rx={14}
+                rx={12}
                 fill={active ? "var(--surface-2)" : "var(--surface)"}
                 stroke={active ? kindColor[childKind] : "var(--border)"}
                 strokeWidth={active ? 2 : 1}
-                className="transition-all duration-300 shadow-xl cursor-pointer"
+                className="transition-all duration-300 shadow-lg cursor-pointer"
                 onClick={() => onSelect(p.node)}
               />
               <circle
-                cx={-w / 2 + 20}
-                cy={-6}
-                r={5}
+                cx={-w / 2 + 18}
+                cy={-4}
+                r={4}
                 fill={kindColor[childKind]}
                 className="cursor-pointer"
                 onClick={() => onSelect(p.node)}
               />
               <text
-                x={-w / 2 + 36}
-                y={-4}
-                className="fill-foreground text-[13px] font-semibold tracking-tight cursor-pointer"
+                x={-w / 2 + 32}
+                y={-2}
+                className="fill-foreground text-[12px] font-semibold tracking-tight cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
                 {truncate(p.node.label, 18)}
               </text>
               <text
-                x={-w / 2 + 36}
+                x={-w / 2 + 32}
                 y={14}
-                className="fill-muted-foreground font-mono text-[10px] cursor-pointer"
+                className="fill-muted-foreground font-mono text-[9px] cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(techLine(p.node), 32)}
+                {truncate(techLine(p.node), 34)}
               </text>
 
-              {/* Eye Inspect Button on each node */}
+              {/* Subtle, perfectly proportioned Eye Inspect Button */}
               <g
-                transform={`translate(${w / 2 - 28}, 0)`}
+                transform={`translate(${w / 2 - 22}, 0)`}
                 className="cursor-pointer group/eye"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -235,17 +234,17 @@ export function GraphCanvas({
                 <circle
                   cx={0}
                   cy={0}
-                  r={14}
+                  r={10}
                   fill="var(--surface-2)"
                   stroke={kindColor[childKind]}
-                  strokeWidth={1}
+                  strokeWidth={0.8}
                   className="transition-transform group-hover/eye:scale-110"
                 />
                 <text
                   x={0}
-                  y={4}
+                  y={3}
                   textAnchor="middle"
-                  className="fill-primary text-[10px]"
+                  className="fill-primary text-[9px]"
                 >
                   👁
                 </text>
