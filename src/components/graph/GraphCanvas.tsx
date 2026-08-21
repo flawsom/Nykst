@@ -41,9 +41,9 @@ function techLine(node: GraphNode) {
 function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
   return (
     <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
-      <rect x={-36} y={-9} width={72} height={18} rx={9} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
-      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[8px] font-mono font-medium">
-        👁 {label}
+      <rect x={-48} y={-10} width={96} height={20} rx={10} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
+      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-semibold">
+        ℹ {label}
       </text>
     </g>
   );
@@ -166,7 +166,7 @@ export function GraphCanvas({
             x={cx}
             y={cy + 48}
             color={kindColor[center.kind]}
-            label="Inspect"
+            label="Inspect Details"
             onClick={() => onInspect(center)}
           />
         </g>
@@ -222,10 +222,10 @@ export function GraphCanvas({
                 {truncate(techLine(p.node), 34)}
               </text>
 
-              {/* Tiny, elegant Eye Inspect Button */}
+              {/* Original 'i' badge button on each child node */}
               <g
-                transform={`translate(${w / 2 - 20}, 0)`}
-                className="cursor-pointer group/eye"
+                transform={`translate(${w / 2 - 24}, 0)`}
+                className="cursor-pointer group/info"
                 onClick={(e) => {
                   e.stopPropagation();
                   onInspect(p.node);
@@ -234,19 +234,19 @@ export function GraphCanvas({
                 <circle
                   cx={0}
                   cy={0}
-                  r={8}
+                  r={9}
                   fill="var(--surface-2)"
                   stroke={kindColor[childKind]}
-                  strokeWidth={0.8}
-                  className="transition-transform group-hover/eye:scale-110"
+                  strokeWidth={1}
+                  className="transition-transform group-hover/info:scale-110"
                 />
                 <text
                   x={0}
-                  y={3}
+                  y={3.5}
                   textAnchor="middle"
-                  className="fill-primary text-[7px]"
+                  className="fill-primary text-[10px] font-serif font-bold italic"
                 >
-                  👁
+                  i
                 </text>
               </g>
             </g>
