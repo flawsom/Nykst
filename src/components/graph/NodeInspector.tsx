@@ -269,7 +269,7 @@ export function NodeInspector({
             {/* Layer 5: Runtime Metrics */}
             {tab === "runtime" && (
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <div className="border border-border bg-surface p-4 rounded-xl space-y-1">
                     <span className="text-[10px] font-mono uppercase text-primary">p99 Latency</span>
                     <div className="text-sm font-semibold">42 ms</div>
@@ -279,18 +279,29 @@ export function NodeInspector({
                     <div className="text-sm font-semibold">14.2k req/s</div>
                   </div>
                   <div className="border border-border bg-surface p-4 rounded-xl space-y-1">
+                    <span className="text-[10px] font-mono uppercase text-primary">Concurrency</span>
+                    <div className="text-sm font-semibold">1,280 active</div>
+                  </div>
+                  <div className="border border-border bg-surface p-4 rounded-xl space-y-1">
                     <span className="text-[10px] font-mono uppercase text-primary">Error Rate</span>
                     <div className="text-sm font-semibold text-emerald-400">0.001%</div>
                   </div>
                 </div>
 
                 <div className="border border-border bg-surface p-4 rounded-xl space-y-3">
-                  <span className="text-[11px] font-mono uppercase text-primary font-semibold">Reality-Checking Telemetry (Static → Runtime)</span>
+                  <span className="text-[11px] font-mono uppercase text-primary font-semibold">Causal Telemetry: Static World → Reality</span>
+                  <div className="bg-card p-3 rounded-lg border border-border font-mono text-xs text-foreground mb-2 flex items-center justify-between">
+                    <span>Code Change</span>
+                    <span className="text-primary">→</span>
+                    <span>Runtime Behavior Changed</span>
+                    <span className="text-primary">→</span>
+                    <span className="text-emerald-400">Pain Point Isolated</span>
+                  </div>
                   <div className="text-xs font-mono text-muted-foreground space-y-1.5">
-                    <div>• CPU Utilization: <span className="text-foreground">1.2 vCPU average (Normal)</span></div>
-                    <div>• Memory Heap: <span className="text-foreground">512 MB active</span></div>
-                    <div>• Database Performance: <span className="text-foreground">Connection pool utilization at 32%</span></div>
-                    <div>• API Failure Rate: <span className="text-emerald-400">0.00% over last 24 hours</span></div>
+                    <div>• Errors & Logs: <span className="text-foreground">Zero unhandled exceptions; 4 warning traces in audit logs</span></div>
+                    <div>• CPU & Memory: <span className="text-foreground">1.2 vCPU avg, 512 MB heap stable under load</span></div>
+                    <div>• Database Performance: <span className="text-foreground">Query duration p95 &lt; 12ms; connection pool healthy</span></div>
+                    <div>• API Failures & Queue Retries: <span className="text-foreground">0 failures; 2 dead-letter queue retries successfully re-routed</span></div>
                   </div>
                 </div>
               </div>
@@ -300,11 +311,14 @@ export function NodeInspector({
             {tab === "incidents" && (
               <div className="space-y-4">
                 <div className="border border-border bg-surface p-4 rounded-xl space-y-3">
-                  <span className="text-[11px] font-mono uppercase text-primary font-semibold">Incident Resolution Pipeline</span>
-                  <div className="bg-card p-4 rounded-lg border border-border font-mono text-xs space-y-2">
-                    <div className="text-emerald-400 font-semibold">INC-8921 (Resolved in 14m)</div>
-                    <div className="text-muted-foreground text-[11px] leading-relaxed">
-                      Symptoms → Hypothesis → Evidence Root Cause → Affected Components → Business Impact → Resolution → Turnaround.
+                  <span className="text-[11px] font-mono uppercase text-primary font-semibold">Casualty Incident & Resolution Pipeline</span>
+                  <div className="bg-card p-4 rounded-lg border border-border font-mono text-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-emerald-400 font-semibold">INC-8921: Upstream DNS Timeout Cascade</span>
+                      <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-[10px]">Resolved in 14m</span>
+                    </div>
+                    <div className="text-muted-foreground text-[11px] leading-relaxed border-t border-border pt-2">
+                      <strong className="text-foreground">Pipeline:</strong> Incidents → Symptoms → Hypothesis → Evidence Root Cause → Affected Components → Business Impact → Resolutions → Turnaround.
                     </div>
                   </div>
                 </div>
@@ -322,7 +336,7 @@ export function NodeInspector({
                     </div>
                     <div className="bg-card p-3 rounded-lg border border-border">
                       <strong className="text-foreground block mb-1">3. What eventually proved correct?</strong>
-                      Adding circuit breaker fallback isolation permanently resolved cascade failures.
+                      Adding circuit breaker fallback isolation permanently resolved cascade failures and updated the system ontology.
                     </div>
                   </div>
                 </div>
