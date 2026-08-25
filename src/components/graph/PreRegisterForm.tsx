@@ -26,11 +26,11 @@ const SIZE_OPTIONS = [
 ];
 
 const TIME_OPTIONS = [
-  "Less than 1 hour a week",
-  "1–3 hours a week",
-  "4–8 hours a week",
-  "1–2 days a week",
-  "More than half my week",
+  "2 to 5 hours a week",
+  "8 to 10 hours a week",
+  "15 to 20 hours a week",
+  "21 to 30 hours a week",
+  "31+ hours a week",
 ];
 
 const HARDEST_OPTIONS = [
@@ -61,6 +61,9 @@ interface Answers {
   dream_feature: string;
   would_use: string;
   closing_thoughts: string;
+  email: string;
+  linkedin: string;
+  x_account: string;
 }
 
 const EMPTY: Answers = {
@@ -73,6 +76,9 @@ const EMPTY: Answers = {
   dream_feature: "",
   would_use: "",
   closing_thoughts: "",
+  email: "",
+  linkedin: "",
+  x_account: "",
 };
 
 const STEP_TITLES = [
@@ -85,6 +91,7 @@ const STEP_TITLES = [
   "If you were building Nykst, what one feature would make you use it every single day?",
   "If Nykst saved you several hours a week, would you use it?",
   "Anything else you want us to know?",
+  "Where can we stay in touch? (Optional)",
 ];
 
 export function PreRegisterForm({ onClose }: { onClose: () => void }) {
@@ -114,6 +121,10 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         return a.dream_feature.trim().length > 3;
       case 7:
         return !!a.would_use;
+      case 8:
+        return true;
+      case 9:
+        return true;
       default:
         return true;
     }
@@ -141,6 +152,9 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         dream_feature: a.dream_feature.trim(),
         would_use: a.would_use,
         closing_thoughts: a.closing_thoughts.trim(),
+        email: a.email.trim() || null,
+        linkedin: a.linkedin.trim() || null,
+        x_account: a.x_account.trim() || null,
         created_at: new Date().toISOString(),
       };
 
@@ -378,6 +392,35 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                     onChange={(e) => set("closing_thoughts", e.target.value)}
                     className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
                     autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 9 && (
+                <div className="space-y-3">
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Optional. Share one or more ways to stay connected. You can leave every field blank.
+                  </p>
+                  <input
+                    type="email"
+                    placeholder="Email address (optional)"
+                    value={a.email}
+                    onChange={(e) => set("email", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                  />
+                  <input
+                    type="text"
+                    placeholder="LinkedIn profile link or account (optional)"
+                    value={a.linkedin}
+                    onChange={(e) => set("linkedin", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                  />
+                  <input
+                    type="text"
+                    placeholder="X account or profile link (optional)"
+                    value={a.x_account}
+                    onChange={(e) => set("x_account", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
                   />
                 </div>
               )}
