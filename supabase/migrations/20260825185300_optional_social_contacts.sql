@@ -4,11 +4,15 @@ ALTER TABLE public.pre_registrations
 
 ALTER TABLE public.pre_registrations
   ADD COLUMN IF NOT EXISTS linkedin TEXT,
-  ADD COLUMN IF NOT EXISTS x_account TEXT;
+  ADD COLUMN IF NOT EXISTS x_account TEXT,
+  ADD COLUMN IF NOT EXISTS knowledge_location TEXT,
+  ADD COLUMN IF NOT EXISTS hard_won_insight TEXT;
 
 COMMENT ON COLUMN public.pre_registrations.email IS 'Optional contact email supplied by the respondent.';
 COMMENT ON COLUMN public.pre_registrations.linkedin IS 'Optional LinkedIn profile URL or account.';
 COMMENT ON COLUMN public.pre_registrations.x_account IS 'Optional X/Twitter profile URL or account.';
+COMMENT ON COLUMN public.pre_registrations.knowledge_location IS 'Where the respondent stores solutions, incident learnings, and architectural decisions.';
+COMMENT ON COLUMN public.pre_registrations.hard_won_insight IS 'The respondent’s hard-won engineering insight from experience.';
 
 NOTIFY pgrst, 'reload schema';
 

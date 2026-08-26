@@ -61,6 +61,8 @@ interface Answers {
   dream_feature: string;
   would_use: string;
   closing_thoughts: string;
+  knowledge_location: string;
+  hard_won_insight: string;
   email: string;
   linkedin: string;
   x_account: string;
@@ -76,6 +78,8 @@ const EMPTY: Answers = {
   dream_feature: "",
   would_use: "",
   closing_thoughts: "",
+  knowledge_location: "",
+  hard_won_insight: "",
   email: "",
   linkedin: "",
   x_account: "",
@@ -90,7 +94,9 @@ const STEP_TITLES = [
   "What is the hardest part when making a change?",
   "If you were building Nykst, what one feature would make you use it every single day?",
   "If Nykst saved you several hours a week, would you use it?",
-  "Anything else you want us to know?",
+  "When an AI changes your code, how do you know what else could break—and how do you currently verify the impact?",
+  "When you solve a difficult problem, where does that knowledge live so the next engineer—or the AI—can use it?",
+  "What hard-won lesson from your experience do smart people still misunderstand about your work, and what do they continue to get wrong?",
   "Where can we stay in touch? (Optional)",
 ];
 
@@ -122,8 +128,12 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
       case 7:
         return !!a.would_use;
       case 8:
-        return true;
+        return a.frustration.trim().length > 3;
       case 9:
+        return a.knowledge_location.trim().length > 3;
+      case 10:
+        return a.hard_won_insight.trim().length > 3;
+      case 11:
         return true;
       default:
         return true;
@@ -152,6 +162,8 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         dream_feature: a.dream_feature.trim(),
         would_use: a.would_use,
         closing_thoughts: a.closing_thoughts.trim(),
+        knowledge_location: a.knowledge_location.trim(),
+        hard_won_insight: a.hard_won_insight.trim(),
         email: a.email.trim() || null,
         linkedin: a.linkedin.trim() || null,
         x_account: a.x_account.trim() || null,
@@ -387,7 +399,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                 <div>
                   <textarea
                     rows={4}
-                    placeholder="Any thoughts, feedback, or specific questions..."
+                    placeholder="Describe how you currently review the possible impact of an AI-generated code change..."
                     value={a.closing_thoughts}
                     onChange={(e) => set("closing_thoughts", e.target.value)}
                     className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
@@ -397,6 +409,32 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
               )}
 
               {step === 9 && (
+                <div>
+                  <textarea
+                    rows={4}
+                    placeholder="Where do solutions, incident learnings, and architectural decisions live today?"
+                    value={a.knowledge_location}
+                    onChange={(e) => set("knowledge_location", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 10 && (
+                <div>
+                  <textarea
+                    rows={5}
+                    placeholder="Share the insight you learned through experience that others still miss..."
+                    value={a.hard_won_insight}
+                    onChange={(e) => set("hard_won_insight", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 11 && (
                 <div className="space-y-3">
                   <p className="text-muted-foreground text-xs leading-relaxed">
                     Optional. Share one or more ways to stay connected. You can leave every field blank.

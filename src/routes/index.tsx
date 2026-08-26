@@ -203,7 +203,7 @@ function Landing() {
             onClick={() => setAdvantages(true)}
             className="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/50 rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors flex items-center gap-2 shadow-md shadow-emerald-600/20"
           >
-            <Sparkles className="size-4 text-emerald-200" /> Advantages of using Nykst
+            Advantages of using Nykst
           </button>
         </div>
 
