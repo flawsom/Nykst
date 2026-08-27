@@ -10,34 +10,39 @@ interface Reason {
 
 const ADVANTAGE_REASONS: Reason[] = [
   {
-    title: "1. Nykst gives your software a memory",
-    subtitle: "The most expensive part of engineering is repeatedly rediscovering what the organization already learned.",
-    pitch: "A repository tells you what the system is. An incident ticket tells you what went wrong once. A design document tells you what someone intended. Nykst connects all three with the evidence from production, so an engineer can understand not only where to change the code, but why it exists and what the team already learned. That turns institutional knowledge from scattered history into an asset the whole organization can use.",
+    title: "1. Stop paying for the same understanding twice",
+    subtitle: "Every undocumented fix becomes a future investigation—and every lost engineer takes context with them.",
+    pitch: "Your team solves hard problems every week, but the reasoning often disappears across commits, dashboards, tickets, and private conversations. Nykst connects those fragments into a living record of what changed, why it changed, and what the system taught you afterward. The advantage is direct: less rediscovery, faster onboarding, and better decisions every time the codebase changes.",
   },
   {
-    title: "2. See the whole system, not just a repository",
-    subtitle: "The real unit of software is the connected system: code, services, data, people, and production behavior.",
-    pitch: "A change that looks local in one repository can alter an API contract, a queue, a database query, and a customer workflow somewhere else. Nykst builds one understandable view across those boundaries. Instead of asking engineers to assemble the picture manually, it gives them the system context first—so decisions are made against reality rather than an isolated file tree.",
+    title: "2. Build the system that learns while you operate it",
+    subtitle: "The value of a software organization should compound instead of resetting after every incident or handoff.",
+    pitch: "Nykst turns engineering history into usable context. A verified fix strengthens future diagnosis; an accepted design decision guides future changes; a rejected approach becomes a boundary the team can avoid. Over time, your system becomes more understandable because it carries forward the evidence your organization has earned—not because people are forced to remember everything themselves.",
   },
   {
-    title: "3. Make important changes with evidence",
-    subtitle: "Speed is valuable only when the team can see the consequences before customers do.",
-    pitch: "Before a team changes an authentication flow or rewrites a shared service, Nykst traces the likely blast radius across dependencies, owners, deployments, and runtime signals. It does not replace engineering judgment; it gives that judgment the missing evidence. Teams can move faster because the question changes from ‘What might this affect?’ to ‘Which affected paths have we verified?’.",
+    title: "3. Know what a code change can disturb before it reaches users",
+    subtitle: "The dangerous part of a deployment is rarely the line you edited—it is the dependency you did not see.",
+    pitch: "A small change to an authentication flow can affect an API gateway, a queue consumer, a database migration, and a customer journey. Nykst traces those relationships across your actual repositories, services, configuration, and runtime signals. Instead of approving changes on intuition alone, your team can review the likely blast radius and verify the paths that matter most.",
   },
   {
-    title: "4. Turn every incident into a future advantage",
-    subtitle: "A resolved incident should improve the next diagnosis—not disappear into an archive.",
-    pitch: "Nykst preserves the chain from symptom to hypothesis, evidence, root cause, affected components, business impact, and verified resolution. When a similar failure appears again, the team sees what was tried, what was wrong, and what actually worked. The organization becomes more capable with every incident instead of paying the same learning cost twice.",
+    title: "4. Make expert knowledge belong to the organization",
+    subtitle: "Critical system understanding should not live inside one person’s memory or one team’s private channel.",
+    pitch: "When a staff engineer leaves, the organization should not lose the reasoning behind its architecture. Nykst preserves the connection between ownership, decisions, code, incidents, and operational outcomes. New engineers can work from the organization’s accumulated evidence, while experienced engineers spend less time repeating explanations that should already be available to the team.",
   },
   {
-    title: "5. Build with the confidence of organizational context",
-    subtitle: "The best development environment is one that understands how your company actually works.",
-    pitch: "Nykst learns from your architecture decisions, accepted changes, rejected approaches, ownership patterns, and production outcomes. That context helps engineers and AI assistants work within the organization’s real constraints—not a generic imagined codebase. The result is fewer surprises, clearer reviews, and development that compounds the expertise your team has earned.",
-  }
+    title: "5. Replace reactive firefighting with prepared engineering",
+    subtitle: "The best time to understand a failure is before it becomes a customer-facing incident.",
+    pitch: "Nykst links code changes to runtime behavior: errors, logs, traces, requests, latency, throughput, retries, concurrency, queues, CPU, memory, and database performance. When behavior changes, the team can investigate the causal path rather than search through disconnected tools. That means fewer blind war rooms and a clearer route from signal to root cause to verified resolution.",
+  },
+  {
+    title: "6. Give every engineering decision a defensible reason",
+    subtitle: "Good teams do not need more opinions; they need better evidence at the moment decisions are made.",
+    pitch: "Nykst lets your engineers and AI work from the company’s real architecture, history, constraints, and outcomes. It can answer why a component exists, what a proposed change may affect, what was tried before, and which solution actually held up in production. That makes development better in every use: more context before action, fewer avoidable surprises, and decisions that become easier to trust.",
+  },
 ];
 
 export function AdvantagesForm({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState(0); // 0 to 4 for reasons, 5 for final contact
+  const [step, setStep] = useState(0); // One step per reason, followed by the final contact step
   const [feedback, setFeedback] = useState<Record<number, string>>({});
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
@@ -123,7 +128,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
             {!isContactStep && currentReason ? (
               <div className="space-y-4">
                 <div>
-                  <span className="text-emerald-400 text-xs font-mono uppercase tracking-widest font-bold">Reason {step + 1}</span>
+                  <span className="text-emerald-400 text-xs font-mono uppercase tracking-widest font-bold">Advantage {step + 1}</span>
                   <h2 className="text-xl font-semibold tracking-tight text-foreground mt-1">
                     {currentReason.title}
                   </h2>
