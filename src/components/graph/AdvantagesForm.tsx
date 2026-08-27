@@ -8,31 +8,31 @@ interface Reason {
   pitch: string;
 }
 
-const HOLY_GRAIL_REASONS: Reason[] = [
+const ADVANTAGE_REASONS: Reason[] = [
   {
-    title: "1. The Amnesiac Codebase Trap",
-    subtitle: "Stop running software that forgets its own history every time context disappears.",
-    pitch: "Your code lives in GitHub, your production behavior lives in monitoring, your incidents live in tickets, and your decisions live in dead Slack threads. When something changes, everyone starts digging. NYKST fuses structure, history, decisions, and outcomes into a permanent cognitive layer so your organization never loses context again."
+    title: "1. Nykst gives your software a memory",
+    subtitle: "The most expensive part of engineering is repeatedly rediscovering what the organization already learned.",
+    pitch: "A repository tells you what the system is. An incident ticket tells you what went wrong once. A design document tells you what someone intended. Nykst connects all three with the evidence from production, so an engineer can understand not only where to change the code, but why it exists and what the team already learned. That turns institutional knowledge from scattered history into an asset the whole organization can use.",
   },
   {
-    title: "2. The Universal Software Soul",
-    subtitle: "Datadog watches servers, Stripe watches money, Git watches code. But no one connected them.",
-    pitch: "NYKST is the missing link—the software soul that locks code, telemetry, business logic, and damage prevention into a single closed learning loop. It is the definitive technical cheat code that stops your system from bleeding context forever."
+    title: "2. See the whole system, not just a repository",
+    subtitle: "The real unit of software is the connected system: code, services, data, people, and production behavior.",
+    pitch: "A change that looks local in one repository can alter an API contract, a queue, a database query, and a customer workflow somewhere else. Nykst builds one understandable view across those boundaries. Instead of asking engineers to assemble the picture manually, it gives them the system context first—so decisions are made against reality rather than an isolated file tree.",
   },
   {
-    title: "3. Eliminate Corporate Suicide by 'Thinking About It'",
-    subtitle: "Indecision is the corporate disease that paralyzes engineering velocity.",
-    pitch: "When your system crashes, your engineers sweat in Zoom war rooms for six hours guessing and bleeding money while rediscovering old code. NYKST gives you an unbreakable persistent memory layer so you deploy with absolute mathematical certainty before your competitors even know what hit them."
+    title: "3. Make important changes with evidence",
+    subtitle: "Speed is valuable only when the team can see the consequences before customers do.",
+    pitch: "Before a team changes an authentication flow or rewrites a shared service, Nykst traces the likely blast radius across dependencies, owners, deployments, and runtime signals. It does not replace engineering judgment; it gives that judgment the missing evidence. Teams can move faster because the question changes from ‘What might this affect?’ to ‘Which affected paths have we verified?’.",
   },
   {
-    title: "4. Building Software That Remembers",
-    subtitle: "Move from digital archaeology to self-correcting system intelligence.",
-    pitch: "The technical purists will tell you self-correcting closed-loop software consciousness is impossible. They said the same thing about phones with no buttons. Are you content living inside their technical limitations, or will you join the definitive engineering revolution?"
+    title: "4. Turn every incident into a future advantage",
+    subtitle: "A resolved incident should improve the next diagnosis—not disappear into an archive.",
+    pitch: "Nykst preserves the chain from symptom to hypothesis, evidence, root cause, affected components, business impact, and verified resolution. When a similar failure appears again, the team sees what was tried, what was wrong, and what actually worked. The organization becomes more capable with every incident instead of paying the same learning cost twice.",
   },
   {
-    title: "5. Claim the Definitive Infrastructure Monopoly",
-    subtitle: "Stop building bloated, terrifying monsters of hidden dependencies.",
-    pitch: "Look at your current codebase. Is it a beautifully sculpted piece of engineering, or a terrifying monster you're scared to touch? NYKST transforms your architecture into a self-improving masterpiece, securing a zero-churn infrastructure monopoly for your enterprise."
+    title: "5. Build with the confidence of organizational context",
+    subtitle: "The best development environment is one that understands how your company actually works.",
+    pitch: "Nykst learns from your architecture decisions, accepted changes, rejected approaches, ownership patterns, and production outcomes. That context helps engineers and AI assistants work within the organization’s real constraints—not a generic imagined codebase. The result is fewer surprises, clearer reviews, and development that compounds the expertise your team has earned.",
   }
 ];
 
@@ -44,7 +44,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  const totalSteps = HOLY_GRAIL_REASONS.length + 1; // 5 reasons + 1 contact step
+  const totalSteps = ADVANTAGE_REASONS.length + 1; // 5 reasons + 1 contact step
 
   const handleFeedbackChange = (text: string) => {
     setFeedback((prev) => ({ ...prev, [step]: text }));
@@ -60,17 +60,17 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
           linkedin: linkedin.trim(),
           created_at: new Date().toISOString(),
         };
-        const existing = JSON.parse(localStorage.getItem("nykst.holy_grail_submissions") || "[]");
+        const existing = JSON.parse(localStorage.getItem("nykst.advantages_submissions") || "[]");
         existing.push(payload);
-        localStorage.setItem("nykst.holy_grail_submissions", JSON.stringify(existing));
+        localStorage.setItem("nykst.advantages_submissions", JSON.stringify(existing));
       } catch (e) {}
       setSaving(false);
       setDone(true);
     }, 500);
   };
 
-  const isContactStep = step === HOLY_GRAIL_REASONS.length;
-  const currentReason = HOLY_GRAIL_REASONS[step];
+  const isContactStep = step === ADVANTAGE_REASONS.length;
+  const currentReason = ADVANTAGE_REASONS[step];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl">
@@ -105,7 +105,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <span className="text-emerald-400 font-mono text-xs uppercase tracking-wider flex items-center gap-1.5 font-semibold">
-                <Sparkles className="size-3.5" /> Holy Grail Advantages · Step {step + 1} of {totalSteps}
+                <Sparkles className="size-3.5" /> Why teams choose Nykst · Step {step + 1} of {totalSteps}
               </span>
               <div className="flex gap-1">
                 {Array.from({ length: totalSteps }).map((_, i) => (
@@ -155,10 +155,10 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                 <div>
                   <span className="text-emerald-400 text-xs font-mono uppercase tracking-widest font-bold">Final Step</span>
                   <h2 className="text-xl font-semibold tracking-tight text-foreground mt-1">
-                    Claim Your Infrastructure Monopoly
+                    See Nykst in your own system
                   </h2>
                   <p className="text-muted-foreground text-xs mt-1 font-mono">
-                    Enter your email and LinkedIn profile to finalize your access.
+                    Leave your details to hear when early access opens.
                   </p>
                 </div>
 
