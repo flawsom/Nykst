@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from "lucide-react";
 
@@ -128,7 +129,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
       case 7:
         return !!a.would_use;
       case 8:
-        return a.frustration.trim().length > 3;
+        return a.closing_thoughts.trim().length > 3;
       case 9:
         return a.knowledge_location.trim().length > 3;
       case 10:
@@ -144,7 +145,11 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
 
   const toggleHardest = (v: string) => {
     const has = a.hardest_parts.includes(v);
-    if (has) set("hardest_parts", a.hardest_parts.filter((x) => x !== v));
+    if (has)
+      set(
+        "hardest_parts",
+        a.hardest_parts.filter((x) => x !== v),
+      );
     else if (a.hardest_parts.length < 3) set("hardest_parts", [...a.hardest_parts, v]);
   };
 
@@ -152,7 +157,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
     setSaving(true);
     setError(null);
     try {
-      const payload = {
+      const payload: TablesInsert<"pre_registration"> = {
         first_name: a.first_name.trim(),
         role: a.role,
         company_size: a.company_size,
@@ -167,7 +172,6 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         email: a.email.trim() || null,
         linkedin: a.linkedin.trim() || null,
         x_account: a.x_account.trim() || null,
-        created_at: new Date().toISOString(),
       };
 
       try {
@@ -178,26 +182,29 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         console.error("Local storage backup error:", e);
       }
 
-      try {
-        await supabase.from("pre_registrations").insert(payload);
-      } catch (supabaseErr) {
-        console.log("Supabase insert skipped, saved locally.");
+      const { error: supabaseError } = await supabase.from("pre_registration").insert(payload);
+
+      if (supabaseError) {
+        throw new Error(supabaseError.message);
       }
 
-      setSaving(false);
       setDone(true);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      console.error("Pre-registration submission failed:", e);
+      setError(
+        e instanceof Error
+          ? `We couldn't save your request: ${e.message}`
+          : "We couldn't save your request. Please try again.",
+      );
+    } finally {
       setSaving(false);
-      setDone(true);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl">
       <div className="bg-background/85 absolute inset-0" onClick={onClose} />
-      <div
-        className="animate-rise border-border bg-card/95 relative w-full max-w-2xl rounded-2xl border p-8 shadow-2xl"
-      >
+      <div className="animate-rise border-border bg-card/95 relative w-full max-w-2xl rounded-2xl border p-8 shadow-2xl">
         <button
           onClick={onClose}
           className="text-muted-foreground hover:text-foreground absolute top-6 right-6 transition-colors"
@@ -210,9 +217,12 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
             <div className="bg-primary/25 text-primary mx-auto flex size-14 items-center justify-center rounded-full border border-primary/40">
               <Check className="size-7" />
             </div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">You're on the early access list</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              You're on the early access list
+            </h2>
             <p className="text-muted-foreground mx-auto max-w-md text-sm leading-relaxed">
-              Thank you, <span className="text-foreground font-medium">{a.first_name}</span>. Your preferences have been successfully recorded.
+              Thank you, <span className="text-foreground font-medium">{a.first_name}</span>. Your
+              preferences have been successfully recorded.
             </p>
             <button
               onClick={onClose}
@@ -233,7 +243,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                     key={i}
                     className={cn(
                       "h-1.5 w-6 rounded-full transition-all",
-                      i <= step ? "bg-primary" : "bg-border"
+                      i <= step ? "bg-primary" : "bg-border",
                     )}
                   />
                 ))}
@@ -250,7 +260,9 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
               {step === 0 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-muted-foreground mb-1.5 block text-xs font-medium">First Name</label>
+                    <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
+                      First Name
+                    </label>
                     <input
                       type="text"
                       placeholder="Alex"
@@ -273,7 +285,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                         "rounded-xl border p-3 text-left text-xs font-medium transition-all flex items-center justify-between",
                         a.role === r
                           ? "bg-primary/20 border-primary text-foreground font-semibold"
-                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
                       )}
                     >
                       <span>{r}</span>
@@ -293,7 +305,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                         "rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
                         a.company_size === s
                           ? "bg-primary/20 border-primary text-foreground font-semibold"
-                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
                       )}
                     >
                       <span>{s}</span>
@@ -326,11 +338,13 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                         "w-full rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
                         a.time_understanding_code === t
                           ? "bg-primary/20 border-primary text-foreground font-semibold"
-                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
                       )}
                     >
                       <span>{t}</span>
-                      {a.time_understanding_code === t && <Check className="size-4 text-primary shrink-0" />}
+                      {a.time_understanding_code === t && (
+                        <Check className="size-4 text-primary shrink-0" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -350,7 +364,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                             "rounded-xl border p-3 text-left text-xs font-medium transition-all flex items-center justify-between",
                             selected
                               ? "bg-primary/20 border-primary text-foreground font-semibold"
-                              : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2"
+                              : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
                           )}
                         >
                           <span>{h}</span>
@@ -385,7 +399,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                         "w-full rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
                         a.would_use === u
                           ? "bg-primary/20 border-primary text-foreground font-semibold"
-                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
                       )}
                     >
                       <span>{u}</span>
@@ -437,7 +451,8 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
               {step === 11 && (
                 <div className="space-y-3">
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    Optional. Share one or more ways to stay connected. You can leave every field blank.
+                    Optional. Share one or more ways to stay connected. You can leave every field
+                    blank.
                   </p>
                   <input
                     type="email"
@@ -478,7 +493,9 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                 >
                   <ArrowLeft className="size-3.5" /> Back
                 </button>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
 
               {step < last ? (
                 <button
@@ -488,7 +505,7 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                     "flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all",
                     canAdvance
                       ? "bg-primary text-primary-foreground hover:bg-primary-glow shadow-sm"
-                      : "bg-surface text-muted-foreground opacity-50 cursor-not-allowed border border-border"
+                      : "bg-surface text-muted-foreground opacity-50 cursor-not-allowed border border-border",
                   )}
                 >
                   Continue <ArrowRight className="size-3.5" />
