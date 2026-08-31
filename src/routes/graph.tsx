@@ -9,6 +9,22 @@ import { canView, useRole } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import { Sparkles } from "lucide-react";
 
+type IngestionSnapshot = {
+  repository_full_name: string;
+  created_at: string;
+  payload: {
+    repository?: { html_url?: string; description?: string | null; default_branch?: string };
+    summary?: {
+      file_count?: number;
+      commit_count?: number;
+      branch_count?: number;
+      pull_request_count?: number;
+      issue_count?: number;
+      contributor_count?: number;
+    };
+  };
+};
+
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
@@ -36,6 +52,7 @@ function GraphPage() {
   const [pathIds, setPathIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [dossier, setDossier] = useState<GraphNode | null>(null);
+  const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -43,6 +60,14 @@ function GraphPage() {
     const p = localStorage.getItem("nykst.provider");
     if (stored) setOrgSlug(stored);
     if (p) setProvider(p);
+    fetch("/api/integrations/github/latest")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = (await response.json()) as { ingestion?: IngestionSnapshot | null };
+        return data.ingestion ?? null;
+      })
+      .then(setSnapshot)
+      .catch(() => setSnapshot(null));
   }, []);
 
   const root = useMemo(() => getOrg(orgSlug), [orgSlug]);
@@ -174,6 +199,37 @@ function GraphPage() {
             </div>
           )}
 
+          {snapshot && (
+            <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
+                    Live repository intelligence
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
+                </div>
+                {snapshot.payload.repository?.html_url && (
+                  <a
+                    href={snapshot.payload.repository.html_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary text-xs hover:underline"
+                  >
+                    Open on GitHub →
+                  </a>
+                )}
+              </div>
+              <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                <span>{snapshot.payload.summary?.file_count ?? 0} files</span>
+                <span>{snapshot.payload.summary?.commit_count ?? 0} commits</span>
+                <span>{snapshot.payload.summary?.branch_count ?? 0} branches</span>
+                <span>{snapshot.payload.summary?.pull_request_count ?? 0} pull requests</span>
+                <span>{snapshot.payload.summary?.issue_count ?? 0} issues</span>
+                <span>{snapshot.payload.summary?.contributor_count ?? 0} contributors</span>
+              </div>
+            </div>
+          )}
+
           <div className="relative min-h-[420px] flex-1 mt-4">
             <GraphCanvas
               key={`${center.id}-${role.id}`}
@@ -188,7 +244,9 @@ function GraphPage() {
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
-            <span>Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})</span>
+            <span>
+              Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})
+            </span>
             <span>Click any node, eye icon 👁, or tree item to drill deeper</span>
           </div>
         </section>
@@ -205,11 +263,7 @@ function GraphPage() {
 
       <OnboardingTour />
 
-      <NodeInspector
-        node={dossier}
-        open={dossier !== null}
-        onClose={() => setDossier(null)}
-      />
+      <NodeInspector node={dossier} open={dossier !== null} onClose={() => setDossier(null)} />
     </main>
   );
 }

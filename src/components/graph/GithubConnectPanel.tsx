@@ -66,9 +66,13 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
+      localStorage.setItem("nykst.org", organization);
+      localStorage.setItem("nykst.provider", "github");
+      localStorage.setItem("nykst.repository", selected.full_name);
       setMessage(
         `System map foundation ready: ${data.summary.file_count} files, ${data.summary.commit_count} commits, ${data.summary.pull_request_count} pull requests, ${data.summary.issue_count} issues, and ${data.summary.contributor_count} contributors indexed.`,
       );
+      window.setTimeout(() => window.location.assign("/graph"), 900);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Repository ingestion failed.");
     } finally {
