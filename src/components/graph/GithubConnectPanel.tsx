@@ -24,20 +24,38 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
 
   useEffect(() => {
     if (!connected) return;
-    Promise.all([
-      fetch("/api/integrations/github/organizations"),
-      fetch("/api/integrations/github/personal-repositories"),
-    ])
-      .then(async ([orgResponse, personalResponse]) => {
-        const orgData = await orgResponse.json();
-        const personalData = await personalResponse.json();
-        if (!orgResponse.ok) throw new Error(orgData.error);
-        if (!personalResponse.ok) throw new Error(personalData.error);
-        setOrganizations(orgData.organizations);
-        setRepositories(personalData.repositories);
-        setWorkspace(PERSONAL);
-      })
-      .catch((error: Error) => setMessage(error.message));
+    setLoading(true);
+    setWorkspace(PERSONAL);
+    setRepository("");
+    Promise.allSettled([
+      fetch("/api/integrations/github/organizations").then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load organizations.");
+        return data.organizations as Organization[];
+      }),
+      fetch("/api/integrations/github/personal-repositories").then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load personal repositories.");
+        return data.repositories as Repository[];
+      }),
+    ]).then(([organizationsResult, repositoriesResult]) => {
+      if (organizationsResult.status === "fulfilled") setOrganizations(organizationsResult.value);
+      if (repositoriesResult.status === "fulfilled") {
+        setRepositories(repositoriesResult.value);
+        if (!repositoriesResult.value.length) {
+          setMessage(
+            "No personal repositories were returned. Reconnect GitHub and approve repository access, then try again.",
+          );
+        }
+      } else {
+        setMessage(
+          repositoriesResult.reason instanceof Error
+            ? repositoriesResult.reason.message
+            : "Could not load personal repositories.",
+        );
+      }
+      setLoading(false);
+    });
   }, [connected]);
 
   async function chooseWorkspace(value: string) {
@@ -126,7 +144,13 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         disabled={!workspace || loading}
         className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
       >
-        <option value="">{loading ? "Loading repositories…" : "Select repository"}</option>
+        <option value="">
+          {loading
+            ? "Loading repositories…"
+            : repositories.length
+              ? "Select repository"
+              : "No repositories found"}
+        </option>
         {repositories.map((item) => (
           <option key={item.id} value={item.full_name}>
             {item.full_name}
