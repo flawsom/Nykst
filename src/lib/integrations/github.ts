@@ -108,13 +108,13 @@ export async function githubRepositories(token: string, org: string) {
 }
 
 export async function githubUserRepositories(token: string) {
-  return paginate<GithubRepo>(token, "/user/repos?affiliation=owner&type=all&sort=updated");
+  return paginate<GithubRepo>(token, "/user/repos?affiliation=owner&sort=updated");
 }
 
 export async function githubAccessibleRepositories(token: string) {
   const repositories = await paginate<GithubRepo>(
     token,
-    "/user/repos?affiliation=owner,collaborator,organization_member&type=all&sort=updated",
+    "/user/repos?affiliation=owner,collaborator,organization_member&sort=updated",
   );
   return [...new Map(repositories.map((repository) => [repository.id, repository])).values()];
 }
