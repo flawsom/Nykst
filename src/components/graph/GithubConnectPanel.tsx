@@ -17,6 +17,7 @@ const PERSONAL = "__personal__";
 export function GithubConnectPanel({ connected, onConnect }: Props) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [allRepositories, setAllRepositories] = useState<Repository[]>([]);
   const [workspace, setWorkspace] = useState("");
   const [repository, setRepository] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,25 +34,26 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         if (!response.ok) throw new Error(data.error || "Could not load organizations.");
         return data.organizations as Organization[];
       }),
-      fetch("/api/integrations/github/personal-repositories").then(async (response) => {
+      fetch("/api/integrations/github/all-repositories").then(async (response) => {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Could not load personal repositories.");
+        if (!response.ok) throw new Error(data.error || "Could not load accessible repositories.");
         return data.repositories as Repository[];
       }),
     ]).then(([organizationsResult, repositoriesResult]) => {
       if (organizationsResult.status === "fulfilled") setOrganizations(organizationsResult.value);
       if (repositoriesResult.status === "fulfilled") {
+        setAllRepositories(repositoriesResult.value);
         setRepositories(repositoriesResult.value);
         if (!repositoriesResult.value.length) {
           setMessage(
-            "No personal repositories were returned. Reconnect GitHub and approve repository access, then try again.",
+            "No accessible repositories were returned. Reconnect GitHub and approve repository access, then try again.",
           );
         }
       } else {
         setMessage(
           repositoriesResult.reason instanceof Error
             ? repositoriesResult.reason.message
-            : "Could not load personal repositories.",
+            : "Could not load accessible repositories.",
         );
       }
       setLoading(false);
@@ -64,13 +66,15 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     setRepositories([]);
     setMessage("");
     if (!value) return;
+    if (value === PERSONAL) {
+      setRepositories(allRepositories);
+      return;
+    }
     setLoading(true);
     try {
-      const endpoint =
-        value === PERSONAL
-          ? "/api/integrations/github/personal-repositories"
-          : `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`;
-      const response = await fetch(endpoint);
+      const response = await fetch(
+        `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`,
+      );
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setRepositories(data.repositories);
@@ -131,7 +135,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
       >
         <option value="">Select account or organization</option>
-        <option value={PERSONAL}>My personal repositories</option>
+        <option value={PERSONAL}>My repositories & accessible repositories</option>
         {organizations.map((item) => (
           <option key={item.id} value={item.login}>
             Organization: {item.login}

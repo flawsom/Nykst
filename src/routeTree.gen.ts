@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
 import { Route as ApiIntegrationsGithubLatestRouteImport } from './routes/api.integrations.github.latest'
@@ -35,6 +36,12 @@ const IntelligenceRoute = IntelligenceRouteImport.update({
   path: '/intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsGithubAllRepositoriesRoute =
+  ApiIntegrationsGithubAllRepositoriesRouteImport.update({
+    id: '/api/integrations/github/all-repositories',
+    path: '/api/integrations/github/all-repositories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsGithubCallbackRoute =
   ApiIntegrationsGithubCallbackRouteImport.update({
     id: '/api/integrations/github/callback',
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
@@ -158,6 +171,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
   ApiIntegrationsGithubLatestRoute: typeof ApiIntegrationsGithubLatestRoute
@@ -188,6 +202,13 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/github/all-repositories': {
+      id: '/api/integrations/github/all-repositories'
+      path: '/api/integrations/github/all-repositories'
+      fullPath: '/api/integrations/github/all-repositories'
+      preLoaderRoute: typeof ApiIntegrationsGithubAllRepositoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/github/callback': {
@@ -246,6 +267,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
+  ApiIntegrationsGithubAllRepositoriesRoute:
+    ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,
   ApiIntegrationsGithubIngestRoute: ApiIntegrationsGithubIngestRoute,
   ApiIntegrationsGithubLatestRoute: ApiIntegrationsGithubLatestRoute,

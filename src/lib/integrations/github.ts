@@ -111,6 +111,14 @@ export async function githubUserRepositories(token: string) {
   return paginate<GithubRepo>(token, "/user/repos?affiliation=owner&type=all&sort=updated");
 }
 
+export async function githubAccessibleRepositories(token: string) {
+  const repositories = await paginate<GithubRepo>(
+    token,
+    "/user/repos?affiliation=owner,collaborator,organization_member&type=all&sort=updated",
+  );
+  return [...new Map(repositories.map((repository) => [repository.id, repository])).values()];
+}
+
 async function paginate<T>(token: string, path: string): Promise<T[]> {
   const result: T[] = [];
   for (let page = 1; page <= 10; page += 1) {
