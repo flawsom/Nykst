@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   exchangeGithubCode,
   githubCookieOptions,
+  githubRedirectUri,
   githubUser,
   oauthCookieOptions,
   readCookie,
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
           return new Response("Invalid or expired GitHub OAuth state.", { status: 400 });
         }
         try {
-          const token = await exchangeGithubCode(code);
+          const token = await exchangeGithubCode(code, githubRedirectUri(request));
           await githubUser(token);
           const headers = new Headers({ Location: "/?github=connected" });
           headers.append(

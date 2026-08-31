@@ -40,25 +40,34 @@ export function createOauthState() {
   return { value, digest };
 }
 
+export function githubRedirectUri(request: Request) {
+  return (
+    env("GITHUB_REDIRECT_URI") ||
+    "https://nykst-software-intellegence.vercel.app/api/integrations/github/callback"
+  );
+}
+
 export function githubAuthorizeUrl(state: string, request: Request) {
   const { clientId } = getConfig();
   const url = new URL(GITHUB_AUTHORIZE);
   url.searchParams.set("client_id", clientId);
-  url.searchParams.set(
-    "redirect_uri",
-    new URL("/api/integrations/github/callback", request.url).toString(),
-  );
+  url.searchParams.set("redirect_uri", githubRedirectUri(request));
   url.searchParams.set("scope", "read:org,repo,read:user");
   url.searchParams.set("state", state);
   return url.toString();
 }
 
-export async function exchangeGithubCode(code: string) {
+export async function exchangeGithubCode(code: string, redirectUri?: string) {
   const { clientId, clientSecret } = getConfig();
   const response = await fetch(GITHUB_TOKEN, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      ...(redirectUri ? { redirect_uri: redirectUri } : {}),
+    }),
   });
   const data = (await response.json()) as {
     access_token?: string;
