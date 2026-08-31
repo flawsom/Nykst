@@ -1,10 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ConnectionProgress } from "@/components/graph/ConnectionProgress";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
-import { ROLES, getRoleId, setRoleId, type RoleId } from "@/lib/access";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 
@@ -21,7 +19,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Connect GitHub, GitLab, Bitbucket or Azure DevOps and operate your entire engineering enterprise through autonomous intelligence.",
+          "Connect GitHub and let Nykst derive your engineering system from the code and collaboration history.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -30,27 +28,15 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const providers = [
-  { id: "github", name: "GitHub", hint: "Cloud & Enterprise Server" },
-  { id: "gitlab", name: "GitLab", hint: "SaaS & Self-managed" },
-  { id: "bitbucket", name: "Bitbucket", hint: "Cloud & Data Center" },
-  { id: "azure", name: "Azure DevOps", hint: "Repos & Pipelines" },
-];
-
 function Landing() {
   const navigate = useNavigate();
-  const [provider, setProvider] = useState("github");
-  const [org, setOrg] = useState("");
   const [user, setUser] = useState<string | null>(null);
-  const [role, setRole] = useState<RoleId>("engineer");
-  const [connecting, setConnecting] = useState(false);
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
 
   useEffect(() => {
     setUser(localStorage.getItem("nykst.user"));
-    setRole(getRoleId());
     setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
   }, []);
 
@@ -65,32 +51,12 @@ function Landing() {
     setUser(null);
   };
 
-  const chooseRole = (id: RoleId) => {
-    setRole(id);
-    setRoleId(id);
-  };
-
   const connect = () => {
-    if (provider === "github") {
-      window.location.assign("/api/integrations/github/start");
-      return;
-    }
-    const slug = org.trim() || "acme";
-    localStorage.setItem("nykst.org", slug);
-    localStorage.setItem("nykst.provider", provider);
-    setConnecting(true);
+    window.location.assign("/api/integrations/github/start");
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {connecting && (
-        <ConnectionProgress
-          provider={providers.find((p) => p.id === provider)?.name ?? provider}
-          org={org.trim() || "acme"}
-          onDone={() => navigate({ to: "/graph" })}
-        />
-      )}
-
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
 
@@ -232,89 +198,14 @@ function Landing() {
             your architecture.
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
-            {providers.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setProvider(p.id)}
-                className={cn(
-                  "rounded-xl border px-3 py-3 text-left transition-all",
-                  provider === p.id
-                    ? "border-primary bg-secondary"
-                    : "border-border bg-surface hover:bg-surface-2",
-                )}
-              >
-                <span className="block text-sm font-medium">{p.name}</span>
-                <span className="text-muted-foreground block text-[11px]">{p.hint}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-5">
-            <label
-              htmlFor="org"
-              className="text-muted-foreground text-[11px] tracking-widest uppercase"
-            >
-              Your organization
-            </label>
-            <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3 py-2.5">
-              <span className="text-muted-foreground font-mono text-xs">
-                {provider === "azure" ? "dev.azure.com/" : `${provider}.com/`}
-              </span>
-              <input
-                id="org"
-                value={org}
-                onChange={(e) => setOrg(e.target.value)}
-                placeholder="your-org"
-                className="placeholder:text-muted-foreground/60 min-w-0 flex-1 bg-transparent text-sm outline-none font-mono"
-              />
-            </div>
-            <p className="text-muted-foreground mt-2 text-[11px]">
-              Nykst reads every repository in this organization and builds the graph from the code
-              itself.
-            </p>
-          </div>
-
-          <div className="mt-5">
-            <span className="text-muted-foreground text-[11px] tracking-widest uppercase">
-              Your role in this organization
+          <div className="border-primary/30 bg-secondary/40 mt-5 rounded-xl border px-4 py-3">
+            <span className="block text-sm font-medium">GitHub</span>
+            <span className="text-muted-foreground block text-[11px]">
+              Connect securely to choose an organization and repository.
             </span>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              {ROLES.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => chooseRole(r.id)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2.5 text-left transition-all",
-                    role === r.id
-                      ? "border-primary bg-secondary"
-                      : "border-border bg-surface hover:bg-surface-2",
-                  )}
-                >
-                  <span className="flex items-center justify-between text-sm font-medium">
-                    {r.name}
-                    <span className="text-muted-foreground text-[10px] tracking-widest uppercase font-mono">
-                      {r.can.viewAllDomains ? "All domains" : `${r.domains.length} domains`}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground mt-0.5 block text-[11px] leading-relaxed">
-                    {r.blurb}
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
 
-          {provider === "github" ? (
-            <GithubConnectPanel connected={githubConnected} onConnect={connect} />
-          ) : (
-            <button
-              onClick={connect}
-              className="bg-primary text-primary-foreground hover:bg-primary-glow mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-md shadow-primary/20"
-            >
-              Connect {providers.find((item) => item.id === provider)?.name} (setup required)
-            </button>
-          )}
+          <GithubConnectPanel connected={githubConnected} onConnect={connect} />
         </div>
 
         <div
