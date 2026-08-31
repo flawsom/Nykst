@@ -202,6 +202,7 @@ function IntelligencePage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("demo") === "1") return;
     fetch("/api/integrations/github/latest")
       .then(async (response) => {
         if (!response.ok) return null;

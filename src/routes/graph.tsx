@@ -48,9 +48,19 @@ function GraphPage() {
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [dossier, setDossier] = useState<GraphNode | null>(null);
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+    setDemoMode(isDemo);
+    if (isDemo) {
+      setOrgSlug("acme");
+      setProvider("demo");
+      setSnapshot(null);
+      return;
+    }
+
     const stored = localStorage.getItem("nykst.org");
     const p = localStorage.getItem("nykst.provider");
     if (stored) setOrgSlug(stored);
@@ -151,12 +161,12 @@ function GraphPage() {
         </nav>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Link
-            to="/intelligence"
+          <a
+            href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
             className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
-          </Link>
+          </a>
           <span className="text-muted-foreground font-mono text-xs">
             {orgSlug} ({provider})
           </span>
@@ -176,7 +186,7 @@ function GraphPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
-                {kindLabel[center.kind]}
+                {demoMode ? "Demo thesis system map" : kindLabel[center.kind]}
               </span>
               <h1 className="text-2xl font-bold tracking-tight mt-0.5">{center.label}</h1>
             </div>
@@ -267,7 +277,8 @@ function GraphPage() {
 
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
             <span>
-              Software Navigator · {childKindLabel[center.kind]} ({centerChildren.length})
+              {demoMode ? "Nykst Demo · " : "Software Navigator · "}
+              {childKindLabel[center.kind]} ({centerChildren.length})
             </span>
             <span>Click any node, eye icon 👁, or tree item to drill deeper</span>
           </div>

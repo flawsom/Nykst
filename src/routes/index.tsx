@@ -206,6 +206,23 @@ function Landing() {
           </div>
 
           <GithubConnectPanel connected={githubConnected} onConnect={connect} />
+
+          <div className="border-border bg-surface/70 mt-3 rounded-xl border px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="block text-sm font-medium">Demo account</span>
+                <span className="text-muted-foreground block text-[11px]">
+                  Explore a realistic Nykst thesis graph without connecting GitHub.
+                </span>
+              </div>
+              <button
+                onClick={() => window.location.assign("/graph?demo=1")}
+                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shrink-0 rounded-lg border px-4 py-2 text-xs font-semibold transition-colors"
+              >
+                Explore demo graph →
+              </button>
+            </div>
+          </div>
         </div>
 
         <div
