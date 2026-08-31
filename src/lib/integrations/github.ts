@@ -136,10 +136,10 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
   );
   const [files, commits, branches, pullRequests, issues, contributors] = await Promise.all([
-    paginate<GithubFile>(
+    githubFetch<{ tree?: GithubFile[] }>(
       token,
       `/repos/${owner}/${repo}/git/trees/${repository.default_branch}?recursive=1`,
-    ).then((tree) =>
+    ).then(({ tree = [] }) =>
       tree.map((item) => ({
         path: item.path,
         type: item.type,
