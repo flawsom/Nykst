@@ -8,41 +8,51 @@ type Repository = {
   private: boolean;
   default_branch: string;
   description?: string | null;
+  owner: { login: string };
 };
 
 type Props = { connected: boolean; onConnect: () => void };
+const PERSONAL = "__personal__";
 
 export function GithubConnectPanel({ connected, onConnect }: Props) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [organization, setOrganization] = useState("");
+  const [workspace, setWorkspace] = useState("");
   const [repository, setRepository] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!connected) return;
-    fetch("/api/integrations/github/organizations")
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        return data;
+    Promise.all([
+      fetch("/api/integrations/github/organizations"),
+      fetch("/api/integrations/github/personal-repositories"),
+    ])
+      .then(async ([orgResponse, personalResponse]) => {
+        const orgData = await orgResponse.json();
+        const personalData = await personalResponse.json();
+        if (!orgResponse.ok) throw new Error(orgData.error);
+        if (!personalResponse.ok) throw new Error(personalData.error);
+        setOrganizations(orgData.organizations);
+        setRepositories(personalData.repositories);
+        setWorkspace(PERSONAL);
       })
-      .then((data) => setOrganizations(data.organizations))
       .catch((error: Error) => setMessage(error.message));
   }, [connected]);
 
-  async function chooseOrganization(value: string) {
-    setOrganization(value);
+  async function chooseWorkspace(value: string) {
+    setWorkspace(value);
     setRepository("");
     setRepositories([]);
     setMessage("");
     if (!value) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`,
-      );
+      const endpoint =
+        value === PERSONAL
+          ? "/api/integrations/github/personal-repositories"
+          : `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`;
+      const response = await fetch(endpoint);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setRepositories(data.repositories);
@@ -62,11 +72,11 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       const response = await fetch("/api/integrations/github/ingest", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner: organization, repo: selected.name }),
+        body: JSON.stringify({ owner: selected.owner.login, repo: selected.name }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      localStorage.setItem("nykst.org", organization);
+      localStorage.setItem("nykst.org", workspace === PERSONAL ? selected.owner.login : workspace);
       localStorage.setItem("nykst.provider", "github");
       localStorage.setItem("nykst.repository", selected.full_name);
       setMessage(
@@ -94,24 +104,26 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
       <p className="text-sm font-medium text-primary">GitHub connected</p>
       <p className="text-muted-foreground text-xs">
-        Choose the organization and repository Nykst should analyze.
+        Choose your personal account or any organization you can access. Private repositories are
+        supported.
       </p>
       <select
-        value={organization}
-        onChange={(event) => void chooseOrganization(event.target.value)}
+        value={workspace}
+        onChange={(event) => void chooseWorkspace(event.target.value)}
         className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
       >
-        <option value="">Select organization</option>
+        <option value="">Select account or organization</option>
+        <option value={PERSONAL}>My personal repositories</option>
         {organizations.map((item) => (
           <option key={item.id} value={item.login}>
-            {item.login}
+            Organization: {item.login}
           </option>
         ))}
       </select>
       <select
         value={repository}
         onChange={(event) => setRepository(event.target.value)}
-        disabled={!organization || loading}
+        disabled={!workspace || loading}
         className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
       >
         <option value="">{loading ? "Loading repositories…" : "Select repository"}</option>

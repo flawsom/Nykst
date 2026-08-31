@@ -107,6 +107,13 @@ export async function githubRepositories(token: string, org: string) {
   );
 }
 
+export async function githubUserRepositories(token: string) {
+  return paginate<GithubRepo>(
+    token,
+    "/user/repos?affiliation=owner,collaborator,organization_member&type=all&sort=updated",
+  );
+}
+
 async function paginate<T>(token: string, path: string): Promise<T[]> {
   const result: T[] = [];
   for (let page = 1; page <= 10; page += 1) {
