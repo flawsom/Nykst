@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ConnectionProgress } from "@/components/graph/ConnectionProgress";
+import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ROLES, getRoleId, setRoleId, type RoleId } from "@/lib/access";
@@ -45,10 +46,12 @@ function Landing() {
   const [connecting, setConnecting] = useState(false);
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
+  const [githubConnected, setGithubConnected] = useState(false);
 
   useEffect(() => {
     setUser(localStorage.getItem("nykst.user"));
     setRole(getRoleId());
+    setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
   }, []);
 
   const login = () => {
@@ -68,11 +71,13 @@ function Landing() {
   };
 
   const connect = () => {
-    const slug = org.trim() || "acme";
-    if (typeof window !== "undefined") {
-      localStorage.setItem("nykst.org", slug);
-      localStorage.setItem("nykst.provider", provider);
+    if (provider === "github") {
+      window.location.assign("/api/integrations/github/start");
+      return;
     }
+    const slug = org.trim() || "acme";
+    localStorage.setItem("nykst.org", slug);
+    localStorage.setItem("nykst.provider", provider);
     setConnecting(true);
   };
 
@@ -223,8 +228,8 @@ function Landing() {
         >
           <h2 className="text-sm font-medium">Connect your organization</h2>
           <p className="text-muted-foreground mt-1 text-xs">
-            Nykst installs read-only and derives the graph itself — we never ask you to describe your
-            architecture.
+            Nykst installs read-only and derives the graph itself — we never ask you to describe
+            your architecture.
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -300,12 +305,16 @@ function Landing() {
             </div>
           </div>
 
-          <button
-            onClick={connect}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-md shadow-primary/20"
-          >
-            Install Nykst & analyze codebase
-          </button>
+          {provider === "github" ? (
+            <GithubConnectPanel connected={githubConnected} onConnect={connect} />
+          ) : (
+            <button
+              onClick={connect}
+              className="bg-primary text-primary-foreground hover:bg-primary-glow mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-md shadow-primary/20"
+            >
+              Connect {providers.find((item) => item.id === provider)?.name} (setup required)
+            </button>
+          )}
         </div>
 
         <div

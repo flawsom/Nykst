@@ -89,6 +89,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      repository_ingestions: {
+        Row: {
+          id: string;
+          provider: string;
+          provider_user_id: string;
+          provider_username: string;
+          repository_full_name: string;
+          status: string;
+          payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider: string;
+          provider_user_id: string;
+          provider_username: string;
+          repository_full_name: string;
+          status?: string;
+          payload?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider?: string;
+          provider_user_id?: string;
+          provider_username?: string;
+          repository_full_name?: string;
+          status?: string;
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
