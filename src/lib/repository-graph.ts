@@ -49,9 +49,11 @@ function node(
     dependencies: [],
     dependents: [],
     blast: {
-      level: children.length > 20 ? "high" : children.length > 5 ? "medium" : "low",
+      level: children.length > 20 ? "High" : children.length > 5 ? "Moderate" : "Low",
       services: children.length,
+      modules: children.length,
       files: kind === "file" ? 1 : children.length,
+      teams: 0,
     },
     repo,
     language: label.endsWith(".tsx") || label.endsWith(".ts") ? "TypeScript" : undefined,

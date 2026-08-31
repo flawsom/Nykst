@@ -1,19 +1,27 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { 
-  Network, 
-  ShieldAlert, 
-  Cpu, 
-  GitBranch, 
-  BookOpen, 
-  Folder, 
-  FileCode, 
-  Sparkles, 
-  RefreshCw, 
+import { useEffect, useState } from "react";
+import {
+  Network,
+  ShieldAlert,
+  Cpu,
+  GitBranch,
+  BookOpen,
+  Folder,
+  FileCode,
+  Sparkles,
+  RefreshCw,
   ArrowLeft,
-  Database
+  Database,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  buildCoreModules,
+  buildGroundedAiBrief,
+  type CoreModule,
+  type CoreFile,
+} from "@/lib/intelligence-core";
+import type { RepositorySnapshot } from "@/lib/repository-graph";
 
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
@@ -21,7 +29,8 @@ export const Route = createFileRoute("/intelligence")({
       { title: "Enterprise Intelligence Memory Core — Nykst" },
       {
         name: "description",
-        content: "Explore enterprise intelligence memory files, folders, and query the AI architect.",
+        content:
+          "Explore enterprise intelligence memory files, folders, and query the AI architect.",
       },
     ],
   }),
@@ -40,7 +49,7 @@ interface MemoryModule {
   id: string;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   description: string;
   files: MemoryFile[];
 }
@@ -58,23 +67,26 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/structural/DependencyGraph.json",
         size: "42 KB",
         summary: "Live node adjacency matrix across connected repositories",
-        content: "{\n  \"org\": \"acme-enterprise\",\n  \"nodes\": 214,\n  \"edges\": 1428,\n  \"syncStatus\": \"active 24/7\",\n  \"apiContracts\": \"verified\"\n}"
+        content:
+          '{\n  "org": "acme-enterprise",\n  "nodes": 214,\n  "edges": 1428,\n  "syncStatus": "active 24/7",\n  "apiContracts": "verified"\n}',
       },
       {
         name: "ApiContracts.ts",
         path: "/memory/structural/ApiContracts.ts",
         size: "18 KB",
         summary: "gRPC and REST endpoint specifications preventing drift",
-        content: "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}"
+        content:
+          "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}",
       },
       {
         name: "MultiRepoLinkage.yaml",
         path: "/memory/structural/MultiRepoLinkage.yaml",
         size: "12 KB",
         summary: "Cross-repository module mapping rules",
-        content: "repos:\n  - name: streaming-engine\n    linkedModules: [\"cdn-edge\", \"playback-api\"]\n  - name: payments-api\n    linkedModules: [\"ledger-sync\", \"webhook-router\"]"
-      }
-    ]
+        content:
+          'repos:\n  - name: streaming-engine\n    linkedModules: ["cdn-edge", "playback-api"]\n  - name: payments-api\n    linkedModules: ["ledger-sync", "webhook-router"]',
+      },
+    ],
   },
   {
     id: "vault",
@@ -88,16 +100,18 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/vault/ERR_CONCURRENCY_092.json",
         size: "8.4 KB",
         summary: "Deadlock stack trace in SessionStore.ts & mutex fix",
-        content: "{\n  \"incidentId\": \"ERR_CONCURRENCY_092\",\n  \"component\": \"SessionStore.ts\",\n  \"rootCause\": \"Race condition in TTL update\",\n  \"patchApplied\": \"Mutex lock around session writes\",\n  \"status\": \"Immunized\"\n}"
+        content:
+          '{\n  "incidentId": "ERR_CONCURRENCY_092",\n  "component": "SessionStore.ts",\n  "rootCause": "Race condition in TTL update",\n  "patchApplied": "Mutex lock around session writes",\n  "status": "Immunized"\n}',
       },
       {
         name: "ERR_JWT_MISMATCH_412.json",
         path: "/memory/vault/ERR_JWT_MISMATCH_412.json",
         size: "6.1 KB",
         summary: "RS256 algorithm fallback failure in AuthMiddleware",
-        content: "{\n  \"incidentId\": \"ERR_JWT_MISMATCH_412\",\n  \"component\": \"AuthMiddleware.ts\",\n  \"patchApplied\": \"Strict algorithm header enforcement\",\n  \"status\": \"Immunized\"\n}"
-      }
-    ]
+        content:
+          '{\n  "incidentId": "ERR_JWT_MISMATCH_412",\n  "component": "AuthMiddleware.ts",\n  "patchApplied": "Strict algorithm header enforcement",\n  "status": "Immunized"\n}',
+      },
+    ],
   },
   {
     id: "behavioral",
@@ -111,16 +125,18 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/behavioral/CodingStandards.yaml",
         size: "14 KB",
         summary: "Team style preferences and monad/async rules",
-        content: "preferences:\n  errorHandling: \"Explicit Result monads for core, try-catch for edge\"\n  strictCasts: true\n  riskTolerance: \"Strict\"\n"
+        content:
+          'preferences:\n  errorHandling: "Explicit Result monads for core, try-catch for edge"\n  strictCasts: true\n  riskTolerance: "Strict"\n',
       },
       {
         name: "RlhfWeights.json",
         path: "/memory/behavioral/RlhfWeights.json",
         size: "9.2 KB",
         summary: "Active reinforcement learning reward weights",
-        content: "{\n  \"model\": \"nykst-architect-v2\",\n  \"safetyPreference\": 0.98,\n  \"totalPatchesEvaluated\": 312\n}"
-      }
-    ]
+        content:
+          '{\n  "model": "nykst-architect-v2",\n  "safetyPreference": 0.98,\n  "totalPatchesEvaluated": 312\n}',
+      },
+    ],
   },
   {
     id: "treepub",
@@ -134,16 +150,18 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/treepub/PositiveCorpusIndex.json",
         size: "22 KB",
         summary: "List of clean 100% typed production files (94.2%)",
-        content: "{\n  \"corpusType\": \"positive\",\n  \"filesCount\": 3840,\n  \"typeCoverage\": \"100%\"\n}"
+        content:
+          '{\n  "corpusType": "positive",\n  "filesCount": 3840,\n  "typeCoverage": "100%"\n}',
       },
       {
         name: "QuarantinedWorkarounds.json",
         path: "/memory/treepub/QuarantinedWorkarounds.json",
         size: "5.5 KB",
         summary: "Quarantined anti-patterns for negative reinforcement",
-        content: "{\n  \"corpusType\": \"negative_reinforcement\",\n  \"quarantinedFiles\": [\"legacy_auth_hack.js\", \"temp_bypass_cors.ts\"]\n}"
-      }
-    ]
+        content:
+          '{\n  "corpusType": "negative_reinforcement",\n  "quarantinedFiles": ["legacy_auth_hack.js", "temp_bypass_cors.ts"]\n}',
+      },
+    ],
   },
   {
     id: "instruction",
@@ -157,27 +175,53 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/instruction/ADR-042-AuthFederation.md",
         size: "16 KB",
         summary: "Architecture Decision Record for OIDC and session clustering",
-        content: "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14\n\nContext: Decentralized authentication across microservices without single-point bottlenecks."
+        content:
+          "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14\n\nContext: Decentralized authentication across microservices without single-point bottlenecks.",
       },
       {
         name: "InternalRunbooks.md",
         path: "/memory/instruction/InternalRunbooks.md",
         size: "24 KB",
         summary: "Incident response runbooks and failover protocols",
-        content: "# Incident Response Runbook\n\n1. Check dependency graph for downstream blast radius.\n2. Verify failure vault for historical immunity patches."
-      }
-    ]
-  }
+        content:
+          "# Incident Response Runbook\n\n1. Check dependency graph for downstream blast radius.\n2. Verify failure vault for historical immunity patches.",
+      },
+    ],
+  },
 ];
 
 function IntelligencePage() {
-  const [activeModule, setActiveModule] = useState<MemoryModule>(MEMORIES[0]!);
-  const [activeFile, setActiveFile] = useState<MemoryFile>(activeModule.files[0]!);
-  const [query, setQuery] = useState("Analyze this memory file and explain its architectural significance.");
+  const [modules, setModules] = useState<Array<MemoryModule | CoreModule>>(MEMORIES);
+  const [activeModule, setActiveModule] = useState<MemoryModule | CoreModule>(MEMORIES[0]!);
+  const [activeFile, setActiveFile] = useState<MemoryFile | CoreFile>(activeModule.files[0]!);
+  const [repositorySnapshot, setRepositorySnapshot] = useState<RepositorySnapshot | null>(null);
+  const [query, setQuery] = useState(
+    "Analyze this memory file and explain its architectural significance.",
+  );
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSelectModule = (mod: MemoryModule) => {
+  useEffect(() => {
+    fetch("/api/integrations/github/latest")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = (await response.json()) as {
+          ingestion?: { payload?: RepositorySnapshot } | null;
+        };
+        return data.ingestion?.payload ?? null;
+      })
+      .then((snapshot) => {
+        if (!snapshot) return;
+        const liveModules = buildCoreModules(snapshot);
+        setRepositorySnapshot(snapshot);
+        setModules(liveModules);
+        setActiveModule(liveModules[0]!);
+        setActiveFile(liveModules[0]!.files[0]!);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const handleSelectModule = (mod: MemoryModule | CoreModule) => {
     setActiveModule(mod);
     setActiveFile(mod.files[0]!);
     setAiResult(null);
@@ -186,13 +230,14 @@ function IntelligencePage() {
   const handleAskAi = () => {
     setLoading(true);
     setAiResult(null);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setLoading(false);
-      setAiResult(`[Nykst AI Architect Analysis — ${activeFile.name}]
-1. File Purpose: ${activeFile.summary}
-2. Structural Relevance: Directly tied to enterprise memory index ${activeModule.subtitle}.
-3. Verification Status: 100% synchronized with live repository AST and commit history. Zero drift detected.`);
-    }, 800);
+      setAiResult(
+        repositorySnapshot
+          ? buildGroundedAiBrief(repositorySnapshot, query, activeFile)
+          : `[Nykst AI Architect Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
+      );
+    }, 450);
   };
 
   return (
@@ -208,7 +253,9 @@ function IntelligencePage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-sm font-semibold text-foreground">Enterprise Intelligence Memory Core</span>
+            <span className="text-sm font-semibold text-foreground">
+              Enterprise Intelligence Memory Core
+            </span>
           </div>
         </div>
 
@@ -230,13 +277,14 @@ function IntelligencePage() {
             Intelligence Dashboard
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Select any memory category below to explore its files and folders, inspect contents, and query the AI architect.
+            Select any memory category below to explore its files and folders, inspect contents, and
+            query the AI architect.
           </p>
         </div>
 
         {/* 5 Memory Modules Selector */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {MEMORIES.map((m) => {
+          {modules.map((m) => {
             const Icon = m.icon;
             const isSelected = activeModule.id === m.id;
             return (
@@ -247,15 +295,27 @@ function IntelligencePage() {
                   "p-4 rounded-xl border text-left transition-all flex flex-col justify-between",
                   isSelected
                     ? "bg-primary/15 border-primary shadow-md"
-                    : "border-border bg-card/70 hover:bg-card"
+                    : "border-border bg-card/70 hover:bg-card",
                 )}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <Icon className={cn("size-4", isSelected ? "text-primary" : "text-muted-foreground")} />
-                    <span className="font-mono text-[10px] text-muted-foreground">{m.files.length} files</span>
+                    <Icon
+                      className={cn(
+                        "size-4",
+                        isSelected ? "text-primary" : "text-muted-foreground",
+                      )}
+                    />
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {m.files.length} files
+                    </span>
                   </div>
-                  <h3 className={cn("mt-3 text-xs font-semibold leading-tight", isSelected ? "text-foreground" : "text-muted-foreground")}>
+                  <h3
+                    className={cn(
+                      "mt-3 text-xs font-semibold leading-tight",
+                      isSelected ? "text-foreground" : "text-muted-foreground",
+                    )}
+                  >
                     {m.title}
                   </h3>
                 </div>
@@ -291,14 +351,24 @@ function IntelligencePage() {
                         "w-full flex items-center justify-between p-3 rounded-xl text-left text-xs transition-all",
                         isSelected
                           ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                          : "bg-surface/80 border border-border text-foreground hover:bg-surface"
+                          : "bg-surface/80 border border-border text-foreground hover:bg-surface",
                       )}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <FileCode className={cn("size-4 shrink-0", isSelected ? "text-primary-foreground" : "text-primary")} />
+                        <FileCode
+                          className={cn(
+                            "size-4 shrink-0",
+                            isSelected ? "text-primary-foreground" : "text-primary",
+                          )}
+                        />
                         <span className="truncate font-mono">{file.name}</span>
                       </div>
-                      <span className={cn("font-mono text-[10px]", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          isSelected ? "text-primary-foreground/80" : "text-muted-foreground",
+                        )}
+                      >
                         {file.size}
                       </span>
                     </button>
@@ -317,7 +387,9 @@ function IntelligencePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <span className="font-mono text-xs text-primary font-semibold">{activeFile.name}</span>
+                  <span className="font-mono text-xs text-primary font-semibold">
+                    {activeFile.name}
+                  </span>
                   <p className="text-muted-foreground text-xs mt-0.5">{activeFile.summary}</p>
                 </div>
                 <span className="font-mono text-[11px] text-muted-foreground border border-border px-2.5 py-1 rounded-lg bg-surface">
@@ -337,7 +409,9 @@ function IntelligencePage() {
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <Sparkles className="size-4 text-primary" /> Ask AI about this file
                 </span>
-                <span className="font-mono text-[11px] text-muted-foreground">Instant Codebase QA</span>
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  Instant Codebase QA
+                </span>
               </div>
 
               <div className="flex gap-2">
@@ -352,7 +426,11 @@ function IntelligencePage() {
                   disabled={loading}
                   className="bg-primary text-primary-foreground hover:bg-primary-glow px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 shrink-0"
                 >
-                  {loading ? <RefreshCw className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                  {loading ? (
+                    <RefreshCw className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
                   Ask AI
                 </button>
               </div>
