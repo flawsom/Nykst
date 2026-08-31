@@ -1034,7 +1034,10 @@ function metricsFor(kind: NodeKind, r: () => number, lang: string) {
         { label: "p99 latency", value: `${between(r, 18, 420)} ms` },
         { label: "Error rate", value: `0.${between(r, 1, 9)}${between(r, 0, 9)}%` },
         { label: "Coverage", value: `${between(r, 58, 94)}%` },
-        { label: "Last deploy", value: pick(r, ["2h ago", "yesterday", "3 days ago", "1 week ago"]) },
+        {
+          label: "Last deploy",
+          value: pick(r, ["2h ago", "yesterday", "3 days ago", "1 week ago"]),
+        },
       ];
     case "module":
       return [
@@ -1103,7 +1106,9 @@ function fileDetail(label: string, opts: MakeOpts, r: () => number): FileDetail 
     loc: between(r, 62, 540),
     classes: tpl[2],
     functions: tpl[3],
-    tests: [`${base}.test${LANG_EXT[opts.language ?? "TypeScript"] ?? ".ts"} — ${between(r, 3, 26)} cases`],
+    tests: [
+      `${base}.test${LANG_EXT[opts.language ?? "TypeScript"] ?? ".ts"} — ${between(r, 3, 26)} cases`,
+    ],
     history: sample(r, WHEN, 3).map((when) => ({
       when,
       who: pick(r, PEOPLE),
@@ -1155,6 +1160,7 @@ const cache = new Map<string, GraphNode[]>();
 
 /** Lazily generates (and memoizes) the children of any node. */
 export function childrenOf(node: GraphNode): GraphNode[] {
+  if (node.children) return node.children;
   if (!node.expandable) return [];
   const hit = cache.get(node.id);
   if (hit) return hit;

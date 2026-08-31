@@ -7,22 +7,17 @@ import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
 import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
+import {
+  buildRepositoryGraph,
+  traceRepositoryProblems,
+  type RepositorySnapshot,
+} from "@/lib/repository-graph";
 import { Sparkles } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
   created_at: string;
-  payload: {
-    repository?: { html_url?: string; description?: string | null; default_branch?: string };
-    summary?: {
-      file_count?: number;
-      commit_count?: number;
-      branch_count?: number;
-      pull_request_count?: number;
-      issue_count?: number;
-      contributor_count?: number;
-    };
-  };
+  payload: RepositorySnapshot;
 };
 
 export const Route = createFileRoute("/graph")({
@@ -70,7 +65,14 @@ function GraphPage() {
       .catch(() => setSnapshot(null));
   }, []);
 
-  const root = useMemo(() => getOrg(orgSlug), [orgSlug]);
+  const root = useMemo(
+    () => (snapshot ? buildRepositoryGraph(snapshot.payload) : getOrg(orgSlug)),
+    [orgSlug, snapshot],
+  );
+  const problems = useMemo(
+    () => (snapshot ? traceRepositoryProblems(snapshot.payload) : []),
+    [snapshot],
+  );
 
   const path = useMemo(() => {
     const out: GraphNode[] = [root];
@@ -220,13 +222,33 @@ function GraphPage() {
                 )}
               </div>
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-                <span>{snapshot.payload.summary?.file_count ?? 0} files</span>
-                <span>{snapshot.payload.summary?.commit_count ?? 0} commits</span>
-                <span>{snapshot.payload.summary?.branch_count ?? 0} branches</span>
-                <span>{snapshot.payload.summary?.pull_request_count ?? 0} pull requests</span>
-                <span>{snapshot.payload.summary?.issue_count ?? 0} issues</span>
-                <span>{snapshot.payload.summary?.contributor_count ?? 0} contributors</span>
+                <span>{snapshot.payload.files?.length ?? 0} files</span>
+                <span>{snapshot.payload.commits?.length ?? 0} commits</span>
+                <span>{snapshot.payload.branches?.length ?? 0} branches</span>
+                <span>{snapshot.payload.pull_requests?.length ?? 0} pull requests</span>
+                <span>{snapshot.payload.issues?.length ?? 0} issues</span>
+                <span>{snapshot.payload.contributors?.length ?? 0} contributors</span>
               </div>
+              {problems.length > 0 && (
+                <div className="border-border/70 mt-3 border-t pt-3">
+                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
+                    Traceable code problems
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {problems.slice(0, 5).map((problem) => (
+                      <div
+                        key={problem.id}
+                        className="flex items-start justify-between gap-3 text-[11px]"
+                      >
+                        <span className="min-w-0 truncate">{problem.title}</span>
+                        <span className="text-muted-foreground shrink-0 font-mono">
+                          {problem.likelyFiles.length} related files
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
