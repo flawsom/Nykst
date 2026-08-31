@@ -39,22 +39,30 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         if (!response.ok) throw new Error(data.error || "Could not load accessible repositories.");
         return data.repositories as Repository[];
       }),
-    ]).then(([organizationsResult, repositoriesResult]) => {
+      fetch("/api/integrations/github/personal-repositories").then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load personal repositories.");
+        return data.repositories as Repository[];
+      }),
+    ]).then(([organizationsResult, repositoriesResult, personalResult]) => {
       if (organizationsResult.status === "fulfilled") setOrganizations(organizationsResult.value);
-      if (repositoriesResult.status === "fulfilled") {
-        setAllRepositories(repositoriesResult.value);
-        setRepositories(repositoriesResult.value);
-        if (!repositoriesResult.value.length) {
-          setMessage(
-            "No accessible repositories were returned. Reconnect GitHub and approve repository access, then try again.",
-          );
-        }
-      } else {
-        setMessage(
-          repositoriesResult.reason instanceof Error
-            ? repositoriesResult.reason.message
-            : "Could not load accessible repositories.",
-        );
+
+      const accessible = repositoriesResult.status === "fulfilled" ? repositoriesResult.value : [];
+      const personal = personalResult.status === "fulfilled" ? personalResult.value : [];
+      const merged = [
+        ...new Map([...accessible, ...personal].map((item) => [item.id, item])).values(),
+      ];
+
+      setAllRepositories(merged);
+      setRepositories(merged);
+      if (!merged.length) {
+        const reason =
+          personalResult.status === "rejected" && personalResult.reason instanceof Error
+            ? personalResult.reason.message
+            : repositoriesResult.status === "rejected" && repositoriesResult.reason instanceof Error
+              ? repositoriesResult.reason.message
+              : "No accessible repositories were returned.";
+        setMessage(`${reason} Reconnect GitHub and approve repository access, then try again.`);
       }
       setLoading(false);
     });
