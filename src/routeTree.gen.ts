@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
@@ -34,6 +35,11 @@ const GraphRoute = GraphRouteImport.update({
 const IntelligenceRoute = IntelligenceRouteImport.update({
   id: '/intelligence',
   path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
+  id: '/api/pre-registration',
+  path: '/api/pre-registration',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/pre-registration'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/pre-registration'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/api/pre-registration'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pre-registration': {
+      id: '/api/pre-registration'
+      path: '/api/pre-registration'
+      fullPath: '/api/pre-registration'
+      preLoaderRoute: typeof ApiPreRegistrationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/github/all-repositories': {
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
+  ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,

@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from "lucide-react";
@@ -182,11 +181,13 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         console.error("Local storage backup error:", e);
       }
 
-      const { error: supabaseError } = await supabase.from("pre_registration").insert(payload);
-
-      if (supabaseError) {
-        throw new Error(supabaseError.message);
-      }
+      const response = await fetch("/api/pre-registration", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not save your request.");
 
       setDone(true);
     } catch (e: unknown) {
