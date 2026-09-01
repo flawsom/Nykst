@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ConnectionProgress } from "@/components/graph/ConnectionProgress";
 
 type Organization = { id: number; login: string; avatar_url?: string };
 type Repository = {
@@ -21,6 +22,8 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
   const [workspace, setWorkspace] = useState("");
   const [repository, setRepository] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mapping, setMapping] = useState(false);
+  const [mappingComplete, setMappingComplete] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -49,9 +52,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
 
       const accessible = repositoriesResult.status === "fulfilled" ? repositoriesResult.value : [];
       const personal = personalResult.status === "fulfilled" ? personalResult.value : [];
-      const merged = [
-        ...new Map([...accessible, ...personal].map((item) => [item.id, item])).values(),
-      ];
+      const merged = [...new Map([...accessible, ...personal].map((item) => [item.id, item])).values()];
 
       setAllRepositories(merged);
       setRepositories(merged);
@@ -80,9 +81,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     }
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`,
-      );
+      const response = await fetch(`/api/integrations/github/repositories?org=${encodeURIComponent(value)}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setRepositories(data.repositories);
@@ -97,7 +96,9 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     const selected = repositories.find((item) => item.full_name === repository);
     if (!selected) return;
     setLoading(true);
-    setMessage("Reading repository structure, code history, and collaboration signals…");
+    setMapping(true);
+    setMappingComplete(false);
+    setMessage("");
     try {
       const response = await fetch("/api/integrations/github/ingest", {
         method: "POST",
@@ -109,15 +110,20 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       localStorage.setItem("nykst.org", workspace === PERSONAL ? selected.owner.login : workspace);
       localStorage.setItem("nykst.provider", "github");
       localStorage.setItem("nykst.repository", selected.full_name);
+      setMappingComplete(true);
       setMessage(
         `System map foundation ready: ${data.summary.file_count} files, ${data.summary.commit_count} commits, ${data.summary.pull_request_count} pull requests, ${data.summary.issue_count} issues, and ${data.summary.contributor_count} contributors indexed.`,
       );
-      window.setTimeout(() => window.location.assign("/graph"), 900);
     } catch (error) {
+      setMapping(false);
       setMessage(error instanceof Error ? error.message : "Repository ingestion failed.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function finishMapping() {
+    window.location.assign("/graph");
   }
 
   if (!connected)
@@ -131,53 +137,58 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     );
 
   return (
-    <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <p className="text-sm font-medium text-primary">GitHub connected</p>
-      <p className="text-muted-foreground text-xs">
-        Choose your personal account or any organization you can access. Private repositories are
-        supported.
-      </p>
-      <select
-        value={workspace}
-        onChange={(event) => void chooseWorkspace(event.target.value)}
-        className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
-      >
-        <option value="">Select account or organization</option>
-        <option value={PERSONAL}>My repositories & accessible repositories</option>
-        {organizations.map((item) => (
-          <option key={item.id} value={item.login}>
-            Organization: {item.login}
+    <>
+      {mapping && (
+        <ConnectionProgress
+          provider="GitHub"
+          org={repository || workspace || "your repository"}
+          complete={mappingComplete}
+          onDone={finishMapping}
+        />
+      )}
+      <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <p className="text-sm font-medium text-primary">GitHub connected</p>
+        <p className="text-muted-foreground text-xs">
+          Choose your personal account or any organization you can access. Private repositories are supported.
+        </p>
+        <select
+          value={workspace}
+          onChange={(event) => void chooseWorkspace(event.target.value)}
+          className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
+        >
+          <option value="">Select account or organization</option>
+          <option value={PERSONAL}>My repositories & accessible repositories</option>
+          {organizations.map((item) => (
+            <option key={item.id} value={item.login}>
+              Organization: {item.login}
+            </option>
+          ))}
+        </select>
+        <select
+          value={repository}
+          onChange={(event) => setRepository(event.target.value)}
+          disabled={!workspace || loading}
+          className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
+        >
+          <option value="">
+            {loading ? "Loading repositories…" : repositories.length ? "Select repository" : "No repositories found"}
           </option>
-        ))}
-      </select>
-      <select
-        value={repository}
-        onChange={(event) => setRepository(event.target.value)}
-        disabled={!workspace || loading}
-        className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
-      >
-        <option value="">
-          {loading
-            ? "Loading repositories…"
-            : repositories.length
-              ? "Select repository"
-              : "No repositories found"}
-        </option>
-        {repositories.map((item) => (
-          <option key={item.id} value={item.full_name}>
-            {item.full_name}
-            {item.private ? " (private)" : ""}
-          </option>
-        ))}
-      </select>
-      <button
-        onClick={() => void ingest()}
-        disabled={!repository || loading}
-        className="bg-primary text-primary-foreground disabled:opacity-50 w-full rounded-lg px-4 py-2.5 text-sm font-semibold"
-      >
-        {loading ? "Building system map…" : "Ingest repository & build system map"}
-      </button>
-      {message && <p className="text-muted-foreground text-xs leading-relaxed">{message}</p>}
-    </div>
+          {repositories.map((item) => (
+            <option key={item.id} value={item.full_name}>
+              {item.full_name}
+              {item.private ? " (private)" : ""}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => void ingest()}
+          disabled={!repository || loading}
+          className="bg-primary text-primary-foreground disabled:opacity-50 w-full rounded-lg px-4 py-2.5 text-sm font-semibold"
+        >
+          {loading ? "Mapping your system…" : "Start mapping my system"}
+        </button>
+        {message && <p className="text-muted-foreground text-xs leading-relaxed">{message}</p>}
+      </div>
+    </>
   );
 }
