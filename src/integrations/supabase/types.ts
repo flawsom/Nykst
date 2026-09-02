@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      advantages_feedback: {
+        Row: {
+          created_at: string
+          email: string
+          feedback: Json
+          id: string
+          linkedin: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          feedback?: Json
+          id?: string
+          linkedin?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          feedback?: Json
+          id?: string
+          linkedin?: string | null
+        }
+        Relationships: []
+      }
+      pre_registration: {
+        Row: {
+          closing_thoughts: string | null
+          company_size: string | null
+          created_at: string
+          dream_feature: string | null
+          email: string | null
+          first_name: string
+          frustration: string | null
+          hard_won_insight: string | null
+          hardest_parts: string[]
+          id: string
+          knowledge_location: string | null
+          linkedin: string | null
+          role: string | null
+          time_understanding_code: string | null
+          would_use: string | null
+          x_account: string | null
+        }
+        Insert: {
+          closing_thoughts?: string | null
+          company_size?: string | null
+          created_at?: string
+          dream_feature?: string | null
+          email?: string | null
+          first_name: string
+          frustration?: string | null
+          hard_won_insight?: string | null
+          hardest_parts?: string[]
+          id?: string
+          knowledge_location?: string | null
+          linkedin?: string | null
+          role?: string | null
+          time_understanding_code?: string | null
+          would_use?: string | null
+          x_account?: string | null
+        }
+        Update: {
+          closing_thoughts?: string | null
+          company_size?: string | null
+          created_at?: string
+          dream_feature?: string | null
+          email?: string | null
+          first_name?: string
+          frustration?: string | null
+          hard_won_insight?: string | null
+          hardest_parts?: string[]
+          id?: string
+          knowledge_location?: string | null
+          linkedin?: string | null
+          role?: string | null
+          time_understanding_code?: string | null
+          would_use?: string | null
+          x_account?: string | null
+        }
+        Relationships: []
+      }
       pre_registrations: {
         Row: {
           closing_thoughts: string | null
@@ -56,6 +137,39 @@ export type Database = {
           role?: string | null
           time_understanding_code?: string | null
           would_use?: string | null
+        }
+        Relationships: []
+      }
+      repository_ingestions: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json | null
+          provider: string
+          provider_user_id: string
+          provider_username: string | null
+          repository_full_name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          provider: string
+          provider_user_id: string
+          provider_username?: string | null
+          repository_full_name: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          provider?: string
+          provider_user_id?: string
+          provider_username?: string | null
+          repository_full_name?: string
+          status?: string
         }
         Relationships: []
       }
