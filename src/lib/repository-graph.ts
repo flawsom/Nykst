@@ -55,7 +55,7 @@ function node(
       files: kind === "file" ? 1 : children.length,
       teams: 0,
     },
-    repo,
+    ...(repo ? { repo } : {}),
     language: label.endsWith(".tsx") || label.endsWith(".ts") ? "TypeScript" : undefined,
     expandable: kind !== "file",
   };
@@ -135,8 +135,8 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
     .map((file) => file.path)
     .filter((path): path is string => Boolean(path));
   return (snapshot.issues ?? []).slice(0, 100).map((issue, index) => {
-    const title = text(issue.title) || `Repository issue ${index + 1}`;
-    const body = text(issue.body);
+    const title = text(issue['title']) || `Repository issue ${index + 1}`;
+    const body = text(issue['body']);
     const tokens = `${title} ${body}`
       .toLowerCase()
       .split(/[^a-z0-9]+/)
@@ -148,10 +148,10 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
       })
       .slice(0, 8);
     return {
-      id: text(issue.id) || text(issue.number) || `issue-${index + 1}`,
+      id: text(issue['id']) || text(issue['number']) || `issue-${index + 1}`,
       title,
-      state: text(issue.state) || "open",
-      url: text(issue.html_url) || undefined,
+      state: text(issue['state']) || "open",
+      ...(text(issue['html_url']) ? { url: text(issue['html_url']) } : {}),
       likelyFiles,
       evidence: likelyFiles.length
         ? "Issue language overlaps repository paths."
