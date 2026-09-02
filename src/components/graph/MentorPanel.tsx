@@ -120,8 +120,9 @@ function incidentsOf(node: GraphNode) {
 type Voice = "technical" | "executive" | "guided";
 
 function voiceOf(role: RoleDef): Voice {
-  if (role.id === "owner") return "executive";
-  if (role.id === "viewer") return "guided";
+  const id = role.id as string;
+  if (id === "owner") return "executive";
+  if (id === "viewer") return "guided";
   return "technical";
 }
 

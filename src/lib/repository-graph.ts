@@ -3,7 +3,12 @@ import type { GraphNode, NodeKind } from "./graph-data";
 type RepoFile = { path?: string; type?: string; size?: number };
 type RepoRecord = Record<string, unknown>;
 export type RepositorySnapshot = {
-  repository?: { full_name?: string; default_branch?: string; description?: string | null };
+  repository?: {
+    full_name?: string;
+    default_branch?: string;
+    description?: string | null;
+    html_url?: string;
+  };
   files?: RepoFile[];
   commits?: RepoRecord[];
   branches?: RepoRecord[];
@@ -56,7 +61,7 @@ function node(
       teams: 0,
     },
     ...(repo ? { repo } : {}),
-    language: label.endsWith(".tsx") || label.endsWith(".ts") ? "TypeScript" : undefined,
+    ...(label.endsWith(".tsx") || label.endsWith(".ts") ? { language: "TypeScript" } : {}),
     expandable: kind !== "file",
   };
 }
