@@ -14,6 +14,7 @@ import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
+import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
@@ -46,6 +47,11 @@ const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
 const ApiAiKeyRoute = ApiAiKeyRouteImport.update({
   id: '/api/ai/key',
   path: '/api/ai/key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiTestRoute = ApiAiTestRouteImport.update({
+  id: '/api/ai/test',
+  path: '/api/ai/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/api/pre-registration'
     | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/api/pre-registration'
     | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/api/pre-registration'
     | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   IntelligenceRoute: typeof IntelligenceRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
+  ApiAiTestRoute: typeof ApiAiTestRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
@@ -242,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/key'
       fullPath: '/api/ai/key'
       preLoaderRoute: typeof ApiAiKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/test': {
+      id: '/api/ai/test'
+      path: '/api/ai/test'
+      fullPath: '/api/ai/test'
+      preLoaderRoute: typeof ApiAiTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/github/all-repositories': {
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntelligenceRoute: IntelligenceRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
+  ApiAiTestRoute: ApiAiTestRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,
