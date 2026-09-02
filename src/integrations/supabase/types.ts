@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_keys: {
+        Row: {
+          ai_provider: string
+          auth_provider: string
+          created_at: string
+          id: string
+          key_ciphertext: string
+          key_last4: string
+          provider_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_provider: string
+          auth_provider?: string
+          created_at?: string
+          id?: string
+          key_ciphertext: string
+          key_last4: string
+          provider_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_provider?: string
+          auth_provider?: string
+          created_at?: string
+          id?: string
+          key_ciphertext?: string
+          key_last4?: string
+          provider_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
