@@ -111,7 +111,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
               sha: text(commit['sha']).slice(0, 8),
               message:
                 text(commit['message']) ||
-                text((commit['commit'] as Record<string, unknown> | undefined)?.message),
+                text((commit['commit'] as Record<string, unknown> | undefined)?.['message']),
               author: text(commit['author']),
             })),
           ),
