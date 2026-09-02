@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
+import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
+import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
+import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
@@ -40,6 +43,21 @@ const IntelligenceRoute = IntelligenceRouteImport.update({
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
   id: '/api/pre-registration',
   path: '/api/pre-registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiKeyRoute = ApiAiKeyRouteImport.update({
+  id: '/api/ai/key',
+  path: '/api/ai/key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiTestRoute = ApiAiTestRouteImport.update({
+  id: '/api/ai/test',
+  path: '/api/ai/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
@@ -96,6 +114,9 @@ export interface FileRoutesByFullPath {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -110,6 +131,9 @@ export interface FileRoutesByTo {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -125,6 +149,9 @@ export interface FileRoutesById {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/ai/key': typeof ApiAiKeyRoute
+  '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -141,6 +168,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
+    | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -155,6 +185,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
+    | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -169,6 +202,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
+    | '/api/ai/key'
+    | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -184,6 +220,9 @@ export interface RootRouteChildren {
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
+  ApiAiKeyRoute: typeof ApiAiKeyRoute
+  ApiAiTestRoute: typeof ApiAiTestRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
@@ -222,6 +261,27 @@ declare module '@tanstack/react-router' {
       path: '/api/pre-registration'
       fullPath: '/api/pre-registration'
       preLoaderRoute: typeof ApiPreRegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/key': {
+      id: '/api/ai/key'
+      path: '/api/ai/key'
+      fullPath: '/api/ai/key'
+      preLoaderRoute: typeof ApiAiKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/test': {
+      id: '/api/ai/test'
+      path: '/api/ai/test'
+      fullPath: '/api/ai/test'
+      preLoaderRoute: typeof ApiAiTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/github/all-repositories': {
@@ -288,6 +348,9 @@ const rootRouteChildren: RootRouteChildren = {
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
+  ApiAiKeyRoute: ApiAiKeyRoute,
+  ApiAiTestRoute: ApiAiTestRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,

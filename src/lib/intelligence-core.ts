@@ -29,7 +29,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
   const files = (snapshot.files ?? []).filter((file) => file.type === "blob" && file.path);
   const repo = snapshot.repository?.full_name ?? "connected repository";
   const topLevel = [...new Set(files.map((file) => file.path!.split("/")[0]))].slice(0, 8);
-  const openIssues = (snapshot.issues ?? []).filter((issue) => text(issue.state) !== "closed");
+  const openIssues = (snapshot.issues ?? []).filter((issue) => text(issue['state']) !== "closed");
   const manifests = files.filter((file) =>
     /(^|\/)(package\.json|pnpm-lock\.yaml|yarn\.lock|package-lock\.json|requirements\.txt|go\.mod|Cargo\.toml|pom\.xml)$/.test(
       file.path!,
@@ -57,7 +57,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           content: json({ repository: repo, domains: topLevel, files: files.length }),
         },
         ...topLevel.map((area) => ({
-          name: area,
+          name: area ?? "root",
           path: `/live/${repo}/${area}`,
           size: `${files.filter((file) => file.path!.startsWith(`${area}/`)).length} files`,
           summary: "Top-level repository area mapped as a core domain.",
@@ -77,7 +77,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
       description: `${manifests.length} dependency manifests detected; package and module boundaries are ready for deeper linkage analysis.`,
       files: manifests.length
         ? manifests.map((file) => ({
-            name: file.path!.split("/").pop()!,
+            name: file.path!.split("/").pop() ?? file.path!,
             path: file.path!,
             size: size(file.size ?? 0),
             summary: "Dependency manifest discovered in the connected repository.",
@@ -108,11 +108,11 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           summary: "Recent change history and commit authors.",
           content: json(
             commitItems.map((commit) => ({
-              sha: text(commit.sha).slice(0, 8),
+              sha: text(commit['sha']).slice(0, 8),
               message:
-                text(commit.message) ||
-                text((commit.commit as Record<string, unknown> | undefined)?.message),
-              author: text(commit.author),
+                text(commit['message']) ||
+                text((commit['commit'] as Record<string, unknown> | undefined)?.['message']),
+              author: text(commit['author']),
             })),
           ),
         },
@@ -123,10 +123,10 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           summary: "Pull requests and collaboration signals.",
           content: json(
             pullItems.map((pr) => ({
-              number: pr.number,
-              title: pr.title,
-              state: pr.state,
-              author: text(pr.user),
+              number: pr['number'],
+              title: pr['title'],
+              state: pr['state'],
+              author: text(pr['user']),
             })),
           ),
         },
@@ -146,10 +146,10 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           summary: "Open GitHub issues that may represent operational or architectural risk.",
           content: json(
             openIssues.slice(0, 30).map((issue) => ({
-              number: issue.number,
-              title: issue.title,
-              labels: issue.labels,
-              url: issue.html_url,
+              number: issue['number'],
+              title: issue['title'],
+              labels: issue['labels'],
+              url: issue['html_url'],
             })),
           ),
         },
@@ -174,7 +174,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
       description: `${docs.length} documentation and architecture artifacts provide context for the connected system.`,
       files: docs.length
         ? docs.map((file) => ({
-            name: file.path!.split("/").pop()!,
+            name: file.path!.split("/").pop() ?? file.path!,
             path: file.path!,
             size: size(file.size ?? 0),
             summary: "Repository documentation retained as system memory.",

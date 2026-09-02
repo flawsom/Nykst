@@ -3,7 +3,12 @@ import type { GraphNode, NodeKind } from "./graph-data";
 type RepoFile = { path?: string; type?: string; size?: number };
 type RepoRecord = Record<string, unknown>;
 export type RepositorySnapshot = {
-  repository?: { full_name?: string; default_branch?: string; description?: string | null };
+  repository?: {
+    full_name?: string;
+    default_branch?: string;
+    description?: string | null;
+    html_url?: string;
+  };
   files?: RepoFile[];
   commits?: RepoRecord[];
   branches?: RepoRecord[];
@@ -55,8 +60,8 @@ function node(
       files: kind === "file" ? 1 : children.length,
       teams: 0,
     },
-    repo,
-    language: label.endsWith(".tsx") || label.endsWith(".ts") ? "TypeScript" : undefined,
+    ...(repo ? { repo } : {}),
+    ...(label.endsWith(".tsx") || label.endsWith(".ts") ? { language: "TypeScript" } : {}),
     expandable: kind !== "file",
   };
 }
@@ -135,8 +140,8 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
     .map((file) => file.path)
     .filter((path): path is string => Boolean(path));
   return (snapshot.issues ?? []).slice(0, 100).map((issue, index) => {
-    const title = text(issue.title) || `Repository issue ${index + 1}`;
-    const body = text(issue.body);
+    const title = text(issue['title']) || `Repository issue ${index + 1}`;
+    const body = text(issue['body']);
     const tokens = `${title} ${body}`
       .toLowerCase()
       .split(/[^a-z0-9]+/)
@@ -148,10 +153,10 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
       })
       .slice(0, 8);
     return {
-      id: text(issue.id) || text(issue.number) || `issue-${index + 1}`,
+      id: text(issue['id']) || text(issue['number']) || `issue-${index + 1}`,
       title,
-      state: text(issue.state) || "open",
-      url: text(issue.html_url) || undefined,
+      state: text(issue['state']) || "open",
+      ...(text(issue['html_url']) ? { url: text(issue['html_url']) } : {}),
       likelyFiles,
       evidence: likelyFiles.length
         ? "Issue language overlaps repository paths."
