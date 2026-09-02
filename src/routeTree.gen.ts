@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
+import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
@@ -42,6 +43,11 @@ const IntelligenceRoute = IntelligenceRouteImport.update({
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
   id: '/api/pre-registration',
   path: '/api/pre-registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAiKeyRoute = ApiAiKeyRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/api/pre-registration'
+    | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/integrations/github/all-repositories'
@@ -208,6 +220,7 @@ export interface RootRouteChildren {
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -248,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/api/pre-registration'
       fullPath: '/api/pre-registration'
       preLoaderRoute: typeof ApiPreRegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai/key': {
@@ -328,6 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
