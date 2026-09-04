@@ -23,6 +23,9 @@ export type ProblemTrace = {
   url?: string;
   likelyFiles: string[];
   evidence: string;
+  area: string;
+  severity: string;
+  owner: string;
 };
 
 function text(value: unknown) {
@@ -152,6 +155,24 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
         return tokens.some((token) => lower.includes(token));
       })
       .slice(0, 8);
+    const labels = Array.isArray(issue.labels)
+      ? issue.labels
+          .map((label) =>
+            typeof label === "object" && label !== null ? text(label.name) : text(label),
+          )
+          .filter(Boolean)
+      : [];
+    const labelText = labels.join(" ").toLowerCase();
+    const severity = /critical|blocker|urgent/.test(labelText)
+      ? "Critical"
+      : /high|security|bug/.test(labelText)
+        ? "High"
+        : /low|documentation|chore/.test(labelText)
+          ? "Low"
+          : "Medium";
+    const area = labels[0] || (issue.pull_request ? "Change" : "Repository issue");
+    const user =
+      typeof issue.user === "object" && issue.user !== null ? text(issue.user.login) : "";
     return {
       id: text(issue['id']) || text(issue['number']) || `issue-${index + 1}`,
       title,
@@ -159,8 +180,11 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
       ...(text(issue['html_url']) ? { url: text(issue['html_url']) } : {}),
       likelyFiles,
       evidence: likelyFiles.length
-        ? "Issue language overlaps repository paths."
+        ? `Issue language overlaps ${likelyFiles.length} repository path${likelyFiles.length === 1 ? "" : "s"}.`
         : "No direct path match; review recent commits and pull requests manually.",
+      area,
+      severity,
+      owner: user || "Unassigned",
     };
   });
 }

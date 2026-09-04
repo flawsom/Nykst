@@ -291,6 +291,7 @@ function GraphPage() {
             inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
           }
           onOpen={drill}
+          repositoryProblems={snapshot ? problems : undefined}
         />
       </div>
 

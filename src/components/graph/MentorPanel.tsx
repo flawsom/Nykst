@@ -3,6 +3,7 @@ import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/gra
 import type { RoleDef } from "@/lib/access";
 import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
 import { useChatMemory } from "@/lib/chat-memory";
+import type { ProblemTrace } from "@/lib/repository-graph";
 import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,8 @@ const BUSINESS_MEANING: Record<string, string> = {
   "Missing test coverage on error paths": "Failures reach customers before anyone notices.",
   "Deprecated API still referenced": "Carrying old work that will force an unplanned migration.",
   "Unbounded retry loop": "One slow partner can take this area down entirely.",
-  "Secrets read at module scope": "Credential exposure risk — a compliance finding waiting to happen.",
+  "Secrets read at module scope":
+    "Credential exposure risk — a compliance finding waiting to happen.",
   "Hot path allocates per request": "Higher infrastructure spend and slower response for users.",
   "Ownership unclear — no CODEOWNERS entry": "No accountable team — incidents here have no owner.",
 };
@@ -104,7 +106,8 @@ const INCIDENT_PATTERNS = [
 function incidentsOf(node: GraphNode) {
   const count = 1 + Math.floor(score(`${node.id}#inc`) * 3);
   return Array.from({ length: count }, (_, i) => {
-    const p = INCIDENT_PATTERNS[Math.floor(score(`${node.id}#inc-${i}`) * INCIDENT_PATTERNS.length)]!;
+    const p =
+      INCIDENT_PATTERNS[Math.floor(score(`${node.id}#inc-${i}`) * INCIDENT_PATTERNS.length)]!;
     const days = 8 + Math.floor(score(`${node.id}#inc-age-${i}`) * 300);
     return {
       id: `${node.id}-inc-${i}`,
@@ -257,6 +260,7 @@ function answerFor(
   q: string,
   node: GraphNode,
   kids: GraphNode[],
+  issues: (IssueLike & { severity: string })[],
 ): { text: string; evidence: Evidence[] } {
   const b = node.blast;
   const low = q.toLowerCase();
@@ -273,7 +277,12 @@ function answerFor(
     { kind: "metric", label: `blast ${b.level}` },
   ];
 
-  if (low.includes("break") || low.includes("change") || low.includes("impact") || low.includes("risk"))
+  if (
+    low.includes("break") ||
+    low.includes("change") ||
+    low.includes("impact") ||
+    low.includes("risk")
+  )
     return {
       text: exec
         ? `Touching ${node.label} affects ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""} — ${b.level.toLowerCase()} exposure. Expect coordination across those teams and a longer release window.`
@@ -302,7 +311,7 @@ function answerFor(
     };
 
   if (low.includes("issue") || low.includes("problem") || low.includes("fix")) {
-    const list = issuesOf(node);
+    const list = issues;
     return {
       text: exec
         ? `${list.length} open findings. Highest impact: ${BUSINESS_MEANING[list[0]!.title] ?? list[0]!.title}`
@@ -323,7 +332,12 @@ function answerFor(
     return {
       text: exec
         ? `${node.summary} It groups ${kids.length} ${childKindLabel[node.kind].toLowerCase()} and is one of your ${b.teams}-team areas.`
-        : `${node.summary} Children: ${kids.slice(0, 5).map((k) => k.label).join(", ") || "none"}.`,
+        : `${node.summary} Children: ${
+            kids
+              .slice(0, 5)
+              .map((k) => k.label)
+              .join(", ") || "none"
+          }.`,
       evidence: [...nodeEv, ...fileEv.slice(0, 2)],
     };
 
@@ -344,13 +358,7 @@ function suggestionsFor(voice: Voice) {
 
 /* ---------------- evidence strip ---------------- */
 
-function EvidenceStrip({
-  items,
-  onOpen,
-}: {
-  items: Evidence[];
-  onOpen: (n: GraphNode) => void;
-}) {
+function EvidenceStrip({ items, onOpen }: { items: Evidence[]; onOpen: (n: GraphNode) => void }) {
   if (items.length === 0) return null;
   return (
     <div className="mt-2.5">
@@ -399,14 +407,32 @@ export function MentorPanel({
   role,
   related,
   onOpen,
+  repositoryProblems,
 }: {
   node: GraphNode;
   role: RoleDef;
   related: GraphNode[];
   onOpen: (n: GraphNode) => void;
+  repositoryProblems?: ProblemTrace[];
 }) {
   const voice = voiceOf(role);
-  const issues = useMemo(() => issuesOf(node), [node]);
+  const issues = useMemo(() => {
+    if (!repositoryProblems?.length) return issuesOf(node);
+    const nodePath = node.detail?.path;
+    const scoped = repositoryProblems.filter(
+      (problem) =>
+        !nodePath ||
+        problem.likelyFiles.length === 0 ||
+        problem.likelyFiles.some((path) => path === nodePath || path.startsWith(`${nodePath}/`)),
+    );
+    return (scoped.length ? scoped : repositoryProblems).map((problem) => ({
+      id: problem.id,
+      title: problem.title,
+      area: problem.area,
+      severity: problem.severity,
+      owner: problem.owner,
+    }));
+  }, [node, repositoryProblems]);
   const canCode = voice === "technical";
   const [tab, setTab] = useState<"brief" | "ask" | "code">("brief");
   const [openCard, setOpenCard] = useState<string | null>("problems");
@@ -424,7 +450,7 @@ export function MentorPanel({
   const ask = (text: string) => {
     const query = text.trim();
     if (!query) return;
-    const res = answerFor(voice, query, node, related);
+    const res = answerFor(voice, query, node, related, issues);
     setThread((t) => [...t, { q: query, a: res.text, evidence: res.evidence }]);
     memory.addTurn({
       q: query,
@@ -437,13 +463,13 @@ export function MentorPanel({
   const openChat = (id: string) => {
     memory.setActiveId(id);
     const c = memory.chats.find((x) => x.id === id);
-    setThread((c?.turns ?? []).map((t) => ({ q: t.q, a: t.a, evidence: t.evidence as Evidence[] })));
+    setThread(
+      (c?.turns ?? []).map((t) => ({ q: t.q, a: t.a, evidence: t.evidence as Evidence[] })),
+    );
     setMenu(false);
   };
 
-  const tabs = canCode
-    ? (["brief", "ask", "code"] as const)
-    : (["brief", "ask"] as const);
+  const tabs = canCode ? (["brief", "ask", "code"] as const) : (["brief", "ask"] as const);
   const TAB_LABEL: Record<string, string> = {
     brief: "Problem tracker",
     ask: "Ask",
@@ -479,7 +505,6 @@ export function MentorPanel({
           ))}
         </div>
       </div>
-
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5">
         {tab === "brief" ? (
@@ -753,7 +778,6 @@ export function MentorPanel({
             ))}
           </div>
         )}
-
       </div>
 
       {tab === "ask" && (
