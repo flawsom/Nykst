@@ -45,11 +45,7 @@ export function ApiSettingsButton({ className }: { className?: string }) {
         />
       </button>
       {open && (
-        <ApiSettingsDialog
-          status={status}
-          onStatus={setStatus}
-          onClose={() => setOpen(false)}
-        />
+        <ApiSettingsDialog status={status} onStatus={setStatus} onClose={() => setOpen(false)} />
       )}
     </>
   );
@@ -64,9 +60,7 @@ function ApiSettingsDialog({
   onStatus: (s: KeyStatus) => void;
   onClose: () => void;
 }) {
-  const [provider, setProvider] = useState<ProviderId>(
-    (status.provider as ProviderId) ?? "openai",
-  );
+  const [provider, setProvider] = useState<ProviderId>((status.provider as ProviderId) ?? "openai");
   const [apiKey, setApiKey] = useState("");
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<"test" | "save" | "remove" | null>(null);

@@ -194,7 +194,12 @@ export async function chatWithUserKey(
   const data = (await response.json()) as Record<string, unknown>;
   if (key.provider === "anthropic") {
     const content = data["content"] as { text?: string }[] | undefined;
-    return content?.map((part) => part.text ?? "").join("").trim() || "No answer returned.";
+    return (
+      content
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim() || "No answer returned."
+    );
   }
   const choices = data["choices"] as { message?: { content?: string } }[] | undefined;
   return choices?.[0]?.message?.content?.trim() || "No answer returned.";

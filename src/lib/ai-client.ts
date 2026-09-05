@@ -1,6 +1,5 @@
 export type AskResult =
-  | { ok: true; answer: string; provider: string }
-  | { ok: false; error: string; needsKey: boolean };
+  { ok: true; answer: string; provider: string } | { ok: false; error: string; needsKey: boolean };
 
 /** Calls Nykst AI using the signed-in user's own provider key (BYOK). */
 export async function askNykstAi(prompt: string, context?: string): Promise<AskResult> {
@@ -43,5 +42,6 @@ export async function fetchKeyStatus(): Promise<KeyStatus> {
 
 /** Opens the API Settings dialog from anywhere in the app. */
 export function openApiSettings() {
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("nykst:open-api-settings"));
+  if (typeof window !== "undefined")
+    window.dispatchEvent(new CustomEvent("nykst:open-api-settings"));
 }
