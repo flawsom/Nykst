@@ -5,6 +5,8 @@ import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,27 +30,136 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+function AuthWall() {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const sendMagicLink = async () => {
+    if (!email.trim()) {
+      setMessage("Enter your email address to continue.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setBusy(false);
+    setMessage(
+      error
+        ? "We could not send the sign-up link. Please try again."
+        : "Check your inbox for a secure sign-up link.",
+    );
+  };
+
+  const continueWith = async (provider: "google" | "apple" | "github") => {
+    setBusy(true);
+    setMessage("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      setBusy(false);
+      setMessage("This sign-up method is not available yet. Try email instead.");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/85 p-4 backdrop-blur-xl">
+      <div className="border-border bg-card w-full max-w-md rounded-3xl border p-6 shadow-2xl sm:p-8">
+        <div className="flex items-center gap-2.5">
+          <span className="glow-ring bg-primary block size-2.5 rounded-full" />
+          <span className="text-sm font-semibold tracking-[0.24em] uppercase">Nykst</span>
+        </div>
+        <p className="text-primary mt-8 text-[10px] font-mono tracking-[0.28em] uppercase">
+          Your software map starts here
+        </p>
+        <h2 className="mt-2 text-3xl font-semibold tracking-tight">Create your account</h2>
+        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+          Sign up first, then connect the repository you want Nykst to understand. Your repository
+          context stays connected to this account.
+        </p>
+
+        <div className="mt-6 grid grid-cols-3 gap-2">
+          {(["google", "apple", "github"] as const).map((provider) => (
+            <button
+              key={provider}
+              disabled={busy}
+              onClick={() => void continueWith(provider)}
+              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-2 py-2.5 text-xs font-medium capitalize transition-colors disabled:opacity-50"
+            >
+              {provider}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-muted-foreground my-5 flex items-center gap-3 text-[10px] font-mono uppercase tracking-widest">
+          <span className="bg-border h-px flex-1" /> or use email{" "}
+          <span className="bg-border h-px flex-1" />
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@company.com"
+            className="border-border bg-surface min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <button
+            disabled={busy}
+            onClick={() => void sendMagicLink()}
+            className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          >
+            Continue
+          </button>
+        </div>
+        {message && <p className="text-muted-foreground mt-3 text-xs leading-relaxed">{message}</p>}
+        <p className="text-muted-foreground mt-6 text-[11px] leading-relaxed">
+          By continuing, you agree to use Nykst with repositories you are authorized to access. We
+          use read-only repository access for mapping.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function Landing() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
 
   useEffect(() => {
-    setUser(localStorage.getItem("nykst.user"));
+    let mounted = true;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        setSession(data.session);
+        setAuthReady(true);
+      })
+      .catch(() => mounted && setAuthReady(true));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (mounted) setSession(nextSession);
+    });
+
     setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = () => {
-    const name = "engineer@nykst.dev";
-    localStorage.setItem("nykst.user", name);
-    setUser(name);
-  };
-
   const logout = () => {
-    localStorage.removeItem("nykst.user");
-    setUser(null);
+    void supabase.auth.signOut();
   };
 
   const connect = () => {
@@ -59,6 +170,7 @@ function Landing() {
     <main className="relative min-h-screen overflow-hidden">
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
+      {authReady && !session && <AuthWall />}
 
       <div
         className="pointer-events-none absolute inset-0"
@@ -110,25 +222,18 @@ function Landing() {
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
           </Link>
-          {user ? (
+          {session && (
             <div className="flex items-center gap-3">
-              <span className="text-muted-foreground hidden font-mono text-xs sm:inline">
-                {user}
+              <span className="text-muted-foreground hidden max-w-[180px] truncate font-mono text-xs sm:inline">
+                {session.user.email ?? "Connected account"}
               </span>
               <button
                 onClick={logout}
                 className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
               >
-                Log out
+                Sign out
               </button>
             </div>
-          ) : (
-            <button
-              onClick={login}
-              className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-            >
-              Log in
-            </button>
           )}
           <button
             onClick={() => setPreRegister(true)}

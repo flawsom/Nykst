@@ -28,7 +28,10 @@ function truncate(s: string, max: number) {
 
 function repoOf(node: GraphNode) {
   if (node.repo) return node.repo;
-  const seg = node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const seg = node.label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   return `${node.owners[0]?.replace("@", "") ?? "org"}/${seg}`;
 }
 
@@ -38,11 +41,38 @@ function techLine(node: GraphNode) {
   return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
 }
 
-function InfoBadge({ x, y, color, label, onClick }: { x: number; y: number; color: string; label: string; onClick: () => void }) {
+function InfoBadge({
+  x,
+  y,
+  color,
+  label,
+  onClick,
+}: {
+  x: number;
+  y: number;
+  color: string;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <g transform={`translate(${x}, ${y})`} onClick={onClick} className="cursor-pointer group">
-      <rect x={-48} y={-10} width={96} height={20} rx={10} fill="var(--surface-2)" stroke={color} strokeWidth={1} className="transition-all group-hover:scale-105" />
-      <text x={0} y={3} textAnchor="middle" className="fill-foreground text-[10px] font-mono font-semibold">
+      <rect
+        x={-48}
+        y={-10}
+        width={96}
+        height={20}
+        rx={10}
+        fill="var(--surface-2)"
+        stroke={color}
+        strokeWidth={1}
+        className="transition-all group-hover:scale-105"
+      />
+      <text
+        x={0}
+        y={3}
+        textAnchor="middle"
+        className="fill-foreground text-[10px] font-mono font-semibold"
+      >
         ℹ {label}
       </text>
     </g>
@@ -68,15 +98,15 @@ export function GraphCanvas({
     return () => clearTimeout(t);
   }, [center.id]);
 
-  const W = 1100;
-  const H = 750;
+  const W = 1200;
+  const H = 820;
   const cx = W / 2;
   const cy = H / 2;
 
   const points = useMemo(() => {
     const n = Math.max(children.length, 1);
-    const radiusX = n > 8 ? 400 : 350;
-    const radiusY = n > 8 ? 290 : 250;
+    const radiusX = n > 8 ? 470 : 410;
+    const radiusY = n > 8 ? 330 : 285;
 
     return children.map((child, i) => {
       const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
@@ -174,8 +204,8 @@ export function GraphCanvas({
         {/* Surrounding circular nodes */}
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const w = 240;
-          const h = 48;
+          const w = 260;
+          const h = 56;
           return (
             <g
               key={p.node.id}
@@ -211,7 +241,7 @@ export function GraphCanvas({
                 className="fill-foreground text-[12px] font-semibold tracking-tight cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, 18)}
+                {truncate(p.node.label, 20)}
               </text>
               <text
                 x={-w / 2 + 32}

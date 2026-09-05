@@ -13,6 +13,7 @@ import {
   type RepositorySnapshot,
 } from "@/lib/repository-graph";
 import { Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -49,6 +50,7 @@ function GraphPage() {
   const [dossier, setDossier] = useState<GraphNode | null>(null);
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -61,18 +63,33 @@ function GraphPage() {
       return;
     }
 
-    const stored = localStorage.getItem("nykst.org");
-    const p = localStorage.getItem("nykst.provider");
-    if (stored) setOrgSlug(stored);
-    if (p) setProvider(p);
-    fetch("/api/integrations/github/latest")
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const data = (await response.json()) as { ingestion?: IngestionSnapshot | null };
-        return data.ingestion ?? null;
+    let active = true;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data.session) {
+          setAuthRequired(true);
+          return;
+        }
+        const stored = localStorage.getItem("nykst.org");
+        const p = localStorage.getItem("nykst.provider");
+        if (stored) setOrgSlug(stored);
+        if (p) setProvider(p);
+        return fetch("/api/integrations/github/latest")
+          .then(async (response) => {
+            if (!response.ok) return null;
+            const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
+            return payload.ingestion ?? null;
+          })
+          .then((ingestion) => active && setSnapshot(ingestion))
+          .catch(() => active && setSnapshot(null));
       })
-      .then(setSnapshot)
-      .catch(() => setSnapshot(null));
+      .catch(() => active && setAuthRequired(true));
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const root = useMemo(
@@ -134,21 +151,47 @@ function GraphPage() {
   const childKind = (centerChildren[0]?.kind ?? "file") as GraphNode["kind"];
   const inspected = selected ?? center;
 
+  if (authRequired) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-5">
+        <div className="border-border bg-card w-full max-w-md rounded-3xl border p-8 text-center shadow-2xl">
+          <span className="glow-ring bg-primary mx-auto block size-3 rounded-full" />
+          <p className="text-primary mt-6 text-[10px] font-mono tracking-[0.28em] uppercase">
+            Account required
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+            Create your Nykst account first
+          </h1>
+          <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            Sign up before entering your private software map. Your connected repository stays
+            attached to your account.
+          </p>
+          <Link
+            to="/"
+            className="bg-primary text-primary-foreground mt-6 inline-flex rounded-xl px-5 py-3 text-sm font-semibold"
+          >
+            Continue to sign up
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <header className="border-border flex items-center justify-between gap-4 border-b px-5 py-3 shrink-0">
+      <header className="border-border flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b px-4 py-3 sm:px-5">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2 rounded-full" />
           <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </Link>
 
-        <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto text-sm">
+        <nav className="order-3 flex w-full min-w-0 items-center gap-2.5 overflow-x-auto text-sm sm:order-none sm:w-auto sm:flex-1">
           {path.map((node, i) => (
             <span key={node.id} className="flex shrink-0 items-center gap-1.5">
-              {i > 0 && <span className="text-muted-foreground/60 text-xs">/</span>}
+              {i > 0 && <span className="text-muted-foreground/60 px-1 text-xs">/</span>}
               <button
                 onClick={() => setPathIds(pathIds.slice(0, i))}
-                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   i === path.length - 1
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -167,8 +210,8 @@ function GraphPage() {
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
           </a>
-          <span className="text-muted-foreground font-mono text-xs">
-            {orgSlug} ({provider})
+          <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
+            {orgSlug} · {provider}
           </span>
         </div>
       </header>
@@ -182,7 +225,7 @@ function GraphPage() {
           visible={(n) => canView(role, n)}
         />
 
-        <section className="flex flex-1 flex-col min-w-0 p-5 overflow-y-auto">
+        <section className="flex min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
@@ -220,16 +263,6 @@ function GraphPage() {
                   </p>
                   <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
                 </div>
-                {snapshot.payload.repository?.html_url && (
-                  <a
-                    href={snapshot.payload.repository.html_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary text-xs hover:underline"
-                  >
-                    Open on GitHub →
-                  </a>
-                )}
               </div>
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                 <span>{snapshot.payload.files?.length ?? 0} files</span>
@@ -262,7 +295,7 @@ function GraphPage() {
             </div>
           )}
 
-          <div className="relative min-h-[420px] flex-1 mt-4">
+          <div className="relative mt-5 min-h-[480px] flex-1 sm:min-h-[520px]">
             <GraphCanvas
               key={`${center.id}-${role.id}`}
               center={center}
@@ -275,12 +308,12 @@ function GraphPage() {
             />
           </div>
 
-          <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground font-mono">
+          <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
             <span>
               {demoMode ? "Nykst Demo · " : "Software Navigator · "}
               {childKindLabel[center.kind]} ({centerChildren.length})
             </span>
-            <span>Click any node, eye icon 👁, or tree item to drill deeper</span>
+            <span>Choose a node or tree item to drill deeper</span>
           </div>
         </section>
 
