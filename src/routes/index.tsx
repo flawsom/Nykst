@@ -4,9 +4,7 @@ import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { cn } from "@/lib/utils";
-import { Apple, Chrome, Github, Mail, Sparkles, X } from "lucide-react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,195 +28,14 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-function AuthWall() {
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const sendMagicLink = async () => {
-    if (!email.trim()) {
-      setMessage("Enter your email address to continue.");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: window.location.origin },
-      });
-      setMessage(
-        error
-          ? "Email sign-up is not configured yet. Please try again later."
-          : "Check your inbox for a secure sign-up link.",
-      );
-    } catch {
-      setMessage("Account sign-up is not configured yet. Please try again later.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const continueWith = async (provider: "google" | "apple" | "github") => {
-    setBusy(true);
-    setMessage("");
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) setMessage("This sign-up method is not available yet. Try email instead.");
-    } catch {
-      setMessage("Account sign-up is not configured yet. Please try again later.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/85 p-4 backdrop-blur-xl">
-      <div className="border-border bg-card w-full max-w-md rounded-3xl border p-6 shadow-2xl sm:p-8">
-        <div className="flex items-center gap-2.5">
-          <span className="glow-ring bg-primary block size-2.5 rounded-full" />
-          <span className="text-sm font-semibold tracking-[0.24em] uppercase">Nykst</span>
-        </div>
-        <p className="text-primary mt-8 text-[10px] font-mono tracking-[0.28em] uppercase">
-          Your software map starts here
-        </p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight">Create your account</h2>
-        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-          Sign up first, then connect the repository you want Nykst to understand. Your repository
-          context stays connected to this account.
-        </p>
-
-        <div className="mt-6 grid grid-cols-3 gap-2">
-          {(["google", "apple", "github"] as const).map((provider) => (
-            <button
-              key={provider}
-              disabled={busy}
-              onClick={() => void continueWith(provider)}
-              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-2 py-2.5 text-xs font-medium capitalize transition-colors disabled:opacity-50"
-            >
-              {provider}
-            </button>
-          ))}
-        </div>
-
-        <div className="text-muted-foreground my-5 flex items-center gap-3 text-[10px] font-mono uppercase tracking-widest">
-          <span className="bg-border h-px flex-1" /> or use email{" "}
-          <span className="bg-border h-px flex-1" />
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@company.com"
-            className="border-border bg-surface min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-primary"
-          />
-          <button
-            disabled={busy}
-            onClick={() => void sendMagicLink()}
-            className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-          >
-            Continue
-          </button>
-        </div>
-        {message && <p className="text-muted-foreground mt-3 text-xs leading-relaxed">{message}</p>}
-        <p className="text-muted-foreground mt-6 text-[11px] leading-relaxed">
-          By continuing, you agree to use Nykst with repositories you are authorized to access. We
-          use read-only repository access for mapping.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function Landing() {
-  const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
-  const [authReady, setAuthReady] = useState(false);
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
 
   useEffect(() => {
-    let mounted = true;
-    try {
-      supabase.auth
-        .getSession()
-        .then(({ data }) => {
-          if (!mounted) return;
-          setSession(data.session);
-          setAuthReady(true);
-        })
-        .catch(() => mounted && setAuthReady(true));
-    } catch {
-      setAuthReady(true);
-    }
-
-    let subscription: { unsubscribe: () => void } | undefined;
-    try {
-      const result = supabase.auth.onAuthStateChange((_event, nextSession) => {
-        if (mounted) setSession(nextSession);
-      });
-      subscription = result.data.subscription;
-    } catch {
-      // Supabase may be intentionally unconfigured in a preview. Keep the page usable.
-      setAuthReady(true);
-    }
-
     setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
-    };
   }, []);
-
-  const submitAuth = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setAuthBusy(true);
-    setAuthMessage("");
-    try {
-      const result =
-        authMode === "signup"
-          ? await supabase.auth.signUp({ email: authEmail, password: authPassword })
-          : await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-      if (result.error) throw result.error;
-      if (authMode === "signup" && !result.data.session) {
-        setAuthMessage("Check your email to confirm your account, then sign in here.");
-      } else {
-        setAuthOpen(false);
-      }
-    } catch (error) {
-      setAuthMessage(
-        error instanceof Error ? error.message : "Authentication could not be completed.",
-      );
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const oauth = async (provider: "google" | "apple") => {
-    setAuthBusy(true);
-    setAuthMessage("");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) setAuthMessage(error.message);
-    setAuthBusy(false);
-  };
-
-  const logout = async () => {
-    await supabase.auth.signOut().catch(() => undefined);
-  };
 
   const connect = () => {
     window.location.assign("/api/integrations/github/start");
@@ -226,109 +43,8 @@ function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {authOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="border-border bg-card relative w-full max-w-md rounded-2xl border p-6 shadow-2xl">
-            <button
-              onClick={() => setAuthOpen(false)}
-              className="text-muted-foreground hover:text-foreground absolute top-4 right-4"
-              aria-label="Close account dialog"
-            >
-              <X className="size-4" />
-            </button>
-            <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Nykst account
-            </p>
-            <h2 className="mt-2 text-xl font-semibold">
-              {authMode === "signin" ? "Welcome back" : "Create your account"}
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Access your repository workspace and keep your selected system in view.
-            </p>
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <button
-                onClick={() => void oauth("google")}
-                disabled={authBusy}
-                className="border-border bg-surface hover:bg-surface-2 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
-              >
-                <Chrome className="size-3.5" /> Google
-              </button>
-              <button
-                onClick={() => void oauth("apple")}
-                disabled={authBusy}
-                className="border-border bg-surface hover:bg-surface-2 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
-              >
-                <Apple className="size-3.5" /> Apple
-              </button>
-              <button
-                onClick={connect}
-                disabled={authBusy}
-                className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
-              >
-                <Github className="size-3.5" /> GitHub
-              </button>
-            </div>
-            <div className="text-muted-foreground my-4 flex items-center gap-3 text-[10px] uppercase tracking-[0.2em]">
-              <span className="bg-border h-px flex-1" />
-              or email
-              <span className="bg-border h-px flex-1" />
-            </div>
-            <form onSubmit={submitAuth} className="space-y-3">
-              <label className="block text-xs font-medium">
-                Email
-                <input
-                  value={authEmail}
-                  onChange={(event) => setAuthEmail(event.target.value)}
-                  type="email"
-                  required
-                  className="border-border bg-surface mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
-                  placeholder="you@company.com"
-                />
-              </label>
-              <label className="block text-xs font-medium">
-                Password
-                <input
-                  value={authPassword}
-                  onChange={(event) => setAuthPassword(event.target.value)}
-                  type="password"
-                  minLength={6}
-                  required
-                  className="border-border bg-surface mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
-                  placeholder="At least 6 characters"
-                />
-              </label>
-              {authMessage && (
-                <p className="text-muted-foreground rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs leading-relaxed">
-                  {authMessage}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={authBusy}
-                className="bg-primary text-primary-foreground hover:bg-primary-glow flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-              >
-                <Mail className="size-4" />
-                {authBusy
-                  ? "Working…"
-                  : authMode === "signin"
-                    ? "Sign in with email"
-                    : "Create account with email"}
-              </button>
-            </form>
-            <button
-              onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
-              className="text-muted-foreground hover:text-foreground mt-4 w-full text-center text-xs"
-            >
-              {authMode === "signin"
-                ? "Need an account? Sign up"
-                : "Already have an account? Sign in"}
-            </button>
-          </div>
-        </div>
-      )}
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
-      {authReady && !session && <AuthWall />}
 
       <div
         className="pointer-events-none absolute inset-0"
@@ -380,42 +96,6 @@ function Landing() {
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
           </Link>
-          {session ? (
-            <div className="flex items-center gap-3">
-              <span className="text-muted-foreground hidden max-w-[180px] truncate font-mono text-xs sm:inline">
-                {session.user.email ?? "Connected account"}
-              </span>
-              <button
-                onClick={() => void logout()}
-                className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setAuthMode("signin");
-                  setAuthMessage("");
-                  setAuthOpen(true);
-                }}
-                className="text-muted-foreground hover:text-foreground px-2 py-1.5 text-xs font-medium transition-colors"
-              >
-                Sign in
-              </button>
-              <button
-                onClick={() => {
-                  setAuthMode("signup");
-                  setAuthMessage("");
-                  setAuthOpen(true);
-                }}
-                className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
-              >
-                Sign up
-              </button>
-            </div>
-          )}
           <button
             onClick={() => setPreRegister(true)}
             className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
