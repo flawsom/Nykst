@@ -64,28 +64,32 @@ function GraphPage() {
     }
 
     let active = true;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!active) return;
-        if (!data.session) {
-          setAuthRequired(true);
-          return;
-        }
-        const stored = localStorage.getItem("nykst.org");
-        const p = localStorage.getItem("nykst.provider");
-        if (stored) setOrgSlug(stored);
-        if (p) setProvider(p);
-        return fetch("/api/integrations/github/latest")
-          .then(async (response) => {
-            if (!response.ok) return null;
-            const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
-            return payload.ingestion ?? null;
-          })
-          .then((ingestion) => active && setSnapshot(ingestion))
-          .catch(() => active && setSnapshot(null));
-      })
-      .catch(() => active && setAuthRequired(true));
+    try {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (!active) return;
+          if (!data.session) {
+            setAuthRequired(true);
+            return;
+          }
+          const stored = localStorage.getItem("nykst.org");
+          const p = localStorage.getItem("nykst.provider");
+          if (stored) setOrgSlug(stored);
+          if (p) setProvider(p);
+          return fetch("/api/integrations/github/latest")
+            .then(async (response) => {
+              if (!response.ok) return null;
+              const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
+              return payload.ingestion ?? null;
+            })
+            .then((ingestion) => active && setSnapshot(ingestion))
+            .catch(() => active && setSnapshot(null));
+        })
+        .catch(() => active && setAuthRequired(true));
+    } catch {
+      setAuthRequired(true);
+    }
 
     return () => {
       active = false;

@@ -42,28 +42,36 @@ function AuthWall() {
     }
     setBusy(true);
     setMessage("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin },
-    });
-    setBusy(false);
-    setMessage(
-      error
-        ? "We could not send the sign-up link. Please try again."
-        : "Check your inbox for a secure sign-up link.",
-    );
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setMessage(
+        error
+          ? "Email sign-up is not configured yet. Please try again later."
+          : "Check your inbox for a secure sign-up link.",
+      );
+    } catch {
+      setMessage("Account sign-up is not configured yet. Please try again later.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const continueWith = async (provider: "google" | "apple" | "github") => {
     setBusy(true);
     setMessage("");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) setMessage("This sign-up method is not available yet. Try email instead.");
+    } catch {
+      setMessage("Account sign-up is not configured yet. Please try again later.");
+    } finally {
       setBusy(false);
-      setMessage("This sign-up method is not available yet. Try email instead.");
     }
   };
 
@@ -136,30 +144,39 @@ function Landing() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!mounted) return;
-        setSession(data.session);
-        setAuthReady(true);
-      })
-      .catch(() => mounted && setAuthReady(true));
+    try {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (!mounted) return;
+          setSession(data.session);
+          setAuthReady(true);
+        })
+        .catch(() => mounted && setAuthReady(true));
+    } catch {
+      setAuthReady(true);
+    }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (mounted) setSession(nextSession);
-    });
+    let subscription: { unsubscribe: () => void } | undefined;
+    try {
+      const result = supabase.auth.onAuthStateChange((_event, nextSession) => {
+        if (mounted) setSession(nextSession);
+      });
+      subscription = result.data.subscription;
+    } catch {
+      // Supabase may be intentionally unconfigured in a preview. Keep the page usable.
+      setAuthReady(true);
+    }
 
     setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
   const logout = () => {
-    void supabase.auth.signOut();
+    void supabase.auth.signOut().catch(() => undefined);
   };
 
   const connect = () => {
