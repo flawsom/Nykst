@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
+import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
@@ -51,6 +52,7 @@ function GraphPage() {
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
+  const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -208,6 +210,12 @@ function GraphPage() {
         </nav>
 
         <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => setBeforeYouActOpen(true)}
+            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Before You Act <span aria-hidden="true">→</span>
+          </button>
           <a
             href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
             className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"
@@ -335,6 +343,12 @@ function GraphPage() {
       <OnboardingTour />
 
       <NodeInspector node={dossier} open={dossier !== null} onClose={() => setDossier(null)} />
+      <BeforeYouAct
+        node={inspected}
+        snapshot={snapshot?.payload ?? null}
+        open={beforeYouActOpen}
+        onClose={() => setBeforeYouActOpen(false)}
+      />
     </main>
   );
 }
