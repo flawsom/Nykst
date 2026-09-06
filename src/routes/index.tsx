@@ -96,6 +96,12 @@ function Landing() {
           >
             <Sparkles className="size-3.5" /> Intelligence Core →
           </Link>
+          <Link
+            to="/subscribe"
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            Subscribe · NPR 999
+          </Link>
           <button
             onClick={() => setPreRegister(true)}
             className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"

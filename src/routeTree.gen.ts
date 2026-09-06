@@ -12,10 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as SubscribeRouteImport } from './routes/subscribe'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
+import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
+import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
@@ -40,9 +44,24 @@ const IntelligenceRoute = IntelligenceRouteImport.update({
   path: '/intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscribeRoute = SubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/admin/payments',
+  path: '/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
   id: '/api/pre-registration',
   path: '/api/pre-registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSubscriptionRoute = ApiSubscriptionRouteImport.update({
+  id: '/api/subscription',
+  path: '/api/subscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
@@ -59,6 +78,11 @@ const ApiAiTestRoute = ApiAiTestRouteImport.update({
   id: '/api/ai/test',
   path: '/api/ai/test',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ApiSubscriptionRoute,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
   ApiIntegrationsGithubAllRepositoriesRouteImport.update({
@@ -113,10 +137,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/subscribe': typeof SubscribeRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -130,10 +158,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/subscribe': typeof SubscribeRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -148,10 +180,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/subscribe': typeof SubscribeRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
@@ -167,10 +203,14 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/subscribe'
+    | '/admin/payments'
     | '/api/pre-registration'
+    | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -184,10 +224,14 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/subscribe'
+    | '/admin/payments'
     | '/api/pre-registration'
+    | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -201,10 +245,14 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/subscribe'
+    | '/admin/payments'
     | '/api/pre-registration'
+    | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/ingest'
@@ -219,7 +267,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  SubscribeRoute: typeof SubscribeRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
+  ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
@@ -256,11 +307,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscribe': {
+      id: '/subscribe'
+      path: '/subscribe'
+      fullPath: '/subscribe'
+      preLoaderRoute: typeof SubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/admin/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pre-registration': {
       id: '/api/pre-registration'
       path: '/api/pre-registration'
       fullPath: '/api/pre-registration'
       preLoaderRoute: typeof ApiPreRegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/subscription': {
+      id: '/api/subscription'
+      path: '/api/subscription'
+      fullPath: '/api/subscription'
+      preLoaderRoute: typeof ApiSubscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai/chat': {
@@ -283,6 +355,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/ai/test'
       preLoaderRoute: typeof ApiAiTestRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/subscription/admin': {
+      id: '/api/subscription/admin'
+      path: '/admin'
+      fullPath: '/api/subscription/admin'
+      preLoaderRoute: typeof ApiSubscriptionAdminRouteImport
+      parentRoute: typeof ApiSubscriptionRoute
     }
     '/api/integrations/github/all-repositories': {
       id: '/api/integrations/github/all-repositories'
@@ -343,11 +422,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApiSubscriptionRouteChildren {
+  ApiSubscriptionAdminRoute: typeof ApiSubscriptionAdminRoute
+}
+
+const ApiSubscriptionRouteChildren: ApiSubscriptionRouteChildren = {
+  ApiSubscriptionAdminRoute: ApiSubscriptionAdminRoute,
+}
+
+const ApiSubscriptionRouteWithChildren = ApiSubscriptionRoute._addFileChildren(
+  ApiSubscriptionRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
+  SubscribeRoute: SubscribeRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
+  ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
