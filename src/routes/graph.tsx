@@ -216,6 +216,12 @@ function GraphPage() {
           >
             Before You Act <span aria-hidden="true">→</span>
           </button>
+          <Link
+            to="/subscribe"
+            className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Premium
+          </Link>
           <a
             href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
             className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"

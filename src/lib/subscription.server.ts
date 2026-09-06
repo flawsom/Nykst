@@ -1,7 +1,19 @@
 import { githubToken, githubUser } from "@/lib/integrations/github";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export const SUBSCRIPTION_AMOUNT_NPR = 999;
+export type SubscriptionPlan = "monthly" | "annual";
+
+export const SUBSCRIPTION_PLANS: Record<
+  SubscriptionPlan,
+  { label: string; amountNpr: number; days: number }
+> = {
+  monthly: { label: "Monthly", amountNpr: 999, days: 31 },
+  annual: { label: "Annual", amountNpr: 9999, days: 366 },
+};
+
+export function isSubscriptionPlan(value: unknown): value is SubscriptionPlan {
+  return value === "monthly" || value === "annual";
+}
 
 function env(name: string) {
   return process.env[name] || ((globalThis as Record<string, unknown>)[name] as string | undefined);
@@ -14,8 +26,12 @@ export function esewaDisplayName() {
 export function esewaPaymentInstructions() {
   return (
     env("NYKST_ESEWA_PAYMENT_INSTRUCTIONS") ||
-    "Open eSewa, send NPR 999 to the approved recipient, and keep the transaction reference visible in your receipt."
+    "Scan the QR code, send the selected NPR amount to the approved recipient, and keep the transaction reference visible in your receipt."
   );
+}
+
+export function esewaQrUrl() {
+  return "/esewa-qr.jpg";
 }
 
 export async function connectedGithubUser(request: Request) {
@@ -50,7 +66,9 @@ async function ensureSubscription(user: { id: number; login: string }) {
       { provider_user_id: String(user.id), provider_username: user.login },
       { onConflict: "provider_user_id" },
     )
-    .select("id, provider_user_id, provider_username, status, active_until, created_at, updated_at")
+    .select(
+      "id, provider_user_id, provider_username, plan, status, active_until, created_at, updated_at",
+    )
     .single();
   if (error) throw new Error("Could not prepare your subscription record.");
   return data;
@@ -62,7 +80,7 @@ export async function getSubscriptionStatus(request: Request) {
   const { data: submission } = await supabaseAdmin
     .from("nykst_payment_submissions")
     .select(
-      "id, provider, amount_npr, transaction_reference, payer_note, status, reviewed_at, review_note, created_at",
+      "id, provider, plan, amount_npr, transaction_reference, payer_note, status, reviewed_at, review_note, created_at",
     )
     .eq("subscription_id", subscription.id)
     .order("created_at", { ascending: false })
@@ -71,14 +89,17 @@ export async function getSubscriptionStatus(request: Request) {
   return {
     subscription,
     submission,
-    amount_npr: SUBSCRIPTION_AMOUNT_NPR,
+    plans: SUBSCRIPTION_PLANS,
+    amount_npr: SUBSCRIPTION_PLANS.monthly.amountNpr,
     display_name: esewaDisplayName(),
     instructions: esewaPaymentInstructions(),
+    qr_url: esewaQrUrl(),
   };
 }
 
 export async function submitPayment(
   request: Request,
+  plan: SubscriptionPlan,
   transactionReference: string,
   payerNote?: string,
 ) {
@@ -93,8 +114,7 @@ export async function submitPayment(
     .eq("subscription_id", subscription.id)
     .in("status", ["pending", "approved"])
     .maybeSingle();
-  if (existing?.status === "approved")
-    throw new Error("Your NPR 999 subscription is already active.");
+  if (existing?.status === "approved") throw new Error("Your subscription is already active.");
   if (existing?.status === "pending")
     throw new Error("A payment submission is already awaiting review.");
   const { data, error } = await supabaseAdmin
@@ -102,11 +122,12 @@ export async function submitPayment(
     .insert({
       subscription_id: subscription.id,
       provider: "esewa",
-      amount_npr: SUBSCRIPTION_AMOUNT_NPR,
+      plan,
+      amount_npr: SUBSCRIPTION_PLANS[plan].amountNpr,
       transaction_reference: reference,
       payer_note: payerNote?.trim().slice(0, 500) || null,
     })
-    .select("id, provider, amount_npr, transaction_reference, payer_note, status, created_at")
+    .select("id, provider, plan, amount_npr, transaction_reference, payer_note, status, created_at")
     .single();
   if (error) {
     if (error.code === "23505")
@@ -115,7 +136,7 @@ export async function submitPayment(
   }
   await supabaseAdmin
     .from("nykst_subscriptions")
-    .update({ status: "pending" })
+    .update({ status: "pending", plan })
     .eq("id", subscription.id);
   return data;
 }
@@ -130,7 +151,7 @@ export async function listPendingPayments(request: Request) {
   const { data, error } = await supabaseAdmin
     .from("nykst_payment_submissions")
     .select(
-      "id, subscription_id, provider, amount_npr, transaction_reference, payer_note, status, reviewed_by, reviewed_at, review_note, created_at, nykst_subscriptions(provider_user_id, provider_username)",
+      "id, subscription_id, provider, plan, amount_npr, transaction_reference, payer_note, status, reviewed_by, reviewed_at, review_note, created_at, nykst_subscriptions(provider_user_id, provider_username)",
     )
     .eq("status", "pending")
     .order("created_at", { ascending: true });
@@ -152,7 +173,7 @@ export async function reviewPayment(
     });
   const { data: submission, error: lookupError } = await supabaseAdmin
     .from("nykst_payment_submissions")
-    .select("id, subscription_id, status")
+    .select("id, subscription_id, status, plan")
     .eq("id", submissionId)
     .maybeSingle();
   if (lookupError || !submission) throw new Error("Payment submission was not found.");
@@ -171,8 +192,15 @@ export async function reviewPayment(
   await supabaseAdmin
     .from("nykst_subscriptions")
     .update({
-      status: decision === "approve" ? "active" : "rejected",
-      active_until: decision === "approve" ? null : null,
+      status: nextStatus === "approved" ? "active" : "rejected",
+      active_until:
+        nextStatus === "approved"
+          ? new Date(
+              Date.now() +
+                SUBSCRIPTION_PLANS[submission.plan as SubscriptionPlan].days * 86_400_000,
+            ).toISOString()
+          : null,
+      plan: submission.plan,
     })
     .eq("id", submission.subscription_id);
   return { ok: true, status: nextStatus };
