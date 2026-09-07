@@ -8,7 +8,6 @@ export const Route = createFileRoute("/subscribe")({
 });
 
 type Plan = "monthly" | "annual";
-type Region = "nepal" | "international";
 type SubscriptionState = {
   subscription?: { status: string; plan?: Plan; active_until?: string | null };
   submission?: {
@@ -28,12 +27,6 @@ type SubscriptionState = {
 function SubscribePage() {
   const [data, setData] = useState<SubscriptionState | null>(null);
   const [plan, setPlan] = useState<Plan>("monthly");
-  const [region, setRegion] = useState<Region>(() =>
-    typeof Intl !== "undefined" &&
-    Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kathmandu"
-      ? "nepal"
-      : "international",
-  );
   const [showPlans, setShowPlans] = useState(false);
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
@@ -62,14 +55,8 @@ function SubscribePage() {
   };
 
   useEffect(() => {
-    if (region === "international") {
-      setLoading(false);
-      setData(null);
-      setError("");
-      return;
-    }
     void load();
-  }, [region]);
+  }, []);
 
   const copyName = async () => {
     if (!data?.display_name || !navigator.clipboard) return;
@@ -173,47 +160,17 @@ function SubscribePage() {
           <div className="border-border bg-surface mt-6 rounded-xl border p-4">
             <div className="flex items-center gap-2">
               <Globe2 className="text-primary size-4" />
-              <p className="text-sm font-semibold">Where are you based?</p>
+              <p className="text-sm font-semibold">Nepal subscription</p>
             </div>
             <p className="text-muted-foreground mt-1 text-xs">
-              Nepal payments use eSewa. International users use BYOK at no subscription charge.
+              Nepal subscriptions are handled through eSewa. The monthly plan is NPR 999.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setRegion("nepal")}
-                className={`rounded-lg border px-3 py-2 text-xs ${region === "nepal" ? "border-primary bg-primary/10" : "border-border"}`}
-              >
-                Nepal
-              </button>
-              <button
-                onClick={() => setRegion("international")}
-                className={`rounded-lg border px-3 py-2 text-xs ${region === "international" ? "border-primary bg-primary/10" : "border-border"}`}
-              >
-                Outside Nepal
-              </button>
-            </div>
           </div>
 
           {loading ? (
             <p className="text-muted-foreground mt-8 text-sm">
               Preparing your payment instructions…
             </p>
-          ) : region === "international" ? (
-            <div className="border-emerald-500/30 bg-emerald-500/10 mt-4 rounded-xl border p-4">
-              <p className="text-sm font-semibold text-emerald-200">
-                Free international access with your own API key
-              </p>
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-                We do not charge users outside Nepal through eSewa. Add your own OpenAI, Anthropic,
-                or DeepSeek key and use Nykst’s AI routing without a subscription payment.
-              </p>
-              <Link
-                to="/intelligence"
-                className="bg-primary text-primary-foreground mt-4 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold"
-              >
-                Open API Settings
-              </Link>
-            </div>
           ) : error && !data ? (
             <div className="mt-6 space-y-4">
               <p className="border-red-500/30 bg-red-500/10 rounded-xl border px-4 py-3 text-sm text-red-300">
