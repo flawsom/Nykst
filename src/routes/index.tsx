@@ -4,7 +4,7 @@ import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { cn } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+import { Mail, Sparkles, X } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,6 +32,7 @@ function Landing() {
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 
   useEffect(() => {
     setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
@@ -45,6 +46,46 @@ function Landing() {
     <main className="relative min-h-screen overflow-hidden">
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
+      {subscriptionOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => setSubscriptionOpen(false)}
+        >
+          <div
+            className="border-border bg-card relative w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              onClick={() => setSubscriptionOpen(false)}
+              aria-label="Close subscription contact panel"
+              className="text-muted-foreground hover:text-foreground absolute top-4 right-4"
+            >
+              <X className="size-4" />
+            </button>
+            <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
+              Nykst subscriptions
+            </p>
+            <h2 className="mt-2 text-xl font-semibold">Talk with us about access</h2>
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              Nykst subscriptions are arranged personally. Tell us about your team, repository
+              needs, and the level of system intelligence you want to use.
+            </p>
+            <div className="border-primary/25 bg-primary/5 mt-5 rounded-xl border p-4">
+              <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Contact</p>
+              <a
+                href="mailto:nykstsoftint@gmail.com?subject=Nykst%20subscription%20enquiry"
+                className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
+              >
+                <Mail className="size-4" /> nykstsoft@gmail.com
+              </a>
+            </div>
+            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+              Click the email address to open your mail app. We will reply personally with plan
+              details, pricing, and setup options.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div
         className="pointer-events-none absolute inset-0"
@@ -102,6 +143,12 @@ function Landing() {
           >
             Subscribe · NPR 999
           </Link>
+          <button
+            onClick={() => setSubscriptionOpen(true)}
+            className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+          >
+            Subscription
+          </button>
           <button
             onClick={() => setPreRegister(true)}
             className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
