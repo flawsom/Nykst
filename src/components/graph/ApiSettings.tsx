@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils";
 
 const PROVIDERS = [
   { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-sonnet" },
+  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
+  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-2.0-flash" },
   { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-chat" },
+  { id: "custom", label: "Custom / Kimi", hint: "Provider API key", model: "provider-model" },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]["id"];
@@ -36,7 +38,7 @@ export function ApiSettingsButton({ className }: { className?: string }) {
         )}
       >
         <KeyRound className="size-3.5" />
-        API settings
+        Connect API
         <span
           className={cn(
             "ml-1 size-1.5 rounded-full",
@@ -62,9 +64,18 @@ function ApiSettingsDialog({
 }) {
   const [provider, setProvider] = useState<ProviderId>((status.provider as ProviderId) ?? "openai");
   const [apiKey, setApiKey] = useState("");
+  const [apiBaseUrl, setApiBaseUrl] = useState("");
+  const [model, setModel] = useState("");
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<"test" | "save" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const selected = PROVIDERS.find((item) => item.id === provider)!;
+
+  useEffect(() => {
+    setApiBaseUrl("");
+    setModel(selected.model);
+    setMessage(null);
+  }, [provider, selected.model]);
 
   const run = async (kind: "test" | "save") => {
     setBusy(kind);
@@ -73,15 +84,18 @@ function ApiSettingsDialog({
       const res = await fetch(kind === "test" ? "/api/ai/test" : "/api/ai/key", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider, apiKey }),
+        body: JSON.stringify({ provider, apiKey, apiBaseUrl, model }),
       });
       const data = (await res.json()) as { error?: string; last4?: string };
-      if (!res.ok) {
+      if (!res.ok)
         setMessage({ tone: "error", text: data.error ?? "That key could not be verified." });
-      } else if (kind === "test") {
-        setMessage({ tone: "ok", text: "Key verified with your provider." });
-      } else {
-        setMessage({ tone: "ok", text: "Key saved securely and encrypted." });
+      else if (kind === "test")
+        setMessage({ tone: "ok", text: "Connected successfully. The key works." });
+      else {
+        setMessage({
+          tone: "ok",
+          text: "Connected and saved securely. Nykst features can now use this provider.",
+        });
         setApiKey("");
         onStatus({ configured: true, provider, last4: data.last4 ?? null });
       }
@@ -96,7 +110,7 @@ function ApiSettingsDialog({
     setBusy("remove");
     await fetch("/api/ai/key", { method: "DELETE" });
     onStatus({ configured: false, provider: null, last4: null });
-    setMessage({ tone: "ok", text: "Key removed." });
+    setMessage({ tone: "ok", text: "Connected provider removed." });
     setBusy(null);
   };
 
@@ -106,21 +120,24 @@ function ApiSettingsDialog({
       onClick={onClose}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         className="border-border bg-card w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Bring your own key
+              Bring your own AI
             </p>
-            <h2 className="mt-1 text-lg font-semibold">API settings</h2>
+            <h2 className="mt-1 text-lg font-semibold">Connect an API</h2>
             <p className="text-muted-foreground mt-1 text-xs">
-              Nykst runs repository intelligence and chat with your own provider account. Keys are
-              encrypted at rest and never shown again.
+              Choose one provider. Nykst tests the key before saving it encrypted on the server.
             </p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-sm">
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground text-sm"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -128,8 +145,8 @@ function ApiSettingsDialog({
         {status.configured && (
           <div className="border-primary/25 bg-primary/5 mt-4 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
             <span className="flex items-center gap-2 text-xs">
-              <ShieldCheck className="text-primary size-4" />
-              {status.provider} key active · ends in {status.last4}
+              <ShieldCheck className="text-primary size-4" /> {status.provider} connected · ends in{" "}
+              {status.last4}
             </span>
             <button
               onClick={remove}
@@ -142,40 +159,67 @@ function ApiSettingsDialog({
         )}
 
         <div className="mt-5">
-          <p className="text-muted-foreground text-[11px] tracking-wide uppercase">Provider</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {PROVIDERS.map((p) => (
+          <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
+            Choose provider
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {PROVIDERS.map((item) => (
               <button
-                key={p.id}
-                onClick={() => setProvider(p.id)}
+                key={item.id}
+                onClick={() => setProvider(item.id)}
                 className={cn(
                   "rounded-xl border px-3 py-2.5 text-left transition-colors",
-                  provider === p.id
+                  provider === item.id
                     ? "border-primary/60 bg-primary/10"
                     : "border-border bg-surface hover:border-primary/30",
                 )}
               >
-                <span className="block text-xs font-semibold">{p.label}</span>
-                <span className="text-muted-foreground block font-mono text-[10px]">{p.model}</span>
+                <span className="block text-xs font-semibold">{item.label}</span>
+                <span className="text-muted-foreground block font-mono text-[10px]">
+                  {item.model}
+                </span>
               </button>
             ))}
           </div>
         </div>
+
+        {provider === "custom" && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-muted-foreground text-[11px] uppercase tracking-wide sm:col-span-2">
+              Provider endpoint (HTTPS)
+              <input
+                value={apiBaseUrl}
+                onChange={(event) => setApiBaseUrl(event.target.value)}
+                placeholder="https://api.moonshot.cn/v1"
+                className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+              />
+            </label>
+            <label className="text-muted-foreground text-[11px] uppercase tracking-wide sm:col-span-2">
+              Model name
+              <input
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                placeholder="moonshot-v1-8k"
+                className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+              />
+            </label>
+          </div>
+        )}
 
         <div className="mt-4">
           <p className="text-muted-foreground text-[11px] tracking-wide uppercase">API key</p>
           <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3">
             <input
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(event) => setApiKey(event.target.value)}
               type={reveal ? "text" : "password"}
               autoComplete="off"
               spellCheck={false}
-              placeholder={PROVIDERS.find((p) => p.id === provider)!.hint}
+              placeholder={selected.hint}
               className="flex-1 bg-transparent py-2.5 font-mono text-sm outline-none"
             />
             <button
-              onClick={() => setReveal((r) => !r)}
+              onClick={() => setReveal((value) => !value)}
               className="text-muted-foreground hover:text-foreground"
               aria-label={reveal ? "Hide key" : "Show key"}
             >
@@ -194,21 +238,20 @@ function ApiSettingsDialog({
             {message.text}
           </p>
         )}
-
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={() => run("test")}
             disabled={!apiKey || busy !== null}
             className="border-border hover:border-primary/40 flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-40"
           >
-            {busy === "test" && <Loader2 className="size-3.5 animate-spin" />} Test key
+            {busy === "test" && <Loader2 className="size-3.5 animate-spin" />} Test connection
           </button>
           <button
             onClick={() => run("save")}
             disabled={!apiKey || busy !== null}
             className="bg-primary text-primary-foreground flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-40"
           >
-            {busy === "save" && <Loader2 className="size-3.5 animate-spin" />} Save key
+            {busy === "save" && <Loader2 className="size-3.5 animate-spin" />} Connect and save
           </button>
         </div>
       </div>

@@ -9,11 +9,14 @@ export const Route = createFileRoute("/api/ai/test")({
           const body = (await request.json()) as Record<string, unknown>;
           const provider = body["provider"];
           const apiKey = typeof body["apiKey"] === "string" ? body["apiKey"].trim() : "";
+          const apiBaseUrl =
+            typeof body["apiBaseUrl"] === "string" ? body["apiBaseUrl"].trim() : "";
+          const model = typeof body["model"] === "string" ? body["model"].trim() : "";
           if (!isAiProvider(provider))
             return Response.json({ error: "Choose a supported AI provider." }, { status: 400 });
           if (!apiKey)
             return Response.json({ error: "Enter your API key first." }, { status: 400 });
-          await testProviderKey(provider, apiKey);
+          await testProviderKey(provider, apiKey, apiBaseUrl, model);
           return Response.json({ ok: true });
         } catch (error) {
           const status = error instanceof AiKeyError ? error.status : 400;

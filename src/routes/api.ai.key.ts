@@ -36,13 +36,16 @@ export const Route = createFileRoute("/api/ai/key")({
           const body = (await request.json()) as Record<string, unknown>;
           const provider = body["provider"];
           const apiKey = typeof body["apiKey"] === "string" ? body["apiKey"].trim() : "";
+          const apiBaseUrl =
+            typeof body["apiBaseUrl"] === "string" ? body["apiBaseUrl"].trim() : "";
+          const model = typeof body["model"] === "string" ? body["model"].trim() : "";
           if (!isAiProvider(provider))
             return Response.json({ error: "Choose a supported AI provider." }, { status: 400 });
           if (apiKey.length < 12)
             return Response.json({ error: "That key looks incomplete." }, { status: 400 });
 
-          await testProviderKey(provider, apiKey);
-          await saveUserKey(userId, provider, apiKey);
+          await testProviderKey(provider, apiKey, apiBaseUrl, model);
+          await saveUserKey(userId, provider, apiKey, apiBaseUrl, model);
           return Response.json({ ok: true, provider, last4: apiKey.slice(-4) });
         } catch (error) {
           const status = error instanceof AiKeyError ? error.status : 400;

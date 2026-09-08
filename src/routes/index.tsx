@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
+import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { cn } from "@/lib/utils";
 import { Mail, Sparkles, X } from "lucide-react";
 
@@ -131,6 +132,7 @@ function Landing() {
           >
             Open graph →
           </Link>
+          <ApiSettingsButton />
           <Link
             to="/intelligence"
             className="text-primary hover:underline transition-colors font-medium flex items-center gap-1"

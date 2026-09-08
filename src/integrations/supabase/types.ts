@@ -242,31 +242,37 @@ export type Database = {
       user_ai_keys: {
         Row: {
           ai_provider: string;
+          api_base_url: string | null;
           auth_provider: string;
           created_at: string;
           id: string;
           key_ciphertext: string;
           key_last4: string;
+          model_name: string | null;
           provider_user_id: string;
           updated_at: string;
         };
         Insert: {
           ai_provider: string;
+          api_base_url?: string | null;
           auth_provider?: string;
           created_at?: string;
           id?: string;
           key_ciphertext: string;
           key_last4: string;
+          model_name?: string | null;
           provider_user_id: string;
           updated_at?: string;
         };
         Update: {
           ai_provider?: string;
+          api_base_url?: string | null;
           auth_provider?: string;
           created_at?: string;
           id?: string;
           key_ciphertext?: string;
           key_last4?: string;
+          model_name?: string | null;
           provider_user_id?: string;
           updated_at?: string;
         };

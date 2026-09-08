@@ -1,22 +1,55 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { githubToken, githubUser } from "@/lib/integrations/github";
 
-export type AiProvider = "openai" | "anthropic" | "deepseek";
+export type AiProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "custom";
 
-export const AI_PROVIDERS: { id: AiProvider; label: string; hint: string; model: string }[] = [
-  { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-sonnet-latest" },
-  { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-chat" },
+type ProviderDefinition = {
+  id: AiProvider;
+  label: string;
+  hint: string;
+  model: string;
+  baseUrl?: string;
+};
+
+export const AI_PROVIDERS: ProviderDefinition[] = [
+  {
+    id: "openai",
+    label: "OpenAI",
+    hint: "sk-...",
+    model: "gpt-4o-mini",
+    baseUrl: "https://api.openai.com/v1",
+  },
+  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    hint: "AIza...",
+    model: "gemini-2.0-flash",
+    baseUrl: "https://generativelanguage.googleapis.com",
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    hint: "sk-...",
+    model: "deepseek-chat",
+    baseUrl: "https://api.deepseek.com/v1",
+  },
+  {
+    id: "custom",
+    label: "Custom / Kimi",
+    hint: "Provider API key",
+    model: "provider-model",
+    baseUrl: "",
+  },
 ];
 
 export function isAiProvider(value: unknown): value is AiProvider {
-  return value === "openai" || value === "anthropic" || value === "deepseek";
+  return AI_PROVIDERS.some((provider) => provider.id === value);
 }
 
 function encryptionKey(): Buffer {
   const raw = process.env["NYKST_BYOK_SECRET"];
   if (!raw) throw new Error("Key storage is not configured.");
-  // Derive a stable 32-byte key from the configured secret.
   return Buffer.from(raw.padEnd(32, "0").slice(0, 32), "utf8");
 }
 
@@ -34,7 +67,6 @@ export function decryptKey(stored: string): string {
   return Buffer.concat([decipher.update(buf.subarray(28)), decipher.final()]).toString("utf8");
 }
 
-/** Identity for BYOK storage: the connected GitHub account. */
 export async function currentUserId(request: Request): Promise<string | null> {
   const token = githubToken(request);
   if (!token) return null;
@@ -46,31 +78,70 @@ export async function currentUserId(request: Request): Promise<string | null> {
   }
 }
 
-export type StoredKey = { provider: AiProvider; last4: string; apiKey: string };
+export type StoredKey = {
+  provider: AiProvider;
+  last4: string;
+  apiKey: string;
+  apiBaseUrl: string | null;
+  model: string;
+};
+
+function providerDefinition(provider: AiProvider) {
+  return AI_PROVIDERS.find((item) => item.id === provider)!;
+}
+
+function safeBaseUrl(value: unknown, provider: AiProvider): string | null {
+  const raw = typeof value === "string" ? value.trim().replace(/\/$/, "") : "";
+  const defaultUrl = providerDefinition(provider).baseUrl ?? "";
+  if (!raw) return defaultUrl || null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") throw new Error("HTTPS required");
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    throw new AiKeyError("Enter a valid HTTPS provider endpoint.", 400);
+  }
+}
+
+function safeModel(value: unknown, provider: AiProvider): string {
+  const model = typeof value === "string" ? value.trim() : "";
+  if (model.length > 120 || /[\r\n]/.test(model))
+    throw new AiKeyError("Enter a valid model name.", 400);
+  return model || providerDefinition(provider).model;
+}
 
 export async function loadUserKey(userId: string): Promise<StoredKey | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("user_ai_keys")
-    .select("ai_provider, key_ciphertext, key_last4")
+    .select("ai_provider, key_ciphertext, key_last4, api_base_url, model_name")
     .eq("auth_provider", "github")
     .eq("provider_user_id", userId)
     .maybeSingle();
-  if (error || !data) return null;
-  if (!isAiProvider(data.ai_provider)) return null;
+  if (error || !data || !isAiProvider(data.ai_provider)) return null;
   try {
     return {
       provider: data.ai_provider,
       last4: data.key_last4,
       apiKey: decryptKey(data.key_ciphertext),
+      apiBaseUrl: data.api_base_url ?? providerDefinition(data.ai_provider).baseUrl ?? null,
+      model: data.model_name ?? providerDefinition(data.ai_provider).model,
     };
   } catch {
     return null;
   }
 }
 
-export async function saveUserKey(userId: string, provider: AiProvider, apiKey: string) {
+export async function saveUserKey(
+  userId: string,
+  provider: AiProvider,
+  apiKey: string,
+  apiBaseUrl?: unknown,
+  model?: unknown,
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const baseUrl = safeBaseUrl(apiBaseUrl, provider);
+  const modelName = safeModel(model, provider);
   const { error } = await supabaseAdmin.from("user_ai_keys").upsert(
     {
       provider_user_id: userId,
@@ -78,11 +149,12 @@ export async function saveUserKey(userId: string, provider: AiProvider, apiKey: 
       ai_provider: provider,
       key_ciphertext: encryptKey(apiKey),
       key_last4: apiKey.slice(-4),
+      api_base_url: baseUrl,
+      model_name: modelName,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "auth_provider,provider_user_id" },
   );
-  // Never surface raw provider errors that could echo the submitted value.
   if (error) throw new Error("Could not save your key. Please try again.");
 }
 
@@ -95,8 +167,6 @@ export async function deleteUserKey(userId: string) {
     .eq("provider_user_id", userId);
 }
 
-/* ---------------- provider calls ---------------- */
-
 export class AiKeyError extends Error {
   status: number;
   constructor(message: string, status = 401) {
@@ -107,17 +177,85 @@ export class AiKeyError extends Error {
 
 function friendly(status: number): string {
   if (status === 401 || status === 403)
-    return "Your API key was rejected by the provider. Update it in API Settings.";
+    return "Your API key was rejected by the provider. Update it in Connect API.";
   if (status === 429)
     return "Your provider account is rate limited or out of quota. Check your plan, then retry.";
   return "Your AI provider could not be reached right now. Please try again.";
 }
 
-/** Validate a key without storing it. Never echoes the key back. */
-export async function testProviderKey(provider: AiProvider, apiKey: string): Promise<void> {
+function openAiBase(key: { provider: AiProvider; apiBaseUrl: string | null }): string {
+  return (
+    key.apiBaseUrl ||
+    (key.provider === "deepseek" ? "https://api.deepseek.com/v1" : "https://api.openai.com/v1")
+  );
+}
+
+async function providerRequest(
+  key: { provider: AiProvider; apiKey: string; apiBaseUrl: string | null; model: string },
+  system: string,
+  prompt: string,
+) {
+  if (key.provider === "anthropic") {
+    return fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": key.apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: key.model,
+        max_tokens: 900,
+        system,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+  }
+  if (key.provider === "gemini") {
+    const endpoint = `${key.apiBaseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(key.model)}:generateContent?key=${encodeURIComponent(key.apiKey)}`;
+    return fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      }),
+    });
+  }
+  return fetch(`${openAiBase(key)}/chat/completions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key.apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      model: key.model,
+      max_tokens: 900,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+}
+
+export async function testProviderKey(
+  provider: AiProvider,
+  apiKey: string,
+  apiBaseUrl?: unknown,
+  model?: unknown,
+): Promise<void> {
+  const baseUrl = safeBaseUrl(apiBaseUrl, provider);
+  const modelName = safeModel(model, provider);
   let response: Response;
   try {
-    if (provider === "anthropic") {
+    if (provider === "gemini") {
+      response = await fetch(
+        `${baseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] }),
+        },
+      );
+    } else if (provider === "anthropic") {
       response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -126,76 +264,48 @@ export async function testProviderKey(provider: AiProvider, apiKey: string): Pro
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-3-5-haiku-latest",
+          model: modelName,
           max_tokens: 8,
           messages: [{ role: "user", content: "ping" }],
         }),
       });
     } else {
-      const base =
-        provider === "deepseek" ? "https://api.deepseek.com/v1" : "https://api.openai.com/v1";
+      const base = baseUrl || "https://api.openai.com/v1";
       response = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${apiKey}` } });
     }
   } catch {
-    throw new AiKeyError("Could not reach the provider. Check your network and try again.", 502);
+    throw new AiKeyError("Could not reach the provider. Check the endpoint and try again.", 502);
   }
   if (!response.ok) throw new AiKeyError(friendly(response.status), response.status);
 }
 
-/** Run a chat completion with the user's own provider + key. */
 export async function chatWithUserKey(
   key: StoredKey,
   system: string,
   prompt: string,
 ): Promise<string> {
-  const model = AI_PROVIDERS.find((p) => p.id === key.provider)!.model;
   let response: Response;
   try {
-    if (key.provider === "anthropic") {
-      response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": key.apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 900,
-          system,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-    } else {
-      const base =
-        key.provider === "deepseek" ? "https://api.deepseek.com/v1" : "https://api.openai.com/v1";
-      response = await fetch(`${base}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key.apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 900,
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
-    }
+    response = await providerRequest(key, system, prompt);
   } catch {
     throw new AiKeyError("Could not reach your AI provider. Please try again.", 502);
   }
-
   if (!response.ok) throw new AiKeyError(friendly(response.status), response.status);
-
   const data = (await response.json()) as Record<string, unknown>;
   if (key.provider === "anthropic") {
     const content = data["content"] as { text?: string }[] | undefined;
     return (
       content
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim() || "No answer returned."
+    );
+  }
+  if (key.provider === "gemini") {
+    const candidates = data["candidates"] as
+      { content?: { parts?: { text?: string }[] } }[] | undefined;
+    return (
+      candidates?.[0]?.content?.parts
         ?.map((part) => part.text ?? "")
         .join("")
         .trim() || "No answer returned."
