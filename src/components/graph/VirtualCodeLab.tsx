@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import type { GraphNode } from "@/lib/graph-data";
+import { askNykstAi } from "@/lib/ai-client";
 import {
   generateCode,
   runVirtualCheck,
@@ -74,7 +75,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
     }, 16);
   }, []);
 
-  const generate = () => {
+  const generate = async () => {
     const text = prompt.trim();
     if (!text) return;
     setGenerating(true);
@@ -83,12 +84,27 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
     setExec(null);
     setShowPrompt(false);
     setTab("code");
-    window.setTimeout(() => {
-      const generated = generateCode(text, node);
+    const localFallback = generateCode(text, node);
+    try {
+      const result = await askNykstAi(
+        `Create a reviewable TypeScript code suggestion for this request: ${text}. Return only the proposed code, with no markdown fences. Do not claim that it was applied.`,
+        `Selected graph node: ${node.label}\nScope: ${context.scope}\nNode summary: ${node.summary}\nExisting local draft:\n${localFallback}`,
+      );
+      const generated =
+        result.ok && result.answer.trim()
+          ? result.answer
+              .replace(/^```(?:typescript|ts|javascript|js)?\\n?/, "")
+              .replace(/\\n?```$/, "")
+              .trim()
+          : localFallback;
       setCode(generated);
-      setGenerating(false);
       streamCode(generated);
-    }, 600);
+    } catch {
+      setCode(localFallback);
+      streamCode(localFallback);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const check = (source = code) => {
@@ -147,7 +163,9 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
             onClick={() => setTab(id)}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
-              tab === id ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+              tab === id
+                ? "bg-secondary text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="size-3.5" />
@@ -204,9 +222,8 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
           />
           <div className="mt-2.5 flex items-center justify-between">
             <p className="text-muted-foreground text-[10px] leading-relaxed">
-              Nykst generates code for{" "}
-              <span className="text-foreground">{context.scope}</span>, then runs it virtually
-              against your org structure before injecting.
+              Nykst generates code for <span className="text-foreground">{context.scope}</span>,
+              then runs it virtually against your org structure before injecting.
             </p>
             <button
               onClick={generate}
@@ -273,9 +290,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
             ) : generating ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
                 <Loader2 className="text-primary size-8 animate-spin" />
-                <p className="text-muted-foreground text-sm">
-                  Generating code for {node.label}…
-                </p>
+                <p className="text-muted-foreground text-sm">Generating code for {node.label}…</p>
               </div>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
@@ -300,7 +315,8 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
                         <span
                           className="mt-1 size-1.5 shrink-0 rounded-full"
                           style={{
-                            background: f.severity === "error" ? "var(--primary)" : "var(--node-module)",
+                            background:
+                              f.severity === "error" ? "var(--primary)" : "var(--node-module)",
                           }}
                         />
                         <div className="min-w-0 flex-1">
@@ -368,19 +384,31 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
                     className="animate-ticker flex items-center gap-2"
                     style={{ animationDelay: `${(exec.output.length + i) * 40}ms` }}
                   >
-                    {s.status === "ok" && <CheckCircle2 className="size-3.5 shrink-0" style={{ color: "var(--node-file)" }} />}
-                    {s.status === "fail" && <XCircle className="size-3.5 shrink-0" style={{ color: "var(--primary)" }} />}
-                    {s.status === "warn" && <CircleAlert className="size-3.5 shrink-0" style={{ color: "var(--node-module)" }} />}
-                    {s.status === "pending" && <div className="size-3.5 shrink-0 rounded-full border border-current opacity-30" />}
+                    {s.status === "ok" && (
+                      <CheckCircle2
+                        className="size-3.5 shrink-0"
+                        style={{ color: "var(--node-file)" }}
+                      />
+                    )}
+                    {s.status === "fail" && (
+                      <XCircle className="size-3.5 shrink-0" style={{ color: "var(--primary)" }} />
+                    )}
+                    {s.status === "warn" && (
+                      <CircleAlert
+                        className="size-3.5 shrink-0"
+                        style={{ color: "var(--node-module)" }}
+                      />
+                    )}
+                    {s.status === "pending" && (
+                      <div className="size-3.5 shrink-0 rounded-full border border-current opacity-30" />
+                    )}
                     <span className="text-[11px]">{s.label}</span>
                     {s.detail && (
                       <span className="text-muted-foreground text-[10px]">— {s.detail}</span>
                     )}
                   </div>
                 ))}
-                <div className="text-muted-foreground pt-1">
-                  Completed in {exec.durationMs}ms
-                </div>
+                <div className="text-muted-foreground pt-1">Completed in {exec.durationMs}ms</div>
               </div>
             )}
           </div>
@@ -449,7 +477,9 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
         <div
           className={cn(
             "border-border border-t px-4 py-3",
-            verdict.passed ? "bg-[color-mix(in_oklab,var(--node-file)_12%,transparent)]" : "bg-[color-mix(in_oklab,var(--primary)_10%,transparent)]",
+            verdict.passed
+              ? "bg-[color-mix(in_oklab,var(--node-file)_12%,transparent)]"
+              : "bg-[color-mix(in_oklab,var(--primary)_10%,transparent)]",
           )}
         >
           <div className="flex items-center gap-2.5">
