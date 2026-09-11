@@ -3,24 +3,20 @@ import { useEffect, useState } from "react";
 import {
   Network,
   ShieldAlert,
-  Cpu,
-  GitBranch,
-  BookOpen,
   Folder,
   FileCode,
   Sparkles,
   RefreshCw,
   ArrowLeft,
   Database,
+  Scale,
+  Siren,
+  Users,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  buildCoreModules,
-  buildGroundedAiBrief,
-  type CoreModule,
-  type CoreFile,
-} from "@/lib/intelligence-core";
+import { buildGroundedAiBrief, type CoreModule, type CoreFile } from "@/lib/intelligence-core";
 import type { RepositorySnapshot } from "@/lib/repository-graph";
 
 export const Route = createFileRoute("/intelligence")({
@@ -55,135 +51,110 @@ interface MemoryModule {
 
 const MEMORIES: MemoryModule[] = [
   {
-    id: "structural",
-    title: "1. Intelligence Memory",
-    subtitle: "Global Structural Baseline",
-    icon: Network,
-    description: "Live 24/7 dependency graph, API contracts, and multi-repo linkage map.",
+    id: "outcome-weighted",
+    title: "1. Outcome-Weighted Memory",
+    subtitle: "Decisions tagged by what happened next",
+    icon: Scale,
+    description:
+      "Stores architectural and code decisions with outcomes: held up, reverted, or caused issues. Built from changes over time, later modifications, reversions, and linked incidents. Used to filter durable patterns from failed ones.",
     files: [
       {
-        name: "DependencyGraph.json",
-        path: "/memory/structural/DependencyGraph.json",
-        size: "42 KB",
-        summary: "Live node adjacency matrix across connected repositories",
-        content:
-          '{\n  "org": "acme-enterprise",\n  "nodes": 214,\n  "edges": 1428,\n  "syncStatus": "active 24/7",\n  "apiContracts": "verified"\n}',
-      },
-      {
-        name: "ApiContracts.ts",
-        path: "/memory/structural/ApiContracts.ts",
+        name: "DecisionOutcomes.json",
+        path: "/memory/outcome-weighted/DecisionOutcomes.json",
         size: "18 KB",
-        summary: "gRPC and REST endpoint specifications preventing drift",
+        summary: "Decisions paired with observed outcomes and confidence",
         content:
-          "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}",
-      },
-      {
-        name: "MultiRepoLinkage.yaml",
-        path: "/memory/structural/MultiRepoLinkage.yaml",
-        size: "12 KB",
-        summary: "Cross-repository module mapping rules",
-        content:
-          'repos:\n  - name: streaming-engine\n    linkedModules: ["cdn-edge", "playback-api"]\n  - name: payments-api\n    linkedModules: ["ledger-sync", "webhook-router"]',
+          '{\n  "heldUp": 42,\n  "reverted": 7,\n  "causedIssues": 5,\n  "source": "commits, pull requests, incidents"\n}',
       },
     ],
   },
   {
-    id: "vault",
-    title: "2. Failure & Resolution Vault",
-    subtitle: "Immune System Data",
+    id: "failure-pattern",
+    title: "2. Failure-Pattern Memory",
+    subtitle: "What broke, why, and the early warning signs",
     icon: ShieldAlert,
-    description: "Historical software breaks, stack traces, and verified human patches.",
+    description:
+      "Stores structured records of failures, root causes, warning signals, and resolution paths. Built from incident logs, error tracking, and postmortems when integrated. Used for predictive alerts when a change resembles a past failure.",
     files: [
       {
-        name: "ERR_CONCURRENCY_092.json",
-        path: "/memory/vault/ERR_CONCURRENCY_092.json",
-        size: "8.4 KB",
-        summary: "Deadlock stack trace in SessionStore.ts & mutex fix",
-        content:
-          '{\n  "incidentId": "ERR_CONCURRENCY_092",\n  "component": "SessionStore.ts",\n  "rootCause": "Race condition in TTL update",\n  "patchApplied": "Mutex lock around session writes",\n  "status": "Immunized"\n}',
-      },
-      {
-        name: "ERR_JWT_MISMATCH_412.json",
-        path: "/memory/vault/ERR_JWT_MISMATCH_412.json",
-        size: "6.1 KB",
-        summary: "RS256 algorithm fallback failure in AuthMiddleware",
-        content:
-          '{\n  "incidentId": "ERR_JWT_MISMATCH_412",\n  "component": "AuthMiddleware.ts",\n  "patchApplied": "Strict algorithm header enforcement",\n  "status": "Immunized"\n}',
-      },
-    ],
-  },
-  {
-    id: "behavioral",
-    title: "3. Behavioral Preference",
-    subtitle: "RLHF & Alignment Logs",
-    icon: Cpu,
-    description: "Tracked record of human engineering choices and coding standards.",
-    files: [
-      {
-        name: "CodingStandards.yaml",
-        path: "/memory/behavioral/CodingStandards.yaml",
-        size: "14 KB",
-        summary: "Team style preferences and monad/async rules",
-        content:
-          'preferences:\n  errorHandling: "Explicit Result monads for core, try-catch for edge"\n  strictCasts: true\n  riskTolerance: "Strict"\n',
-      },
-      {
-        name: "RlhfWeights.json",
-        path: "/memory/behavioral/RlhfWeights.json",
-        size: "9.2 KB",
-        summary: "Active reinforcement learning reward weights",
-        content:
-          '{\n  "model": "nykst-architect-v2",\n  "safetyPreference": 0.98,\n  "totalPatchesEvaluated": 312\n}',
-      },
-    ],
-  },
-  {
-    id: "treepub",
-    title: "4. Tree-Split Learning",
-    subtitle: "High- vs Low-Quality Pipeline",
-    icon: GitBranch,
-    description: "Pipeline separating clean production code from quarantined workarounds.",
-    files: [
-      {
-        name: "PositiveCorpusIndex.json",
-        path: "/memory/treepub/PositiveCorpusIndex.json",
+        name: "FailurePatterns.json",
+        path: "/memory/failure-pattern/FailurePatterns.json",
         size: "22 KB",
-        summary: "List of clean 100% typed production files (94.2%)",
+        summary: "Failure signatures mapped to root causes and warning signals",
         content:
-          '{\n  "corpusType": "positive",\n  "filesCount": 3840,\n  "typeCoverage": "100%"\n}',
-      },
-      {
-        name: "QuarantinedWorkarounds.json",
-        path: "/memory/treepub/QuarantinedWorkarounds.json",
-        size: "5.5 KB",
-        summary: "Quarantined anti-patterns for negative reinforcement",
-        content:
-          '{\n  "corpusType": "negative_reinforcement",\n  "quarantinedFiles": ["legacy_auth_hack.js", "temp_bypass_cors.ts"]\n}',
+          '{\n  "patterns": 18,\n  "warningSignals": ["retry spike", "error-rate drift"],\n  "source": "incidents, errors, postmortems"\n}',
       },
     ],
   },
   {
-    id: "instruction",
-    title: "5. Instruction-Tuning",
-    subtitle: "Contextual QA & Prompt Logs",
-    icon: BookOpen,
-    description: "Developer prompts, ADRs, and internal documentation for AI architect.",
+    id: "architectural-decision",
+    title: "3. Architectural Decision Memory",
+    subtitle: "Why the system was built this way",
+    icon: Network,
+    description:
+      "Captures the reason behind a system or component at decision time, rather than reconstructing it later. Built from commit messages, pull requests, documentation, and direct input. Used to answer why instantly.",
     files: [
       {
-        name: "ADR-042-AuthFederation.md",
-        path: "/memory/instruction/ADR-042-AuthFederation.md",
+        name: "ArchitectureDecisions.md",
+        path: "/memory/architectural-decision/ArchitectureDecisions.md",
         size: "16 KB",
-        summary: "Architecture Decision Record for OIDC and session clustering",
+        summary: "Decision records with context, constraints, and rejected alternatives",
         content:
-          "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14\n\nContext: Decentralized authentication across microservices without single-point bottlenecks.",
+          "# Architecture Decision\n\nStatus: Accepted\n\nContext: The decision is recorded when made, with evidence and alternatives.\n\nSources: commits, PRs, docs, direct input.",
       },
+    ],
+  },
+  {
+    id: "incident-resolution",
+    title: "4. Incident-Resolution Memory",
+    subtitle: "What broke, what was tried, what fixed it",
+    icon: Siren,
+    description:
+      "Stores paired incident and resolution records. Built from incident tools, ticketing systems, and resolved issue threads. Used to give engineers a direct playbook instead of repeating old investigations.",
+    files: [
       {
-        name: "InternalRunbooks.md",
-        path: "/memory/instruction/InternalRunbooks.md",
+        name: "ResolutionPlaybooks.json",
+        path: "/memory/incident-resolution/ResolutionPlaybooks.json",
         size: "24 KB",
-        summary: "Incident response runbooks and failover protocols",
+        summary: "Verified fixes paired with the incidents they resolved",
         content:
-          "# Incident Response Runbook\n\n1. Check dependency graph for downstream blast radius.\n2. Verify failure vault for historical immunity patches.",
+          '{\n  "playbooks": 12,\n  "verifiedFixes": 9,\n  "source": "incident tools, tickets, issue threads"\n}',
+      },
+    ],
+  },
+  {
+    id: "team-convention",
+    title: "5. Team Convention Memory",
+    subtitle: "How this team writes and reviews code",
+    icon: Users,
+    description:
+      "Stores accepted and rejected coding patterns plus recurring review feedback. Built from code-review comments and PR approval or rejection patterns. Requires code-review tool integration to become richer.",
+    files: [
+      {
+        name: "TeamConventions.yaml",
+        path: "/memory/team-convention/TeamConventions.yaml",
+        size: "14 KB",
+        summary: "Observed review preferences and accepted implementation patterns",
+        content:
+          'conventions:\n  accepted: ["explicit error paths", "small focused modules"]\n  rejected: ["hidden retries", "unowned migrations"]\n  source: "code review integration"',
+      },
+    ],
+  },
+  {
+    id: "continuity",
+    title: "6. Continuity Memory",
+    subtitle: "The evolving timeline of system understanding",
+    icon: History,
+    description:
+      "Stores the chain of how understanding changed across updates. It is not separately collected: it emerges automatically as the other five memory types accumulate over time.",
+    files: [
+      {
+        name: "SystemContinuity.timeline",
+        path: "/memory/continuity/SystemContinuity.timeline",
+        size: "31 KB",
+        summary: "A living timeline synthesized from the other five memories",
+        content:
+          '{\n  "timeline": "emergent",\n  "source": "outcome, failure, decisions, resolutions, conventions",\n  "collection": "automatic"\n}',
       },
     ],
   },
@@ -212,11 +183,9 @@ function IntelligencePage() {
       })
       .then((snapshot) => {
         if (!snapshot) return;
-        const liveModules = buildCoreModules(snapshot);
         setRepositorySnapshot(snapshot);
-        setModules(liveModules);
-        setActiveModule(liveModules[0]!);
-        setActiveFile(liveModules[0]!.files[0]!);
+        // Keep the six memory types as the stable navigation model in live mode too.
+        // Repository evidence grounds the Memory query below without replacing the taxonomy.
       })
       .catch(() => undefined);
   }, []);
@@ -279,8 +248,8 @@ function IntelligencePage() {
           </p>
         </div>
 
-        {/* 5 Memory Modules Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        {/* Six Memory Types Selector */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
           {modules.map((m) => {
             const Icon = m.icon;
             const isSelected = activeModule.id === m.id;
