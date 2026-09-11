@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
@@ -77,7 +77,7 @@ function Landing() {
                 href="mailto:nykstsoftint@gmail.com?subject=Nykst%20subscription%20enquiry"
                 className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
               >
-                <Mail className="size-4" /> nykstsoft@gmail.com
+                <Mail className="size-4" /> nykstsoftint@gmail.com
               </a>
             </div>
             <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
@@ -127,12 +127,12 @@ function Landing() {
         </div>
         <nav className="flex items-center gap-4 text-sm">
           <ApiSettingsButton />
-          <Link
-            to="/subscribe"
+          <button
+            onClick={() => setSubscriptionOpen(true)}
             className="text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
-            Subscribe · NPR 999
-          </Link>
+            Pricing · NPR 999
+          </button>
           <button
             onClick={() => setSubscriptionOpen(true)}
             className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, Clock3, Copy, Crown, Globe2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Copy, Crown, Globe2, ShieldCheck, X } from "lucide-react";
 
 export const Route = createFileRoute("/subscribe")({
   head: () => ({ meta: [{ title: "Nykst Premium — eSewa subscription" }] }),
@@ -99,12 +99,24 @@ function SubscribePage() {
           <span className="glow-ring bg-primary size-2 rounded-full" />
           <span className="text-[13px] font-semibold uppercase tracking-[0.24em]">Nykst</span>
         </Link>
-        <Link
-          to="/graph"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs"
-        >
-          <ArrowLeft className="size-3.5" /> Back to graph
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (window.history.length > 1) window.history.back();
+              else window.location.assign("/");
+            }}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs"
+          >
+            <ArrowLeft className="size-3.5" /> Back one step
+          </button>
+          <button
+            onClick={() => window.location.assign("/")}
+            className="text-muted-foreground hover:text-foreground rounded-lg p-2"
+            aria-label="Close pricing"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
       </header>
 
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
