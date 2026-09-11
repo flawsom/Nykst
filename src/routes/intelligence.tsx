@@ -26,11 +26,10 @@ import type { RepositorySnapshot } from "@/lib/repository-graph";
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
     meta: [
-      { title: "Enterprise Intelligence Memory Core — Nykst" },
+      { title: "Co-work — Nykst" },
       {
         name: "description",
-        content:
-          "Explore enterprise intelligence memory files, folders, and query the AI architect.",
+        content: "Explore system memory, repository evidence, and work with Nykst Co-work.",
       },
     ],
   }),
@@ -196,7 +195,7 @@ function IntelligencePage() {
   const [activeFile, setActiveFile] = useState<MemoryFile | CoreFile>(activeModule.files[0]!);
   const [repositorySnapshot, setRepositorySnapshot] = useState<RepositorySnapshot | null>(null);
   const [query, setQuery] = useState(
-    "Analyze this memory file and explain its architectural significance.",
+    "Analyze this system artifact and explain its architectural significance.",
   );
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -236,7 +235,7 @@ function IntelligencePage() {
       setAiResult(
         repositorySnapshot
           ? buildGroundedAiBrief(repositorySnapshot, query, activeFile)
-          : `[Nykst AI Architect Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
+          : `[Nykst Co-work Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
       );
     }, 450);
   };
@@ -254,9 +253,7 @@ function IntelligencePage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-sm font-semibold text-foreground">
-              Enterprise Intelligence Memory Core
-            </span>
+            <span className="text-sm font-semibold text-foreground">Nykst Co-work</span>
           </div>
         </div>
 
@@ -272,14 +269,13 @@ function IntelligencePage() {
       <div className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-6">
         <div>
           <span className="text-primary font-mono text-xs tracking-widest uppercase">
-            Autonomous Enterprise Memory & Vaults
+            System memory & collaborative analysis
           </span>
           <h1 className="text-gradient mt-2 text-3xl font-semibold tracking-tight">
-            Intelligence Dashboard
+            Co-work workspace
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Select any memory category below to explore its files and folders, inspect contents, and
-            query the AI architect.
+            Select a system memory category, inspect its evidence, and work with Nykst Co-work.
           </p>
         </div>
 
@@ -326,7 +322,7 @@ function IntelligencePage() {
           })}
         </div>
 
-        {/* File Explorer & Ask AI Dashboard */}
+        {/* File Explorer & Co-work Dashboard */}
         <div className="border-border bg-card/90 rounded-2xl border backdrop-blur overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[480px]">
           {/* Left: Files and Folders list */}
           <div className="border-border lg:col-span-4 border-r bg-surface/30 p-5 flex flex-col justify-between">
@@ -404,11 +400,11 @@ function IntelligencePage() {
               </div>
             </div>
 
-            {/* Ask AI Section */}
+            {/* Co-work Section */}
             <div className="border-border bg-surface/60 rounded-xl border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-primary" /> Ask AI about this file
+                  <Sparkles className="size-4 text-primary" /> Work with Co-work on this file
                 </span>
                 <span className="font-mono text-[11px] text-muted-foreground">
                   Instant Codebase QA
@@ -432,7 +428,7 @@ function IntelligencePage() {
                   ) : (
                     <Sparkles className="size-3.5" />
                   )}
-                  Ask AI
+                  Ask Co-work
                 </button>
               </div>
 

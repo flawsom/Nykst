@@ -137,7 +137,7 @@ function Landing() {
             to="/intelligence"
             className="text-primary hover:underline transition-colors font-medium flex items-center gap-1"
           >
-            <Sparkles className="size-3.5" /> Intelligence Core →
+            <Sparkles className="size-3.5" /> Co-work →
           </Link>
           <Link
             to="/subscribe"

@@ -313,7 +313,7 @@ function EnvelopeBody({
             onClick={onOpenSettings}
             className="text-muted-foreground hover:text-primary mt-3 text-[11px] transition-colors"
           >
-            Using your connected AI provider · Manage API Settings
+            Using your connected Co-work provider · Manage API Settings
           </button>
         )}
       </section>

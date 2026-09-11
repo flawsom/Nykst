@@ -226,7 +226,7 @@ function GraphPage() {
             href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
             className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"
           >
-            <Sparkles className="size-3.5" /> Intelligence Core →
+            <Sparkles className="size-3.5" /> Co-work →
           </a>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
             {orgSlug} · {provider}
@@ -342,7 +342,7 @@ function GraphPage() {
             inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
           }
           onOpen={drill}
-          repositoryProblems={snapshot ? problems : undefined}
+          {...(snapshot ? { repositoryProblems: problems } : {})}
         />
       </div>
 

@@ -126,11 +126,12 @@ function ApiSettingsDialog({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Bring your own AI
+              Bring your own provider
             </p>
             <h2 className="mt-1 text-lg font-semibold">Connect an API</h2>
             <p className="text-muted-foreground mt-1 text-xs">
-              Choose one provider. Nykst tests the key before saving it encrypted on the server.
+              Choose one provider. Nykst tests the key before saving it encrypted on the server so
+              Co-work can use it.
             </p>
           </div>
           <button

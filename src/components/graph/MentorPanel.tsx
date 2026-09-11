@@ -135,7 +135,7 @@ const VOICE_LABEL: Record<Voice, string> = {
   guided: "Guided tour",
 };
 
-/* ---------------- problem tracker ---------------- */
+/* ---------------- issues ---------------- */
 
 interface Tracker {
   id: string;
@@ -471,7 +471,7 @@ export function MentorPanel({
 
   const tabs = canCode ? (["brief", "ask", "code"] as const) : (["brief", "ask"] as const);
   const TAB_LABEL: Record<string, string> = {
-    brief: "Problem tracker",
+    brief: "Issues",
     ask: "Ask",
     code: "Virtual code",
   };
