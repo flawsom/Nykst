@@ -26,10 +26,10 @@ import type { RepositorySnapshot } from "@/lib/repository-graph";
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
     meta: [
-      { title: "Co-work — Nykst" },
+      { title: "Memory — Nykst" },
       {
         name: "description",
-        content: "Explore system memory, repository evidence, and work with Nykst Co-work.",
+        content: "Explore system memory, repository evidence, and work with Nykst Memory.",
       },
     ],
   }),
@@ -235,7 +235,7 @@ function IntelligencePage() {
       setAiResult(
         repositorySnapshot
           ? buildGroundedAiBrief(repositorySnapshot, query, activeFile)
-          : `[Nykst Co-work Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
+          : `[Nykst Memory Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
       );
     }, 450);
   };
@@ -253,7 +253,7 @@ function IntelligencePage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-sm font-semibold text-foreground">Nykst Co-work</span>
+            <span className="text-sm font-semibold text-foreground">Nykst Memory</span>
           </div>
         </div>
 
@@ -272,10 +272,10 @@ function IntelligencePage() {
             System memory & collaborative analysis
           </span>
           <h1 className="text-gradient mt-2 text-3xl font-semibold tracking-tight">
-            Co-work workspace
+            Memory workspace
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Select a system memory category, inspect its evidence, and work with Nykst Co-work.
+            Select a system memory category, inspect its evidence, and work with Nykst Memory.
           </p>
         </div>
 
@@ -322,7 +322,7 @@ function IntelligencePage() {
           })}
         </div>
 
-        {/* File Explorer & Co-work Dashboard */}
+        {/* File Explorer & Memory Dashboard */}
         <div className="border-border bg-card/90 rounded-2xl border backdrop-blur overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[480px]">
           {/* Left: Files and Folders list */}
           <div className="border-border lg:col-span-4 border-r bg-surface/30 p-5 flex flex-col justify-between">
@@ -400,11 +400,11 @@ function IntelligencePage() {
               </div>
             </div>
 
-            {/* Co-work Section */}
+            {/* Memory Section */}
             <div className="border-border bg-surface/60 rounded-xl border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-primary" /> Work with Co-work on this file
+                  <Sparkles className="size-4 text-primary" /> Work with Memory on this file
                 </span>
                 <span className="font-mono text-[11px] text-muted-foreground">
                   Instant Codebase QA
@@ -428,7 +428,7 @@ function IntelligencePage() {
                   ) : (
                     <Sparkles className="size-3.5" />
                   )}
-                  Ask Co-work
+                  Ask Memory
                 </button>
               </div>
 

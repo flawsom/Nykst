@@ -29,7 +29,7 @@ export function NodeInspector({
   const [chatLog, setChatLog] = useState<{ role: "user" | "ai"; text: string }[]>([
     {
       role: "ai",
-      text: `Hello! I am Nykst Co-work, your principal architectural partner for ${node?.label ?? "this system"}. How can I help you understand this component's codebase, history, or runtime behavior?`,
+      text: `Hello! I am Nykst Memory, your principal architectural partner for ${node?.label ?? "this system"}. How can I help you understand this component's codebase, history, or runtime behavior?`,
     },
   ]);
 
@@ -79,7 +79,7 @@ export function NodeInspector({
                 { id: "changes", label: "4. Changes & Evolution", icon: GitCommit },
                 { id: "runtime", label: "5. Runtime Metrics", icon: Activity },
                 { id: "incidents", label: "6. Data Incidents & Learning", icon: AlertTriangle },
-                { id: "ask", label: "7. Ask Nykst Co-work", icon: Sparkles },
+                { id: "ask", label: "7. Ask Nykst Memory", icon: Sparkles },
               ].map((item) => {
                 const Icon = item.icon;
                 const active = tab === item.id;
@@ -481,7 +481,7 @@ export function NodeInspector({
               <div className="flex flex-col h-[400px] border border-border bg-surface rounded-xl overflow-hidden">
                 <div className="p-3 border-b border-border bg-card flex items-center gap-2">
                   <Sparkles className="size-4 text-primary" />
-                  <span className="text-xs font-semibold">Nykst Co-work Architectural Partner</span>
+                  <span className="text-xs font-semibold">Nykst Memory Architectural Partner</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs font-mono">
                   {chatLog.map((c, i) => (

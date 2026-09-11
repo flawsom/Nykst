@@ -13,8 +13,7 @@ import {
   traceRepositoryProblems,
   type RepositorySnapshot,
 } from "@/lib/repository-graph";
-import { Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { BookOpen, X } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -51,8 +50,8 @@ function GraphPage() {
   const [dossier, setDossier] = useState<GraphNode | null>(null);
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
   const [demoMode, setDemoMode] = useState(false);
-  const [authRequired, setAuthRequired] = useState(false);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
+  const [softModal, setSoftModal] = useState<"premium" | "memory" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -66,36 +65,34 @@ function GraphPage() {
     }
 
     let active = true;
-    try {
-      supabase.auth
-        .getSession()
-        .then(({ data }) => {
-          if (!active) return;
-          if (!data.session) {
-            setAuthRequired(true);
-            return;
-          }
-          const stored = localStorage.getItem("nykst.org");
-          const p = localStorage.getItem("nykst.provider");
-          if (stored) setOrgSlug(stored);
-          if (p) setProvider(p);
-          return fetch("/api/integrations/github/latest")
-            .then(async (response) => {
-              if (!response.ok) return null;
-              const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
-              return payload.ingestion ?? null;
-            })
-            .then((ingestion) => active && setSnapshot(ingestion))
-            .catch(() => active && setSnapshot(null));
-        })
-        .catch(() => active && setAuthRequired(true));
-    } catch {
-      setAuthRequired(true);
-    }
+    const stored = localStorage.getItem("nykst.org");
+    const p = localStorage.getItem("nykst.provider");
+    if (stored) setOrgSlug(stored);
+    if (p) setProvider(p);
+    fetch("/api/integrations/github/latest")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
+        return payload.ingestion ?? null;
+      })
+      .then((ingestion) => active && setSnapshot(ingestion))
+      .catch(() => active && setSnapshot(null));
 
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => {
+      const state = window.history.state as { nykstPath?: string[] } | null;
+      setPathIds(Array.isArray(state?.nykstPath) ? state.nykstPath : []);
+      setSelected(null);
+    };
+    window.history.replaceState({ nykstPath: pathIds }, "", window.location.href);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   const root = useMemo(
@@ -129,7 +126,9 @@ function GraphPage() {
 
   const drill = (node: GraphNode) => {
     if (node.expandable) {
-      setPathIds((p) => [...p, node.id]);
+      const nextPath = [...pathIds, node.id];
+      window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+      setPathIds(nextPath);
       setSelected(null);
     } else {
       setSelected(node);
@@ -146,42 +145,19 @@ function GraphPage() {
       cursor = next;
     }
     if (node.expandable) {
+      window.history.pushState({ nykstPath: chain }, "", window.location.href);
       setPathIds(chain);
       setSelected(null);
     } else {
-      setPathIds(chain.slice(0, -1));
+      const nextPath = chain.slice(0, -1);
+      window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+      setPathIds(nextPath);
       setSelected(node);
     }
   };
 
   const childKind = (centerChildren[0]?.kind ?? "file") as GraphNode["kind"];
   const inspected = selected ?? center;
-
-  if (authRequired) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-5">
-        <div className="border-border bg-card w-full max-w-md rounded-3xl border p-8 text-center shadow-2xl">
-          <span className="glow-ring bg-primary mx-auto block size-3 rounded-full" />
-          <p className="text-primary mt-6 text-[10px] font-mono tracking-[0.28em] uppercase">
-            Account required
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-            Create your Nykst account first
-          </h1>
-          <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-            Sign up before entering your private software map. Your connected repository stays
-            attached to your account.
-          </p>
-          <Link
-            to="/"
-            className="bg-primary text-primary-foreground mt-6 inline-flex rounded-xl px-5 py-3 text-sm font-semibold"
-          >
-            Continue to sign up
-          </Link>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
@@ -196,7 +172,12 @@ function GraphPage() {
             <span key={node.id} className="flex shrink-0 items-center gap-1.5">
               {i > 0 && <span className="text-muted-foreground/60 px-1 text-xs">/</span>}
               <button
-                onClick={() => setPathIds(pathIds.slice(0, i))}
+                onClick={() => {
+                  const nextPath = pathIds.slice(0, i);
+                  window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+                  setPathIds(nextPath);
+                  setSelected(null);
+                }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   i === path.length - 1
                     ? "bg-secondary text-foreground"
@@ -216,18 +197,18 @@ function GraphPage() {
           >
             Before You Act <span aria-hidden="true">→</span>
           </button>
-          <Link
-            to="/subscribe"
+          <button
+            onClick={() => setSoftModal("premium")}
             className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
             Premium
-          </Link>
-          <a
-            href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
-            className="text-primary hover:underline text-xs font-medium flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg"
+          </button>
+          <button
+            onClick={() => setSoftModal("memory")}
+            className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
-            <Sparkles className="size-3.5" /> Co-work →
-          </a>
+            <BookOpen className="size-3.5" /> Memory
+          </button>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
             {orgSlug} · {provider}
           </span>
@@ -355,6 +336,50 @@ function GraphPage() {
         open={beforeYouActOpen}
         onClose={() => setBeforeYouActOpen(false)}
       />
+      {softModal && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          role="presentation"
+          onClick={() => setSoftModal(null)}
+        >
+          <section
+            className="border-border bg-card w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="graph-soft-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-primary text-[10px] font-mono uppercase tracking-[0.24em]">
+                  {softModal === "premium" ? "Nykst access" : "System memory"}
+                </p>
+                <h2 id="graph-soft-modal-title" className="mt-1 text-lg font-semibold">
+                  {softModal === "premium" ? "Premium workspace" : "Memory, kept in context"}
+                </h2>
+              </div>
+              <button
+                onClick={() => setSoftModal(null)}
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1"
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+              {softModal === "premium"
+                ? "Premium access adds deeper repository history, broader system context, and team-ready workflows. You can keep exploring the graph without signing in."
+                : "Memory connects graph evidence, changes, issues, and decisions so every node carries the context engineers need. This view is available in both demo and connected repository mode."}
+            </p>
+            <button
+              onClick={() => setSoftModal(null)}
+              className="border-border bg-surface hover:bg-surface-2 mt-5 rounded-lg border px-4 py-2 text-xs font-semibold"
+            >
+              Keep exploring
+            </button>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

@@ -131,7 +131,7 @@ function ApiSettingsDialog({
             <h2 className="mt-1 text-lg font-semibold">Connect an API</h2>
             <p className="text-muted-foreground mt-1 text-xs">
               Choose one provider. Nykst tests the key before saving it encrypted on the server so
-              Co-work can use it.
+              Memory can use it.
             </p>
           </div>
           <button
