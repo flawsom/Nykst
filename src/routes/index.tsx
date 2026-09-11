@@ -74,7 +74,9 @@ function Landing() {
             <div className="border-primary/25 bg-primary/5 mt-5 rounded-xl border p-4">
               <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Contact</p>
               <a
-                href="mailto:nykstsoftint@gmail.com?subject=Nykst%20subscription%20enquiry"
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=nykstsoftint%40gmail.com&su=Nykst%20subscription%20enquiry"
+                target="_blank"
+                rel="noreferrer"
                 className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
               >
                 <Mail className="size-4" /> nykstsoftint@gmail.com
