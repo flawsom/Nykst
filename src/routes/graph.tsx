@@ -51,7 +51,7 @@ function GraphPage() {
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
-  const [softModal, setSoftModal] = useState<"premium" | "memory" | null>(null);
+  const [softModal, setSoftModal] = useState<"premium" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -203,12 +203,12 @@ function GraphPage() {
           >
             Premium
           </button>
-          <button
-            onClick={() => setSoftModal("memory")}
+          <a
+            href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
             className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
             <BookOpen className="size-3.5" /> Memory
-          </button>
+          </a>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
             {orgSlug} · {provider}
           </span>
@@ -352,10 +352,10 @@ function GraphPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-primary text-[10px] font-mono uppercase tracking-[0.24em]">
-                  {softModal === "premium" ? "Nykst access" : "System memory"}
+                  Nykst access
                 </p>
                 <h2 id="graph-soft-modal-title" className="mt-1 text-lg font-semibold">
-                  {softModal === "premium" ? "Premium workspace" : "Memory, kept in context"}
+                  Premium workspace
                 </h2>
               </div>
               <button
@@ -367,9 +367,8 @@ function GraphPage() {
               </button>
             </div>
             <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
-              {softModal === "premium"
-                ? "Premium access adds deeper repository history, broader system context, and team-ready workflows. You can keep exploring the graph without signing in."
-                : "Memory connects graph evidence, changes, issues, and decisions so every node carries the context engineers need. This view is available in both demo and connected repository mode."}
+              Premium access adds deeper repository history, broader system context, and team-ready
+              workflows. You can keep exploring the graph without signing in.
             </p>
             <button
               onClick={() => setSoftModal(null)}

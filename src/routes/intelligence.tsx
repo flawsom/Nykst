@@ -160,6 +160,39 @@ const MEMORIES: MemoryModule[] = [
   },
 ];
 
+const MEMORY_GUIDE: Record<string, { does: string; source: string; usedFor: string }> = {
+  "outcome-weighted": {
+    does: "Connects each decision to what happened after it shipped.",
+    source: "Change history, later modifications, reversions, and linked issues or incidents.",
+    usedFor: "Finding patterns that held up and warning when an approach has failed before.",
+  },
+  "failure-pattern": {
+    does: "Structures failures into symptoms, root causes, warning signs, and resolutions.",
+    source: "Incident logs, error tracking, and postmortems when integrated.",
+    usedFor: "Predictive alerts when a change resembles a known failure pattern.",
+  },
+  "architectural-decision": {
+    does: "Preserves why a system or component was built a particular way.",
+    source: "Commits, pull requests, linked documentation, and direct team input.",
+    usedFor: "Answering why something exists without reconstructing the history manually.",
+  },
+  "incident-resolution": {
+    does: "Pairs what broke with what was tried and what actually fixed it.",
+    source: "Incident tools, tickets, and resolved issue threads.",
+    usedFor: "Giving engineers a verified playbook instead of repeating an old investigation.",
+  },
+  "team-convention": {
+    does: "Learns accepted and rejected implementation patterns from team reviews.",
+    source: "Code-review comments and pull-request approval or rejection patterns.",
+    usedFor: "Making suggestions match the team's real standards.",
+  },
+  continuity: {
+    does: "Builds the evolving timeline of how system understanding changed.",
+    source: "Automatically synthesized from the other five memory types over time.",
+    usedFor: "Showing system evolution with no separate collection mechanism.",
+  },
+};
+
 function IntelligencePage() {
   const [modules, setModules] = useState<Array<MemoryModule | CoreModule>>(MEMORIES);
   const [activeModule, setActiveModule] = useState<MemoryModule | CoreModule>(MEMORIES[0]!);
@@ -244,7 +277,8 @@ function IntelligencePage() {
             Memory workspace
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Select a system memory category, inspect its evidence, and work with Nykst Memory.
+            Select any memory type to see what it does, where its evidence comes from, and how it
+            helps. In connected mode, evidence is grounded in your GitHub repository.
           </p>
         </div>
 
@@ -305,6 +339,19 @@ function IntelligencePage() {
               <p className="text-muted-foreground text-xs mb-4 leading-relaxed">
                 {activeModule.description}
               </p>
+              {repositorySnapshot && (
+                <div className="border-primary/20 bg-primary/5 mb-4 rounded-lg border px-3 py-2 text-[10px] leading-relaxed">
+                  <span className="text-primary font-mono uppercase tracking-wider">
+                    Live GitHub evidence
+                  </span>
+                  <span className="text-muted-foreground mt-1 block">
+                    {repositorySnapshot.repository?.full_name ?? "Connected repository"} ·{" "}
+                    {repositorySnapshot.files?.length ?? 0} files ·{" "}
+                    {repositorySnapshot.commits?.length ?? 0} commits ·{" "}
+                    {repositorySnapshot.issues?.length ?? 0} issues
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-2">
                 {activeModule.files.map((file) => {
@@ -379,6 +426,34 @@ function IntelligencePage() {
                   Instant Codebase QA
                 </span>
               </div>
+              {MEMORY_GUIDE[activeModule.id] && (
+                <div className="grid gap-3 border-t border-border pt-3 text-[11px] md:grid-cols-3">
+                  <div>
+                    <span className="text-primary font-mono uppercase tracking-wider">
+                      What it does
+                    </span>
+                    <p className="text-muted-foreground mt-1 leading-relaxed">
+                      {MEMORY_GUIDE[activeModule.id].does}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-primary font-mono uppercase tracking-wider">
+                      Data source
+                    </span>
+                    <p className="text-muted-foreground mt-1 leading-relaxed">
+                      {MEMORY_GUIDE[activeModule.id].source}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-primary font-mono uppercase tracking-wider">
+                      Used for
+                    </span>
+                    <p className="text-muted-foreground mt-1 leading-relaxed">
+                      {MEMORY_GUIDE[activeModule.id].usedFor}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <input
