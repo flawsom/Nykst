@@ -5,7 +5,7 @@ import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { cn } from "@/lib/utils";
-import { Mail, Sparkles, X } from "lucide-react";
+import { Mail, X } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -126,19 +126,7 @@ function Landing() {
           <span className="text-[15px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </div>
         <nav className="flex items-center gap-4 text-sm">
-          <Link
-            to="/graph"
-            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
-          >
-            Open graph →
-          </Link>
           <ApiSettingsButton />
-          <Link
-            to="/intelligence"
-            className="text-primary hover:underline transition-colors font-medium flex items-center gap-1"
-          >
-            <Sparkles className="size-3.5" /> Co-work →
-          </Link>
           <Link
             to="/subscribe"
             className="text-muted-foreground hover:text-foreground transition-colors font-medium"
