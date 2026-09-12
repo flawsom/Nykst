@@ -160,14 +160,14 @@ function GraphPage() {
   const inspected = selected ?? center;
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden">
-      <header className="border-border flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b px-4 py-3 sm:px-5">
+    <main className="bg-background flex min-h-screen flex-col overflow-hidden lg:h-screen">
+      <header className="border-border flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2 rounded-full" />
           <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </Link>
 
-        <nav className="order-3 flex w-full min-w-0 items-center gap-2.5 overflow-x-auto text-sm sm:order-none sm:w-auto sm:flex-1">
+        <nav className="order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5 text-sm sm:order-none sm:w-auto sm:flex-1 sm:gap-2.5">
           {path.map((node, i) => (
             <span key={node.id} className="flex shrink-0 items-center gap-1.5">
               {i > 0 && <span className="text-muted-foreground/60 px-1 text-xs">/</span>}
@@ -190,7 +190,7 @@ function GraphPage() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="order-2 flex w-full items-center gap-2 overflow-x-auto sm:order-none sm:w-auto sm:gap-3">
           <button
             onClick={() => setBeforeYouActOpen(true)}
             className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -215,7 +215,7 @@ function GraphPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
         <TreePanel
           root={root}
           openIds={openIds}
@@ -224,7 +224,7 @@ function GraphPage() {
           visible={(n) => canView(role, n)}
         />
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5">
+        <section className="flex min-h-[calc(100vh-150px)] min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5 md:min-h-0">
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
@@ -294,7 +294,7 @@ function GraphPage() {
             </div>
           )}
 
-          <div className="relative mt-5 min-h-[480px] flex-1 sm:min-h-[520px]">
+          <div className="relative mt-5 min-h-[390px] flex-1 sm:min-h-[520px]">
             <GraphCanvas
               key={`${center.id}-${role.id}`}
               center={center}

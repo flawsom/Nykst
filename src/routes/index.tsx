@@ -122,46 +122,46 @@ function Landing() {
       </div>
       <div className="pointer-events-none absolute inset-0 bg-grid" />
 
-      <header className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-6">
+      <header className="relative mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
         <div className="flex items-center gap-2.5">
           <span className="glow-ring bg-primary block size-2.5 rounded-full" />
           <span className="text-[15px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
         </div>
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 text-xs sm:w-auto sm:gap-4 sm:text-sm">
           <ApiSettingsButton />
           <button
             onClick={() => setSubscriptionOpen(true)}
-            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            className="text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap rounded-lg px-2 py-2 transition-colors font-medium"
           >
             Pricing · NPR 999
           </button>
           <button
             onClick={() => setSubscriptionOpen(true)}
-            className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            className="border-border bg-surface hover:bg-surface-2 shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
           >
             Subscription
           </button>
           <button
             onClick={() => setPreRegister(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+            className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
           >
             Pre-register
           </button>
         </nav>
       </header>
 
-      <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-24">
+      <section className="relative mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
         <p className="animate-rise text-primary text-xs tracking-[0.3em] uppercase font-mono">
           System Intelligence & Organizational Navigation
         </p>
         <h1
-          className="animate-rise text-gradient mt-6 max-w-4xl text-5xl leading-[1.05] font-semibold tracking-tight md:text-6xl"
+          className="animate-rise text-gradient mt-5 max-w-4xl text-4xl leading-[1.08] font-semibold tracking-tight sm:text-5xl md:text-6xl"
           style={{ animationDelay: "80ms" }}
         >
           The system navigator for your software organization.
         </h1>
         <p
-          className="animate-rise text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed"
+          className="animate-rise text-muted-foreground mt-5 max-w-2xl text-sm leading-relaxed sm:mt-6 sm:text-base"
           style={{ animationDelay: "160ms" }}
         >
           Connect your organization once. Nykst analyzes the codebase itself and renders it as a
@@ -171,26 +171,26 @@ function Landing() {
 
         {/* Pre-register & Distinct Green Advantages Section */}
         <div
-          className="animate-rise mt-8 flex flex-wrap items-center gap-4"
+          className="animate-rise mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
           style={{ animationDelay: "200ms" }}
         >
           <button
             onClick={() => setPreRegister(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow lift hover:lift-hover rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/20"
+            className="bg-primary text-primary-foreground hover:bg-primary-glow lift hover:lift-hover w-full rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/20 sm:w-auto"
           >
             Pre-register for early access
           </button>
 
           <button
             onClick={() => setAdvantages(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/50 rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors flex items-center gap-2 shadow-md shadow-emerald-600/20"
+            className="bg-emerald-600 hover:bg-emerald-500 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/50 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-colors sm:w-auto"
           >
             Advantages of using Nykst
           </button>
         </div>
 
         <div
-          className="animate-rise text-muted-foreground mt-10 flex flex-wrap gap-x-8 gap-y-2 font-mono text-[11px]"
+          className="animate-rise text-muted-foreground mt-8 grid grid-cols-2 gap-3 font-mono text-[10px] sm:mt-10 sm:flex sm:flex-wrap sm:gap-x-8 sm:gap-y-2 sm:text-[11px]"
           style={{ animationDelay: "220ms" }}
         >
           <span>14 core domains derived</span>
@@ -200,7 +200,7 @@ function Landing() {
         </div>
 
         <div
-          className="animate-rise border-border bg-card/70 mt-14 max-w-3xl rounded-2xl border p-6 backdrop-blur"
+          className="animate-rise border-border bg-card/70 mt-10 max-w-3xl rounded-2xl border p-4 backdrop-blur sm:mt-14 sm:p-6"
           style={{ animationDelay: "240ms", boxShadow: "var(--shadow-panel)" }}
         >
           <h2 className="text-sm font-medium">Connect your organization</h2>

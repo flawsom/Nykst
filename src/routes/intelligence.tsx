@@ -245,22 +245,22 @@ function IntelligencePage() {
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <header className="border-border flex items-center justify-between gap-4 border-b px-6 py-4 bg-card/90 backdrop-blur sticky top-0 z-50">
-        <div className="flex items-center gap-4">
+      <header className="border-border sticky top-0 z-50 flex items-center justify-between gap-3 border-b bg-card/90 px-3 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Link
             to="/graph"
-            className="border-border bg-surface hover:bg-surface-2 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            className="border-border bg-surface hover:bg-surface-2 flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-medium transition-colors sm:px-3 sm:text-xs"
           >
             <ArrowLeft className="size-3.5" /> Back to Graph
           </Link>
           <div className="flex items-center gap-2.5">
             <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-sm font-semibold text-foreground">Nykst Memory</span>
+            <span className="truncate text-sm font-semibold text-foreground">Nykst Memory</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs text-emerald-400">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-[10px] text-emerald-400 sm:px-3 sm:text-xs">
             <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
             24/7 Live Sync Active
           </span>
@@ -268,12 +268,12 @@ function IntelligencePage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col space-y-5 p-3 sm:space-y-6 sm:p-6">
         <div>
           <span className="text-primary font-mono text-xs tracking-widest uppercase">
             System memory & collaborative analysis
           </span>
-          <h1 className="text-gradient mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="text-gradient mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
             Memory workspace
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -283,7 +283,7 @@ function IntelligencePage() {
         </div>
 
         {/* Six Memory Types Selector */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-6">
           {modules.map((m) => {
             const Icon = m.icon;
             const isSelected = activeModule.id === m.id;
@@ -292,7 +292,7 @@ function IntelligencePage() {
                 key={m.id}
                 onClick={() => handleSelectModule(m)}
                 className={cn(
-                  "p-4 rounded-xl border text-left transition-all flex flex-col justify-between",
+                  "min-h-[132px] rounded-xl border p-3 text-left transition-all flex flex-col justify-between sm:min-h-[150px] sm:p-4",
                   isSelected
                     ? "bg-primary/15 border-primary shadow-md"
                     : "border-border bg-card/70 hover:bg-card",
@@ -326,9 +326,9 @@ function IntelligencePage() {
         </div>
 
         {/* File Explorer & Memory Dashboard */}
-        <div className="border-border bg-card/90 rounded-2xl border backdrop-blur overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[480px]">
+        <div className="border-border bg-card/90 grid min-h-[480px] grid-cols-1 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur lg:grid-cols-12">
           {/* Left: Files and Folders list */}
-          <div className="border-border lg:col-span-4 border-r bg-surface/30 p-5 flex flex-col justify-between">
+          <div className="border-border bg-surface/30 flex flex-col justify-between border-b p-4 sm:p-5 lg:col-span-4 lg:border-r lg:border-b-0">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
@@ -396,7 +396,7 @@ function IntelligencePage() {
           </div>
 
           {/* Right: File Content & Ask AI */}
-          <div className="lg:col-span-8 p-6 flex flex-col justify-between bg-card/50 space-y-6">
+          <div className="flex flex-col justify-between space-y-5 bg-card/50 p-4 sm:space-y-6 sm:p-6 lg:col-span-8">
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
@@ -411,7 +411,7 @@ function IntelligencePage() {
               </div>
 
               {/* File Content Preview */}
-              <div className="border-border bg-surface/90 rounded-xl border p-4 font-mono text-xs text-foreground overflow-x-auto max-h-56 leading-relaxed shadow-inner">
+              <div className="border-border bg-surface/90 max-h-64 overflow-x-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed text-foreground shadow-inner sm:p-4 sm:text-xs">
                 <pre>{activeFile.content}</pre>
               </div>
             </div>
