@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   exchangeGithubCode,
@@ -6,7 +5,7 @@ import {
   githubRedirectUri,
   githubUser,
   oauthCookieOptions,
-  readCookie,
+  verifyOauthState,
 } from "@/lib/integrations/github";
 
 export const Route = createFileRoute("/api/integrations/github/callback")({
@@ -16,13 +15,7 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
-        const savedState = readCookie(request, "nykst_github_oauth_state");
-        if (
-          !code ||
-          !state ||
-          !savedState ||
-          createHash("sha256").update(savedState).digest("hex") !== state
-        ) {
+        if (!code || !state || !verifyOauthState(state)) {
           return new Response("Invalid or expired GitHub OAuth state.", { status: 400 });
         }
         try {

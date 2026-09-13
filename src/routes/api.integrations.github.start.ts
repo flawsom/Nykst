@@ -10,8 +10,8 @@ export const Route = createFileRoute("/api/integrations/github/start")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const { value, digest } = createOauthState();
-          const location = githubAuthorizeUrl(digest, request);
+          const { value, state } = createOauthState();
+          const location = githubAuthorizeUrl(state, request);
           return new Response(null, {
             status: 302,
             headers: {

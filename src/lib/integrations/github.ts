@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -35,9 +35,21 @@ function getConfig() {
 }
 
 export function createOauthState() {
-  const value = randomBytes(24).toString("hex");
-  const digest = createHash("sha256").update(value).digest("hex");
-  return { value, digest };
+  const value = `${Date.now()}.${randomBytes(24).toString("hex")}`;
+  const digest = createHmac("sha256", getConfig().clientSecret).update(value).digest("hex");
+  return { value, digest, state: `${value}.${digest}` };
+}
+
+export function verifyOauthState(state: string) {
+  const separator = state.lastIndexOf(".");
+  if (separator <= 0) return false;
+  const value = state.slice(0, separator);
+  const received = state.slice(separator + 1);
+  if (!/^\d+\.[a-f0-9]{48}$/.test(value) || !/^[a-f0-9]{64}$/.test(received)) return false;
+  const age = Date.now() - Number(value.split(".", 1)[0]);
+  if (!Number.isFinite(age) || age < 0 || age > 10 * 60 * 1000) return false;
+  const expected = createHmac("sha256", getConfig().clientSecret).update(value).digest("hex");
+  return timingSafeEqual(Buffer.from(received, "hex"), Buffer.from(expected, "hex"));
 }
 
 export function githubRedirectUri(request: Request) {
