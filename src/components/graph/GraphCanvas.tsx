@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { childKindLabel, type GraphNode, type NodeKind } from "@/lib/graph-data";
+import type { GraphNode, NodeKind } from "@/lib/graph-data";
 
 const kindColor: Record<NodeKind, string> = {
   org: "var(--primary)",
@@ -119,18 +119,9 @@ export function GraphCanvas({
   }, [children, cx, cy]);
 
   return (
-    <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-2xl border border-border/60 bg-surface/20 select-none sm:min-h-[560px]">
+    <div className="relative h-full w-full overflow-hidden select-none">
       <div className="pointer-events-none absolute inset-0 bg-grid" />
-      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-[10px] font-mono tracking-[0.16em] text-muted-foreground uppercase backdrop-blur">
-        {children.length} connected {childKindLabel[childKind]}
-      </div>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="relative h-full min-h-[480px] w-full sm:min-h-[560px]"
-        role="img"
-        aria-label={`${center.label} software graph with ${children.length} connected nodes`}
-      >
+      <svg viewBox={`0 0 ${W} ${H}`} className="relative h-full w-full" role="img">
         <defs>
           <radialGradient id="haloGrad">
             <stop offset="0%" stopColor={kindColor[center.kind]} stopOpacity="0.4" />
