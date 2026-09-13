@@ -122,7 +122,7 @@ export function GraphCanvas({
     <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-2xl border border-border/60 bg-surface/20 select-none sm:min-h-[560px]">
       <div className="pointer-events-none absolute inset-0 bg-grid" />
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-[10px] font-mono tracking-[0.16em] text-muted-foreground uppercase backdrop-blur">
-        {children.length} connected {childKindLabel(childKind)}
+        {children.length} connected {childKindLabel[childKind]}
       </div>
       <svg
         viewBox={`0 0 ${W} ${H}`}
