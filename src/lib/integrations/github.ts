@@ -20,13 +20,9 @@ type GithubRepo = {
 };
 type GithubFile = { path: string; type: string; size?: number; sha?: string };
 
-function env(name: string): string | undefined {
-  return process.env[name] || ((globalThis as Record<string, unknown>)[name] as string | undefined);
-}
-
 function getConfig() {
-  const clientId = env("GITHUB_CLIENT_ID");
-  const clientSecret = env("GITHUB_CLIENT_SECRET");
+  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret)
     throw new Error(
       "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel.",
@@ -54,7 +50,7 @@ export function verifyOauthState(state: string) {
 
 export function githubRedirectUri(request: Request) {
   return (
-    env("GITHUB_REDIRECT_URI") ||
+    process.env.GITHUB_REDIRECT_URI?.trim() ||
     "https://nykst-software-intellegence.vercel.app/api/integrations/github/callback"
   );
 }
