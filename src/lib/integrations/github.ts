@@ -22,7 +22,9 @@ type GithubFile = { path: string; type: string; size?: number; sha?: string };
 
 function getConfig() {
   const clientId = process.env.GITHUB_CLIENT_ID?.trim();
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  // CLIENT_SECRET was the variable updated in Vercel during the credential rotation.
+  // Prefer it while retaining the documented name for existing deployments.
+  const clientSecret = (process.env.CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET)?.trim();
   if (!clientId || !clientSecret)
     throw new Error(
       "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel.",
