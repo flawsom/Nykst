@@ -215,7 +215,7 @@ function GraphPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         <TreePanel
           root={root}
           openIds={openIds}
@@ -224,7 +224,7 @@ function GraphPage() {
           visible={(n) => canView(role, n)}
         />
 
-        <section className="flex min-h-[calc(100vh-150px)] min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5 md:min-h-0">
+        <section className="flex min-h-[calc(100vh-190px)] min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5 md:min-h-0 md:overflow-hidden">
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
@@ -294,7 +294,7 @@ function GraphPage() {
             </div>
           )}
 
-          <div className="relative mt-5 min-h-[390px] flex-1 sm:min-h-[520px]">
+          <div className="relative mt-5 min-h-[480px] flex-1 sm:min-h-[560px] md:min-h-0">
             <GraphCanvas
               key={`${center.id}-${role.id}`}
               center={center}
