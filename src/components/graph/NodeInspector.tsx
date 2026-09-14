@@ -55,10 +55,10 @@ export function NodeInspector({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-card border-border h-[88vh] max-w-[min(1150px,95vw)] gap-0 overflow-hidden p-0 sm:max-w-[min(1150px,95vw)]">
-        <div className="flex h-full min-h-0">
+      <DialogContent className="bg-card border-border h-[92vh] max-w-[min(1150px,96vw)] gap-0 overflow-hidden p-0 sm:max-w-[min(1150px,96vw)]">
+        <div className="flex h-full min-h-0 flex-col sm:flex-row">
           {/* Sidebar Navigation matching dashboard style */}
-          <aside className="border-border bg-surface w-72 shrink-0 flex flex-col border-r p-4">
+          <aside className="border-border bg-surface w-full shrink-0 border-b p-3 sm:w-72 sm:border-r sm:border-b-0 sm:p-4">
             <div className="flex items-center gap-3 pb-4 border-b border-border">
               <div className="size-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-bold font-mono">
                 i
@@ -71,7 +71,7 @@ export function NodeInspector({
               </div>
             </div>
 
-            <nav className="flex-1 space-y-1 pt-3 overflow-y-auto">
+            <nav className="flex flex-1 gap-1 overflow-x-auto pt-3 sm:block sm:space-y-1 sm:overflow-y-auto">
               {[
                 { id: "code", label: "1. Code Analysis", icon: Code },
                 { id: "architecture", label: "2. Architecture", icon: Layers },
@@ -88,7 +88,7 @@ export function NodeInspector({
                     key={item.id}
                     onClick={() => setTab(item.id as TabId)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all text-left",
+                      "w-auto shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left sm:w-full sm:gap-3 sm:px-3.5",
                       active
                         ? "bg-primary/20 text-primary border border-primary/30 font-semibold"
                         : "text-muted-foreground hover:text-foreground hover:bg-surface-2",
@@ -100,14 +100,14 @@ export function NodeInspector({
               })}
             </nav>
 
-            <div className="pt-3 border-t border-border text-[11px] text-muted-foreground font-mono space-y-1">
+            <div className="hidden pt-3 border-t border-border text-[11px] text-muted-foreground font-mono space-y-1 sm:block">
               <div>Kind: {node.kind}</div>
               <div>Primary Owner: {ownerName}</div>
             </div>
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 flex flex-col min-h-0 bg-background/50 overflow-y-auto p-6 space-y-6">
+          <main className="flex-1 flex flex-col min-h-0 bg-background/50 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
             <div className="border-b border-border pb-4">
               <h2 className="text-xl font-semibold tracking-tight capitalize">
                 {tab.replace("-", " ")} Inspection
@@ -116,6 +116,41 @@ export function NodeInspector({
                 Deep structural intelligence and telemetry for{" "}
                 <span className="text-foreground font-mono">{node.label}</span>.
               </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="border border-primary/25 bg-primary/5 rounded-xl p-4">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-primary">
+                  Repository evidence
+                </span>
+                <p className="mt-2 text-sm leading-relaxed text-foreground">{node.summary}</p>
+                <p className="mt-2 text-[11px] font-mono text-muted-foreground">
+                  {repoName} · {node.kind} · {node.expandable ? "expandable" : "file-level"}
+                </p>
+              </div>
+              <div className="border border-border bg-surface rounded-xl p-4">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-primary">
+                  Connected context
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-3 text-xs font-mono">
+                  <div>
+                    <span className="block text-muted-foreground text-[10px]">DEPENDENCIES</span>
+                    {node.dependencies.length}
+                  </div>
+                  <div>
+                    <span className="block text-muted-foreground text-[10px]">DEPENDENTS</span>
+                    {node.dependents.length}
+                  </div>
+                  <div>
+                    <span className="block text-muted-foreground text-[10px]">FILES</span>
+                    {node.blast.files}
+                  </div>
+                  <div>
+                    <span className="block text-muted-foreground text-[10px]">OWNER</span>
+                    {ownerName}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Layer 1: Code Analysis */}
