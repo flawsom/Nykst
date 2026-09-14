@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { GraphNode } from "@/lib/graph-data";
 import { cn } from "@/lib/utils";
+import { askNykstAi, openApiSettings } from "@/lib/ai-client";
 import {
   Code,
   Layers,
@@ -11,9 +12,12 @@ import {
   AlertTriangle,
   Sparkles,
   Send,
+  GitPullRequest,
+  ShieldCheck,
 } from "lucide-react";
 
-type TabId = "code" | "architecture" | "dependencies" | "changes" | "runtime" | "incidents" | "ask";
+type TabId =
+  "code" | "architecture" | "dependencies" | "changes" | "runtime" | "incidents" | "coding" | "ask";
 
 export function NodeInspector({
   node,
@@ -26,6 +30,19 @@ export function NodeInspector({
 }) {
   const [tab, setTab] = useState<TabId>("code");
   const [chatPrompt, setChatPrompt] = useState("");
+  const [changePrompt, setChangePrompt] = useState("");
+  const [change, setChange] = useState<{
+    owner: string;
+    repo: string;
+    path: string;
+    base: string;
+    baseSha: string;
+    after: string;
+    diff: string;
+    testMessage: string;
+  } | null>(null);
+  const [codingBusy, setCodingBusy] = useState(false);
+  const [codingMessage, setCodingMessage] = useState("");
   const [chatLog, setChatLog] = useState<{ role: "user" | "ai"; text: string }[]>([
     {
       role: "ai",
@@ -38,7 +55,7 @@ export function NodeInspector({
   const repoName = node.repo || `acme/${node.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   const ownerName = node.owners?.length ? node.owners[0] : "@engineering-lead";
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatPrompt.trim()) return;
     const q = chatPrompt;
@@ -46,11 +63,88 @@ export function NodeInspector({
     setChatLog((prev) => [
       ...prev,
       { role: "user", text: q },
-      {
-        role: "ai",
-        text: `Analyzing enterprise memory for "${q}" across ${repoName}...\n\nBased on Nykst's continuous reality-checking engine, this component interacts directly with 4 upstream microservices and maintains a p99 latency of 42ms. The architectural decision record (ADR #412) specifies strict idempotency here.`,
-      },
+      { role: "ai", text: "Nykst Memory is checking the connected repository…" },
     ]);
+    const result = await askNykstAi(
+      q,
+      `Repository: ${repoName}\nComponent: ${node.label}\nKind: ${node.kind}\nSummary: ${node.summary}\nDependencies: ${node.dependencies.join(", ")}\nDependents: ${node.dependents.join(", ")}`,
+    );
+    setChatLog((prev) => [
+      ...prev.slice(0, -1),
+      { role: "ai", text: result.ok ? result.answer : result.error },
+    ]);
+    if (!result.ok && result.needsKey) openApiSettings();
+  };
+
+  const filePath = node.id.match(/\/file:(.+)$/)?.[1] ?? "";
+  const repoParts = repoName.split("/");
+  const handlePrepareChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!filePath || !changePrompt.trim() || repoParts.length !== 2) return;
+    setCodingBusy(true);
+    setCodingMessage("Reading the live file and generating a reviewable replacement…");
+    try {
+      const response = await fetch("/api/integrations/github/coding", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "prepare",
+          owner: repoParts[0],
+          repo: repoParts[1],
+          path: filePath,
+          base: "main",
+          prompt: changePrompt,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not prepare the change.");
+      setChange(data);
+      setCodingMessage("Preview ready. Review the exact diff before creating anything on GitHub.");
+    } catch (error) {
+      setCodingMessage(error instanceof Error ? error.message : "Could not prepare the change.");
+    } finally {
+      setCodingBusy(false);
+    }
+  };
+
+  const handleCreatePr = async () => {
+    if (!change) return;
+    setCodingBusy(true);
+    setCodingMessage(
+      "Creating a new branch, committing the reviewed file, and opening the pull request…",
+    );
+    const branch = `nykst/${
+      filePath
+        .split("/")
+        .pop()
+        ?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "change"
+    }-${Date.now().toString(36)}`;
+    try {
+      const response = await fetch("/api/integrations/github/coding", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "create-pr",
+          ...change,
+          branch,
+          title: `Nykst: ${changePrompt.slice(0, 100)}`,
+          commitMessage: `Nykst: ${changePrompt.slice(0, 100)}`,
+          description: `Requested change: ${changePrompt}`,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not create the pull request.");
+      setCodingMessage(
+        `Pull request #${data.pullRequest.number} created. Repository CI is the authoritative test runner.`,
+      );
+      window.open(data.pullRequest.html_url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setCodingMessage(
+        error instanceof Error ? error.message : "Could not create the pull request.",
+      );
+    } finally {
+      setCodingBusy(false);
+    }
   };
 
   return (
@@ -79,7 +173,8 @@ export function NodeInspector({
                 { id: "changes", label: "4. Changes & Evolution", icon: GitCommit },
                 { id: "runtime", label: "5. Runtime Metrics", icon: Activity },
                 { id: "incidents", label: "6. Data Incidents & Learning", icon: AlertTriangle },
-                { id: "ask", label: "7. Ask Nykst Memory", icon: Sparkles },
+                { id: "coding", label: "7. Code Change & PR", icon: GitPullRequest },
+                { id: "ask", label: "8. Ask Nykst Memory", icon: Sparkles },
               ].map((item) => {
                 const Icon = item.icon;
                 const active = tab === item.id;
@@ -511,7 +606,91 @@ export function NodeInspector({
               </div>
             )}
 
-            {/* Layer 7: Ask Nykst AI */}
+            {tab === "coding" && (
+              <div className="space-y-4">
+                <div className="border border-primary/30 bg-primary/5 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-primary text-xs font-semibold">
+                    <ShieldCheck className="size-4" /> Guarded repository change
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                    Nykst reads the live GitHub file, asks your connected provider for a complete
+                    replacement, shows the exact diff, then creates a new branch and pull request.
+                    It never writes to the base branch.
+                  </p>
+                </div>
+                {!filePath ? (
+                  <div className="border border-border bg-surface rounded-xl p-5 text-sm text-muted-foreground">
+                    Open the inspector for a file node to propose a code change. Module and service
+                    nodes are intentionally read-only until a specific file is selected.
+                  </div>
+                ) : (
+                  <>
+                    <form
+                      onSubmit={handlePrepareChange}
+                      className="border border-border bg-surface rounded-xl p-4 space-y-3"
+                    >
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-primary">
+                        Target file
+                      </div>
+                      <div className="text-xs font-mono text-foreground break-all">
+                        {repoName} · main · {filePath}
+                      </div>
+                      <textarea
+                        value={changePrompt}
+                        onChange={(e) => setChangePrompt(e.target.value)}
+                        placeholder="Describe the smallest safe change you want…"
+                        className="min-h-24 w-full resize-y bg-card border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary"
+                      />
+                      <button
+                        disabled={codingBusy || !changePrompt.trim()}
+                        className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                      >
+                        {codingBusy ? "Working…" : "Generate real diff"}
+                      </button>
+                    </form>
+                    {codingMessage && (
+                      <div className="rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground">
+                        {codingMessage}
+                      </div>
+                    )}
+                    {change && (
+                      <div className="border border-border bg-surface rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between border-b border-border p-3">
+                          <span className="text-xs font-semibold">Reviewable diff</span>
+                          <span className="text-[10px] font-mono text-amber-300">
+                            TESTS NOT RUN
+                          </span>
+                        </div>
+                        <pre className="max-h-80 overflow-auto whitespace-pre-wrap p-4 text-[11px] font-mono leading-relaxed">
+                          <code>{change.diff}</code>
+                        </pre>
+                        <div className="border-t border-border p-3 text-[11px] text-muted-foreground">
+                          {change.testMessage}
+                        </div>
+                        <div className="flex flex-wrap gap-2 border-t border-border p-3">
+                          <button
+                            disabled={codingBusy}
+                            onClick={handleCreatePr}
+                            className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                          >
+                            <GitPullRequest className="mr-1 inline size-3.5" /> Create branch + PR
+                          </button>
+                          <button
+                            disabled={codingBusy}
+                            onClick={() => setChange(null)}
+                            className="rounded-lg border border-border px-4 py-2 text-xs"
+                          >
+                            Discard preview
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Layer 8: Ask Nykst Memory */}
             {tab === "ask" && (
               <div className="flex flex-col h-[400px] border border-border bg-surface rounded-xl overflow-hidden">
                 <div className="p-3 border-b border-border bg-card flex items-center gap-2">

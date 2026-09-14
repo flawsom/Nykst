@@ -22,6 +22,7 @@ import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
+import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
 import { Route as ApiIntegrationsGithubLatestRouteImport } from './routes/api.integrations.github.latest'
 import { Route as ApiIntegrationsGithubOrganizationsRouteImport } from './routes/api.integrations.github.organizations'
@@ -96,6 +97,12 @@ const ApiIntegrationsGithubCallbackRoute =
     path: '/api/integrations/github/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsGithubCodingRoute =
+  ApiIntegrationsGithubCodingRouteImport.update({
+    id: '/api/integrations/github/coding',
+    path: '/api/integrations/github/coding',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsGithubIngestRoute =
   ApiIntegrationsGithubIngestRouteImport.update({
     id: '/api/integrations/github/ingest',
@@ -147,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
+  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -168,6 +176,7 @@ export interface FileRoutesByTo {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
+  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -190,6 +199,7 @@ export interface FileRoutesById {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
+  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
+    | '/api/integrations/github/coding'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
+    | '/api/integrations/github/coding'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -255,6 +267,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
+    | '/api/integrations/github/coding'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -276,6 +289,7 @@ export interface RootRouteChildren {
   ApiAiTestRoute: typeof ApiAiTestRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
+  ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
   ApiIntegrationsGithubLatestRoute: typeof ApiIntegrationsGithubLatestRoute
   ApiIntegrationsGithubOrganizationsRoute: typeof ApiIntegrationsGithubOrganizationsRoute
@@ -377,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsGithubCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/github/coding': {
+      id: '/api/integrations/github/coding'
+      path: '/api/integrations/github/coding'
+      fullPath: '/api/integrations/github/coding'
+      preLoaderRoute: typeof ApiIntegrationsGithubCodingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/github/ingest': {
       id: '/api/integrations/github/ingest'
       path: '/api/integrations/github/ingest'
@@ -448,6 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,
+  ApiIntegrationsGithubCodingRoute: ApiIntegrationsGithubCodingRoute,
   ApiIntegrationsGithubIngestRoute: ApiIntegrationsGithubIngestRoute,
   ApiIntegrationsGithubLatestRoute: ApiIntegrationsGithubLatestRoute,
   ApiIntegrationsGithubOrganizationsRoute:

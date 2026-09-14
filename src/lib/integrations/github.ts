@@ -21,10 +21,8 @@ type GithubRepo = {
 type GithubFile = { path: string; type: string; size?: number; sha?: string };
 
 function getConfig() {
-  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
-  // CLIENT_SECRET was the variable updated in Vercel during the credential rotation.
-  // Prefer it while retaining the documented name for existing deployments.
-  const clientSecret = (process.env.CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET)?.trim();
+  const clientId = process.env["GITHUB_CLIENT_ID"]?.trim();
+  const clientSecret = process.env["GITHUB_CLIENT_SECRET"]?.trim();
   if (!clientId || !clientSecret)
     throw new Error(
       "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel.",
@@ -52,7 +50,7 @@ export function verifyOauthState(state: string) {
 
 export function githubRedirectUri(request: Request) {
   return (
-    process.env.GITHUB_REDIRECT_URI?.trim() ||
+    process.env["GITHUB_REDIRECT_URI"]?.trim() ||
     "https://nykst-software-intellegence.vercel.app/api/integrations/github/callback"
   );
 }
@@ -102,6 +100,96 @@ async function githubFetch<T>(token: string, path: string, init?: RequestInit): 
   const data = (await response.json()) as T & { message?: string };
   if (!response.ok) throw new Error(data.message || `GitHub API returned ${response.status}`);
   return data;
+}
+
+export type GithubContent = {
+  type: string;
+  encoding?: string;
+  content?: string;
+  sha: string;
+  path: string;
+};
+export type GithubRef = { object: { sha: string } };
+
+export async function githubContent(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string,
+  ref: string,
+) {
+  return githubFetch<GithubContent>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`,
+  );
+}
+
+export async function githubBranchSha(token: string, owner: string, repo: string, branch: string) {
+  const ref = await githubFetch<GithubRef>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/ref/heads/${branch.split("/").map(encodeURIComponent).join("/")}`,
+  );
+  return ref.object.sha;
+}
+
+export async function githubCreateBranch(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  sha: string,
+) {
+  return githubFetch<{ ref: string }>(token, `/repos/${owner}/${repo}/git/refs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }),
+  });
+}
+
+export async function githubPutFile(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string,
+  content: string,
+  branch: string,
+  message: string,
+  sha: string,
+) {
+  return githubFetch<{ content?: { html_url?: string }; commit?: { sha?: string } }>(
+    token,
+    `/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        message,
+        content: Buffer.from(content, "utf8").toString("base64"),
+        branch,
+        sha,
+      }),
+    },
+  );
+}
+
+export async function githubCreatePullRequest(
+  token: string,
+  owner: string,
+  repo: string,
+  title: string,
+  body: string,
+  head: string,
+  base: string,
+) {
+  return githubFetch<{ html_url: string; number: number; title: string }>(
+    token,
+    `/repos/${owner}/${repo}/pulls`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title, body, head, base }),
+    },
+  );
 }
 
 export async function githubUser(token: string) {
