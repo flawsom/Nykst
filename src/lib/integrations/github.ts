@@ -22,7 +22,10 @@ type GithubFile = { path: string; type: string; size?: number; sha?: string };
 
 function getConfig() {
   const clientId = process.env["GITHUB_CLIENT_ID"]?.trim();
-  const clientSecret = process.env["GITHUB_CLIENT_SECRET"]?.trim();
+  // Prefer the standardized name. Keep the legacy alias temporarily so existing
+  // Vercel projects do not break during the environment-variable migration.
+  const clientSecret =
+    process.env["GITHUB_CLIENT_SECRET"]?.trim() || process.env["CLIENT_SECRET"]?.trim();
   if (!clientId || !clientSecret)
     throw new Error(
       "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel.",
