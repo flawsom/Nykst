@@ -190,16 +190,6 @@ function Landing() {
         </div>
 
         <div
-          className="animate-rise text-muted-foreground mt-8 grid grid-cols-2 gap-3 font-mono text-[10px] sm:mt-10 sm:flex sm:flex-wrap sm:gap-x-8 sm:gap-y-2 sm:text-[11px]"
-          style={{ animationDelay: "220ms" }}
-        >
-          <span>14 core domains derived</span>
-          <span>128 repositories parsed</span>
-          <span>214 services mapped</span>
-          <span>299,600 files indexed</span>
-        </div>
-
-        <div
           className="animate-rise border-border bg-card/70 mt-10 max-w-3xl rounded-2xl border p-4 backdrop-blur sm:mt-14 sm:p-6"
           style={{ animationDelay: "240ms", boxShadow: "var(--shadow-panel)" }}
         >
