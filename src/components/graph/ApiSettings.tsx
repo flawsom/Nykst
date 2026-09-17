@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const PROVIDERS = [
   { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
   { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
-  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-2.0-flash" },
+  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-2.5-flash-lite" },
   { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-chat" },
   { id: "custom", label: "Custom / Kimi", hint: "Provider API key", model: "provider-model" },
 ] as const;

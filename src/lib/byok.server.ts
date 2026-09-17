@@ -24,7 +24,7 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: "gemini",
     label: "Google Gemini",
     hint: "AIza...",
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash-lite",
     baseUrl: "https://generativelanguage.googleapis.com",
   },
   {
@@ -107,6 +107,11 @@ function safeModel(value: unknown, provider: AiProvider): string {
   const model = typeof value === "string" ? value.trim() : "";
   if (model.length > 120 || /[\r\n]/.test(model))
     throw new AiKeyError("Enter a valid model name.", 400);
+  if (
+    provider === "gemini" &&
+    (!model || model === "gemini-2.0-flash" || model === "gemini-1.5-flash")
+  )
+    return providerDefinition(provider).model;
   return model || providerDefinition(provider).model;
 }
 
@@ -125,7 +130,7 @@ export async function loadUserKey(userId: string): Promise<StoredKey | null> {
       last4: data.key_last4,
       apiKey: decryptKey(data.key_ciphertext),
       apiBaseUrl: data.api_base_url ?? providerDefinition(data.ai_provider).baseUrl ?? null,
-      model: data.model_name ?? providerDefinition(data.ai_provider).model,
+      model: safeModel(data.model_name, data.ai_provider),
     };
   } catch {
     return null;
@@ -175,12 +180,29 @@ export class AiKeyError extends Error {
   }
 }
 
-function friendly(status: number): string {
+function friendly(status: number, providerMessage?: string): string {
   if (status === 401 || status === 403)
     return "Your API key was rejected by the provider. Update it in Connect API.";
   if (status === 429)
     return "Your provider account is rate limited or out of quota. Check your plan, then retry.";
+  if (status === 400 || status === 404)
+    return (
+      providerMessage ||
+      "The provider rejected this model or request. Check the provider settings and try again."
+    );
   return "Your AI provider could not be reached right now. Please try again.";
+}
+
+async function providerErrorMessage(response: Response) {
+  try {
+    const data = (await response.clone().json()) as {
+      error?: { message?: string };
+      message?: string;
+    };
+    return data.error?.message || data.message;
+  } catch {
+    return undefined;
+  }
 }
 
 function openAiBase(key: { provider: AiProvider; apiBaseUrl: string | null }): string {
@@ -212,10 +234,10 @@ async function providerRequest(
     });
   }
   if (key.provider === "gemini") {
-    const endpoint = `${key.apiBaseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(key.model)}:generateContent?key=${encodeURIComponent(key.apiKey)}`;
+    const endpoint = `${key.apiBaseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(key.model)}:generateContent`;
     return fetch(endpoint, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-goog-api-key": key.apiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -248,10 +270,10 @@ export async function testProviderKey(
   try {
     if (provider === "gemini") {
       response = await fetch(
-        `${baseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        `${baseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(modelName)}:generateContent`,
         {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] }),
         },
       );
@@ -276,7 +298,11 @@ export async function testProviderKey(
   } catch {
     throw new AiKeyError("Could not reach the provider. Check the endpoint and try again.", 502);
   }
-  if (!response.ok) throw new AiKeyError(friendly(response.status), response.status);
+  if (!response.ok)
+    throw new AiKeyError(
+      friendly(response.status, await providerErrorMessage(response)),
+      response.status,
+    );
 }
 
 export async function chatWithUserKey(
@@ -290,7 +316,11 @@ export async function chatWithUserKey(
   } catch {
     throw new AiKeyError("Could not reach your AI provider. Please try again.", 502);
   }
-  if (!response.ok) throw new AiKeyError(friendly(response.status), response.status);
+  if (!response.ok)
+    throw new AiKeyError(
+      friendly(response.status, await providerErrorMessage(response)),
+      response.status,
+    );
   const data = (await response.json()) as Record<string, unknown>;
   if (key.provider === "anthropic") {
     const content = data["content"] as { text?: string }[] | undefined;
