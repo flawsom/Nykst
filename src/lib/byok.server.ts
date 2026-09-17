@@ -24,7 +24,7 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: "gemini",
     label: "Google Gemini",
     hint: "AIza...",
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-3.5-flash-lite",
     baseUrl: "https://generativelanguage.googleapis.com",
   },
   {
@@ -86,6 +86,18 @@ export type StoredKey = {
   model: string;
 };
 
+export function platformGeminiKey(): StoredKey | null {
+  const apiKey = process.env["GEMINI_API_KEY"]?.trim();
+  if (!apiKey) return null;
+  return {
+    provider: "gemini",
+    last4: apiKey.slice(-4),
+    apiKey,
+    apiBaseUrl: "https://generativelanguage.googleapis.com",
+    model: "gemini-3.5-flash-lite",
+  };
+}
+
 function providerDefinition(provider: AiProvider) {
   return AI_PROVIDERS.find((item) => item.id === provider)!;
 }
@@ -109,7 +121,10 @@ function safeModel(value: unknown, provider: AiProvider): string {
     throw new AiKeyError("Enter a valid model name.", 400);
   if (
     provider === "gemini" &&
-    (!model || model === "gemini-2.0-flash" || model === "gemini-1.5-flash")
+    (!model ||
+      model === "gemini-2.0-flash" ||
+      model === "gemini-1.5-flash" ||
+      model === "gemini-2.5-flash-lite")
   )
     return providerDefinition(provider).model;
   return model || providerDefinition(provider).model;

@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AiKeyError, chatWithUserKey, currentUserId, loadUserKey } from "@/lib/byok.server";
+import {
+  AiKeyError,
+  chatWithUserKey,
+  currentUserId,
+  loadUserKey,
+  platformGeminiKey,
+} from "@/lib/byok.server";
 
 const SYSTEM = [
   "You are Nykst, a software intelligence system navigator.",
@@ -18,7 +24,8 @@ export const Route = createFileRoute("/api/ai/chat")({
             { status: 401 },
           );
 
-        const key = await loadUserKey(userId);
+        const personalKey = await loadUserKey(userId);
+        const key = personalKey ?? platformGeminiKey();
         if (!key)
           return Response.json(
             {
@@ -39,7 +46,11 @@ export const Route = createFileRoute("/api/ai/chat")({
             SYSTEM,
             context ? `Graph context:\n${context}\n\nQuestion: ${prompt}` : prompt,
           );
-          return Response.json({ answer, provider: key.provider });
+          return Response.json({
+            answer,
+            provider: key.provider,
+            platformFallback: !personalKey,
+          });
         } catch (error) {
           const status = error instanceof AiKeyError ? error.status : 500;
           const message =
