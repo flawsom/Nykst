@@ -8,7 +8,7 @@ const PROVIDERS = [
   { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
   { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.5-flash-lite" },
   { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-chat" },
-  { id: "custom", label: "Custom / Kimi", hint: "Provider API key", model: "provider-model" },
+  { id: "custom", label: "OpenRouter", hint: "sk-or-v1-...", model: "openrouter/free" },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]["id"];
@@ -66,14 +66,18 @@ function ApiSettingsDialog({
   const [apiKey, setApiKey] = useState("");
   const [apiBaseUrl, setApiBaseUrl] = useState("");
   const [model, setModel] = useState("");
+  const [advanced, setAdvanced] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<"test" | "save" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const selected = PROVIDERS.find((item) => item.id === provider)!;
+  const connectedLabel =
+    PROVIDERS.find((item) => item.id === status.provider)?.label ?? status.provider;
 
   useEffect(() => {
-    setApiBaseUrl("");
+    setApiBaseUrl(provider === "custom" ? "https://openrouter.ai/api/v1" : "");
     setModel(selected.model);
+    setAdvanced(false);
     setMessage(null);
   }, [provider, selected.model]);
 
@@ -146,7 +150,7 @@ function ApiSettingsDialog({
         {status.configured && (
           <div className="border-primary/25 bg-primary/5 mt-4 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
             <span className="flex items-center gap-2 text-xs">
-              <ShieldCheck className="text-primary size-4" /> {status.provider} connected · ends in{" "}
+              <ShieldCheck className="text-primary size-4" /> {connectedLabel} connected · ends in{" "}
               {status.last4}
             </span>
             <button
@@ -185,30 +189,48 @@ function ApiSettingsDialog({
         </div>
 
         {provider === "custom" && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="text-muted-foreground text-[11px] uppercase tracking-wide sm:col-span-2">
-              Provider endpoint (HTTPS)
-              <input
-                value={apiBaseUrl}
-                onChange={(event) => setApiBaseUrl(event.target.value)}
-                placeholder="https://api.moonshot.cn/v1"
-                className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
-              />
-            </label>
-            <label className="text-muted-foreground text-[11px] uppercase tracking-wide sm:col-span-2">
-              Model name
-              <input
-                value={model}
-                onChange={(event) => setModel(event.target.value)}
-                placeholder="moonshot-v1-8k"
-                className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
-              />
-            </label>
+          <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
+            <p className="text-xs font-medium">OpenRouter — one key, many models</p>
+            <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+              Paste your OpenRouter key below. Nykst automatically uses the OpenRouter endpoint and
+              its free router, so you do not need to remember any links or model names.
+            </p>
+            <button
+              type="button"
+              onClick={() => setAdvanced((value) => !value)}
+              className="text-primary mt-2 text-[11px] font-medium hover:underline"
+            >
+              {advanced ? "Hide advanced settings" : "Use another compatible provider"}
+            </button>
+            {advanced && (
+              <div className="mt-3 grid gap-3">
+                <label className="text-muted-foreground text-[11px] uppercase tracking-wide">
+                  Provider endpoint (HTTPS)
+                  <input
+                    value={apiBaseUrl}
+                    onChange={(event) => setApiBaseUrl(event.target.value)}
+                    placeholder="https://api.example.com/v1"
+                    className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="text-muted-foreground text-[11px] uppercase tracking-wide">
+                  Model name
+                  <input
+                    value={model}
+                    onChange={(event) => setModel(event.target.value)}
+                    placeholder="provider-model"
+                    className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
+            )}
           </div>
         )}
 
         <div className="mt-4">
-          <p className="text-muted-foreground text-[11px] tracking-wide uppercase">API key</p>
+          <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
+            {provider === "custom" ? "OpenRouter API key" : "API key"}
+          </p>
           <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3">
             <input
               value={apiKey}
