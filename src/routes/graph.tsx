@@ -162,10 +162,20 @@ function GraphPage() {
   return (
     <main className="bg-background flex min-h-screen flex-col overflow-hidden lg:h-screen">
       <header className="border-border flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="glow-ring bg-primary block size-2 rounded-full" />
-          <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/"
+            className="border-border bg-surface text-muted-foreground hover:bg-surface-2 hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg border transition-colors"
+            aria-label="Return to opening dashboard"
+            title="Return to opening dashboard"
+          >
+            <X className="size-4" />
+          </Link>
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="glow-ring bg-primary block size-2 rounded-full" />
+            <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
+          </Link>
+        </div>
 
         <nav className="order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5 text-sm sm:order-none sm:w-auto sm:flex-1 sm:gap-2.5">
           {path.map((node, i) => (

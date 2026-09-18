@@ -36,7 +36,18 @@ function Landing() {
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 
   useEffect(() => {
-    setGithubConnected(new URLSearchParams(window.location.search).get("github") === "connected");
+    let active = true;
+    const queryConnected =
+      new URLSearchParams(window.location.search).get("github") === "connected";
+    if (queryConnected) setGithubConnected(true);
+    void fetch("/api/integrations/github/organizations")
+      .then((response) => {
+        if (active && response.ok) setGithubConnected(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, []);
 
   const connect = () => {

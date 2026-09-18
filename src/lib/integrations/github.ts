@@ -343,5 +343,7 @@ export function githubError(error: unknown) {
 
 export { GithubOrg, GithubRepo };
 
-export const githubCookieOptions = ["HttpOnly", "Secure", "SameSite=Lax", "Max-Age=3600"];
+// Keep the user's GitHub connection across reloads and normal return visits.
+// GitHub can still invalidate the token; in that case the UI will ask to reconnect.
+export const githubCookieOptions = ["HttpOnly", "Secure", "SameSite=Lax", "Max-Age=31536000"];
 export const oauthCookieOptions = ["HttpOnly", "Secure", "SameSite=Lax", "Max-Age=600"];
