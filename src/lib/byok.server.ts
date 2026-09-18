@@ -220,6 +220,24 @@ async function providerErrorMessage(response: Response) {
   }
 }
 
+function textFromCompatibleResponse(data: Record<string, unknown>): string {
+  const choices = data["choices"] as
+    { message?: { content?: unknown }; text?: unknown }[] | undefined;
+  const content = choices?.[0]?.message?.content ?? choices?.[0]?.text;
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content))
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object" && "text" in part)
+          return typeof part.text === "string" ? part.text : "";
+        return "";
+      })
+      .join("")
+      .trim();
+  return "";
+}
+
 function openAiBase(key: { provider: AiProvider; apiBaseUrl: string | null }): string {
   return (
     key.apiBaseUrl ||
@@ -259,9 +277,20 @@ async function providerRequest(
       }),
     });
   }
-  return fetch(`${openAiBase(key)}/chat/completions`, {
+  const baseUrl = openAiBase(key);
+  const openRouterHeaders = baseUrl.includes("openrouter.ai")
+    ? {
+        "HTTP-Referer": "https://nykst-software-intellegence.vercel.app",
+        "X-OpenRouter-Title": "Nykst",
+      }
+    : {};
+  return fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key.apiKey}`, "content-type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${key.apiKey}`,
+      "content-type": "application/json",
+      ...openRouterHeaders,
+    },
     body: JSON.stringify({
       model: key.model,
       max_tokens: 900,
@@ -356,6 +385,5 @@ export async function chatWithUserKey(
         .trim() || "No answer returned."
     );
   }
-  const choices = data["choices"] as { message?: { content?: string } }[] | undefined;
-  return choices?.[0]?.message?.content?.trim() || "No answer returned.";
+  return textFromCompatibleResponse(data) || "No answer returned.";
 }
