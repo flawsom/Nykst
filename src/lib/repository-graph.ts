@@ -21,6 +21,14 @@ export type RepositorySnapshot = {
     scanned_files?: number;
     edges?: Array<{ from?: string; to?: string; kind?: "internal" | "external" }>;
   };
+  validation_profile?: {
+    generated_at?: string;
+    package_manager?: "npm" | "pnpm" | "yarn" | "bun" | null;
+    install_command?: string | null;
+    commands?: string[];
+    source?: string;
+    can_execute?: boolean;
+  };
 };
 export type ProblemTrace = {
   id: string;

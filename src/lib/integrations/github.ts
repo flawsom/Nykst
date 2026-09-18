@@ -261,6 +261,13 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     repository.default_branch,
     files,
   );
+  const validation_profile = await buildValidationProfile(
+    token,
+    owner,
+    repo,
+    repository.default_branch,
+    files,
+  );
   return {
     provider: "github",
     repository: {
@@ -280,6 +287,7 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     issues,
     contributors,
     dependency_graph,
+    validation_profile,
     summary: {
       file_count: files.length,
       commit_count: commits.length,
@@ -378,6 +386,99 @@ async function analyzeRepositoryDependencies(
     method: "bounded-source-import-analysis",
     scanned_files: nodes.size,
     edges: edges.slice(0, 4000),
+  };
+}
+
+async function readRepositoryText(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  path: string,
+) {
+  try {
+    const response = await githubFetch<{ content?: string; encoding?: string }>(
+      token,
+      `/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`,
+    );
+    if (!response.content) return null;
+    return response.encoding === "base64"
+      ? Buffer.from(response.content.replace(/\n/g, ""), "base64").toString("utf8")
+      : response.content;
+  } catch {
+    return null;
+  }
+}
+
+async function buildValidationProfile(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  files: DependencyFile[],
+) {
+  const paths = new Set(
+    files.map((file) => file.path).filter((path): path is string => Boolean(path)),
+  );
+  const packageJson = paths.has("package.json")
+    ? await readRepositoryText(token, owner, repo, branch, "package.json")
+    : null;
+  let packageScripts: Record<string, string> = {};
+  let packageManager: "npm" | "pnpm" | "yarn" | "bun" | null = null;
+  if (packageJson) {
+    try {
+      const parsed = JSON.parse(packageJson) as {
+        scripts?: Record<string, string>;
+        packageManager?: string;
+      };
+      packageScripts = parsed.scripts ?? {};
+      packageManager = parsed.packageManager?.startsWith("pnpm")
+        ? "pnpm"
+        : parsed.packageManager?.startsWith("yarn")
+          ? "yarn"
+          : parsed.packageManager?.startsWith("bun")
+            ? "bun"
+            : "npm";
+    } catch {
+      // Keep the profile conservative when package.json is malformed.
+    }
+  }
+  if (!packageManager)
+    packageManager = paths.has("pnpm-lock.yaml")
+      ? "pnpm"
+      : paths.has("yarn.lock")
+        ? "yarn"
+        : paths.has("bun.lockb")
+          ? "bun"
+          : paths.has("package.json")
+            ? "npm"
+            : null;
+  const run = (script: string) =>
+    packageManager === "pnpm"
+      ? `pnpm ${script}`
+      : packageManager === "yarn"
+        ? `yarn ${script}`
+        : packageManager === "bun"
+          ? `bun ${script}`
+          : `npm run ${script}`;
+  return {
+    generated_at: new Date().toISOString(),
+    package_manager: packageManager,
+    install_command: packageManager ? `${packageManager} install --frozen-lockfile` : null,
+    commands: [
+      ...(packageScripts.typecheck ? [run("typecheck")] : []),
+      ...(packageScripts.lint ? [run("lint")] : []),
+      ...(packageScripts.test ? [run("test")] : []),
+      ...(packageScripts.build ? [run("build")] : []),
+    ],
+    source: packageJson ? "package.json" : "repository file inventory",
+    can_execute: Boolean(
+      packageManager &&
+      (packageScripts.test ||
+        packageScripts.build ||
+        packageScripts.typecheck ||
+        packageScripts.lint),
+    ),
   };
 }
 
