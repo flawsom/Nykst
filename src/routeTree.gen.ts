@@ -20,6 +20,7 @@ import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
+import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
@@ -84,6 +85,11 @@ const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => ApiSubscriptionRoute,
+} as any)
+const ApiWebhooksGithubRoute = ApiWebhooksGithubRouteImport.update({
+  id: '/api/webhooks/github',
+  path: '/api/webhooks/github',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
   ApiIntegrationsGithubAllRepositoriesRouteImport.update({
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/subscription/admin'
+    | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/subscription/admin'
+    | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/subscription/admin'
+    | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -287,6 +299,7 @@ export interface RootRouteChildren {
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
+  ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
@@ -377,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSubscriptionAdminRouteImport
       parentRoute: typeof ApiSubscriptionRoute
     }
+    '/api/webhooks/github': {
+      id: '/api/webhooks/github'
+      path: '/api/webhooks/github'
+      fullPath: '/api/webhooks/github'
+      preLoaderRoute: typeof ApiWebhooksGithubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/github/all-repositories': {
       id: '/api/integrations/github/all-repositories'
       path: '/api/integrations/github/all-repositories'
@@ -466,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
+  ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,

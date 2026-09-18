@@ -173,6 +173,51 @@ export type Database = {
         }
         Relationships: []
       }
+      production_signals: {
+        Row: {
+          created_at: string
+          delivery_id: string
+          event_type: string
+          fingerprint: string
+          id: string
+          occurred_at: string
+          payload: Json
+          repository_full_name: string | null
+          severity: string
+          source: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_id: string
+          event_type: string
+          fingerprint: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          repository_full_name?: string | null
+          severity?: string
+          source: string
+          summary: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          delivery_id?: string
+          event_type?: string
+          fingerprint?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          repository_full_name?: string | null
+          severity?: string
+          source?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
       user_ai_keys: {
         Row: {
           ai_provider: string
