@@ -218,6 +218,54 @@ export type Database = {
         }
         Relationships: []
       }
+      root_cause_diagnoses: {
+        Row: {
+          confidence: string
+          created_at: string
+          dependencies: Json
+          evidence: Json
+          explanation: string
+          id: string
+          model_name: string | null
+          model_provider: string | null
+          recommended_next_steps: Json
+          repository_full_name: string | null
+          signal_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          dependencies?: Json
+          evidence?: Json
+          explanation: string
+          id?: string
+          model_name?: string | null
+          model_provider?: string | null
+          recommended_next_steps?: Json
+          repository_full_name?: string | null
+          signal_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          dependencies?: Json
+          evidence?: Json
+          explanation?: string
+          id?: string
+          model_name?: string | null
+          model_provider?: string | null
+          recommended_next_steps?: Json
+          repository_full_name?: string | null
+          signal_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       user_ai_keys: {
         Row: {
           ai_provider: string

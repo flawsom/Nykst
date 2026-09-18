@@ -14,6 +14,7 @@ import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
@@ -54,6 +55,11 @@ const SubscribeRoute = SubscribeRouteImport.update({
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/admin/payments',
   path: '/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
+  id: '/api/diagnosis',
+  path: '/api/diagnosis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/intelligence': typeof IntelligenceRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/intelligence': typeof IntelligenceRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/intelligence': typeof IntelligenceRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/subscribe'
     | '/admin/payments'
+    | '/api/diagnosis'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/subscribe'
     | '/admin/payments'
+    | '/api/diagnosis'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/subscribe'
     | '/admin/payments'
+    | '/api/diagnosis'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   IntelligenceRoute: typeof IntelligenceRoute
   SubscribeRoute: typeof SubscribeRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  ApiDiagnosisRoute: typeof ApiDiagnosisRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -346,6 +359,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/diagnosis': {
+      id: '/api/diagnosis'
+      path: '/api/diagnosis'
+      fullPath: '/api/diagnosis'
+      preLoaderRoute: typeof ApiDiagnosisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pre-registration': {
@@ -481,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntelligenceRoute: IntelligenceRoute,
   SubscribeRoute: SubscribeRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  ApiDiagnosisRoute: ApiDiagnosisRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,
