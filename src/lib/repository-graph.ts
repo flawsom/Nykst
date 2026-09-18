@@ -15,6 +15,12 @@ export type RepositorySnapshot = {
   pull_requests?: RepoRecord[];
   issues?: RepoRecord[];
   contributors?: RepoRecord[];
+  dependency_graph?: {
+    generated_at?: string;
+    method?: string;
+    scanned_files?: number;
+    edges?: Array<{ from?: string; to?: string; kind?: "internal" | "external" }>;
+  };
 };
 export type ProblemTrace = {
   id: string;
@@ -143,8 +149,8 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
     .map((file) => file.path)
     .filter((path): path is string => Boolean(path));
   return (snapshot.issues ?? []).slice(0, 100).map((issue, index) => {
-    const title = text(issue['title']) || `Repository issue ${index + 1}`;
-    const body = text(issue['body']);
+    const title = text(issue["title"]) || `Repository issue ${index + 1}`;
+    const body = text(issue["body"]);
     const tokens = `${title} ${body}`
       .toLowerCase()
       .split(/[^a-z0-9]+/)
@@ -174,10 +180,10 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
     const user =
       typeof issue.user === "object" && issue.user !== null ? text(issue.user.login) : "";
     return {
-      id: text(issue['id']) || text(issue['number']) || `issue-${index + 1}`,
+      id: text(issue["id"]) || text(issue["number"]) || `issue-${index + 1}`,
       title,
-      state: text(issue['state']) || "open",
-      ...(text(issue['html_url']) ? { url: text(issue['html_url']) } : {}),
+      state: text(issue["state"]) || "open",
+      ...(text(issue["html_url"]) ? { url: text(issue["html_url"]) } : {}),
       likelyFiles,
       evidence: likelyFiles.length
         ? `Issue language overlaps ${likelyFiles.length} repository path${likelyFiles.length === 1 ? "" : "s"}.`

@@ -254,6 +254,13 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/issues?state=all`),
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/contributors`),
   ]);
+  const dependency_graph = await analyzeRepositoryDependencies(
+    token,
+    owner,
+    repo,
+    repository.default_branch,
+    files,
+  );
   return {
     provider: "github",
     repository: {
@@ -272,6 +279,7 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     pull_requests: pullRequests,
     issues,
     contributors,
+    dependency_graph,
     summary: {
       file_count: files.length,
       commit_count: commits.length,
@@ -280,6 +288,96 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
       issue_count: issues.length,
       contributor_count: contributors.length,
     },
+  };
+}
+
+type DependencyFile = { path?: string; type?: string; size?: number; sha?: string };
+
+function sourceFile(path: string) {
+  return /\.(mjs|cjs|js|jsx|ts|tsx|py|go|java|rs|rb|php)$/.test(path);
+}
+
+function resolveRelativeImport(source: string, imported: string, paths: Set<string>) {
+  const base = source.includes("/") ? source.slice(0, source.lastIndexOf("/") + 1) : "";
+  const raw = `${base}${imported}`.replace(/^\.\//, "");
+  const candidates = [
+    raw,
+    `${raw}.ts`,
+    `${raw}.tsx`,
+    `${raw}.js`,
+    `${raw}.jsx`,
+    `${raw}/index.ts`,
+    `${raw}/index.tsx`,
+  ];
+  return candidates.find((candidate) => paths.has(candidate));
+}
+
+function importsFor(path: string, content: string) {
+  const imports = new Set<string>();
+  const patterns = [
+    /(?:import|export)\s+(?:[^"']+\s+from\s+)?["']([^"']+)["']/g,
+    /require\(\s*["']([^"']+)["']\s*\)/g,
+    /from\s+([a-zA-Z0-9_./-]+)\s+import\s+/g,
+    /\buse\s+([a-zA-Z0-9_./-]+)/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of content.matchAll(pattern)) {
+      if (match[1] && match[1] !== path) imports.add(match[1]);
+    }
+  }
+  return [...imports].slice(0, 80);
+}
+
+async function analyzeRepositoryDependencies(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  files: DependencyFile[],
+) {
+  const paths = new Set(
+    files.map((file) => file.path).filter((path): path is string => Boolean(path)),
+  );
+  const candidates = files
+    .filter(
+      (file) =>
+        file.type === "blob" && file.path && sourceFile(file.path) && (file.size ?? 0) <= 200_000,
+    )
+    .slice(0, 120);
+  const edges: Array<{ from: string; to: string; kind: "internal" | "external" }> = [];
+  const nodes = new Set<string>();
+  for (const file of candidates) {
+    if (!file.path) continue;
+    try {
+      const response = await githubFetch<{ content?: string; encoding?: string }>(
+        token,
+        `/repos/${owner}/${repo}/contents/${file.path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`,
+      );
+      const content =
+        response.encoding === "base64" && response.content
+          ? Buffer.from(response.content.replace(/\n/g, ""), "base64").toString("utf8")
+          : (response.content ?? "");
+      if (!content) continue;
+      nodes.add(file.path);
+      for (const imported of importsFor(file.path, content)) {
+        const target = imported.startsWith(".")
+          ? resolveRelativeImport(file.path, imported, paths)
+          : undefined;
+        edges.push({
+          from: file.path,
+          to: target ?? imported,
+          kind: target ? "internal" : "external",
+        });
+      }
+    } catch {
+      // A single unreadable file must not make the repository ingestion fail.
+    }
+  }
+  return {
+    generated_at: new Date().toISOString(),
+    method: "bounded-source-import-analysis",
+    scanned_files: nodes.size,
+    edges: edges.slice(0, 4000),
   };
 }
 

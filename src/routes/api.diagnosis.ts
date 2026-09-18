@@ -90,6 +90,7 @@ export const Route = createFileRoute("/api/diagnosis")({
                   : [],
                 issues: Array.isArray(payload["issues"]) ? payload["issues"].slice(0, 10) : [],
                 files: Array.isArray(payload["files"]) ? payload["files"].slice(0, 80) : [],
+                dependency_graph: payload["dependency_graph"] ?? null,
               },
             )}`,
           );
