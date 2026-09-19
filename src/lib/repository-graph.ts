@@ -180,8 +180,9 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
         return tokens.some((token) => lower.includes(token));
       })
       .slice(0, 8);
-    const labels = Array.isArray(issue.labels)
-      ? issue.labels
+    const rawLabels = issue["labels"];
+    const labels = Array.isArray(rawLabels)
+      ? rawLabels
           .map((label) =>
             typeof label === "object" && label !== null ? text(label.name) : text(label),
           )
@@ -195,9 +196,12 @@ export function traceRepositoryProblems(snapshot: RepositorySnapshot): ProblemTr
         : /low|documentation|chore/.test(labelText)
           ? "Low"
           : "Medium";
-    const area = labels[0] || (issue.pull_request ? "Change" : "Repository issue");
+    const area = labels[0] || (issue["pull_request"] ? "Change" : "Repository issue");
+    const rawUser = issue["user"];
     const user =
-      typeof issue.user === "object" && issue.user !== null ? text(issue.user.login) : "";
+      typeof rawUser === "object" && rawUser !== null && "login" in rawUser
+        ? text(rawUser.login)
+        : "";
     return {
       id: text(issue["id"]) || text(issue["number"]) || `issue-${index + 1}`,
       title,

@@ -3,7 +3,7 @@ import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/gra
 import type { RoleDef } from "@/lib/access";
 import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
 import { useChatMemory } from "@/lib/chat-memory";
-import type { ProblemTrace } from "@/lib/repository-graph";
+import type { ProblemTrace, RepositorySnapshot } from "@/lib/repository-graph";
 import { askNykstAi } from "@/lib/ai-client";
 import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
@@ -357,6 +357,49 @@ function suggestionsFor(voice: Voice) {
   return ["What breaks if I change it?", "Show dependencies", "What issues are open?"];
 }
 
+function repositoryContext(
+  snapshot: RepositorySnapshot,
+  node: GraphNode,
+  related: GraphNode[],
+  issues: (IssueLike & { severity: string })[],
+) {
+  const record = (value: Record<string, unknown>, fields: string[]) =>
+    Object.fromEntries(fields.filter((field) => field in value).map((field) => [field, value[field]]));
+  const records = (values: Record<string, unknown>[] | undefined, fields: string[]) =>
+    (values ?? []).map((value) => record(value, fields));
+  return {
+    source: "GitHub repository ingestion; treat this as the source of truth.",
+    repository: snapshot.repository ?? null,
+    selected_graph_node: {
+      id: node.id,
+      kind: node.kind,
+      label: node.label,
+      summary: node.summary,
+      path: node.detail?.path ?? null,
+      owners: node.owners,
+      dependencies: node.dependencies,
+      dependents: node.dependents,
+      blast_radius: node.blast,
+    },
+    related_graph_nodes: related.map((child) => ({
+      id: child.id,
+      kind: child.kind,
+      label: child.label,
+      path: child.detail?.path ?? null,
+      summary: child.summary,
+    })),
+    files: snapshot.files ?? [],
+    commits: records(snapshot.commits, ["sha", "html_url", "message", "author", "committer", "commit"]),
+    branches: records(snapshot.branches, ["name", "sha", "protected", "commit"]),
+    pull_requests: records(snapshot.pull_requests, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "merged_at", "html_url", "head", "base"]),
+    issues: records(snapshot.issues, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "html_url", "comments", "pull_request"]),
+    issue_findings_in_scope: issues,
+    contributors: records(snapshot.contributors, ["login", "id", "contributions", "type", "html_url"]),
+    dependency_graph: snapshot.dependency_graph ?? null,
+    validation_profile: snapshot.validation_profile ?? null,
+  };
+}
+
 /* ---------------- evidence strip ---------------- */
 
 function EvidenceStrip({ items, onOpen }: { items: Evidence[]; onOpen: (n: GraphNode) => void }) {
@@ -409,12 +452,14 @@ export function MentorPanel({
   related,
   onOpen,
   repositoryProblems,
+  repositorySnapshot,
 }: {
   node: GraphNode;
   role: RoleDef;
   related: GraphNode[];
   onOpen: (n: GraphNode) => void;
   repositoryProblems?: ProblemTrace[];
+  repositorySnapshot?: RepositorySnapshot;
 }) {
   const voice = voiceOf(role);
   const issues = useMemo(() => {
@@ -457,20 +502,27 @@ export function MentorPanel({
     setAsking(true);
     setAskError(null);
     const res = answerFor(voice, query, node, related, issues);
-    const context = [
-      `Selected ${kindLabel[node.kind]}: ${node.label}`,
-      `Summary: ${node.summary}`,
-      `Owners: ${node.owners.join(", ") || "unassigned"}`,
-      `Dependencies: ${node.dependencies.join(", ") || "none tracked"}`,
-      `Dependents: ${node.dependents.join(", ") || "none tracked"}`,
-      `Blast radius: ${node.blast.level}; ${node.blast.services} services; ${node.blast.modules} modules; ${node.blast.files} files; ${node.blast.teams} teams`,
-      `Related graph nodes: ${related.map((child) => `${child.kind}:${child.label}`).join(", ") || "none"}`,
-      `Evidence files: ${res.evidence.filter((item) => item.kind === "file").map((item) => item.label).join(", ") || "none"}`,
-      `Repository issues in scope: ${issues.map((issue) => `${issue.title} [${issue.area}, ${issue.severity}, ${issue.owner}]`).join("; ") || "none"}`,
-    ].join("\n");
+    const context = repositorySnapshot
+      ? JSON.stringify(repositoryContext(repositorySnapshot, node, related, issues))
+      : [
+          "No GitHub snapshot is connected. This is demo graph data, not repository evidence.",
+          `Selected ${kindLabel[node.kind]}: ${node.label}`,
+          `Summary: ${node.summary}`,
+          `Owners: ${node.owners.join(", ") || "unassigned"}`,
+          `Dependencies: ${node.dependencies.join(", ") || "none tracked"}`,
+          `Dependents: ${node.dependents.join(", ") || "none tracked"}`,
+          `Blast radius: ${node.blast.level}; ${node.blast.services} services; ${node.blast.modules} modules; ${node.blast.files} files; ${node.blast.teams} teams`,
+        ].join("\n");
+    const groundedPrompt = repositorySnapshot
+      ? `${query}\n\nAnswer strictly from the supplied GitHub snapshot and selected graph node. Cite concrete repository evidence such as file paths, commit SHAs, pull request numbers, issue numbers, dependency edges, branch names, or validation commands. Separate observed facts from graph-derived calculations and inference. Never invent incidents, owners, dependencies, blast-radius numbers, file contents, or historical decisions that are absent from the snapshot. If the snapshot does not contain the answer, say exactly what is missing and what can be verified next.`
+      : query;
     try {
-      const ai = await askNykstAi(query, context);
-      const answer = ai.ok ? ai.answer : res.text;
+      const ai = await askNykstAi(groundedPrompt, context);
+      const answer = ai.ok
+        ? ai.answer
+        : repositorySnapshot
+          ? `I could not reach the connected AI provider. I will not fabricate a repository answer. Available live evidence includes ${repositorySnapshot.files?.length ?? 0} files, ${repositorySnapshot.commits?.length ?? 0} commits, ${repositorySnapshot.pull_requests?.length ?? 0} pull requests, and ${repositorySnapshot.issues?.length ?? 0} issues.`
+          : res.text;
       if (!ai.ok) setAskError(ai.error);
       setThread((t) => [...t, { q: query, a: answer, evidence: res.evidence }]);
       memory.addTurn({

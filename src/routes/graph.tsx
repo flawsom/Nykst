@@ -334,6 +334,7 @@ function GraphPage() {
           }
           onOpen={drill}
           {...(snapshot ? { repositoryProblems: problems } : {})}
+          {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
         />
       </div>
 
