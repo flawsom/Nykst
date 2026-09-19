@@ -4,6 +4,7 @@ import type { RoleDef } from "@/lib/access";
 import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/remediation";
 import { useChatMemory } from "@/lib/chat-memory";
 import type { ProblemTrace } from "@/lib/repository-graph";
+import { askNykstAi } from "@/lib/ai-client";
 import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
@@ -417,15 +418,16 @@ export function MentorPanel({
 }) {
   const voice = voiceOf(role);
   const issues = useMemo(() => {
-    if (!repositoryProblems?.length) return issuesOf(node);
+    if (repositoryProblems === undefined) return issuesOf(node);
     const nodePath = node.detail?.path;
     const scoped = repositoryProblems.filter(
       (problem) =>
-        !nodePath ||
-        problem.likelyFiles.length === 0 ||
-        problem.likelyFiles.some((path) => path === nodePath || path.startsWith(`${nodePath}/`)),
+        problem.state.toLowerCase() !== "closed" &&
+        (!nodePath ||
+          problem.likelyFiles.length === 0 ||
+          problem.likelyFiles.some((path) => path === nodePath || path.startsWith(`${nodePath}/`))),
     );
-    return (scoped.length ? scoped : repositoryProblems).map((problem) => ({
+    return scoped.map((problem) => ({
       id: problem.id,
       title: problem.title,
       area: problem.area,
@@ -438,6 +440,8 @@ export function MentorPanel({
   const [openCard, setOpenCard] = useState<string | null>("problems");
   const [q, setQ] = useState("");
   const [menu, setMenu] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [askError, setAskError] = useState<string | null>(null);
   const [thread, setThread] = useState<{ q: string; a: string; evidence: Evidence[] }[]>([]);
   const { resolve, remedies, resolvedIds } = useRemediation();
   const memory = useChatMemory(node.label);
@@ -447,17 +451,37 @@ export function MentorPanel({
     [voice, node, related, issues, resolvedIds],
   );
 
-  const ask = (text: string) => {
+  const ask = async (text: string) => {
     const query = text.trim();
-    if (!query) return;
+    if (!query || asking) return;
+    setAsking(true);
+    setAskError(null);
     const res = answerFor(voice, query, node, related, issues);
-    setThread((t) => [...t, { q: query, a: res.text, evidence: res.evidence }]);
-    memory.addTurn({
-      q: query,
-      a: res.text,
-      evidence: res.evidence.map((e) => ({ kind: e.kind, label: e.label })),
-    });
-    setQ("");
+    const context = [
+      `Selected ${kindLabel[node.kind]}: ${node.label}`,
+      `Summary: ${node.summary}`,
+      `Owners: ${node.owners.join(", ") || "unassigned"}`,
+      `Dependencies: ${node.dependencies.join(", ") || "none tracked"}`,
+      `Dependents: ${node.dependents.join(", ") || "none tracked"}`,
+      `Blast radius: ${node.blast.level}; ${node.blast.services} services; ${node.blast.modules} modules; ${node.blast.files} files; ${node.blast.teams} teams`,
+      `Related graph nodes: ${related.map((child) => `${child.kind}:${child.label}`).join(", ") || "none"}`,
+      `Evidence files: ${res.evidence.filter((item) => item.kind === "file").map((item) => item.label).join(", ") || "none"}`,
+      `Repository issues in scope: ${issues.map((issue) => `${issue.title} [${issue.area}, ${issue.severity}, ${issue.owner}]`).join("; ") || "none"}`,
+    ].join("\n");
+    try {
+      const ai = await askNykstAi(query, context);
+      const answer = ai.ok ? ai.answer : res.text;
+      if (!ai.ok) setAskError(ai.error);
+      setThread((t) => [...t, { q: query, a: answer, evidence: res.evidence }]);
+      memory.addTurn({
+        q: query,
+        a: answer,
+        evidence: res.evidence.map((e) => ({ kind: e.kind, label: e.label })),
+      });
+      setQ("");
+    } finally {
+      setAsking(false);
+    }
   };
 
   const openChat = (id: string) => {
@@ -760,6 +784,18 @@ export function MentorPanel({
               ))}
             </div>
 
+            {askError && (
+              <div className="border-border bg-primary/10 text-muted-foreground rounded-lg border px-3 py-2 text-[11px] leading-relaxed">
+                <span className="text-primary font-medium">AI provider: </span>
+                {askError} The graph-grounded answer is shown below; no generic answer was substituted.
+              </div>
+            )}
+            {asking && (
+              <p className="text-muted-foreground text-[11px]">
+                Reading the selected node, related graph nodes, files, and repository issues…
+              </p>
+            )}
+
             {thread.length === 0 && (
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Co Work about {node.label}. Answers cite the graph nodes, files and incident
@@ -797,9 +833,10 @@ export function MentorPanel({
             />
             <button
               type="submit"
-              className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-[12px] font-medium"
+              disabled={asking || !q.trim()}
+              className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-[12px] font-medium disabled:opacity-50"
             >
-              Co Work
+              {asking ? "Reading…" : "Co Work"}
             </button>
           </form>
         </div>

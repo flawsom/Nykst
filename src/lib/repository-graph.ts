@@ -1,4 +1,4 @@
-import type { GraphNode, NodeKind } from "./graph-data";
+import type { FileDetail, GraphNode, NodeKind } from "./graph-data";
 
 type RepoFile = { path?: string; type?: string; size?: number };
 type RepoRecord = Record<string, unknown>;
@@ -60,6 +60,7 @@ function node(
   summary: string,
   children: GraphNode[] = [],
   repo?: string,
+  detail?: FileDetail,
 ): GraphNode {
   return {
     id,
@@ -78,6 +79,7 @@ function node(
       teams: 0,
     },
     ...(repo ? { repo } : {}),
+    ...(detail ? { detail } : {}),
     ...(label.endsWith(".tsx") || label.endsWith(".ts") ? { language: "TypeScript" } : {}),
     expandable: kind !== "file",
   };
@@ -113,6 +115,15 @@ export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
               `Real file from ${repo}.`,
               [],
               repo,
+              {
+                path,
+                language: path.split(".").pop()?.toUpperCase() || "Unknown",
+                loc: 0,
+                classes: [],
+                functions: [],
+                tests: [],
+                history: [],
+              },
             ),
           );
         return node(

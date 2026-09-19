@@ -2,12 +2,16 @@ export type AskResult =
   { ok: true; answer: string; provider: string } | { ok: false; error: string; needsKey: boolean };
 
 /** Calls Nykst AI using the signed-in user's own provider key (BYOK). */
-export async function askNykstAi(prompt: string, context?: string): Promise<AskResult> {
+export async function askNykstAi(
+  prompt: string,
+  context?: string,
+  options?: { mode?: "navigator" | "code" },
+): Promise<AskResult> {
   try {
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt, context: context ?? "" }),
+      body: JSON.stringify({ prompt, context: context ?? "", mode: options?.mode ?? "navigator" }),
     });
     const data = (await res.json()) as {
       answer?: string;

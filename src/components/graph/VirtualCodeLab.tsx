@@ -91,6 +91,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
       const result = await askNykstAi(
         `Create a reviewable TypeScript code suggestion for this request: ${text}. Return only the proposed code, with no markdown fences. Do not claim that it was applied.`,
         `Selected graph node: ${node.label}\nScope: ${context.scope}\nNode summary: ${node.summary}\nExisting local draft:\n${localFallback}`,
+        { mode: "code" },
       );
       const generated =
         result.ok && result.answer.trim()
