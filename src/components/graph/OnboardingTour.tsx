@@ -41,14 +41,7 @@ export function OnboardingTour() {
   };
 
   if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="border-border bg-surface hover:bg-surface-2 text-muted-foreground fixed right-5 bottom-5 z-40 rounded-full border px-3 py-1.5 text-[11px] transition-colors"
-      >
-        Walkthrough
-      </button>
-    );
+    return null;
   }
 
   const step = STEPS[i]!;

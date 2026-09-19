@@ -472,7 +472,7 @@ export function MentorPanel({
   const tabs = canCode ? (["brief", "ask", "code"] as const) : (["brief", "ask"] as const);
   const TAB_LABEL: Record<string, string> = {
     brief: "Issues",
-    ask: "Ask",
+    ask: "Co Work",
     code: "Virtual code",
   };
 
@@ -762,7 +762,7 @@ export function MentorPanel({
 
             {thread.length === 0 && (
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Ask anything about {node.label}. Answers cite the graph nodes, files and incident
+                Co Work about {node.label}. Answers cite the graph nodes, files and incident
                 patterns they used, and every conversation is remembered.
               </p>
             )}
@@ -792,14 +792,14 @@ export function MentorPanel({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={`Ask about ${node.label}`}
+              placeholder={`Co Work about ${node.label}`}
               className="border-border bg-surface min-w-0 flex-1 rounded-lg border px-3 py-2 text-[13px] outline-none"
             />
             <button
               type="submit"
               className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-[12px] font-medium"
             >
-              Ask
+              Co Work
             </button>
           </form>
         </div>
