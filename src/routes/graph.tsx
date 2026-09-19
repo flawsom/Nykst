@@ -13,7 +13,7 @@ import {
   traceRepositoryProblems,
   type RepositorySnapshot,
 } from "@/lib/repository-graph";
-import { BookOpen, X } from "lucide-react";
+import { X } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -213,12 +213,6 @@ function GraphPage() {
           >
             Premium
           </button>
-          <a
-            href={demoMode ? "/intelligence?demo=1" : "/intelligence"}
-            className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
-          >
-            <BookOpen className="size-3.5" /> Memory
-          </a>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
             {orgSlug} · {provider}
           </span>
