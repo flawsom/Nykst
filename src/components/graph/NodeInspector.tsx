@@ -1,187 +1,149 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { GraphNode } from "@/lib/graph-data";
 import type { RepositorySnapshot } from "@/lib/repository-graph";
 import { cn } from "@/lib/utils";
 import { askNykstAi, openApiSettings } from "@/lib/ai-client";
-import { Code, Layers, Cpu, GitCommit, Activity, AlertTriangle, Sparkles, GitPullRequest } from "lucide-react";
+import { Code, Layers, GitBranch, History, Brain, Send } from "lucide-react";
 
-type TabId = "code" | "architecture" | "dependencies" | "changes" | "runtime" | "incidents" | "coding" | "ask";
-
+type TabId = "code" | "architecture" | "dependencies" | "history" | "memory";
 type Props = { node: GraphNode | null; open: boolean; onClose: () => void; repositorySnapshot?: RepositorySnapshot };
+type Evidence = {
+  path: string;
+  content?: string;
+  sha?: string;
+  imports: Array<{ target: string; line: number; resolved: boolean }>;
+  dependents: Array<{ path: string; line: number; commitSha: string }>;
+  commits: Array<Record<string, unknown>>;
+  pullRequests: Array<Record<string, unknown>>;
+  coChange: Array<{ path: string; count: number }>;
+  blindSpots: string[];
+};
 
-function value(record: Record<string, unknown>, key: string) {
+function text(record: Record<string, unknown>, key: string) {
   const item = record[key];
   return typeof item === "string" || typeof item === "number" ? String(item) : "";
 }
-
-function LiveUnavailable({ children }: { children: string }) {
-  return <p className="text-muted-foreground rounded-lg border border-dashed border-border p-4 text-xs leading-relaxed">{children}</p>;
+function unavailable(message: string) {
+  return <p className="rounded-lg border border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">{message}</p>;
 }
-
-function LiveRepositoryTab({ tab, node, snapshot }: { tab: TabId; node: GraphNode; snapshot: RepositorySnapshot }) {
-  const files = snapshot.files ?? [];
-  const commits = snapshot.commits ?? [];
-  const prs = snapshot.pull_requests ?? [];
-  const issues = snapshot.issues ?? [];
-  const selectedPath = node.detail?.path;
-  const selectedFile = files.find((file) => file.path === selectedPath);
-  const externalEdges = snapshot.dependency_graph?.edges?.filter((edge) => edge.kind === "external") ?? [];
-  const closedIssues = issues.filter((issue) => value(issue, "state").toLowerCase() === "closed");
-
-  if (tab === "code") return (
-    <div className="space-y-4">
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-2">
-        <span className="text-[11px] font-mono uppercase text-primary font-semibold">GitHub repository</span>
-        <p className="text-sm font-medium font-mono">{snapshot.repository?.full_name ?? "Repository name unavailable"}</p>
-        <p className="text-xs text-muted-foreground">Default branch: <span className="text-foreground font-mono">{snapshot.repository?.default_branch ?? "Unavailable"}</span></p>
-        <p className="text-xs text-muted-foreground">No release or tag data was included in this ingestion.</p>
-      </section>
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-3">
-        <span className="text-[11px] font-mono uppercase text-primary font-semibold">Indexed file evidence</span>
-        <p className="text-xs text-muted-foreground">{selectedPath ? `Selected path: ${selectedPath}` : `${files.length} files indexed in the current GitHub snapshot.`}</p>
-        {selectedFile ? <pre className="text-xs font-mono whitespace-pre-wrap">{JSON.stringify(selectedFile, null, 2)}</pre> : <LiveUnavailable>Functions, classes, exports, and file contents are not present in the current GitHub tree snapshot. Nykst will not invent them.</LiveUnavailable>}
-      </section>
-    </div>
-  );
-
-  if (tab === "architecture") return (
-    <div className="space-y-4">
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-3">
-        <span className="text-[11px] font-mono uppercase text-primary font-semibold">Repository-derived architecture</span>
-        <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-          <div>Domains / roots <strong>{new Set(files.map((file) => file.path?.split("/")[0]).filter(Boolean)).size}</strong></div>
-          <div>Files <strong>{files.length}</strong></div>
-          <div>Dependency edges <strong>{snapshot.dependency_graph?.edges?.length ?? 0}</strong></div>
-          <div>Scanned source files <strong>{snapshot.dependency_graph?.scanned_files ?? 0}</strong></div>
-        </div>
-      </section>
-      <LiveUnavailable>Frontend, backend, database, queues, caches, authentication, and infrastructure cannot be asserted from a GitHub file tree alone. Connect runtime or deployment integrations to populate those layers.</LiveUnavailable>
-    </div>
-  );
-
-  if (tab === "dependencies") return (
-    <div className="space-y-4">
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-3">
-        <span className="text-[11px] font-mono uppercase text-primary font-semibold">Observed dependency edges</span>
-        <div className="space-y-1.5 text-xs font-mono max-h-72 overflow-y-auto">
-          {(snapshot.dependency_graph?.edges ?? []).slice(0, 120).map((edge, index) => <div key={`${edge.from}-${edge.to}-${index}`} className="border-b border-border/60 pb-1">{edge.from} → {edge.to} <span className="text-muted-foreground">({edge.kind})</span></div>)}
-          {(snapshot.dependency_graph?.edges ?? []).length === 0 && <LiveUnavailable>No dependency edges were captured in this ingestion.</LiveUnavailable>}
-        </div>
-      </section>
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-2 text-xs">
-        <p>External references observed: <strong>{externalEdges.length}</strong></p>
-        <p>Validation source: <strong>{snapshot.validation_profile?.source ?? "Unavailable"}</strong></p>
-        <p>Package manager: <strong>{snapshot.validation_profile?.package_manager ?? "Unavailable"}</strong></p>
-        <p>Commands: <strong>{snapshot.validation_profile?.commands?.join(", ") || "Unavailable"}</strong></p>
-      </section>
-    </div>
-  );
-
-  if (tab === "changes") return (
-    <div className="space-y-4">
-      <section className="border border-border bg-surface rounded-xl p-4 space-y-3">
-        <span className="text-[11px] font-mono uppercase text-primary font-semibold">GitHub changes</span>
-        <p className="text-xs text-muted-foreground">{commits.length} commits and {prs.length} pull requests in the current snapshot.</p>
-        <div className="space-y-2 text-xs">{commits.slice(0, 12).map((commit, index) => <div key={`${value(commit, "sha")}-${index}`} className="border-b border-border/60 pb-2"><span className="font-mono">{value(commit, "sha").slice(0, 8) || "sha unavailable"}</span> · {value(commit, "message") || "Commit message unavailable"}</div>)}</div>
-      </section>
-      <LiveUnavailable>Deployments, configuration changes, feature flags, AI prompts, approvals, and rollbacks are not GitHub facts in this snapshot.</LiveUnavailable>
-    </div>
-  );
-
-  if (tab === "runtime") return <LiveUnavailable>Runtime metrics are not available from GitHub. Errors, logs, traces, requests, latency, throughput, CPU, memory, queues, retries, and database performance require a connected observability or deployment integration.</LiveUnavailable>;
-
-  if (tab === "incidents") return (
-    <section className="border border-border bg-surface rounded-xl p-4 space-y-3">
-      <span className="text-[11px] font-mono uppercase text-primary font-semibold">GitHub issue history</span>
-      <p className="text-xs text-muted-foreground">{closedIssues.length} closed issues in the current snapshot. These are repository records, not runtime incidents.</p>
-      <div className="space-y-2 text-xs">{closedIssues.slice(0, 20).map((issue, index) => <div key={`${value(issue, "number")}-${index}`} className="border-b border-border/60 pb-2">#{value(issue, "number") || "?"} · {value(issue, "title") || "Untitled issue"} · closed {value(issue, "closed_at") || "date unavailable"}</div>)}</div>
-    </section>
-  );
-
-  return null;
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="space-y-3 rounded-xl border border-border bg-surface p-4"><span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-primary">{title}</span>{children}</section>;
+}
+function lines(content: string, pattern: RegExp) {
+  return content.split("\n").map((line, index) => pattern.test(line) ? `${index + 1}: ${line.trim()}` : "").filter(Boolean).slice(0, 30);
+}
+function dependencyHops(snapshot: RepositorySnapshot, target: string) {
+  const reverse = new Map<string, string[]>();
+  for (const edge of snapshot.dependency_graph?.edges ?? []) {
+    if (edge.kind !== "internal" || !edge.from || !edge.to) continue;
+    reverse.set(edge.to, [...(reverse.get(edge.to) ?? []), edge.from]);
+  }
+  const seen = new Set([target]);
+  const grouped: Array<{ hop: number; path: string; label: "EXTRACTED" | "INFERRED" }> = [];
+  let frontier = [target];
+  for (let hop = 1; hop <= 3; hop += 1) {
+    const next: string[] = [];
+    for (const current of frontier) {
+      for (const dependent of reverse.get(current) ?? []) {
+        if (seen.has(dependent)) continue;
+        seen.add(dependent);
+        next.push(dependent);
+        grouped.push({ hop, path: dependent, label: hop === 1 ? "EXTRACTED" : "INFERRED" });
+      }
+    }
+    frontier = next;
+  }
+  return grouped;
 }
 
 export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props) {
   const [tab, setTab] = useState<TabId>("code");
-  const [chatPrompt, setChatPrompt] = useState("");
-  const [chatLog, setChatLog] = useState<{ role: "user" | "ai"; text: string }[]>([]);
-  const [changePrompt, setChangePrompt] = useState("");
-  const [codingMessage, setCodingMessage] = useState("");
-  const [codingBusy, setCodingBusy] = useState(false);
-  const [change, setChange] = useState<Record<string, unknown> | null>(null);
-  const repoName = node?.repo ?? repositorySnapshot?.repository?.full_name ?? "connected repository";
-  const repoParts = repoName.split("/");
-  const filePath = node?.detail?.path ?? "";
-  const live = Boolean(repositorySnapshot);
+  const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [loadingEvidence, setLoadingEvidence] = useState(false);
+  const [query, setQuery] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [chainTarget, setChainTarget] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const filePath = selectedPath ?? node?.detail?.path ?? "";
+  const repoName = node?.repo ?? repositorySnapshot?.repository?.full_name ?? "";
+  const [owner, repo] = repoName.split("/");
+  const live = Boolean(repositorySnapshot && owner && repo);
+
+  useEffect(() => {
+    if (!open || !live || !filePath) return;
+    setLoadingEvidence(true);
+    setEvidence(null);
+    fetch(`/api/integrations/github/file-evidence?owner=${encodeURIComponent(owner!)}&repo=${encodeURIComponent(repo!)}&path=${encodeURIComponent(filePath)}&branch=${encodeURIComponent(repositorySnapshot?.repository?.default_branch ?? "main")}`)
+      .then(async (response) => {
+        const payload = (await response.json()) as { evidence?: Evidence; error?: string };
+        if (!response.ok || !payload.evidence) throw new Error(payload.error ?? "Could not load GitHub file evidence.");
+        setEvidence(payload.evidence);
+      })
+      .catch(() => setEvidence(null))
+      .finally(() => setLoadingEvidence(false));
+  }, [open, live, filePath, owner, repo, repositorySnapshot?.repository?.default_branch]);
 
   const tabs = useMemo(() => [
     { id: "code" as const, label: "1. Code Analysis", icon: Code },
     { id: "architecture" as const, label: "2. Architecture", icon: Layers },
-    { id: "dependencies" as const, label: "3. Dependencies", icon: Cpu },
-    { id: "changes" as const, label: "4. Changes & Evolution", icon: GitCommit },
-    { id: "runtime" as const, label: "5. Runtime Metrics", icon: Activity },
-    { id: "incidents" as const, label: "6. Data Incidents & Learning", icon: AlertTriangle },
-    { id: "coding" as const, label: "7. Code Change & PR", icon: GitPullRequest },
-    { id: "ask" as const, label: "8. Ask Nykst Memory", icon: Sparkles },
+    { id: "dependencies" as const, label: "3. Dependencies", icon: GitBranch },
+    { id: "history" as const, label: "4. History", icon: History },
+    { id: "memory" as const, label: "5. Memory", icon: Brain },
   ], []);
 
   if (!node) return null;
 
-  const handleSend = async (event: React.FormEvent) => {
+  const ask = async (event: React.FormEvent) => {
     event.preventDefault();
-    const query = chatPrompt.trim();
-    if (!query) return;
-    setChatPrompt("");
-    setChatLog((previous) => [...previous, { role: "user", text: query }, { role: "ai", text: "Checking live repository evidence…" }]);
-    const context = repositorySnapshot ? JSON.stringify({ repository: repositorySnapshot.repository, files: repositorySnapshot.files, commits: repositorySnapshot.commits, branches: repositorySnapshot.branches, pull_requests: repositorySnapshot.pull_requests, issues: repositorySnapshot.issues, contributors: repositorySnapshot.contributors, dependency_graph: repositorySnapshot.dependency_graph, selected_node: node }) : `No GitHub snapshot is connected. Selected node: ${node.label}`;
-    const result = await askNykstAi(`${query}\n\nUse only direct evidence in this repository context. Cite paths, SHAs, PRs, and issue numbers. Say when evidence is missing; never invent runtime or architecture facts.`, context);
-    setChatLog((previous) => [...previous.slice(0, -1), { role: "ai", text: result.ok ? result.answer : result.error }]);
+    const question = query.trim();
+    if (!question || asking) return;
+    setAsking(true);
+    setAnswer("Retrieving evidence from GitHub…");
+    const context = JSON.stringify({ repository: repositorySnapshot?.repository, selectedNode: node, fileEvidence: evidence, snapshot: repositorySnapshot });
+    const result = await askNykstAi(`${question}\n\nAnswer only from retrieved evidence. Cite a file path, commit SHA, or PR number for every material claim. If the evidence is missing, say so plainly. Do not infer runtime facts.`, context);
+    setAnswer(result.ok ? result.answer : result.error);
     if (!result.ok && result.needsKey) openApiSettings();
+    setAsking(false);
   };
 
-  const handlePrepareChange = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!filePath || !changePrompt.trim() || repoParts.length !== 2) return;
-    setCodingBusy(true);
-    setCodingMessage("Reading the live file and preparing a reviewable change…");
-    try {
-      const response = await fetch("/api/integrations/github/coding", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", owner: repoParts[0], repo: repoParts[1], path: filePath, base: repositorySnapshot?.repository?.default_branch ?? "main", prompt: changePrompt }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not prepare the change.");
-      setChange(data);
-      setCodingMessage("Preview ready. Review the exact diff before creating anything on GitHub.");
-    } catch (error) { setCodingMessage(error instanceof Error ? error.message : "Could not prepare the change."); } finally { setCodingBusy(false); }
+  const renderCode = () => {
+    if (!repositorySnapshot) return unavailable("Connect GitHub to replace this dossier with authenticated repository evidence.");
+    const content = evidence?.content ?? "";
+    const packageFiles = (repositorySnapshot.files ?? []).filter((file) => /(^|\/)(package\.json|vite\.config\.|tsconfig\.json|\.env|Dockerfile|Makefile)/i.test(file.path ?? ""));
+    return <div className="space-y-4">
+      <Card title="Preview"><p className="text-xs text-muted-foreground">{filePath || "Select a file node to preview its GitHub content."}</p>{loadingEvidence ? unavailable("Loading the selected file from GitHub…") : content ? <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-card p-3 text-[11px] font-mono">{content}</pre> : unavailable("No file content was returned by GitHub.")}</Card>
+      <div className="grid gap-3 sm:grid-cols-2"><Card title="Export"><p className="text-xs text-muted-foreground">SHA: <span className="font-mono text-foreground">{evidence?.sha ?? "Unavailable"}</span></p><a href={repositorySnapshot.repository?.html_url ? `${repositorySnapshot.repository.html_url}/blob/${repositorySnapshot.repository.default_branch ?? "main"}/${filePath}` : undefined} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open exact file on GitHub</a></Card><Card title="Import"><div className="space-y-1 text-xs font-mono">{(evidence?.imports ?? []).slice(0, 20).map((item, index) => <div key={`${item.target}-${index}`}>L{item.line} · {item.target} <span className={item.resolved ? "text-emerald-400" : "text-primary"}>{item.resolved ? "RESOLVED" : "UNRESOLVED"}</span></div>)}{!evidence?.imports.length && <span className="text-muted-foreground">No imports extracted.</span>}</div></Card></div>
+      <Card title="Environment and services"><div className="flex flex-wrap gap-2 text-xs font-mono">{packageFiles.map((file) => <button key={file.path} onClick={() => setSelectedPath(file.path ?? null)} className="rounded border border-border px-2 py-1 hover:border-primary">{file.path}</button>)}</div>{!packageFiles.length && unavailable("No package or configuration files were included in the current tree.")}</Card>
+      <Card title="Risk"><p className="text-xs leading-relaxed">Observed risk is limited to the retrieved evidence: {evidence?.blindSpots.length ? `${evidence.blindSpots.length} blind spot(s) were detected.` : "no blind spot was detected by the bounded parser."} This is not a runtime risk score.</p></Card>
+    </div>;
   };
 
-  const handleCreatePr = async () => {
-    if (!change) return;
-    setCodingBusy(true);
-    try {
-      const branch = `nykst/${filePath.split("/").pop()?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "change"}-${Date.now().toString(36)}`;
-      const response = await fetch("/api/integrations/github/coding", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "create-pr", ...change, branch, title: `Nykst: ${changePrompt.slice(0, 100)}`, commitMessage: `Nykst: ${changePrompt.slice(0, 100)}`, description: `Requested change: ${changePrompt}` }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not create the pull request.");
-      setCodingMessage(`Pull request #${data.pullRequest.number} created. GitHub CI is authoritative.`);
-      window.open(data.pullRequest.html_url, "_blank", "noopener,noreferrer");
-    } catch (error) { setCodingMessage(error instanceof Error ? error.message : "Could not create the pull request."); } finally { setCodingBusy(false); }
+  const renderArchitecture = () => {
+    if (!repositorySnapshot) return unavailable("Architecture is unavailable until GitHub is connected.");
+    const files = repositorySnapshot.files ?? [];
+    const folders = [...new Set(files.map((file) => file.path?.split("/").slice(0, -1).join("/")).filter(Boolean))].slice(0, 80) as string[];
+    const entries = files.filter((file) => /(^|\/)(main|index|server|app)\.(tsx?|jsx?|py|go)$/.test(file.path ?? ""));
+    return <div className="space-y-4"><Card title="Stack"><div className="grid grid-cols-2 gap-3 text-xs font-mono"><div>Language signals <strong>{[...new Set(files.map((file) => file.path?.split(".").pop()).filter(Boolean))].join(", ") || "Unavailable"}</strong></div><div>Build / validation <strong>{repositorySnapshot.validation_profile?.commands?.join(", ") || "Unavailable"}</strong></div><div>Package manager <strong>{repositorySnapshot.validation_profile?.package_manager ?? "Unavailable"}</strong></div><div>Key libraries <strong>{repositorySnapshot.validation_profile?.key_libraries?.join(", ") || "Unavailable"}</strong></div><div>Config files <strong>{files.filter((file) => /config|\.env|Dockerfile|Makefile/i.test(file.path ?? "")).length}</strong></div></div></Card><Card title="Module map"><div className="space-y-1 text-xs">{folders.map((folder) => <button key={folder} onClick={() => setSelectedPath(folder)} className="block w-full rounded px-2 py-1 text-left hover:bg-secondary"><span className="font-mono">{folder}</span> <span className="text-muted-foreground">· {files.filter((file) => file.path?.startsWith(`${folder}/`)).length} files · responsibility inferred from folder name</span></button>)}{!folders.length && unavailable("No folder map available.")}</div></Card><Card title="Entry points"><div className="flex flex-wrap gap-2 text-xs font-mono">{entries.map((file) => <button key={file.path} onClick={() => setSelectedPath(file.path ?? null)} className="rounded border border-border px-2 py-1 hover:border-primary">{file.path}</button>)}{!entries.length && <span className="text-muted-foreground">No conventional entry point was identified.</span>}</div></Card><Card title="Dependency direction"><div className="space-y-1 text-xs font-mono">{(repositorySnapshot.dependency_graph?.edges ?? []).filter((edge) => edge.kind === "internal").slice(0, 80).map((edge, index) => <div key={`${edge.from}-${edge.to}-${index}`}>{edge.from} → {edge.to}</div>)}{!(repositorySnapshot.dependency_graph?.edges ?? []).some((edge) => edge.kind === "internal") && <span className="text-muted-foreground">No internal dependency direction was captured.</span>}</div></Card></div>;
   };
 
-  return <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-    <DialogContent className="bg-card border-border h-[92vh] max-w-[min(1150px,96vw)] gap-0 overflow-hidden p-0 sm:max-w-[min(1150px,96vw)]">
-      <div className="flex h-full min-h-0 flex-col sm:flex-row">
-        <aside className="border-border bg-surface w-full shrink-0 border-b p-3 sm:w-72 sm:border-r sm:border-b-0 sm:p-4">
-          <div className="border-b border-border pb-4"><span className="text-[10px] font-mono text-primary uppercase tracking-widest">System Dossier</span><h3 className="text-sm font-semibold truncate mt-1">{node.label}</h3><p className="text-[10px] text-muted-foreground mt-1">{live ? "GitHub-grounded view" : "Demo view — not repository evidence"}</p></div>
-          <nav className="flex flex-1 gap-1 overflow-x-auto pt-3 sm:block sm:space-y-1 sm:overflow-y-auto">{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} className={cn("w-auto shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left sm:w-full", tab === id ? "bg-primary/20 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground hover:bg-surface-2")}><Icon className="size-4" />{label}</button>)}</nav>
-        </aside>
-        <main className="flex-1 flex flex-col min-h-0 bg-background/50 overflow-y-auto p-4 sm:p-6 space-y-5">
-          <div className="border-b border-border pb-4"><h2 className="text-xl font-semibold tracking-tight">{tabs.find((item) => item.id === tab)?.label.replace(/^\d\. /, "")}</h2><p className="text-muted-foreground text-xs mt-1">{repoName} · {node.kind} · {node.detail?.path ?? "path unavailable"}</p></div>
-          {tab !== "ask" && tab !== "coding" && repositorySnapshot && <LiveRepositoryTab tab={tab} node={node} snapshot={repositorySnapshot} />}
-          {tab !== "ask" && tab !== "coding" && !repositorySnapshot && <LiveUnavailable>This view is using demo graph data. Connect GitHub to replace it with authenticated repository evidence.</LiveUnavailable>}
-          {tab === "ask" && <div className="space-y-4">{chatLog.map((message, index) => <div key={index} className={message.role === "user" ? "bg-secondary rounded-lg p-3 text-sm ml-6" : "text-sm leading-relaxed"}>{message.text}</div>)}{chatLog.length === 0 && <LiveUnavailable>Ask about this node. When GitHub is connected, answers are grounded in the repository snapshot.</LiveUnavailable>}<form onSubmit={handleSend} className="flex gap-2 mt-auto"><input value={chatPrompt} onChange={(event) => setChatPrompt(event.target.value)} placeholder="Ask about this repository node…" className="border-border bg-surface min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm" /><button className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-xs">Ask</button></form></div>}
-          {tab === "coding" && <div className="space-y-4"><LiveUnavailable>{filePath ? "Prepare a change from the live GitHub file, then review the exact diff before opening a pull request." : "Select a file node to prepare a GitHub change."}</LiveUnavailable><form onSubmit={handlePrepareChange} className="space-y-3"><textarea value={changePrompt} onChange={(event) => setChangePrompt(event.target.value)} placeholder="Describe the change…" className="border-border bg-surface w-full rounded-lg border p-3 text-sm" rows={4} /><button disabled={codingBusy || !filePath} className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-xs disabled:opacity-50">{codingBusy ? "Preparing…" : "Prepare reviewable change"}</button></form>{codingMessage && <p className="text-xs text-muted-foreground">{codingMessage}</p>}{change && <><pre className="bg-surface rounded-lg p-3 text-xs overflow-auto">{String(change["diff"] ?? change["after"] ?? "No diff returned")}</pre><button onClick={handleCreatePr} disabled={codingBusy} className="border-border rounded-lg border px-4 py-2 text-xs">Create GitHub pull request</button></>}</div>}
-        </main>
-      </div>
-    </DialogContent>
-  </Dialog>;
+  const renderDependencies = () => {
+    if (!repositorySnapshot) return unavailable("Dependencies are unavailable until GitHub is connected.");
+    const hops = dependencyHops(repositorySnapshot, filePath);
+    const directLines = new Map((evidence?.dependents ?? []).map((item) => [item.path, item.line]));
+    return <div className="space-y-4"><Card title="Imports"><div className="space-y-1 text-xs font-mono">{(evidence?.imports ?? []).map((item, index) => <div key={`${item.target}-${index}`}>L{item.line} · {item.target} · {item.resolved ? "EXTRACTED / RESOLVED" : "EXTRACTED / UNRESOLVED"}</div>)}{!evidence?.imports.length && <span className="text-muted-foreground">No imports extracted.</span>}</div></Card><Card title="Dependents"><div className="space-y-1 text-xs font-mono">{(evidence?.dependents ?? []).slice(0, 60).map((item, index) => <button key={`${item.path}-${index}`} onClick={() => setChainTarget(item.path)} className="block w-full text-left hover:text-primary">L{item.line} · {item.path} · EXTRACTED</button>)}{!evidence?.dependents.length && <span className="text-muted-foreground">No direct importers were proven.</span>}</div></Card><Card title="Blast radius"><div className="space-y-1 text-xs font-mono">{hops.map((item) => <button key={`${item.hop}-${item.path}`} onClick={() => setChainTarget(item.path)} className="block w-full text-left hover:text-primary">Hop {item.hop} · {item.path} · line {directLines.get(item.path) ?? "unavailable"} · {item.label}</button>)}{!hops.length && <span className="text-muted-foreground">No transitive dependents were extracted from the bounded graph.</span>}</div>{chainTarget && <p className="mt-2 text-xs font-mono">Chain target: {chainTarget}</p>}</Card><Card title="Blind spots"><div className="space-y-1 text-xs">{(evidence?.blindSpots ?? []).map((item) => <p key={item}>• {item}</p>)}{!evidence?.blindSpots.length && <p>No blind spots reported by the bounded extractor.</p>}</div></Card></div>;
+  };
+
+  const renderHistory = () => {
+    if (!evidence) return unavailable("Load a file-level GitHub history by selecting a file node.");
+    const reverts = evidence.commits.filter((commit) => /revert/i.test(text(commit, "message") || text(commit, "commit")));
+    const outcomes = { held: evidence.commits.length - reverts.length, reverted: reverts.length, fixes: evidence.commits.filter((commit) => /fix|bug|patch/i.test(text(commit, "message"))).length };
+    return <div className="space-y-4"><Card title="Commits touching the file"><div className="space-y-2 text-xs">{evidence.commits.map((commit, index) => <div key={`${text(commit, "sha")}-${index}`}><span className="font-mono">{text(commit, "sha").slice(0, 8) || "sha unavailable"}</span> · {text(commit, "message") || "message unavailable"}<div className="text-muted-foreground">{text(commit, "author") || "author unavailable"} · {text(commit, "date") || text(commit, "commit") || "date unavailable"}</div></div>)}</div></Card><Card title="PRs that touched it"><div className="space-y-1 text-xs">{evidence.pullRequests.map((pr, index) => <a key={`${text(pr, "number")}-${index}`} href={text(pr, "html_url") || undefined} target="_blank" rel="noreferrer" className="block text-primary underline">#{text(pr, "number")} · {text(pr, "title")} · {text(pr, "state")}</a>)}{!evidence.pullRequests.length && <span className="text-muted-foreground">No matching PR was found in the bounded scan.</span>}</div></Card><Card title="Reverts and outcomes"><div className="grid grid-cols-3 gap-2 text-xs font-mono"><div>Held <strong>{outcomes.held}</strong></div><div>Reverted <strong>{outcomes.reverted}</strong></div><div>Fix-like <strong>{outcomes.fixes}</strong></div></div><p className="mt-2 text-[11px] text-muted-foreground">Computed from GitHub commit messages; not a claim about production outcome.</p></Card><Card title="Co-change"><div className="space-y-1 text-xs font-mono">{evidence.coChange.map((item) => <div key={item.path}>{item.path} · {item.count} shared commit(s)</div>)}{!evidence.coChange.length && <span className="text-muted-foreground">No co-change evidence returned.</span>}</div></Card></div>;
+  };
+
+  const renderMemory = () => <div className="space-y-4"><Card title="Ask Nykst"><form onSubmit={ask} className="flex gap-2"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask from retrieved evidence…" className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm" /><button disabled={asking} className="rounded-lg bg-primary px-3 py-2 text-primary-foreground"><Send className="size-4" /></button></form>{answer && <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{answer}</p>}</Card><Card title="Decisions found"><p className="text-xs text-muted-foreground">Decision extraction from README, AGENTS.md, commit messages, and PR descriptions requires those file contents and sources in the current evidence response. Nykst will not invent decisions.</p></Card><Card title="Outcomes"><p className="text-xs text-muted-foreground">History-derived counts are shown in the History tab. Runtime outcomes such as “held in production” require deployment or observability evidence.</p></Card><Card title="Failure patterns"><p className="text-xs text-muted-foreground">Repeated reverts and fix-like commits are visible from the selected file’s GitHub history. No evidence means no failure pattern is asserted.</p></Card></div>;
+
+  const content = tab === "code" ? renderCode() : tab === "architecture" ? renderArchitecture() : tab === "dependencies" ? renderDependencies() : tab === "history" ? renderHistory() : renderMemory();
+  return <Dialog open={open} onOpenChange={(value) => !value && onClose()}><DialogContent className="h-[92vh] max-w-[min(1150px,96vw)] gap-0 overflow-hidden border-border bg-card p-0"><div className="flex h-full min-h-0 flex-col sm:flex-row"><aside className="w-full shrink-0 border-b border-border bg-surface p-3 sm:w-72 sm:border-b-0 sm:border-r sm:p-4"><div className="border-b border-border pb-4"><span className="text-[10px] font-mono uppercase tracking-widest text-primary">System dossier</span><h3 className="mt-1 truncate text-sm font-semibold">{node.label}</h3><p className="mt-1 text-[10px] text-muted-foreground">{live ? "GitHub-grounded" : "No connected evidence"}</p></div><nav className="flex gap-1 overflow-x-auto pt-3 sm:block sm:space-y-1">{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} className={cn("flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-medium sm:w-full", tab === id ? "border border-primary/30 bg-primary/20 text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground")}><Icon className="size-4" />{label}</button>)}</nav></aside><main className="min-h-0 flex-1 overflow-y-auto bg-background/50 p-4 sm:p-6"><div className="mb-5 border-b border-border pb-4"><h2 className="text-xl font-semibold">{tabs.find((item) => item.id === tab)?.label.replace(/^\d\. /, "")}</h2><p className="mt-1 text-xs text-muted-foreground">{repoName || "Repository unavailable"} · {node.detail?.path ?? "select a file for file-level evidence"}</p></div>{loadingEvidence && <p className="mb-4 text-xs text-muted-foreground">Fetching exact GitHub file evidence…</p>}{content}</main></div></DialogContent></Dialog>;
 }

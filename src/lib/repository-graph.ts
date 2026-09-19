@@ -28,6 +28,7 @@ export type RepositorySnapshot = {
     commands?: string[];
     source?: string;
     can_execute?: boolean;
+    key_libraries?: string[];
   };
 };
 export type ProblemTrace = {

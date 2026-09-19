@@ -25,6 +25,7 @@ import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.git
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
+import { Route as ApiIntegrationsGithubFileEvidenceRouteImport } from './routes/api.integrations.github.file-evidence'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
 import { Route as ApiIntegrationsGithubLatestRouteImport } from './routes/api.integrations.github.latest'
 import { Route as ApiIntegrationsGithubOrganizationsRouteImport } from './routes/api.integrations.github.organizations'
@@ -115,6 +116,12 @@ const ApiIntegrationsGithubCodingRoute =
     path: '/api/integrations/github/coding',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsGithubFileEvidenceRoute =
+  ApiIntegrationsGithubFileEvidenceRouteImport.update({
+    id: '/api/integrations/github/file-evidence',
+    path: '/api/integrations/github/file-evidence',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsGithubIngestRoute =
   ApiIntegrationsGithubIngestRouteImport.update({
     id: '/api/integrations/github/ingest',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
+  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -193,6 +201,7 @@ export interface FileRoutesByTo {
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
+  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -218,6 +227,7 @@ export interface FileRoutesById {
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
+  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
+    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
+    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -292,6 +304,7 @@ export interface FileRouteTypes {
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
+    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -316,6 +329,7 @@ export interface RootRouteChildren {
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
+  ApiIntegrationsGithubFileEvidenceRoute: typeof ApiIntegrationsGithubFileEvidenceRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
   ApiIntegrationsGithubLatestRoute: typeof ApiIntegrationsGithubLatestRoute
   ApiIntegrationsGithubOrganizationsRoute: typeof ApiIntegrationsGithubOrganizationsRoute
@@ -438,6 +452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsGithubCodingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/github/file-evidence': {
+      id: '/api/integrations/github/file-evidence'
+      path: '/api/integrations/github/file-evidence'
+      fullPath: '/api/integrations/github/file-evidence'
+      preLoaderRoute: typeof ApiIntegrationsGithubFileEvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/github/ingest': {
       id: '/api/integrations/github/ingest'
       path: '/api/integrations/github/ingest'
@@ -512,6 +533,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,
   ApiIntegrationsGithubCodingRoute: ApiIntegrationsGithubCodingRoute,
+  ApiIntegrationsGithubFileEvidenceRoute:
+    ApiIntegrationsGithubFileEvidenceRoute,
   ApiIntegrationsGithubIngestRoute: ApiIntegrationsGithubIngestRoute,
   ApiIntegrationsGithubLatestRoute: ApiIntegrationsGithubLatestRoute,
   ApiIntegrationsGithubOrganizationsRoute:
