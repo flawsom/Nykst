@@ -85,6 +85,64 @@ function node(
   };
 }
 
+function descendants(node: GraphNode): GraphNode[] {
+  return [node, ...(node.children ?? []).flatMap(descendants)];
+}
+
+function enrichRepositoryGraph(root: GraphNode, snapshot: RepositorySnapshot) {
+  const fileNodes = descendants(root).filter((candidate) => candidate.kind === "file");
+  const byPath = new Map(fileNodes.map((candidate) => [candidate.detail?.path ?? "", candidate]));
+  const dependencyEdges = snapshot.dependency_graph?.edges ?? [];
+  const upstream = new Map<string, Set<string>>();
+  const downstream = new Map<string, Set<string>>();
+  for (const edge of dependencyEdges) {
+    if (!edge.from || !edge.to) continue;
+    if (!byPath.has(edge.from)) continue;
+    const target = byPath.has(edge.to) ? edge.to : edge.to;
+    const deps = upstream.get(edge.from) ?? new Set<string>();
+    deps.add(target);
+    upstream.set(edge.from, deps);
+    if (byPath.has(edge.to)) {
+      const dependents = downstream.get(edge.to) ?? new Set<string>();
+      dependents.add(edge.from);
+      downstream.set(edge.to, dependents);
+    }
+  }
+  for (const candidate of fileNodes) {
+    const path = candidate.detail?.path ?? "";
+    candidate.dependencies = [...(upstream.get(path) ?? [])];
+    candidate.dependents = [...(downstream.get(path) ?? [])];
+  }
+  for (const candidate of descendants(root).filter((item) => item.kind !== "file")) {
+    const leaves = descendants(candidate).filter((item) => item.kind === "file");
+    const dependencyPaths = new Set(leaves.flatMap((leaf) => leaf.dependencies));
+    const dependentPaths = new Set(leaves.flatMap((leaf) => leaf.dependents));
+    candidate.dependencies = [...dependencyPaths];
+    candidate.dependents = [...dependentPaths];
+    const reachable = new Set<string>();
+    const visit = (path: string) => {
+      if (reachable.has(path)) return;
+      reachable.add(path);
+      for (const next of downstream.get(path) ?? []) visit(next);
+    };
+    for (const leaf of leaves) visit(leaf.detail?.path ?? "");
+    const descendantFiles = leaves.length;
+    const descendantModules = new Set(
+      leaves.map((leaf) => leaf.detail?.path?.split("/").slice(0, -1).join("/") ?? ""),
+    );
+    const downstreamFiles = [...reachable].filter((path) => !leaves.some((leaf) => leaf.detail?.path === path));
+    const downstreamServices = new Set(downstreamFiles.map((path) => path.split("/").slice(0, 2).join("/")));
+    candidate.blast = {
+      services: downstreamServices.size,
+      modules: descendantModules.size,
+      files: descendantFiles + downstreamFiles.length,
+      teams: 0,
+      level: downstreamFiles.length > 50 ? "Critical" : downstreamFiles.length > 20 ? "High" : downstreamFiles.length > 5 ? "Moderate" : "Low",
+    };
+  }
+  return root;
+}
+
 export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
   const repo = snapshot.repository?.full_name ?? "connected repository";
   const files = (snapshot.files ?? []).filter((file) => file.type === "blob" && file.path);
@@ -153,13 +211,16 @@ export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
       repo,
     );
   });
-  return node(
+  return enrichRepositoryGraph(
+    node(
     `org:${repo}`,
     "org",
     repo,
     `Repository-derived system map for ${repo}.`,
     domainNodes,
     repo,
+    ),
+    snapshot,
   );
 }
 

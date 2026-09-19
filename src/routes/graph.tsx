@@ -340,7 +340,12 @@ function GraphPage() {
 
       <OnboardingTour />
 
-      <NodeInspector node={dossier} open={dossier !== null} onClose={() => setDossier(null)} />
+      <NodeInspector
+        node={dossier}
+        open={dossier !== null}
+        onClose={() => setDossier(null)}
+        {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
+      />
       <BeforeYouAct
         node={inspected}
         snapshot={snapshot?.payload ?? null}

@@ -104,7 +104,26 @@ const INCIDENT_PATTERNS = [
   "Config rollout with no kill switch",
 ];
 
-function incidentsOf(node: GraphNode) {
+function incidentsOf(node: GraphNode, snapshot?: RepositorySnapshot) {
+  if (snapshot) {
+    const nodePath = node.detail?.path;
+    return (snapshot.issues ?? [])
+      .filter((issue) => {
+        const state = typeof issue["state"] === "string" ? issue["state"] : "";
+        if (state.toLowerCase() !== "closed") return false;
+        if (!nodePath) return true;
+        const body = typeof issue["body"] === "string" ? issue["body"] : "";
+        const title = typeof issue["title"] === "string" ? issue["title"] : "";
+        return `${title} ${body}`.toLowerCase().includes(nodePath.toLowerCase());
+      })
+      .slice(0, 8)
+      .map((issue, index) => ({
+        id: String(issue["id"] ?? issue["number"] ?? `github-issue-${index}`),
+        pattern: String(issue["title"] ?? "Closed GitHub issue"),
+        when: String(issue["closed_at"] ?? issue["updated_at"] ?? "date unavailable"),
+        minutes: undefined,
+      }));
+  }
   const count = 1 + Math.floor(score(`${node.id}#inc`) * 3);
   return Array.from({ length: count }, (_, i) => {
     const p =
@@ -154,10 +173,11 @@ function trackersFor(
   kids: GraphNode[],
   issues: (IssueLike & { severity: string })[],
   resolvedIds: string[],
+  repositorySnapshot?: RepositorySnapshot,
 ): Tracker[] {
   const b = node.blast;
   const { nodes, files } = evidenceSources(node, kids);
-  const incidents = incidentsOf(node);
+  const incidents = incidentsOf(node, repositorySnapshot);
   const open = issues.filter((i) => !resolvedIds.includes(i.id));
   const errorPaths = issues.filter(
     (i) => i.area === "Reliability" || i.area === "Quality" || i.title.includes("error"),
@@ -226,7 +246,7 @@ function trackersFor(
       headline: incidents.length
         ? `Recurring trigger: ${incidents[0]!.pattern}.`
         : "No incident history recorded here.",
-      detail: incidents.map((i) => `${i.pattern} · ${i.when} · ${i.minutes}m impact`),
+      detail: incidents.map((i) => `${i.pattern} · ${i.when}${i.minutes === undefined ? " · duration unavailable" : ` · ${i.minutes}m impact`}`),
       evidence: [
         ...incidents.map((i) => ({ kind: "incident" as const, label: `${i.pattern} (${i.when})` })),
         ...nodeEv.slice(0, 1),
@@ -262,6 +282,7 @@ function answerFor(
   node: GraphNode,
   kids: GraphNode[],
   issues: (IssueLike & { severity: string })[],
+  repositorySnapshot?: RepositorySnapshot,
 ): { text: string; evidence: Evidence[] } {
   const b = node.blast;
   const low = q.toLowerCase();
@@ -269,7 +290,7 @@ function answerFor(
   const { nodes, files } = evidenceSources(node, kids);
   const nodeEv: Evidence[] = nodes.map((n) => ({ kind: "node", label: n.label, node: n }));
   const fileEv: Evidence[] = files.slice(0, 3).map((f) => ({ kind: "file", label: f }));
-  const incEv: Evidence[] = incidentsOf(node).map((i) => ({
+  const incEv: Evidence[] = incidentsOf(node, repositorySnapshot).map((i) => ({
     kind: "incident",
     label: `${i.pattern} (${i.when})`,
   }));
@@ -323,8 +344,8 @@ function answerFor(
 
   if (low.includes("incident") || low.includes("outage") || low.includes("history"))
     return {
-      text: `Recorded patterns on ${node.label}: ${incidentsOf(node)
-        .map((i) => `${i.pattern} (${i.when}, ${i.minutes}m)`)
+      text: `Recorded GitHub history on ${node.label}: ${incidentsOf(node, repositorySnapshot)
+        .map((i) => `${i.pattern} (${i.when}${i.minutes === undefined ? ", duration unavailable" : `, ${i.minutes}m`})`)
         .join("; ")}.`,
       evidence: [...incEv, ...nodeEv.slice(0, 1)],
     };
@@ -492,8 +513,8 @@ export function MentorPanel({
   const memory = useChatMemory(node.label);
 
   const trackers = useMemo(
-    () => trackersFor(voice, node, related, issues, resolvedIds),
-    [voice, node, related, issues, resolvedIds],
+    () => trackersFor(voice, node, related, issues, resolvedIds, repositorySnapshot),
+    [voice, node, related, issues, resolvedIds, repositorySnapshot],
   );
 
   const ask = async (text: string) => {
@@ -501,7 +522,7 @@ export function MentorPanel({
     if (!query || asking) return;
     setAsking(true);
     setAskError(null);
-    const res = answerFor(voice, query, node, related, issues);
+    const res = answerFor(voice, query, node, related, issues, repositorySnapshot);
     const context = repositorySnapshot
       ? JSON.stringify(repositoryContext(repositorySnapshot, node, related, issues))
       : [
