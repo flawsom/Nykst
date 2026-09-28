@@ -1,4 +1,19 @@
-import ts from "typescript";
+import type TS from "typescript";
+
+// Loaded on first use so a problem with the compiler can only affect analysis, never the
+// server's startup (the router bundle imports this module for every request).
+let ts: typeof TS;
+
+export async function loadParser() {
+  if (ts) return;
+  // TypeScript's Node host reads __filename/__dirname while loading. A bundled ES module
+  // has neither, so give it a placeholder; only createSourceFile is used, no lib files.
+  const scope = globalThis as { __filename?: string; __dirname?: string };
+  scope.__filename ??= "/node_modules/typescript/lib/typescript.js";
+  scope.__dirname ??= "/node_modules/typescript/lib";
+  const mod = (await import("typescript")) as typeof TS & { default?: typeof TS };
+  ts = mod.default ?? mod;
+}
 
 export interface RawImport {
   specifier: string;
@@ -50,17 +65,17 @@ function scriptKind(path: string) {
   return ts.ScriptKind.JS;
 }
 
-function hasModifier(node: ts.Node, kind: ts.SyntaxKind) {
+function hasModifier(node: TS.Node, kind: TS.SyntaxKind) {
   return ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === kind);
 }
 
-function literalText(node: ts.Node | undefined): string | null {
+function literalText(node: TS.Node | undefined): string | null {
   if (!node) return null;
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
   return null;
 }
 
-function bindingNames(name: ts.BindingName): string[] {
+function bindingNames(name: TS.BindingName): string[] {
   if (ts.isIdentifier(name)) return [name.text];
   return name.elements.flatMap((element) =>
     ts.isOmittedExpression(element) ? [] : bindingNames(element.name),
@@ -72,7 +87,7 @@ const URL_PATTERN = /^https?:\/\/([a-z0-9.-]+\.[a-z]{2,})(?=[/:?#]|$)/i;
 /** Extracts structural facts from one JS/TS source file using the TypeScript parser. */
 export function parseSource(path: string, content: string): ParsedSource {
   const sf = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, false, scriptKind(path));
-  const lineOf = (node: ts.Node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
+  const lineOf = (node: TS.Node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
   const result: ParsedSource = {
     imports: [],
     exports: [],
@@ -116,7 +131,7 @@ export function parseSource(path: string, content: string): ParsedSource {
     }
   }
 
-  const visit = (node: ts.Node) => {
+  const visit = (node: TS.Node) => {
     if (ts.isImportDeclaration(node)) {
       const specifier = literalText(node.moduleSpecifier);
       if (specifier !== null) {

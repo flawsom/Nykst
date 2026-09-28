@@ -35,7 +35,7 @@ const walk = (dir: string) => {
   }
 };
 walk(root);
-const analysis = analyzeRepository({ ref: "local", paths, contents, skipped });
+const analysis = await analyzeRepository({ ref: "local", paths, contents, skipped });
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(analysis));
 console.log(JSON.stringify(analysis.stats, null, 2));
 console.log("packages", analysis.packages);
