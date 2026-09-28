@@ -4,23 +4,23 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   {
     title: "This graph is the navigator",
-    body: "Your organization sits in the middle. Everything around it is a core domain derived from your code — not a folder tree.",
+    body: "Your repository sits in the middle. Around it are the areas of your code, the external services it talks to and its data — ordered by how much depends on them.",
   },
   {
     title: "Click to go one level deeper",
-    body: "Domain → capability → service → module → file. Each click re-centers the graph on what you clicked.",
+    body: "Area → folder → file. Each click re-centers the graph on what you clicked; the tree on the left jumps anywhere.",
   },
   {
-    title: "The i badge opens the dossier",
-    body: "Health, risk, blast radius, classes, functions, lines, issues and incidents for that exact node.",
+    title: "The i badge shows the impact",
+    body: "Every file that imports the node (with the exact line), the pages and API routes it reaches, the tests that cover it and its change history.",
   },
   {
-    title: "Issues carry their own fix",
-    body: "Open Issues in the dossier. Solved patterns are remembered — the next identical issue arrives pre-solved and only needs your approval.",
+    title: "Check before you change",
+    body: "Before You Act summarizes what to inspect for the selected node. Connect AI tools gives Claude Code or Cursor the same impact data while they write code.",
   },
   {
-    title: "You only see what you may see",
-    body: "Your role scopes the graph. Domains outside your access are hidden, and the header shows what is restricted.",
+    title: "Keep the map current",
+    body: "The map reflects the commit shown in the banner. Press Re-analyze after pushing changes.",
   },
 ];
 

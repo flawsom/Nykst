@@ -15,6 +15,8 @@ import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
+import { Route as ApiMcpRouteImport } from './routes/api.mcp'
+import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
@@ -61,6 +63,16 @@ const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
 const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
   id: '/api/diagnosis',
   path: '/api/diagnosis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpTokensRoute = ApiMcpTokensRouteImport.update({
+  id: '/api/mcp-tokens',
+  path: '/api/mcp-tokens',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
@@ -166,6 +178,8 @@ export interface FileRoutesByFullPath {
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -191,6 +205,8 @@ export interface FileRoutesByTo {
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -217,6 +233,8 @@ export interface FileRoutesById {
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -244,6 +262,8 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/mcp'
+    | '/api/mcp-tokens'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -269,6 +289,8 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/mcp'
+    | '/api/mcp-tokens'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -294,6 +316,8 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/mcp'
+    | '/api/mcp-tokens'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -320,6 +344,8 @@ export interface RootRouteChildren {
   SubscribeRoute: typeof SubscribeRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
+  ApiMcpRoute: typeof ApiMcpRoute
+  ApiMcpTokensRoute: typeof ApiMcpTokensRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -380,6 +406,20 @@ declare module '@tanstack/react-router' {
       path: '/api/diagnosis'
       fullPath: '/api/diagnosis'
       preLoaderRoute: typeof ApiDiagnosisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp-tokens': {
+      id: '/api/mcp-tokens'
+      path: '/api/mcp-tokens'
+      fullPath: '/api/mcp-tokens'
+      preLoaderRoute: typeof ApiMcpTokensRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pre-registration': {
@@ -523,6 +563,8 @@ const rootRouteChildren: RootRouteChildren = {
   SubscribeRoute: SubscribeRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
+  ApiMcpRoute: ApiMcpRoute,
+  ApiMcpTokensRoute: ApiMcpTokensRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,

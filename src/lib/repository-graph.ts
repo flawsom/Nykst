@@ -1,4 +1,6 @@
 import type { FileDetail, GraphNode, NodeKind } from "./graph-data";
+import { buildAnalysisGraph } from "./analysis/graph";
+import type { RepoAnalysis, RepoHistory } from "./analysis/types";
 
 type RepoFile = { path?: string; type?: string; size?: number };
 type RepoRecord = Record<string, unknown>;
@@ -30,6 +32,9 @@ export type RepositorySnapshot = {
     can_execute?: boolean;
     key_libraries?: string[];
   };
+  /** TypeScript-compiler analysis; absent on snapshots ingested before the engine existed */
+  analysis?: RepoAnalysis;
+  history?: RepoHistory;
 };
 export type ProblemTrace = {
   id: string;
@@ -146,6 +151,9 @@ function enrichRepositoryGraph(root: GraphNode, snapshot: RepositorySnapshot) {
 
 export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
   const repo = snapshot.repository?.full_name ?? "connected repository";
+  if (snapshot.analysis?.files)
+    return buildAnalysisGraph(repo, snapshot.analysis, snapshot.history);
+  // Legacy snapshots: folder-derived tree until the repository is re-ingested.
   const files = (snapshot.files ?? []).filter((file) => file.type === "blob" && file.path);
   const domains = new Map<string, Map<string, Map<string, string[]>>>();
   for (const file of files) {

@@ -505,7 +505,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
             <div className="min-w-0 flex-1">
               <div className="text-[12px] font-semibold">
                 {verdict.passed
-                  ? `Fits ${context.scope} — safe to inject`
+                  ? `No static issue found in ${context.scope}`
                   : `Does not fit ${context.scope} — injection blocked`}
               </div>
               <p className="text-muted-foreground text-[10px] leading-relaxed">

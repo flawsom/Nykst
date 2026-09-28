@@ -1,5 +1,6 @@
 import type { GraphNode } from "@/lib/graph-data";
 import type { RepositorySnapshot } from "@/lib/repository-graph";
+import { historyFor } from "@/lib/analysis/impact";
 
 export type EnvelopeEvidence = {
   source: "graph" | "commit" | "pull_request" | "issue" | "repository" | "inference";
@@ -130,14 +131,29 @@ export function buildBeforeYouActEnvelope(
     .filter((issue) => overlapScore(targetText, recordText(issue)) > 0)
     .slice(0, 5);
 
-  const historicalChanges = relevantCommits.map((commit) => ({
-    title: recordText(commit).slice(0, 120),
-    date: dateValue(commit),
-    actor: actorValue(commit),
-    detail:
-      "Commit language overlaps the selected area or stated intent; inspect the full diff before changing it.",
-  }));
-  relevantPrs.forEach((pr) =>
+  // With analyzed history, use commits that actually changed these files instead of word overlap.
+  const fileHistory =
+    snapshot?.history && node.analysisRef
+      ? historyFor(snapshot.history, node.analysisRef.paths)
+      : null;
+  const historicalChanges = fileHistory
+    ? fileHistory.commits.slice(0, 8).map((commit) => ({
+        title: commit.message.slice(0, 120),
+        date: commit.date.slice(0, 10) || "Unknown date",
+        actor: commit.author,
+        detail: `Commit ${commit.sha.slice(0, 7)} changed ${commit.files
+          .filter((file) => node.analysisRef!.paths.includes(file))
+          .slice(0, 3)
+          .join(", ")}.`,
+      }))
+    : relevantCommits.map((commit) => ({
+        title: recordText(commit).slice(0, 120),
+        date: dateValue(commit),
+        actor: actorValue(commit),
+        detail:
+          "Commit language overlaps the selected area or stated intent; inspect the full diff before changing it.",
+      }));
+  (fileHistory ? [] : relevantPrs).forEach((pr) =>
     historicalChanges.push({
       title: recordText(pr).slice(0, 120),
       date: dateValue(pr),
@@ -147,40 +163,48 @@ export function buildBeforeYouActEnvelope(
   );
   if (historicalChanges.length)
     evidence.push({
-      source: relevantCommits.length ? "commit" : "pull_request",
+      source: fileHistory || relevantCommits.length ? "commit" : "pull_request",
       label: "Change history",
-      detail: `${historicalChanges.length} historical records overlap the target context.`,
-      strength: "supporting",
+      detail: fileHistory
+        ? `${historicalChanges.length} recent commits changed these files.`
+        : `${historicalChanges.length} historical records overlap the target context.`,
+      strength: fileHistory ? "direct" : "supporting",
     });
 
-  const coChanged = [
-    ...new Set([
-      ...relevantCommits.flatMap((commit) => {
-        const files = commit["files"];
-        return Array.isArray(files)
-          ? files.map((file) =>
-              typeof file === "string" ? file : stringValue((file as RecordLike)["filename"]),
-            )
-          : [];
-      }),
-      ...relevantPrs.flatMap((pr) => {
-        const files = pr["files"];
-        return Array.isArray(files)
-          ? files.map((file) =>
-              typeof file === "string" ? file : stringValue((file as RecordLike)["filename"]),
-            )
-          : [];
-      }),
-    ]),
-  ]
-    .filter(Boolean)
-    .filter((file) => file !== nodePath)
-    .slice(0, 8)
-    .map((file) => ({
-      label: file,
-      reason: "Appears in the same change record as the target.",
-      confidence: "high" as const,
-    }));
+  const coChanged = fileHistory?.coChange.length
+    ? fileHistory.coChange.slice(0, 8).map((item) => ({
+        label: item.path,
+        reason: `Changed in the same commit or pull request ${item.count} times.`,
+        confidence: item.count >= 3 ? ("high" as const) : ("medium" as const),
+      }))
+    : [
+        ...new Set([
+          ...relevantCommits.flatMap((commit) => {
+            const files = commit["files"];
+            return Array.isArray(files)
+              ? files.map((file) =>
+                  typeof file === "string" ? file : stringValue((file as RecordLike)["filename"]),
+                )
+              : [];
+          }),
+          ...relevantPrs.flatMap((pr) => {
+            const files = pr["files"];
+            return Array.isArray(files)
+              ? files.map((file) =>
+                  typeof file === "string" ? file : stringValue((file as RecordLike)["filename"]),
+                )
+              : [];
+          }),
+        ]),
+      ]
+        .filter(Boolean)
+        .filter((file) => file !== nodePath)
+        .slice(0, 8)
+        .map((file) => ({
+          label: file,
+          reason: "Appears in the same change record as the target.",
+          confidence: "high" as const,
+        }));
   if (!coChanged.length && connected.length) {
     coChanged.push(
       ...connected.slice(0, 5).map((item) => ({

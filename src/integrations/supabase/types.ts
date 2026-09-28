@@ -266,6 +266,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_access_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string | null
+          provider: string
+          provider_user_id: string
+          provider_username: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          provider?: string
+          provider_user_id: string
+          provider_username: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          provider?: string
+          provider_user_id?: string
+          provider_username?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+        }
+        Relationships: []
+      }
       user_ai_keys: {
         Row: {
           ai_provider: string

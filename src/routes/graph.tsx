@@ -4,6 +4,7 @@ import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
+import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
@@ -52,6 +53,39 @@ function GraphPage() {
   const [demoMode, setDemoMode] = useState(false);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
   const [softModal, setSoftModal] = useState<"premium" | null>(null);
+  const [aiToolsOpen, setAiToolsOpen] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
+
+  const reanalyze = async () => {
+    const [owner, repo] = (snapshot?.repository_full_name ?? "").split("/");
+    if (!owner || !repo) return;
+    setReanalyzing(true);
+    setReanalyzeError(null);
+    try {
+      const response = await fetch("/api/integrations/github/ingest", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ owner, repo }),
+      });
+      const payload = (await response.json()) as { error?: string } & RepositorySnapshot;
+      if (!response.ok) throw new Error(payload.error ?? "Analysis failed.");
+      const { ingestionId: _id, ...rest } = payload as RepositorySnapshot & {
+        ingestionId?: string;
+      };
+      setSnapshot({
+        repository_full_name: snapshot!.repository_full_name,
+        created_at: new Date().toISOString(),
+        payload: rest,
+      });
+      setPathIds([]);
+      setSelected(null);
+    } catch (error) {
+      setReanalyzeError(error instanceof Error ? error.message : "Analysis failed.");
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -207,6 +241,14 @@ function GraphPage() {
           >
             Before You Act <span aria-hidden="true">→</span>
           </button>
+          {snapshot && (
+            <button
+              onClick={() => setAiToolsOpen(true)}
+              className="border-border bg-surface text-foreground hover:bg-surface-2 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              Connect AI tools
+            </button>
+          )}
           <button
             onClick={() => setSoftModal("premium")}
             className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -214,7 +256,7 @@ function GraphPage() {
             Premium
           </button>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
-            {orgSlug} · {provider}
+            {snapshot ? snapshot.repository_full_name : `${orgSlug} · ${provider}`}
           </span>
         </div>
       </header>
@@ -257,6 +299,19 @@ function GraphPage() {
             </div>
           )}
 
+          {!snapshot && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[12px]">
+              <p className="font-semibold text-amber-400">Sample data</p>
+              <p className="text-muted-foreground mt-1">
+                This is a generated example organization, not a real system. Connect GitHub from the{" "}
+                <Link to="/" className="text-primary underline">
+                  dashboard
+                </Link>{" "}
+                to map your own repository.
+              </p>
+            </div>
+          )}
+
           {snapshot && (
             <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -266,7 +321,37 @@ function GraphPage() {
                   </p>
                   <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-mono text-[10px]">
+                    analyzed {new Date(snapshot.created_at).toLocaleString()}
+                  </span>
+                  <button
+                    onClick={reanalyze}
+                    disabled={reanalyzing}
+                    className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 rounded-lg border px-3 py-1 text-[11px] font-semibold disabled:opacity-60"
+                  >
+                    {reanalyzing ? "Analyzing…" : "Re-analyze"}
+                  </button>
+                </div>
               </div>
+              {reanalyzeError && <p className="mt-2 text-[11px] text-red-400">{reanalyzeError}</p>}
+              {snapshot.payload.analysis ? (
+                <p className="text-muted-foreground mt-2 text-[11px]">
+                  Parsed {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")}{" "}
+                  source files with the TypeScript compiler ·{" "}
+                  {snapshot.payload.analysis.stats.internalEdges.toLocaleString("en-US")} import
+                  edges · {snapshot.payload.analysis.services.length} external services ·{" "}
+                  {snapshot.payload.analysis.resources.length} data resources
+                  {snapshot.payload.analysis.stats.unresolvedImports
+                    ? ` · ${snapshot.payload.analysis.stats.unresolvedImports} unresolved imports`
+                    : ""}
+                </p>
+              ) : (
+                <p className="mt-2 text-[11px] text-amber-400">
+                  This snapshot predates the code analysis engine — the map below only reflects
+                  folder names. Re-analyze to get real dependencies and impact.
+                </p>
+              )}
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                 <span>{snapshot.payload.files?.length ?? 0} files</span>
                 <span>{snapshot.payload.commits?.length ?? 0} commits</span>
@@ -314,7 +399,8 @@ function GraphPage() {
           <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
             <span>
               {demoMode ? "Nykst Demo · " : "Software Navigator · "}
-              {childKindLabel[center.kind]} ({centerChildren.length})
+              {center.analysisRef ? "Contents" : childKindLabel[center.kind]} (
+              {centerChildren.length})
             </span>
             <span>Choose a node or tree item to drill deeper</span>
           </div>
@@ -340,6 +426,7 @@ function GraphPage() {
         onClose={() => setDossier(null)}
         {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
       />
+      <ConnectAiTools open={aiToolsOpen} onClose={() => setAiToolsOpen(false)} />
       <BeforeYouAct
         node={inspected}
         snapshot={snapshot?.payload ?? null}

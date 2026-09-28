@@ -21,6 +21,9 @@ interface Props {
   technical?: boolean;
 }
 
+/** Above this many children the ring layout overlaps, so switch to a grid. */
+const DENSE_THRESHOLD = 14;
+
 function truncate(s: string, max: number) {
   if (s.length <= max) return s;
   return s.slice(0, max - 1) + "…";
@@ -36,6 +39,13 @@ function repoOf(node: GraphNode) {
 }
 
 function techLine(node: GraphNode) {
+  if (node.analysisRef) {
+    const importers = `${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`;
+    if (node.analysisRef.type === "file")
+      return `${node.detail?.loc ?? 0} LOC · ${importers} · ${node.blast.level} impact`;
+    const files = node.analysisRef.paths.length;
+    return `${files} file${files === 1 ? "" : "s"} · ${importers} · ${node.blast.level} impact`;
+  }
   if (!node.expandable && node.detail)
     return `${node.detail.language} · ${node.detail.loc} LOC · ${node.detail.path}`;
   return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
@@ -103,7 +113,25 @@ export function GraphCanvas({
   const cx = W / 2;
   const cy = H / 2;
 
+  const dense = children.length > DENSE_THRESHOLD;
   const points = useMemo(() => {
+    if (dense) {
+      // Grid of slots around the center, nearest first, so the most important
+      // children (they arrive sorted) sit closest to the node they belong to.
+      const slots: { x: number; y: number }[] = [];
+      for (let row = 0; row < 13; row += 1) {
+        for (let col = 0; col < 5; col += 1) {
+          const x = 110 + col * 245;
+          const y = 40 + row * 62;
+          if (Math.abs(x - cx) < 360 && y > cy - 150 && y < cy + 175) continue;
+          slots.push({ x, y });
+        }
+      }
+      slots.sort(
+        (a, b) => Math.hypot((a.x - cx) / 1.4, a.y - cy) - Math.hypot((b.x - cx) / 1.4, b.y - cy),
+      );
+      return children.slice(0, slots.length).map((child, i) => ({ node: child, ...slots[i]! }));
+    }
     const n = Math.max(children.length, 1);
     const radiusX = n > 8 ? 470 : 410;
     const radiusY = n > 8 ? 330 : 285;
@@ -116,7 +144,8 @@ export function GraphCanvas({
         y: cy + Math.sin(angle) * radiusY,
       };
     });
-  }, [children, cx, cy]);
+  }, [children, cx, cy, dense]);
+  const hiddenCount = children.length - points.length;
 
   return (
     <div className="relative h-full w-full overflow-hidden select-none">
@@ -204,8 +233,8 @@ export function GraphCanvas({
         {/* Surrounding circular nodes */}
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const w = 260;
-          const h = 56;
+          const w = dense ? 200 : 260;
+          const h = dense ? 46 : 56;
           return (
             <g
               key={p.node.id}
@@ -231,7 +260,7 @@ export function GraphCanvas({
                 cx={-w / 2 + 18}
                 cy={-4}
                 r={4}
-                fill={kindColor[childKind]}
+                fill={kindColor[p.node.kind]}
                 className="cursor-pointer"
                 onClick={() => onSelect(p.node)}
               />
@@ -241,7 +270,7 @@ export function GraphCanvas({
                 className="fill-foreground text-[12px] font-semibold tracking-tight cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, 20)}
+                {truncate(p.node.label, dense ? 17 : 20)}
               </text>
               <text
                 x={-w / 2 + 32}
@@ -249,7 +278,7 @@ export function GraphCanvas({
                 className="fill-muted-foreground font-mono text-[9px] cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(techLine(p.node), 34)}
+                {truncate(techLine(p.node), dense ? 26 : 34)}
               </text>
 
               {/* Original 'i' badge button on each child node */}
@@ -282,6 +311,16 @@ export function GraphCanvas({
             </g>
           );
         })}
+        {hiddenCount > 0 && (
+          <text
+            x={cx}
+            y={H - 8}
+            textAnchor="middle"
+            className="fill-muted-foreground font-mono text-[11px]"
+          >
+            +{hiddenCount} more — see the system tree
+          </text>
+        )}
       </svg>
     </div>
   );

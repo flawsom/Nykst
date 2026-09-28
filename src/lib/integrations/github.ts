@@ -1,6 +1,10 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
+import { analyzeRepository, MAX_SOURCE_BYTES, wantsContent } from "@/lib/analysis/engine.server";
+import { buildRepositoryHistory } from "@/lib/analysis/history.server";
+import { isSourcePath } from "@/lib/analysis/resolve";
+import { fetchRepositoryTarball } from "@/lib/analysis/tarball.server";
 
 const GITHUB_API = "https://api.github.com";
 const GITHUB_AUTHORIZE = "https://github.com/login/oauth/authorize";
@@ -370,19 +374,18 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/issues?state=all`),
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/contributors`),
   ]);
-  const dependency_graph = await analyzeRepositoryDependencies(
-    token,
-    owner,
-    repo,
-    repository.default_branch,
-    files,
-  );
+  const [source, history] = await Promise.all([
+    analyzeRepositorySource(token, owner, repo, repository.default_branch),
+    buildRepositoryHistory(token, owner, repo, commits, pullRequests),
+  ]);
+  const { analysis, dependency_graph } = source;
   const validation_profile = await buildValidationProfile(
     token,
     owner,
     repo,
     repository.default_branch,
     files,
+    source.packageJson,
   );
   return {
     provider: "github",
@@ -404,6 +407,8 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     contributors,
     dependency_graph,
     validation_profile,
+    analysis,
+    history,
     summary: {
       file_count: files.length,
       commit_count: commits.length,
@@ -417,91 +422,40 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
 
 type DependencyFile = { path?: string; type?: string; size?: number; sha?: string | undefined };
 
-function sourceFile(path: string) {
-  return /\.(mjs|cjs|js|jsx|ts|tsx|py|go|java|rs|rb|php)$/.test(path);
-}
-
-function resolveRelativeImport(source: string, imported: string, paths: Set<string>) {
-  const base = source.includes("/") ? source.slice(0, source.lastIndexOf("/") + 1) : "";
-  const raw = `${base}${imported}`.replace(/^\.\//, "");
-  const candidates = [
-    raw,
-    `${raw}.ts`,
-    `${raw}.tsx`,
-    `${raw}.js`,
-    `${raw}.jsx`,
-    `${raw}/index.ts`,
-    `${raw}/index.tsx`,
-  ];
-  return candidates.find((candidate) => paths.has(candidate));
-}
-
-function importsFor(path: string, content: string) {
-  const imports = new Set<string>();
-  const patterns = [
-    /(?:import|export)\s+(?:[^"']+\s+from\s+)?["']([^"']+)["']/g,
-    /require\(\s*["']([^"']+)["']\s*\)/g,
-    /from\s+([a-zA-Z0-9_./-]+)\s+import\s+/g,
-    /\buse\s+([a-zA-Z0-9_./-]+)/g,
-  ];
-  for (const pattern of patterns) {
-    for (const match of content.matchAll(pattern)) {
-      if (match[1] && match[1] !== path) imports.add(match[1]);
-    }
-  }
-  return [...imports].slice(0, 80);
-}
-
-async function analyzeRepositoryDependencies(
-  token: string,
-  owner: string,
-  repo: string,
-  branch: string,
-  files: DependencyFile[],
-) {
-  const paths = new Set(
-    files.map((file) => file.path).filter((path): path is string => Boolean(path)),
+/**
+ * Downloads the repository archive once and runs the TypeScript-based analysis engine
+ * over every JS/TS source file. `dependency_graph` is kept as a compact edge list for
+ * older consumers; the full result lives in `analysis`.
+ */
+async function analyzeRepositorySource(token: string, owner: string, repo: string, ref: string) {
+  const archive = await fetchRepositoryTarball(token, owner, repo, ref, wantsContent);
+  const skipped = archive.paths.filter(
+    (path) => isSourcePath(path) && (archive.sizes.get(path) ?? 0) > MAX_SOURCE_BYTES,
+  ).length;
+  const analysis = analyzeRepository({
+    ref: archive.commitSha ?? ref,
+    paths: archive.paths,
+    contents: archive.contents,
+    skipped,
+  });
+  const edges = analysis.files.flatMap((file) =>
+    file.imports
+      .filter((item) => (item.kind === "internal" || item.kind === "external") && item.target)
+      .map((item) => ({
+        from: file.path,
+        to: item.target!,
+        kind: item.kind as "internal" | "external",
+      })),
   );
-  const candidates = files
-    .filter(
-      (file) =>
-        file.type === "blob" && file.path && sourceFile(file.path) && (file.size ?? 0) <= 200_000,
-    )
-    .slice(0, 120);
-  const edges: Array<{ from: string; to: string; kind: "internal" | "external" }> = [];
-  const nodes = new Set<string>();
-  for (const file of candidates) {
-    if (!file.path) continue;
-    try {
-      const response = await githubFetch<{ content?: string; encoding?: string }>(
-        token,
-        `/repos/${owner}/${repo}/contents/${file.path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`,
-      );
-      const content =
-        response.encoding === "base64" && response.content
-          ? Buffer.from(response.content.replace(/\n/g, ""), "base64").toString("utf8")
-          : (response.content ?? "");
-      if (!content) continue;
-      nodes.add(file.path);
-      for (const imported of importsFor(file.path, content)) {
-        const target = imported.startsWith(".")
-          ? resolveRelativeImport(file.path, imported, paths)
-          : undefined;
-        edges.push({
-          from: file.path,
-          to: target ?? imported,
-          kind: target ? "internal" : "external",
-        });
-      }
-    } catch {
-      // A single unreadable file must not make the repository ingestion fail.
-    }
-  }
   return {
-    generated_at: new Date().toISOString(),
-    method: "bounded-source-import-analysis",
-    scanned_files: nodes.size,
-    edges: edges.slice(0, 4000),
+    analysis,
+    packageJson: archive.contents.get("package.json") ?? null,
+    dependency_graph: {
+      generated_at: analysis.generatedAt,
+      method: analysis.method,
+      scanned_files: analysis.stats.analyzedFiles,
+      edges: edges.filter((edge) => edge.kind === "internal").slice(0, 4000),
+    },
   };
 }
 
@@ -532,13 +486,16 @@ async function buildValidationProfile(
   repo: string,
   branch: string,
   files: DependencyFile[],
+  knownPackageJson: string | null = null,
 ) {
   const paths = new Set(
     files.map((file) => file.path).filter((path): path is string => Boolean(path)),
   );
-  const packageJson = paths.has("package.json")
-    ? await readRepositoryText(token, owner, repo, branch, "package.json")
-    : null;
+  const packageJson =
+    knownPackageJson ??
+    (paths.has("package.json")
+      ? await readRepositoryText(token, owner, repo, branch, "package.json")
+      : null);
   let packageScripts: Record<string, string> = {};
   let keyLibraries: string[] = [];
   let packageManager: "npm" | "pnpm" | "yarn" | "bun" | null = null;

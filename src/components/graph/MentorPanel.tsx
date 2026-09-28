@@ -5,6 +5,7 @@ import { knownRemedy, stepsFor, useRemediation, type IssueLike } from "@/lib/rem
 import { useChatMemory } from "@/lib/chat-memory";
 import type { ProblemTrace, RepositorySnapshot } from "@/lib/repository-graph";
 import { askNykstAi } from "@/lib/ai-client";
+import { impactBriefing } from "@/lib/analysis/context";
 import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
@@ -409,14 +410,23 @@ function repositoryContext(
       path: child.detail?.path ?? null,
       summary: child.summary,
     })),
-    files: snapshot.files ?? [],
+    // With a compiler-based analysis the node briefing below replaces the raw file list.
+    files: snapshot.analysis?.files ? undefined : (snapshot.files ?? []),
     commits: records(snapshot.commits, ["sha", "html_url", "message", "author", "committer", "commit"]),
     branches: records(snapshot.branches, ["name", "sha", "protected", "commit"]),
     pull_requests: records(snapshot.pull_requests, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "merged_at", "html_url", "head", "base"]),
     issues: records(snapshot.issues, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "html_url", "comments", "pull_request"]),
     issue_findings_in_scope: issues,
     contributors: records(snapshot.contributors, ["login", "id", "contributions", "type", "html_url"]),
-    dependency_graph: snapshot.dependency_graph ?? null,
+    ...(snapshot.analysis?.files
+      ? {
+          code_analysis: impactBriefing(
+            snapshot.analysis,
+            snapshot.history,
+            node.analysisRef?.paths ?? [],
+          ),
+        }
+      : { dependency_graph: snapshot.dependency_graph ?? null }),
     validation_profile: snapshot.validation_profile ?? null,
   };
 }

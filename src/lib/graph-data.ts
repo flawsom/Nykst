@@ -36,6 +36,13 @@ export interface GraphNode {
   language?: string;
   /** false when this node is a terminal leaf (a file) */
   expandable: boolean;
+  /** set on nodes built from a real repository analysis */
+  analysisRef?: {
+    type: "repository" | "directory" | "file" | "service" | "resource" | "group";
+    key: string;
+    /** analyzed source files this node stands for; the seeds for impact analysis */
+    paths: string[];
+  };
 }
 
 /* ------------------------------------------------------------------ */

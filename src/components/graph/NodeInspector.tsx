@@ -5,6 +5,7 @@ import type { RepositorySnapshot } from "@/lib/repository-graph";
 import { cn } from "@/lib/utils";
 import { askNykstAi, openApiSettings } from "@/lib/ai-client";
 import { Code, Layers, GitBranch, History, Brain, Send } from "lucide-react";
+import { ArchitecturePanel, ImpactPanel } from "./AnalysisPanels";
 
 type TabId = "code" | "architecture" | "dependencies" | "history" | "memory";
 type Props = { node: GraphNode | null; open: boolean; onClose: () => void; repositorySnapshot?: RepositorySnapshot };
@@ -85,10 +86,15 @@ export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props
       .finally(() => setLoadingEvidence(false));
   }, [open, live, filePath, owner, repo, repositorySnapshot?.repository?.default_branch]);
 
+  // With a compiler-based analysis the impact view is the most useful place to land.
+  useEffect(() => {
+    if (open && repositorySnapshot?.analysis?.files) setTab("dependencies");
+  }, [open, node?.id, repositorySnapshot?.analysis?.files]);
+
   const tabs = useMemo(() => [
     { id: "code" as const, label: "1. Code Analysis", icon: Code },
     { id: "architecture" as const, label: "2. Architecture", icon: Layers },
-    { id: "dependencies" as const, label: "3. Dependencies", icon: GitBranch },
+    { id: "dependencies" as const, label: "3. Impact", icon: GitBranch },
     { id: "history" as const, label: "4. History", icon: History },
     { id: "memory" as const, label: "5. Memory", icon: Brain },
   ], []);
@@ -120,8 +126,11 @@ export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props
     </div>;
   };
 
+  const analyzed = Boolean(repositorySnapshot?.analysis?.files);
+
   const renderArchitecture = () => {
     if (!repositorySnapshot) return unavailable("Architecture is unavailable until GitHub is connected.");
+    if (analyzed) return <ArchitecturePanel snapshot={repositorySnapshot} />;
     const files = repositorySnapshot.files ?? [];
     const folders = [...new Set(files.map((file) => file.path?.split("/").slice(0, -1).join("/")).filter(Boolean))].slice(0, 80) as string[];
     const entries = files.filter((file) => /(^|\/)(main|index|server|app)\.(tsx?|jsx?|py|go)$/.test(file.path ?? ""));
@@ -130,6 +139,9 @@ export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props
 
   const renderDependencies = () => {
     if (!repositorySnapshot) return unavailable("Dependencies are unavailable until GitHub is connected.");
+    if (analyzed && node.analysisRef)
+      return <ImpactPanel snapshot={repositorySnapshot} node={node} />;
+    if (analyzed) return unavailable("This node is not part of the analyzed source tree.");
     const hops = dependencyHops(repositorySnapshot, filePath);
     const directLines = new Map((evidence?.dependents ?? []).map((item) => [item.path, item.line]));
     return <div className="space-y-4"><Card title="Imports"><div className="space-y-1 text-xs font-mono">{(evidence?.imports ?? []).map((item, index) => <div key={`${item.target}-${index}`}>L{item.line} · {item.target} · {item.resolved ? "EXTRACTED / RESOLVED" : "EXTRACTED / UNRESOLVED"}</div>)}{!evidence?.imports.length && <span className="text-muted-foreground">No imports extracted.</span>}</div></Card><Card title="Dependents"><div className="space-y-1 text-xs font-mono">{(evidence?.dependents ?? []).slice(0, 60).map((item, index) => <button key={`${item.path}-${index}`} onClick={() => setChainTarget(item.path)} className="block w-full text-left hover:text-primary">L{item.line} · {item.path} · EXTRACTED</button>)}{!evidence?.dependents.length && <span className="text-muted-foreground">No direct importers were proven.</span>}</div></Card><Card title="Blast radius"><div className="space-y-1 text-xs font-mono">{hops.map((item) => <button key={`${item.hop}-${item.path}`} onClick={() => setChainTarget(item.path)} className="block w-full text-left hover:text-primary">Hop {item.hop} · {item.path} · line {directLines.get(item.path) ?? "unavailable"} · {item.label}</button>)}{!hops.length && <span className="text-muted-foreground">No transitive dependents were extracted from the bounded graph.</span>}</div>{chainTarget && <p className="mt-2 text-xs font-mono">Chain target: {chainTarget}</p>}</Card><Card title="Blind spots"><div className="space-y-1 text-xs">{(evidence?.blindSpots ?? []).map((item) => <p key={item}>• {item}</p>)}{!evidence?.blindSpots.length && <p>No blind spots reported by the bounded extractor.</p>}</div></Card></div>;

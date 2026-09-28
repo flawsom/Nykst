@@ -322,18 +322,18 @@ export function generateCode(prompt: string, node: GraphNode): string {
   return (rule ?? { build: FALLBACK }).build(node, prompt.trim());
 }
 
-/* ------------------------- simulated execution ------------------------- */
+/* ------------------------- static check summary ------------------------- */
 
-/** Simulates running the code against the org structure and returns a verdict. */
+/** Summarizes the static pattern checks as steps. Nothing is compiled or executed. */
 export function simulateExecution(code: string, node: GraphNode, check: VirtualRun): ExecResult {
   const steps: ExecStep[] = [];
   const output: string[] = [];
   const start = performance.now();
 
   steps.push({
-    label: "Parse TypeScript",
+    label: "Shape check",
     status: "pending",
-    detail: "syntax + type check",
+    detail: "has an export and code structure (not a compiler check)",
   });
   steps.push({
     label: `Resolve imports against ${node.label}`,
@@ -341,9 +341,9 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
     detail: `${check.context.allowedModules.length} allowed modules`,
   });
   steps.push({
-    label: "Run unit tests",
+    label: "Async safety heuristic",
     status: "pending",
-    detail: "virtual test harness",
+    detail: "pattern match only — no tests are executed",
   });
   steps.push({
     label: "Check blast radius",
@@ -364,9 +364,9 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   steps[0]!.status = hasSyntax ? "ok" : "fail";
   if (!hasSyntax) {
     steps[0]!.detail = "syntax error — no export or malformed code";
-    output.push("✗ Parse failed: code does not look like valid TypeScript");
+    output.push("✗ Shape check failed: no export or code structure found");
   } else {
-    output.push("✓ Parsed successfully");
+    output.push("✓ Has an export and code structure (not type-checked)");
   }
 
   // step 1 — imports
@@ -385,13 +385,13 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   if (hasAsync && !hasTry) {
     steps[2]!.status = "warn";
     steps[2]!.detail = "async without try/catch";
-    output.push("⚠ Tests pass but async paths are unguarded");
+    output.push("⚠ Async code without try/catch");
   } else if (errors.length) {
     steps[2]!.status = "fail";
-    output.push("✗ Tests fail due to structural errors");
+    output.push("✗ Blocked by the structural errors above");
   } else {
     steps[2]!.status = "ok";
-    output.push("✓ Virtual tests pass");
+    output.push("✓ No async-safety issue matched (no tests were run)");
   }
 
   // step 3 — blast radius
@@ -407,7 +407,7 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   // step 4 — fit
   steps[4]!.status = check.fits ? "ok" : "fail";
   if (check.fits) {
-    output.push(`✓ Fits the structure of ${node.label} — safe to inject`);
+    output.push(`✓ No boundary violation found for ${node.label} by the static checks`);
   } else {
     steps[4]!.detail = `${errors.length} blocking error(s)`;
     output.push(`✗ Does not fit ${node.label} — ${errors.length} structural error(s) block injection`);
@@ -418,7 +418,7 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   return {
     steps,
     passed,
-    durationMs: Math.round(performance.now() - start + 12 + Math.random() * 80),
+    durationMs: Math.round(performance.now() - start),
     output,
   };
 }
