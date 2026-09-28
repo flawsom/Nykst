@@ -5,7 +5,7 @@ import {
   serviceForHost,
   serviceForPackage,
 } from "./catalog";
-import { parseJsonc, parseSource, type ParsedSource } from "./parse.server";
+import { loadParser, parseJsonc, parseSource, type ParsedSource } from "./parse.server";
 import {
   dirname,
   ImportResolver,
@@ -156,12 +156,12 @@ export interface AnalyzeInput {
   skipped?: number;
 }
 
-export function analyzeRepository({
-  ref,
-  paths,
-  contents,
-  skipped = 0,
-}: AnalyzeInput): RepoAnalysis {
+export async function analyzeRepository(input: AnalyzeInput): Promise<RepoAnalysis> {
+  await loadParser();
+  return analyzeLoaded(input);
+}
+
+function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): RepoAnalysis {
   const started = Date.now();
   const pathSet = new Set(paths);
   const limitations: string[] = [];

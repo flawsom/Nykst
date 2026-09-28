@@ -432,7 +432,7 @@ async function analyzeRepositorySource(token: string, owner: string, repo: strin
   const skipped = archive.paths.filter(
     (path) => isSourcePath(path) && (archive.sizes.get(path) ?? 0) > MAX_SOURCE_BYTES,
   ).length;
-  const analysis = analyzeRepository({
+  const analysis = await analyzeRepository({
     ref: archive.commitSha ?? ref,
     paths: archive.paths,
     contents: archive.contents,
