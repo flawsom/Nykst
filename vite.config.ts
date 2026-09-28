@@ -7,6 +7,9 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // Vercel must receive its serverless Build Output API bundle. The shared
+  // Lovable wrapper defaults to Cloudflare when no deployment target is set.
+  nitro: { preset: "vercel" },
   vite: {
     // TypeScript's Node runtime probes __filename. Keep it external so Vercel's
     // Node runtime loads the package instead of inlining it into an ESM worker.
