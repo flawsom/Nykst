@@ -1,0 +1,8 @@
+// Cloudflare Workers deployment. `npm run build` writes the worker to .output/server
+// and a redirect in .wrangler/deploy, so `npx wrangler deploy` picks this up.
+{
+  "name": "nykst-software-intellegence",
+  "compatibility_date": "2026-09-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+}
