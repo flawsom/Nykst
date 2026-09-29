@@ -4,5 +4,13 @@
   "name": "nykst-software-intellegence",
   "compatibility_date": "2026-09-28",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Public configuration only. Secrets (SUPABASE_SERVICE_ROLE_KEY, GITHUB_CLIENT_SECRET,
+  // NYKST_BYOK_SECRET, ...) live in the dashboard under Settings → Variables and secrets.
+  "vars": {
+    "SUPABASE_URL": "https://lpfjvufpibnxefqnispk.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_7XzrpmR_BfT53-68YjDYEA_g2e0ulbR",
+    "GITHUB_CLIENT_ID": "Ov23livYJjLNikjXzTIw",
+    "NYKST_ADMIN_GITHUB_ID": "297429012"
+  }
 }
