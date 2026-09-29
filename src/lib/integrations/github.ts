@@ -58,7 +58,8 @@ export function verifyOauthState(state: string) {
 export function githubRedirectUri(request: Request) {
   return (
     process.env["GITHUB_REDIRECT_URI"]?.trim() ||
-    "https://nykst-software-intellegence.vercel.app/api/integrations/github/callback"
+    // Follow whatever host served the request (workers.dev, a custom domain, local dev).
+    new URL("/api/integrations/github/callback", request.url).toString()
   );
 }
 
