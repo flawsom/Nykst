@@ -17,6 +17,7 @@ async function get<T>(token: string, path: string): Promise<T> {
       Accept: "application/vnd.github+json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "nykst-software-intelligence",
     },
   });
   if (!response.ok) throw new Error(`GitHub ${path} returned ${response.status}`);

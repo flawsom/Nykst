@@ -9,6 +9,8 @@ import { fetchRepositoryTarball } from "@/lib/analysis/tarball.server";
 const GITHUB_API = "https://api.github.com";
 const GITHUB_AUTHORIZE = "https://github.com/login/oauth/authorize";
 const GITHUB_TOKEN = "https://github.com/login/oauth/access_token";
+// GitHub rejects requests without a User-Agent. Node adds one by default; Workers do not.
+export const GITHUB_USER_AGENT = "nykst-software-intelligence";
 
 type GithubUser = { id: number; login: string; name?: string | null; avatar_url?: string };
 type GithubOrg = { id: number; login: string; avatar_url?: string };
@@ -77,7 +79,11 @@ export async function exchangeGithubCode(code: string, redirectUri?: string) {
   const { clientId, clientSecret } = getConfig();
   const response = await fetch(GITHUB_TOKEN, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "User-Agent": GITHUB_USER_AGENT,
+    },
     body: JSON.stringify({
       client_id: clientId,
       client_secret: clientSecret,
@@ -85,7 +91,7 @@ export async function exchangeGithubCode(code: string, redirectUri?: string) {
       ...(redirectUri ? { redirect_uri: redirectUri } : {}),
     }),
   });
-  const data = (await response.json()) as {
+  const data = (await readJson(response)) as {
     access_token?: string;
     error?: string;
     error_description?: string;
@@ -95,6 +101,16 @@ export async function exchangeGithubCode(code: string, redirectUri?: string) {
   return data.access_token;
 }
 
+/** Parses a GitHub response, turning non-JSON error pages into a readable error. */
+async function readJson(response: Response): Promise<unknown> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`GitHub returned ${response.status}: ${text.slice(0, 200)}`);
+  }
+}
+
 async function githubFetch<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${GITHUB_API}${path}`, {
     ...init,
@@ -102,10 +118,11 @@ async function githubFetch<T>(token: string, path: string, init?: RequestInit): 
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
       "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": GITHUB_USER_AGENT,
       ...(init?.headers || {}),
     },
   });
-  const data = (await response.json()) as T & { message?: string };
+  const data = (await readJson(response)) as T & { message?: string };
   if (!response.ok) throw new Error(data.message || `GitHub API returned ${response.status}`);
   return data;
 }

@@ -116,6 +116,7 @@ export async function fetchRepositoryTarball(
         Accept: "application/vnd.github+json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "nykst-software-intelligence",
       },
       redirect: "follow",
     },
