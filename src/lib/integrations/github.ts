@@ -22,7 +22,11 @@ type GithubRepo = {
   default_branch: string;
   description?: string | null;
   html_url: string;
-  owner: { login: string };
+  owner: { login: string; type?: string };
+};
+type GithubInstallation = {
+  id: number;
+  account: { id: number; login: string; type: string; avatar_url?: string } | null;
 };
 type GithubFile = { path: string; type: string; size?: number; sha?: string };
 
@@ -65,12 +69,33 @@ export function githubRedirectUri(request: Request) {
   );
 }
 
+export function githubAppSlug() {
+  return process.env["GITHUB_APP_SLUG"]?.trim() || null;
+}
+
+/**
+ * True when sign-in goes through a GitHub App: users grant read-only access to the
+ * repositories they choose. GitHub App client IDs start with "Iv" (OAuth apps use "Ov" or
+ * plain hex), so the switch follows the configured client ID; a slug also forces it on.
+ * The legacy OAuth app requests the full `repo` scope.
+ */
+export function githubIsApp() {
+  return Boolean(githubAppSlug()) || /^Iv/.test(process.env["GITHUB_CLIENT_ID"]?.trim() ?? "");
+}
+
+/** Where users choose, add or remove the repositories the GitHub App can read. */
+export function githubInstallUrl() {
+  const slug = githubAppSlug();
+  return slug ? `https://github.com/apps/${encodeURIComponent(slug)}/installations/new` : null;
+}
+
 export function githubAuthorizeUrl(state: string, request: Request) {
   const { clientId } = getConfig();
   const url = new URL(GITHUB_AUTHORIZE);
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", githubRedirectUri(request));
-  url.searchParams.set("scope", "read:org,repo,read:user");
+  // GitHub Apps take their permissions from the app settings, not from scopes.
+  if (!githubIsApp()) url.searchParams.set("scope", "read:org,repo,read:user");
   url.searchParams.set("state", state);
   return url.toString();
 }
@@ -123,6 +148,10 @@ async function githubFetch<T>(token: string, path: string, init?: RequestInit): 
     },
   });
   const data = (await readJson(response)) as T & { message?: string };
+  if (response.status === 403 && data.message === "Resource not accessible by integration")
+    throw new Error(
+      "Nykst has read-only access to this repository, so it can't make this change on GitHub.",
+    );
   if (!response.ok) throw new Error(data.message || `GitHub API returned ${response.status}`);
   return data;
 }
@@ -336,10 +365,46 @@ export async function githubCreatePullRequest(
 export async function githubUser(token: string) {
   return githubFetch<GithubUser>(token, "/user");
 }
+/** Repositories the user granted to the GitHub App, across all their installations. */
+async function githubInstallationRepositories(token: string) {
+  const { installations = [] } = await githubFetch<{ installations?: GithubInstallation[] }>(
+    token,
+    "/user/installations?per_page=100",
+  );
+  const repositories: GithubRepo[] = [];
+  for (const installation of installations) {
+    for (let page = 1; page <= 10; page += 1) {
+      const batch = await githubFetch<{ repositories?: GithubRepo[] }>(
+        token,
+        `/user/installations/${installation.id}/repositories?per_page=100&page=${page}`,
+      );
+      repositories.push(...(batch.repositories ?? []));
+      if ((batch.repositories ?? []).length < 100) break;
+    }
+  }
+  return {
+    installations,
+    repositories: [
+      ...new Map(repositories.map((repository) => [repository.id, repository])).values(),
+    ],
+  };
+}
+
 export async function githubOrganizations(token: string) {
+  if (githubIsApp()) {
+    const { installations } = await githubInstallationRepositories(token);
+    return installations
+      .map((installation) => installation.account)
+      .filter((account): account is NonNullable<typeof account> => account?.type === "Organization")
+      .map(({ id, login, avatar_url }) => ({ id, login, ...(avatar_url ? { avatar_url } : {}) }));
+  }
   return githubFetch<GithubOrg[]>(token, "/user/orgs?per_page=100");
 }
 export async function githubRepositories(token: string, org: string) {
+  if (githubIsApp()) {
+    const { repositories } = await githubInstallationRepositories(token);
+    return repositories.filter((repository) => repository.owner.login === org);
+  }
   return githubFetch<GithubRepo[]>(
     token,
     `/orgs/${encodeURIComponent(org)}/repos?type=all&sort=updated&per_page=100`,
@@ -347,10 +412,12 @@ export async function githubRepositories(token: string, org: string) {
 }
 
 export async function githubUserRepositories(token: string) {
+  if (githubIsApp()) return (await githubInstallationRepositories(token)).repositories;
   return paginate<GithubRepo>(token, "/user/repos?affiliation=owner&sort=updated");
 }
 
 export async function githubAccessibleRepositories(token: string) {
+  if (githubIsApp()) return (await githubInstallationRepositories(token)).repositories;
   const repositories = await paginate<GithubRepo>(
     token,
     "/user/repos?affiliation=owner,collaborator,organization_member&sort=updated",
