@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
@@ -153,6 +153,12 @@ function Landing() {
         </div>
         <nav className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 text-xs sm:w-auto sm:gap-4 sm:text-sm">
           <ApiSettingsButton />
+          <Link
+            to="/mcp"
+            className="text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap rounded-lg px-2 py-2 font-medium transition-colors"
+          >
+            AI agents (MCP)
+          </Link>
           <button
             onClick={() => setSubscriptionOpen(true)}
             className="text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap rounded-lg px-2 py-2 transition-colors font-medium"
@@ -257,31 +263,23 @@ function Landing() {
         </div>
 
         <div
-          id="extension"
+          id="ai-agents"
           className="border-border bg-card/70 mt-24 flex flex-wrap items-center justify-between gap-5 rounded-2xl border p-6 backdrop-blur"
           style={{ boxShadow: "var(--shadow-panel)" }}
         >
           <div className="max-w-lg">
-            <h2 className="text-sm font-medium">Nykst inside your editor</h2>
+            <h2 className="text-sm font-medium">Nykst inside your AI coding agent</h2>
             <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-              Install the extension to open any file's node, dependencies and blast radius from VS
-              Code or JetBrains — the same graph, without switching context.
+              Connect Claude Code, Cursor, VS Code, Codex and more over MCP. Your agent asks Nykst
+              what a change will break before it writes code.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="#extension"
-              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-            >
-              Download for VS Code
-            </a>
-            <a
-              href="#extension"
-              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-            >
-              Download for JetBrains
-            </a>
-          </div>
+          <Link
+            to="/mcp"
+            className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
+          >
+            Setup guide for every agent →
+          </Link>
         </div>
       </section>
     </main>

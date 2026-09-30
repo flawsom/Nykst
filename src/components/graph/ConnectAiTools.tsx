@@ -109,6 +109,10 @@ export function ConnectAiTools({ open, onClose }: { open: boolean; onClose: () =
             </p>
           </div>
 
+          <a href="/mcp" className="text-primary block text-xs font-semibold underline">
+            Step-by-step setup guides for Claude Code, Cursor, VS Code, Codex and more →
+          </a>
+
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           {created ? (
