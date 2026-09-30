@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
@@ -48,6 +49,11 @@ const GraphRoute = GraphRouteImport.update({
 const IntelligenceRoute = IntelligenceRouteImport.update({
   id: '/intelligence',
   path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubscribeRoute = SubscribeRouteImport.update({
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/mcp': typeof McpRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/mcp': typeof McpRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/mcp': typeof McpRoute
   '/subscribe': typeof SubscribeRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/mcp'
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/mcp'
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/'
     | '/graph'
     | '/intelligence'
+    | '/mcp'
     | '/subscribe'
     | '/admin/payments'
     | '/api/diagnosis'
@@ -341,6 +353,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  McpRoute: typeof McpRoute
   SubscribeRoute: typeof SubscribeRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe': {
@@ -560,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
+  McpRoute: McpRoute,
   SubscribeRoute: SubscribeRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
