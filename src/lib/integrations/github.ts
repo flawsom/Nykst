@@ -69,13 +69,18 @@ export function githubRedirectUri(request: Request) {
   );
 }
 
-/**
- * When GITHUB_APP_SLUG is set, sign-in goes through a GitHub App: users grant read-only
- * access to the repositories they choose. Without it, the legacy OAuth app (full `repo`
- * scope) is used, so the switch happens by configuration.
- */
 export function githubAppSlug() {
   return process.env["GITHUB_APP_SLUG"]?.trim() || null;
+}
+
+/**
+ * True when sign-in goes through a GitHub App: users grant read-only access to the
+ * repositories they choose. GitHub App client IDs start with "Iv" (OAuth apps use "Ov" or
+ * plain hex), so the switch follows the configured client ID; a slug also forces it on.
+ * The legacy OAuth app requests the full `repo` scope.
+ */
+export function githubIsApp() {
+  return Boolean(githubAppSlug()) || /^Iv/.test(process.env["GITHUB_CLIENT_ID"]?.trim() ?? "");
 }
 
 /** Where users choose, add or remove the repositories the GitHub App can read. */
@@ -90,7 +95,7 @@ export function githubAuthorizeUrl(state: string, request: Request) {
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", githubRedirectUri(request));
   // GitHub Apps take their permissions from the app settings, not from scopes.
-  if (!githubAppSlug()) url.searchParams.set("scope", "read:org,repo,read:user");
+  if (!githubIsApp()) url.searchParams.set("scope", "read:org,repo,read:user");
   url.searchParams.set("state", state);
   return url.toString();
 }
@@ -386,7 +391,7 @@ async function githubInstallationRepositories(token: string) {
 }
 
 export async function githubOrganizations(token: string) {
-  if (githubAppSlug()) {
+  if (githubIsApp()) {
     const { installations } = await githubInstallationRepositories(token);
     return installations
       .map((installation) => installation.account)
@@ -396,7 +401,7 @@ export async function githubOrganizations(token: string) {
   return githubFetch<GithubOrg[]>(token, "/user/orgs?per_page=100");
 }
 export async function githubRepositories(token: string, org: string) {
-  if (githubAppSlug()) {
+  if (githubIsApp()) {
     const { repositories } = await githubInstallationRepositories(token);
     return repositories.filter((repository) => repository.owner.login === org);
   }
@@ -407,12 +412,12 @@ export async function githubRepositories(token: string, org: string) {
 }
 
 export async function githubUserRepositories(token: string) {
-  if (githubAppSlug()) return (await githubInstallationRepositories(token)).repositories;
+  if (githubIsApp()) return (await githubInstallationRepositories(token)).repositories;
   return paginate<GithubRepo>(token, "/user/repos?affiliation=owner&sort=updated");
 }
 
 export async function githubAccessibleRepositories(token: string) {
-  if (githubAppSlug()) return (await githubInstallationRepositories(token)).repositories;
+  if (githubIsApp()) return (await githubInstallationRepositories(token)).repositories;
   const repositories = await paginate<GithubRepo>(
     token,
     "/user/repos?affiliation=owner,collaborator,organization_member&sort=updated",

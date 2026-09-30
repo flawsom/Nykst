@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   exchangeGithubCode,
-  githubAppSlug,
+  githubIsApp,
   githubCookieOptions,
   githubRedirectUri,
   githubUser,
@@ -18,12 +18,12 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
         const state = url.searchParams.get("state");
         const setupAction = url.searchParams.get("setup_action");
         // GitHub App installs: an org owner still has to approve the request.
-        if (githubAppSlug() && setupAction === "request")
+        if (githubIsApp() && setupAction === "request")
           return new Response(null, { status: 302, headers: { Location: "/?github=requested" } });
         // Returning from choosing repositories on GitHub. The redirect carries a code only when
         // the app asks for user authorization during installation; otherwise sign in now.
         const fromInstall =
-          Boolean(githubAppSlug()) && (setupAction === "install" || setupAction === "update");
+          githubIsApp() && (setupAction === "install" || setupAction === "update");
         if (fromInstall && !code)
           return new Response(null, {
             status: 302,

@@ -27,6 +27,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
   const [message, setMessage] = useState("");
   // Set when access is granted per repository (GitHub App); links to GitHub's picker.
   const [manageUrl, setManageUrl] = useState<string | null>(null);
+  const [perRepository, setPerRepository] = useState(false);
 
   useEffect(() => {
     if (!connected) return;
@@ -45,6 +46,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         return {
           repositories: data.repositories as Repository[],
           manageUrl: typeof data.manageUrl === "string" ? (data.manageUrl as string) : null,
+          perRepository: data.perRepository === true,
         };
       }),
       fetch("/api/integrations/github/personal-repositories").then(async (response) => {
@@ -60,6 +62,9 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       const grantUrl =
         repositoriesResult.status === "fulfilled" ? repositoriesResult.value.manageUrl : null;
       setManageUrl(grantUrl);
+      const perRepo =
+        repositoriesResult.status === "fulfilled" && repositoriesResult.value.perRepository;
+      setPerRepository(perRepo);
       const personal = personalResult.status === "fulfilled" ? personalResult.value : [];
       const merged = [
         ...new Map([...accessible, ...personal].map((item) => [item.id, item])).values(),
@@ -67,9 +72,11 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
 
       setAllRepositories(merged);
       setRepositories(merged);
-      if (!merged.length && grantUrl) {
+      if (!merged.length && perRepo) {
         setMessage(
-          "Nykst can't see any repositories yet. Choose which ones it may read on GitHub.",
+          grantUrl
+            ? "Nykst can't see any repositories yet. Choose which ones it may read on GitHub."
+            : "Nykst can't see any repositories yet. Install the Nykst GitHub App on the repositories you want to map, then reload.",
         );
       } else if (!merged.length) {
         const reason =
@@ -166,7 +173,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <p className="text-sm font-medium text-primary">GitHub connected</p>
         <p className="text-muted-foreground text-xs">
-          {manageUrl
+          {perRepository
             ? "Nykst reads only the repositories you grant it, and never writes to them."
             : "Choose your personal account or any organization you can access. Private repositories are supported."}
         </p>
