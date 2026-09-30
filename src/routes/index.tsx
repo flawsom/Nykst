@@ -33,13 +33,22 @@ function Landing() {
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
+  const [githubNotice, setGithubNotice] = useState<string | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const queryConnected =
-      new URLSearchParams(window.location.search).get("github") === "connected";
-    if (queryConnected) setGithubConnected(true);
+    const params = new URLSearchParams(window.location.search);
+    const githubResult = params.get("github");
+    if (githubResult === "connected") setGithubConnected(true);
+    if (githubResult === "expired")
+      setGithubNotice("That GitHub sign-in link expired. Click Connect GitHub to try again.");
+    if (githubResult === "failed")
+      setGithubNotice(
+        `GitHub sign-in failed: ${params.get("reason") ?? "unknown error"}. Please try again.`,
+      );
+    // Drop the result from the address bar so a refresh does not replay it.
+    if (githubResult) window.history.replaceState(null, "", window.location.pathname);
     void fetch("/api/integrations/github/organizations")
       .then((response) => {
         if (active && response.ok) setGithubConnected(true);
@@ -216,6 +225,12 @@ function Landing() {
               Connect securely to choose an organization and repository.
             </span>
           </div>
+
+          {githubNotice && (
+            <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300">
+              {githubNotice}
+            </p>
+          )}
 
           <GithubConnectPanel connected={githubConnected} onConnect={connect} />
 

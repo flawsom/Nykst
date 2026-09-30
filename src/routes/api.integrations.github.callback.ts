@@ -15,8 +15,10 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
+        // Usually a refreshed or reopened old callback URL: send the user back to try again
+        // instead of leaving them on a dead error page.
         if (!code || !state || !verifyOauthState(state)) {
-          return new Response("Invalid or expired GitHub OAuth state.", { status: 400 });
+          return new Response(null, { status: 302, headers: { Location: "/?github=expired" } });
         }
         try {
           const token = await exchangeGithubCode(code, githubRedirectUri(request));
@@ -32,10 +34,13 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
           );
           return new Response(null, { status: 302, headers });
         } catch (error) {
-          return new Response(
-            error instanceof Error ? error.message : "GitHub authorization failed.",
-            { status: 502 },
-          );
+          const message = error instanceof Error ? error.message : "GitHub authorization failed.";
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: `/?github=failed&reason=${encodeURIComponent(message.slice(0, 200))}`,
+            },
+          });
         }
       },
     },
