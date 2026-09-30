@@ -25,6 +25,8 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
   const [mapping, setMapping] = useState(false);
   const [mappingComplete, setMappingComplete] = useState(false);
   const [message, setMessage] = useState("");
+  // Set when access is granted per repository (GitHub App); links to GitHub's picker.
+  const [manageUrl, setManageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!connected) return;
@@ -40,7 +42,10 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       fetch("/api/integrations/github/all-repositories").then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Could not load accessible repositories.");
-        return data.repositories as Repository[];
+        return {
+          repositories: data.repositories as Repository[],
+          manageUrl: typeof data.manageUrl === "string" ? (data.manageUrl as string) : null,
+        };
       }),
       fetch("/api/integrations/github/personal-repositories").then(async (response) => {
         const data = await response.json();
@@ -50,13 +55,23 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     ]).then(([organizationsResult, repositoriesResult, personalResult]) => {
       if (organizationsResult.status === "fulfilled") setOrganizations(organizationsResult.value);
 
-      const accessible = repositoriesResult.status === "fulfilled" ? repositoriesResult.value : [];
+      const accessible =
+        repositoriesResult.status === "fulfilled" ? repositoriesResult.value.repositories : [];
+      const grantUrl =
+        repositoriesResult.status === "fulfilled" ? repositoriesResult.value.manageUrl : null;
+      setManageUrl(grantUrl);
       const personal = personalResult.status === "fulfilled" ? personalResult.value : [];
-      const merged = [...new Map([...accessible, ...personal].map((item) => [item.id, item])).values()];
+      const merged = [
+        ...new Map([...accessible, ...personal].map((item) => [item.id, item])).values(),
+      ];
 
       setAllRepositories(merged);
       setRepositories(merged);
-      if (!merged.length) {
+      if (!merged.length && grantUrl) {
+        setMessage(
+          "Nykst can't see any repositories yet. Choose which ones it may read on GitHub.",
+        );
+      } else if (!merged.length) {
         const reason =
           personalResult.status === "rejected" && personalResult.reason instanceof Error
             ? personalResult.reason.message
@@ -81,7 +96,9 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
     }
     setLoading(true);
     try {
-      const response = await fetch(`/api/integrations/github/repositories?org=${encodeURIComponent(value)}`);
+      const response = await fetch(
+        `/api/integrations/github/repositories?org=${encodeURIComponent(value)}`,
+      );
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setRepositories(data.repositories);
@@ -149,7 +166,9 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
       <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <p className="text-sm font-medium text-primary">GitHub connected</p>
         <p className="text-muted-foreground text-xs">
-          Choose your personal account or any organization you can access. Private repositories are supported.
+          {manageUrl
+            ? "Nykst reads only the repositories you grant it, and never writes to them."
+            : "Choose your personal account or any organization you can access. Private repositories are supported."}
         </p>
         <select
           value={workspace}
@@ -171,7 +190,11 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
           className="border-border bg-surface w-full rounded-lg border px-3 py-2 text-sm"
         >
           <option value="">
-            {loading ? "Loading repositories…" : repositories.length ? "Select repository" : "No repositories found"}
+            {loading
+              ? "Loading repositories…"
+              : repositories.length
+                ? "Select repository"
+                : "No repositories found"}
           </option>
           {repositories.map((item) => (
             <option key={item.id} value={item.full_name}>
@@ -188,6 +211,16 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
           {loading ? "Mapping your system…" : "Start mapping my system"}
         </button>
         {message && <p className="text-muted-foreground text-xs leading-relaxed">{message}</p>}
+        {manageUrl && (
+          <a
+            href={manageUrl}
+            className="border-primary/30 text-primary hover:bg-primary/10 block rounded-lg border px-4 py-2 text-center text-xs font-semibold"
+          >
+            {allRepositories.length
+              ? "Add or remove repositories on GitHub"
+              : "Choose repositories on GitHub"}
+          </a>
+        )}
       </div>
     </>
   );

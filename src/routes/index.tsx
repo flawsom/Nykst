@@ -41,6 +41,10 @@ function Landing() {
     const params = new URLSearchParams(window.location.search);
     const githubResult = params.get("github");
     if (githubResult === "connected") setGithubConnected(true);
+    if (githubResult === "requested")
+      setGithubNotice(
+        "Access requested. An owner of that organization has to approve Nykst on GitHub first.",
+      );
     if (githubResult === "expired")
       setGithubNotice("That GitHub sign-in link expired. Click Connect GitHub to try again.");
     if (githubResult === "failed")
