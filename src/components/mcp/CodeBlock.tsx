@@ -1,7 +1,29 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-type Props = { title?: string; code: string; note?: string | undefined };
+type Props = {
+  title?: string;
+  code: string;
+  note?: string | undefined;
+  /** Decides the label: bash is typed into a terminal, everything else is a file's content. */
+  language?: "bash" | "json" | "toml" | "markdown";
+};
+
+const KIND: Record<NonNullable<Props["language"]>, { label: string; tone: string }> = {
+  bash: { label: "Run in a terminal", tone: "text-primary border-primary/40 bg-primary/10" },
+  json: {
+    label: "File content, not a terminal command",
+    tone: "text-amber-300 border-amber-500/40 bg-amber-500/10",
+  },
+  toml: {
+    label: "File content, not a terminal command",
+    tone: "text-amber-300 border-amber-500/40 bg-amber-500/10",
+  },
+  markdown: {
+    label: "Paste into your instruction file",
+    tone: "text-amber-300 border-amber-500/40 bg-amber-500/10",
+  },
+};
 
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -25,9 +47,15 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
   );
 }
 
-export function CodeBlock({ title, code, note }: Props) {
+export function CodeBlock({ title, code, note, language }: Props) {
+  const kind = language ? KIND[language] : null;
   return (
     <figure className="border-border bg-background overflow-hidden rounded-xl border">
+      {kind && (
+        <div className={`border-b px-3 py-1 text-[11px] font-semibold ${kind.tone}`}>
+          {kind.label}
+        </div>
+      )}
       <figcaption className="border-border bg-surface flex items-center justify-between gap-3 border-b px-3 py-1.5">
         <span className="text-muted-foreground truncate font-mono text-[11px]">
           {title ?? "Snippet"}

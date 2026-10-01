@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
+import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
 import { Route as ApiMcpRouteImport } from './routes/api.mcp'
@@ -56,9 +58,19 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscribeRoute = SubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
+  id: '/.well-known/$',
+  path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
@@ -182,7 +194,9 @@ export interface FileRoutesByFullPath {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
+  '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/mcp': typeof ApiMcpRoute
@@ -210,7 +224,9 @@ export interface FileRoutesByTo {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
+  '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/mcp': typeof ApiMcpRoute
@@ -239,7 +255,9 @@ export interface FileRoutesById {
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
+  '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/mcp': typeof ApiMcpRoute
@@ -269,7 +287,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/mcp'
+    | '/register'
     | '/subscribe'
+    | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/mcp'
@@ -297,7 +317,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/mcp'
+    | '/register'
     | '/subscribe'
+    | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/mcp'
@@ -325,7 +347,9 @@ export interface FileRouteTypes {
     | '/graph'
     | '/intelligence'
     | '/mcp'
+    | '/register'
     | '/subscribe'
+    | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/mcp'
@@ -354,7 +378,9 @@ export interface RootRouteChildren {
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
   McpRoute: typeof McpRoute
+  RegisterRoute: typeof RegisterRoute
   SubscribeRoute: typeof SubscribeRoute
+  DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
   ApiMcpRoute: typeof ApiMcpRoute
@@ -407,11 +433,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscribe': {
       id: '/subscribe'
       path: '/subscribe'
       fullPath: '/subscribe'
       preLoaderRoute: typeof SubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/$': {
+      id: '/.well-known/$'
+      path: '/.well-known/$'
+      fullPath: '/.well-known/$'
+      preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/payments': {
@@ -581,7 +621,9 @@ const rootRouteChildren: RootRouteChildren = {
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
   McpRoute: McpRoute,
+  RegisterRoute: RegisterRoute,
   SubscribeRoute: SubscribeRoute,
+  DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
   ApiMcpRoute: ApiMcpRoute,

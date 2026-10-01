@@ -37,13 +37,33 @@ export type Guide = {
 
 const json = (value: unknown) => JSON.stringify(value, null, 2);
 
+const vscodeConfig = (url: string) =>
+  json({
+    servers: {
+      nykst: {
+        type: "http",
+        url,
+        headers: { Authorization: "Bearer ${input:nykst-token}" },
+      },
+    },
+    inputs: [
+      {
+        type: "promptString",
+        id: "nykst-token",
+        description: "Nykst access token",
+        password: true,
+      },
+    ],
+  });
+
 export const GUIDES: Guide[] = [
   {
     id: "claude-code",
     name: "Claude Code",
     summary: "One command. Nykst is then available in every project.",
     steps: [
-      "Run the command below in any terminal.",
+      "Make sure Claude Code is installed: running claude --version in a terminal should print a version.",
+      "Run the command below in any terminal (macOS, Linux, Windows PowerShell or Command Prompt).",
       "Start Claude Code and type /mcp. nykst should be listed as connected.",
     ],
     snippets: [
@@ -98,8 +118,9 @@ export const GUIDES: Guide[] = [
     name: "VS Code",
     summary: "GitHub Copilot agent mode. VS Code asks for the token, so it never sits in a file.",
     steps: [
+      "You need VS Code with GitHub Copilot signed in. MCP servers run in Copilot Chat's Agent mode.",
       "Create .vscode/mcp.json in your project (or run the command MCP: Open User Configuration for all projects).",
-      "Paste the block below.",
+      "Paste the first block below into that file. It is file content, not a terminal command. Or use one of the terminal options, which create the file for you.",
       "VS Code shows a Start button above the server entry. Click it and paste your token when prompted.",
       "Open Copilot Chat in Agent mode and check the tools icon for nykst.",
     ],
@@ -107,27 +128,26 @@ export const GUIDES: Guide[] = [
       {
         title: ".vscode/mcp.json",
         language: "json",
+        code: ({ url }) => vscodeConfig(url),
+        note: "This is the content of a file. Open or create .vscode/mcp.json in VS Code and paste it there. Don't paste it into a terminal.",
+      },
+      {
+        title: "Or create the file from a terminal (Windows PowerShell)",
+        language: "bash",
         code: ({ url }) =>
-          json({
-            servers: {
-              nykst: {
-                type: "http",
-                url,
-                headers: { Authorization: "Bearer ${input:nykst-token}" },
-              },
-            },
-            inputs: [
-              {
-                type: "promptString",
-                id: "nykst-token",
-                description: "Nykst access token",
-                password: true,
-              },
-            ],
-          }),
+          `New-Item -ItemType Directory -Force .vscode | Out-Null\n@'\n${vscodeConfig(url)}\n'@ | Set-Content .vscode\\mcp.json`,
+        note: "Run it in your project folder. It writes the file for you.",
+      },
+      {
+        title: "Or create the file from a terminal (macOS/Linux)",
+        language: "bash",
+        code: ({ url }) =>
+          `mkdir -p .vscode\ncat > .vscode/mcp.json <<'EOF'\n${vscodeConfig(url)}\nEOF`,
+        note: "Run it in your project folder. It writes the file for you.",
       },
     ],
-    verify: "The tools icon in Copilot Chat (Agent mode) lists Nykst's tools.",
+    verify:
+      "The tools icon in Copilot Chat (Agent mode) lists Nykst's tools. If there is an error, run the command MCP: List Servers, choose nykst and pick Show Output to read it.",
   },
   {
     id: "codex",
@@ -140,10 +160,17 @@ export const GUIDES: Guide[] = [
     ],
     snippets: [
       {
-        title: "Terminal",
+        title: "Terminal (macOS/Linux)",
         language: "bash",
         code: ({ url, token }) =>
           `export NYKST_TOKEN="${token}"\ncodex mcp add nykst --url ${url} --bearer-token-env-var NYKST_TOKEN`,
+      },
+      {
+        title: "Terminal (Windows PowerShell)",
+        language: "bash",
+        code: ({ url, token }) =>
+          `setx NYKST_TOKEN "${token}"\n# Close and reopen the terminal, then:\ncodex mcp add nykst --url ${url} --bearer-token-env-var NYKST_TOKEN`,
+        note: "export doesn't exist on Windows. setx saves the variable for new terminals.",
       },
       {
         title: "Or edit ~/.codex/config.toml",
@@ -204,6 +231,12 @@ export const GUIDES: Guide[] = [
         language: "bash",
         code: ({ token }) => `export NYKST_TOKEN="${token}"`,
         note: "Put it in ~/.zshrc or ~/.bashrc so it survives restarts.",
+      },
+      {
+        title: "Terminal (Windows PowerShell)",
+        language: "bash",
+        code: ({ token }) => `setx NYKST_TOKEN "${token}"`,
+        note: "Restart Windsurf afterwards so it picks up the variable.",
       },
     ],
     verify: "The MCP panel lists nykst with its tools enabled.",

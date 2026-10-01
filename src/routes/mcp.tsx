@@ -192,6 +192,7 @@ function McpGuidePage() {
                 <CodeBlock
                   key={snippet.title}
                   title={snippet.title}
+                  language={snippet.language}
                   code={snippet.code(ctx)}
                   note={snippet.note}
                 />
@@ -241,7 +242,11 @@ function McpGuidePage() {
             instruction file so every change starts with an impact check.
           </StepHeading>
           <div className="space-y-3 pl-0 sm:pl-9">
-            <CodeBlock title="Add to your agent's instruction file" code={AGENT_RULES} />
+            <CodeBlock
+              title="Add to your agent's instruction file"
+              language="markdown"
+              code={AGENT_RULES}
+            />
             <ul className="text-muted-foreground space-y-1 text-xs">
               {RULE_FILES.map((item) => (
                 <li key={item.file}>
@@ -256,10 +261,27 @@ function McpGuidePage() {
           <h2 className="text-base font-semibold">Troubleshooting and safety</h2>
           <dl className="mt-4 space-y-4 text-sm">
             <div>
-              <dt className="font-medium">401 or “invalid access token”</dt>
+              <dt className="font-medium">Error 401, or “token” in the message</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
-                The token was mistyped, revoked, or the Authorization header is missing. Create a
-                new one in step 2. Tokens start with nyk_.
+                Nykst tells you what is wrong: no token sent, the token is still the placeholder
+                YOUR_NYKST_TOKEN, it doesn't start with nyk_, or it was revoked. Create a new token
+                in step 2 and paste it in place of the placeholder.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">“command not found” or the command does nothing</dt>
+              <dd className="text-muted-foreground mt-1 leading-relaxed">
+                The tool itself isn't installed yet. Check with claude --version, codex --version or
+                gemini --version. On Windows, open a new terminal after installing, and use
+                PowerShell: the export command only exists on macOS and Linux, so use the Windows
+                PowerShell snippet where there is one.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium">An error in VS Code</dt>
+              <dd className="text-muted-foreground mt-1 leading-relaxed">
+                Run MCP: List Servers from the command palette, choose nykst, and pick Show Output.
+                It prints the exact reason. Send that text to us if it isn't clear.
               </dd>
             </div>
             <div>
