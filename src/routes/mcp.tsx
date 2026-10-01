@@ -192,6 +192,7 @@ function McpGuidePage() {
                 <CodeBlock
                   key={snippet.title}
                   title={snippet.title}
+                  language={snippet.language}
                   code={snippet.code(ctx)}
                   note={snippet.note}
                 />
@@ -241,7 +242,11 @@ function McpGuidePage() {
             instruction file so every change starts with an impact check.
           </StepHeading>
           <div className="space-y-3 pl-0 sm:pl-9">
-            <CodeBlock title="Add to your agent's instruction file" code={AGENT_RULES} />
+            <CodeBlock
+              title="Add to your agent's instruction file"
+              language="markdown"
+              code={AGENT_RULES}
+            />
             <ul className="text-muted-foreground space-y-1 text-xs">
               {RULE_FILES.map((item) => (
                 <li key={item.file}>

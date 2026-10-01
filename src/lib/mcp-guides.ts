@@ -37,6 +37,25 @@ export type Guide = {
 
 const json = (value: unknown) => JSON.stringify(value, null, 2);
 
+const vscodeConfig = (url: string) =>
+  json({
+    servers: {
+      nykst: {
+        type: "http",
+        url,
+        headers: { Authorization: "Bearer ${input:nykst-token}" },
+      },
+    },
+    inputs: [
+      {
+        type: "promptString",
+        id: "nykst-token",
+        description: "Nykst access token",
+        password: true,
+      },
+    ],
+  });
+
 export const GUIDES: Guide[] = [
   {
     id: "claude-code",
@@ -101,7 +120,7 @@ export const GUIDES: Guide[] = [
     steps: [
       "You need VS Code with GitHub Copilot signed in. MCP servers run in Copilot Chat's Agent mode.",
       "Create .vscode/mcp.json in your project (or run the command MCP: Open User Configuration for all projects).",
-      "Paste the block below.",
+      "Paste the first block below into that file. It is file content, not a terminal command. Or use one of the terminal options, which create the file for you.",
       "VS Code shows a Start button above the server entry. Click it and paste your token when prompted.",
       "Open Copilot Chat in Agent mode and check the tools icon for nykst.",
     ],
@@ -109,24 +128,22 @@ export const GUIDES: Guide[] = [
       {
         title: ".vscode/mcp.json",
         language: "json",
+        code: ({ url }) => vscodeConfig(url),
+        note: "This is the content of a file. Open or create .vscode/mcp.json in VS Code and paste it there. Don't paste it into a terminal.",
+      },
+      {
+        title: "Or create the file from a terminal (Windows PowerShell)",
+        language: "bash",
         code: ({ url }) =>
-          json({
-            servers: {
-              nykst: {
-                type: "http",
-                url,
-                headers: { Authorization: "Bearer ${input:nykst-token}" },
-              },
-            },
-            inputs: [
-              {
-                type: "promptString",
-                id: "nykst-token",
-                description: "Nykst access token",
-                password: true,
-              },
-            ],
-          }),
+          `New-Item -ItemType Directory -Force .vscode | Out-Null\n@'\n${vscodeConfig(url)}\n'@ | Set-Content .vscode\\mcp.json`,
+        note: "Run it in your project folder. It writes the file for you.",
+      },
+      {
+        title: "Or create the file from a terminal (macOS/Linux)",
+        language: "bash",
+        code: ({ url }) =>
+          `mkdir -p .vscode\ncat > .vscode/mcp.json <<'EOF'\n${vscodeConfig(url)}\nEOF`,
+        note: "Run it in your project folder. It writes the file for you.",
       },
     ],
     verify:
