@@ -187,22 +187,47 @@ async function handleMessage(userId: string, message: RpcRequest) {
   }
 }
 
+/** Tells the user what is wrong with the token, since clients show this text as the error. */
+function describeTokenProblem(request: Request) {
+  const guide = `${new URL(request.url).origin}/mcp`;
+  const header = request.headers.get("authorization") ?? "";
+  const token = header.replace(/^Bearer\s+/i, "").trim();
+  if (!token)
+    return {
+      missing: true,
+      message: `No Nykst access token was sent. Add the header "Authorization: Bearer nyk_…". Create a token at ${guide}`,
+    };
+  if (/YOUR_NYKST_TOKEN|<your-token>|TOKEN/i.test(token) && !token.startsWith(TOKEN_PREFIX))
+    return {
+      missing: false,
+      message: `The token is still a placeholder. Replace it with a real token from ${guide}`,
+    };
+  if (!token.startsWith(TOKEN_PREFIX))
+    return {
+      missing: false,
+      message: `That is not a Nykst token (they start with nyk_). Create one at ${guide}`,
+    };
+  return {
+    missing: false,
+    message: `This Nykst token was not recognized or has been revoked. Create a new one at ${guide}`,
+  };
+}
+
 export async function handleMcpRequest(request: Request): Promise<Response> {
   if (request.method === "GET" || request.method === "DELETE")
     return new Response(null, { status: 405, headers: { allow: "POST" } });
   const user = await userForToken(request);
-  if (!user)
-    return Response.json(
-      rpcError(
-        null,
-        -32001,
-        "Missing or invalid Nykst access token. Create one in Nykst → Connect AI tools.",
-      ),
-      {
-        status: 401,
-        headers: { "www-authenticate": 'Bearer realm="nykst"' },
+  if (!user) {
+    const problem = describeTokenProblem(request);
+    return Response.json(rpcError(null, -32001, problem.message), {
+      status: 401,
+      headers: {
+        "www-authenticate": problem.missing
+          ? 'Bearer realm="nykst"'
+          : 'Bearer realm="nykst", error="invalid_token"',
       },
-    );
+    });
+  }
   let body: unknown;
   try {
     body = await request.json();

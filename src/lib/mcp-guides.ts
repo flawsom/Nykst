@@ -43,7 +43,8 @@ export const GUIDES: Guide[] = [
     name: "Claude Code",
     summary: "One command. Nykst is then available in every project.",
     steps: [
-      "Run the command below in any terminal.",
+      "Make sure Claude Code is installed: running claude --version in a terminal should print a version.",
+      "Run the command below in any terminal (macOS, Linux, Windows PowerShell or Command Prompt).",
       "Start Claude Code and type /mcp. nykst should be listed as connected.",
     ],
     snippets: [
@@ -98,6 +99,7 @@ export const GUIDES: Guide[] = [
     name: "VS Code",
     summary: "GitHub Copilot agent mode. VS Code asks for the token, so it never sits in a file.",
     steps: [
+      "You need VS Code with GitHub Copilot signed in. MCP servers run in Copilot Chat's Agent mode.",
       "Create .vscode/mcp.json in your project (or run the command MCP: Open User Configuration for all projects).",
       "Paste the block below.",
       "VS Code shows a Start button above the server entry. Click it and paste your token when prompted.",
@@ -127,7 +129,8 @@ export const GUIDES: Guide[] = [
           }),
       },
     ],
-    verify: "The tools icon in Copilot Chat (Agent mode) lists Nykst's tools.",
+    verify:
+      "The tools icon in Copilot Chat (Agent mode) lists Nykst's tools. If there is an error, run the command MCP: List Servers, choose nykst and pick Show Output to read it.",
   },
   {
     id: "codex",
@@ -140,10 +143,17 @@ export const GUIDES: Guide[] = [
     ],
     snippets: [
       {
-        title: "Terminal",
+        title: "Terminal (macOS/Linux)",
         language: "bash",
         code: ({ url, token }) =>
           `export NYKST_TOKEN="${token}"\ncodex mcp add nykst --url ${url} --bearer-token-env-var NYKST_TOKEN`,
+      },
+      {
+        title: "Terminal (Windows PowerShell)",
+        language: "bash",
+        code: ({ url, token }) =>
+          `setx NYKST_TOKEN "${token}"\n# Close and reopen the terminal, then:\ncodex mcp add nykst --url ${url} --bearer-token-env-var NYKST_TOKEN`,
+        note: "export doesn't exist on Windows. setx saves the variable for new terminals.",
       },
       {
         title: "Or edit ~/.codex/config.toml",
@@ -204,6 +214,12 @@ export const GUIDES: Guide[] = [
         language: "bash",
         code: ({ token }) => `export NYKST_TOKEN="${token}"`,
         note: "Put it in ~/.zshrc or ~/.bashrc so it survives restarts.",
+      },
+      {
+        title: "Terminal (Windows PowerShell)",
+        language: "bash",
+        code: ({ token }) => `setx NYKST_TOKEN "${token}"`,
+        note: "Restart Windsurf afterwards so it picks up the variable.",
       },
     ],
     verify: "The MCP panel lists nykst with its tools enabled.",
