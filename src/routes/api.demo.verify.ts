@@ -5,17 +5,12 @@ import { verifyChange, type ProposedEdit } from "@/lib/analysis/verify.server";
 
 /** Runs the real checker against the public example snapshot. No sign-in, nothing is stored. */
 let cached: Promise<RepoAnalysis> | null = null;
-function demoAnalysis(origin: string) {
-  cached ??= fetch(`${origin}/demo/snapshot.json`)
-    .then((response) => {
-      if (!response.ok) throw new Error("The example could not be loaded.");
-      return response.json() as Promise<{ payload: { analysis: RepoAnalysis } }>;
-    })
-    .then((snapshot) => snapshot.payload.analysis)
-    .catch((error) => {
-      cached = null;
-      throw error;
-    });
+function demoAnalysis() {
+  // Bundled with the server: a Worker cannot fetch its own public origin.
+  cached ??= import("../../public/demo/snapshot.json").then(
+    (module) =>
+      (module.default as unknown as { payload: { analysis: RepoAnalysis } }).payload.analysis,
+  );
   return cached;
 }
 
@@ -44,7 +39,7 @@ export const Route = createFileRoute("/api/demo/verify")({
               );
             edits.push({ path, content });
           }
-          const analysis = await demoAnalysis(new URL(request.url).origin);
+          const analysis = await demoAnalysis();
           return Response.json({ report: await verifyChange(analysis, edits) });
         } catch (error) {
           return Response.json(
