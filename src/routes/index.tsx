@@ -1,26 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Bot,
+  Brain,
+  GitBranch,
+  GitPullRequest,
+  Mail,
+  Network,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
-import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
-import { cn } from "@/lib/utils";
-import { Mail, X } from "lucide-react";
+import { SiteFooter, SiteHeader } from "@/components/site/SiteHeader";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst — System Navigator for Software Organizations" },
+      { title: "Nykst — See what a change will break before you ship it" },
       {
         name: "description",
         content:
-          "Nykst is the definitive system navigator for software organizations. Experience living software graphs, persistent memory, and autonomous reasoning.",
+          "Nykst reads your repository's real import graph, history and call sites, shows the blast radius of a change, remembers why code is the way it is, and checks generated code against it.",
       },
-      { property: "og:title", content: "Nykst — System Navigator for Software Organizations" },
+      { property: "og:title", content: "Nykst — See what a change will break before you ship it" },
       {
         property: "og:description",
         content:
-          "Connect GitHub and let Nykst derive your engineering system from the code and collaboration history.",
+          "Blast radius, repository memory and verified changes for your team and your AI coding agent.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -29,12 +38,41 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+const pillars = [
+  {
+    icon: Network,
+    title: "Know the blast radius",
+    body: "Every file's real importers, call sites, entry points and tests, resolved from your code with the TypeScript parser. Pick a file and see exactly what depends on it.",
+  },
+  {
+    icon: Brain,
+    title: "Remember why it is this way",
+    body: "Commit and pull request history, files that change together, reverts and fixes, plus notes your team pins to a file. Context that normally lives in someone's head.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Check changes before they land",
+    body: "Hand Nykst a diff or let it draft one. It re-reads the graph and reports removed exports, broken call signatures, new cycles and missing dependencies, and says what it could not check.",
+  },
+];
+
+const steps = [
+  ["Connect", "Install the read-only GitHub App on the repositories you choose."],
+  ["Analyze", "Nykst parses the code and history. Nothing is written to your repository."],
+  ["Ask", "Use the workspace, or let Claude Code, Cursor and others query it over MCP."],
+];
+
+const limits = [
+  "TypeScript and JavaScript only for now. Other languages are listed but not analyzed.",
+  "Static analysis. It does not run your code, so runtime-only breakage is out of reach.",
+  "Every verification report lists what was checked and what was not.",
+];
+
 function Landing() {
   const [preRegister, setPreRegister] = useState(false);
-  const [advantages, setAdvantages] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
   const [githubNotice, setGithubNotice] = useState<string | null>(null);
-  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -63,225 +101,216 @@ function Landing() {
     };
   }, []);
 
-  const connect = () => {
-    window.location.assign("/api/integrations/github/start");
-  };
-
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <div className="min-h-screen">
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
-      {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
-      {subscriptionOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onClick={() => setSubscriptionOpen(false)}
+      {contactOpen && <ContactDialog onClose={() => setContactOpen(false)} />}
+
+      <SiteHeader>
+        <ApiSettingsButton />
+        <button
+          onClick={() => setPreRegister(true)}
+          className="bg-primary text-primary-foreground hover:bg-primary-glow ml-1 inline-flex min-h-11 items-center rounded-md px-4 text-sm font-semibold transition-colors"
         >
-          <div
-            className="border-border bg-card relative w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              onClick={() => setSubscriptionOpen(false)}
-              aria-label="Close subscription contact panel"
-              className="text-muted-foreground hover:text-foreground absolute top-4 right-4"
-            >
-              <X className="size-4" />
-            </button>
-            <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Nykst subscriptions
+          Get early access
+        </button>
+      </SiteHeader>
+
+      <main>
+        <section className="relative mx-auto grid max-w-6xl gap-10 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+          <div>
+            <p className="text-primary font-mono text-xs tracking-[0.2em] uppercase">
+              Impact analysis for code changes
             </p>
-            <h2 className="mt-2 text-xl font-semibold">Talk with us about access</h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              Nykst subscriptions are arranged personally. Tell us about your team, repository
-              needs, and the level of system intelligence you want to use.
+            <h1 className="mt-4 text-4xl leading-[1.1] font-semibold tracking-tight text-balance sm:text-5xl">
+              See what a change will break before you ship it.
+            </h1>
+            <p className="text-muted-foreground mt-5 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
+              Nykst reads your repository's real import graph and history, shows the blast radius of
+              any file, and checks code, yours or your AI agent's, against it before it lands.
             </p>
-            <div className="border-primary/25 bg-primary/5 mt-5 rounded-xl border p-4">
-              <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Contact</p>
-              <a
-                href="https://mail.google.com/mail/?view=cm&fs=1&to=nykstsoftint%40gmail.com&su=Nykst%20subscription%20enquiry"
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
-              >
-                <Mail className="size-4" /> nykstsoftint@gmail.com
-              </a>
-            </div>
-            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
-              Click the email address to open your mail app. We will reply personally with plan
-              details, pricing, and setup options.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "var(--gradient-hero)" }}
-      />
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <span
-          className="aurora size-[520px]"
-          style={{ background: "var(--primary)", opacity: 0.18, top: "-14%", left: "-8%" }}
-        />
-        <span
-          className="aurora size-[420px]"
-          style={{
-            background: "var(--node-capability)",
-            opacity: 0.14,
-            top: "22%",
-            right: "-10%",
-            animationDelay: "-6s",
-          }}
-        />
-        <span
-          className="aurora size-[380px]"
-          style={{
-            background: "var(--node-service)",
-            opacity: 0.12,
-            bottom: "-12%",
-            left: "34%",
-            animationDelay: "-11s",
-          }}
-        />
-      </div>
-      <div className="pointer-events-none absolute inset-0 bg-grid" />
-
-      <header className="relative mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
-        <div className="flex items-center gap-2.5">
-          <span className="glow-ring bg-primary block size-2.5 rounded-full" />
-          <span className="text-[15px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
-        </div>
-        <nav className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 text-xs sm:w-auto sm:gap-4 sm:text-sm">
-          <ApiSettingsButton />
-          <Link
-            to="/mcp"
-            className="text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap rounded-lg px-2 py-2 font-medium transition-colors"
-          >
-            AI agents (MCP)
-          </Link>
-          <button
-            onClick={() => setSubscriptionOpen(true)}
-            className="text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap rounded-lg px-2 py-2 transition-colors font-medium"
-          >
-            Pricing · NPR 999
-          </button>
-          <button
-            onClick={() => setSubscriptionOpen(true)}
-            className="border-border bg-surface hover:bg-surface-2 shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-          >
-            Subscription
-          </button>
-          <button
-            onClick={() => setPreRegister(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
-          >
-            Pre-register
-          </button>
-        </nav>
-      </header>
-
-      <section className="relative mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
-        <p className="animate-rise text-primary text-xs tracking-[0.3em] uppercase font-mono">
-          System Intelligence & Organizational Navigation
-        </p>
-        <h1
-          className="animate-rise text-gradient mt-5 max-w-4xl text-4xl leading-[1.08] font-semibold tracking-tight sm:text-5xl md:text-6xl"
-          style={{ animationDelay: "80ms" }}
-        >
-          The system navigator for your software organization.
-        </h1>
-        <p
-          className="animate-rise text-muted-foreground mt-5 max-w-2xl text-sm leading-relaxed sm:mt-6 sm:text-base"
-          style={{ animationDelay: "160ms" }}
-        >
-          Connect your organization once. Nykst analyzes the codebase itself and renders it as a
-          living graph — core domains, capabilities, services, modules, down to a single file. No
-          folder browsing. No guesswork.
-        </p>
-
-        {/* Pre-register & Distinct Green Advantages Section */}
-        <div
-          className="animate-rise mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
-          style={{ animationDelay: "200ms" }}
-        >
-          <button
-            onClick={() => setPreRegister(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary-glow lift hover:lift-hover w-full rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/20 sm:w-auto"
-          >
-            Pre-register for early access
-          </button>
-
-          <button
-            onClick={() => setAdvantages(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/50 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-colors sm:w-auto"
-          >
-            Advantages of using Nykst
-          </button>
-        </div>
-
-        <div
-          className="animate-rise border-border bg-card/70 mt-10 max-w-3xl rounded-2xl border p-4 backdrop-blur sm:mt-14 sm:p-6"
-          style={{ animationDelay: "240ms", boxShadow: "var(--shadow-panel)" }}
-        >
-          <h2 className="text-sm font-medium">Connect your organization</h2>
-          <p className="text-muted-foreground mt-1 text-xs">
-            Nykst installs read-only and derives the graph itself — we never ask you to describe
-            your architecture.
-          </p>
-
-          <div className="border-primary/30 bg-secondary/40 mt-5 rounded-xl border px-4 py-3">
-            <span className="block text-sm font-medium">GitHub</span>
-            <span className="text-muted-foreground block text-[11px]">
-              Connect securely to choose an organization and repository.
-            </span>
-          </div>
-
-          {githubNotice && (
-            <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300">
-              {githubNotice}
-            </p>
-          )}
-
-          <GithubConnectPanel connected={githubConnected} onConnect={connect} />
-
-          <div className="border-border bg-surface/70 mt-3 rounded-xl border px-4 py-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <span className="block text-sm font-medium">Demo account</span>
-                <span className="text-muted-foreground block text-[11px]">
-                  Explore a realistic Nykst thesis graph without connecting GitHub.
-                </span>
-              </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => window.location.assign("/graph?demo=1")}
-                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shrink-0 rounded-lg border px-4 py-2 text-xs font-semibold transition-colors"
+                className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold transition-colors"
               >
-                Explore demo graph →
+                Explore a live example <ArrowRight className="size-4" aria-hidden />
               </button>
+              <Link
+                to="/mcp"
+                className="border-border bg-surface hover:bg-surface-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border px-6 text-sm font-medium transition-colors"
+              >
+                <Bot className="size-4" aria-hidden /> Use it in your AI agent
+              </Link>
             </div>
           </div>
-        </div>
 
-        <div
-          id="ai-agents"
-          className="border-border bg-card/70 mt-24 flex flex-wrap items-center justify-between gap-5 rounded-2xl border p-6 backdrop-blur"
-          style={{ boxShadow: "var(--shadow-panel)" }}
-        >
-          <div className="max-w-lg">
-            <h2 className="text-sm font-medium">Nykst inside your AI coding agent</h2>
-            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-              Connect Claude Code, Cursor, VS Code, Codex and more over MCP. Your agent asks Nykst
-              what a change will break before it writes code.
-            </p>
-          </div>
-          <Link
-            to="/mcp"
-            className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
+          <div
+            className="border-border bg-card self-start rounded-2xl border p-5 sm:p-6"
+            style={{ boxShadow: "var(--shadow-panel)" }}
           >
-            Setup guide for every agent →
-          </Link>
-        </div>
-      </section>
-    </main>
+            <h2 className="text-base font-semibold">Connect a repository</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Read-only, per repository. You choose which ones Nykst can see.
+            </p>
+            {githubNotice && (
+              <p
+                role="status"
+                className="border-warn/30 bg-warn-soft text-warn mt-4 rounded-lg border px-3 py-2 text-sm"
+              >
+                {githubNotice}
+              </p>
+            )}
+            <div className="mt-4">
+              <GithubConnectPanel
+                connected={githubConnected}
+                onConnect={() => window.location.assign("/api/integrations/github/start")}
+              />
+            </div>
+            <div className="border-border mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-muted-foreground text-sm">No repository handy?</p>
+              <a
+                href="/graph?demo=1"
+                className="text-primary inline-flex min-h-11 items-center text-sm font-semibold hover:underline"
+              >
+                Open the example →
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 sm:px-6" aria-labelledby="what">
+          <h2 id="what" className="sr-only">
+            What Nykst does
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {pillars.map(({ icon: Icon, title, body }) => (
+              <article key={title} className="border-border bg-card rounded-xl border p-6">
+                <span className="bg-primary/10 text-primary inline-flex size-10 items-center justify-center rounded-lg">
+                  <Icon className="size-5" aria-hidden />
+                </span>
+                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto mt-20 max-w-6xl px-4 sm:px-6" aria-labelledby="how">
+          <h2 id="how" className="text-2xl font-semibold tracking-tight">
+            How it works
+          </h2>
+          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+            {steps.map(([title, body], index) => (
+              <li key={title} className="border-border rounded-xl border p-5">
+                <span className="text-primary tabular font-mono text-sm">0{index + 1}</span>
+                <h3 className="mt-2 font-semibold">{title}</h3>
+                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section
+          className="mx-auto mt-20 grid max-w-6xl gap-4 px-4 sm:px-6 lg:grid-cols-2"
+          aria-label="Limits and agents"
+        >
+          <div className="border-border bg-card rounded-xl border p-6">
+            <div className="flex items-center gap-2">
+              <GitBranch className="text-warn size-5" aria-hidden />
+              <h2 className="text-lg font-semibold">What it does not do</h2>
+            </div>
+            <ul className="text-muted-foreground mt-4 space-y-2.5 text-sm leading-relaxed">
+              {limits.map((line) => (
+                <li key={line} className="flex gap-2.5">
+                  <span className="bg-warn mt-2 size-1.5 shrink-0 rounded-full" aria-hidden />
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="border-border bg-card rounded-xl border p-6">
+            <div className="flex items-center gap-2">
+              <GitPullRequest className="text-primary size-5" aria-hidden />
+              <h2 className="text-lg font-semibold">Inside your coding agent</h2>
+            </div>
+            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+              Connect Claude Code, Cursor, VS Code, Codex and others over MCP. Your agent asks Nykst
+              what a change will break, and what the team already knows about those files, before it
+              writes code.
+            </p>
+            <Link
+              to="/mcp"
+              className="text-primary mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold hover:underline"
+            >
+              Setup guide for every agent <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </div>
+        </section>
+
+        <section className="mx-auto mt-20 max-w-6xl px-4 sm:px-6">
+          <div className="border-primary/30 bg-primary/5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-6 sm:p-8">
+            <div>
+              <h2 className="text-xl font-semibold">Want it for your team?</h2>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Subscriptions are arranged personally. Tell us about your repositories.
+              </p>
+            </div>
+            <button
+              onClick={() => setContactOpen(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex min-h-12 items-center rounded-lg px-6 text-sm font-semibold transition-colors"
+            >
+              Talk to us
+            </button>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function ContactDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-title"
+        className="border-border bg-card relative w-full max-w-md rounded-2xl border p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="text-muted-foreground hover:text-foreground absolute top-2 right-2 inline-flex size-11 items-center justify-center"
+        >
+          <X className="size-4" aria-hidden />
+        </button>
+        <h2 id="contact-title" className="text-xl font-semibold">
+          Talk with us about access
+        </h2>
+        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+          Tell us about your team, your repositories and what you want to check before shipping. We
+          reply personally with plan details and setup options.
+        </p>
+        <a
+          href="https://mail.google.com/mail/?view=cm&fs=1&to=nykstsoftint%40gmail.com&su=Nykst%20subscription%20enquiry"
+          target="_blank"
+          rel="noreferrer"
+          className="border-primary/30 bg-primary/5 text-primary mt-5 flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:underline"
+        >
+          <Mail className="size-4" aria-hidden /> nykstsoftint@gmail.com
+        </a>
+      </div>
+    </div>
   );
 }

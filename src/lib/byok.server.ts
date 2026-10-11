@@ -19,7 +19,7 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     model: "gpt-4o-mini",
     baseUrl: "https://api.openai.com/v1",
   },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
+  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
   {
     id: "gemini",
     label: "Google Gemini",

@@ -5,6 +5,9 @@ import {
   serviceForHost,
   serviceForPackage,
 } from "./catalog";
+import { dataCallTargets } from "./data-calls";
+import { findCycles } from "./cycles";
+import { exportOrigin } from "./exports";
 import { loadParser, parseJsonc, parseSource, type ParsedSource } from "./parse.server";
 import {
   dirname,
@@ -17,9 +20,12 @@ import {
 import {
   ANALYSIS_VERSION,
   type AnalyzedFile,
+  type CallSite,
   type DataResource,
   type ExternalService,
   type FileRole,
+  type ImportRef,
+  type PackageDeps,
   type RepoAnalysis,
   type ResourceUse,
 } from "./types";
@@ -143,9 +149,144 @@ function sqlResources(path: string, sql: string) {
   return found.map((item) => ({ ...item, path }));
 }
 
-/** Receivers that call `.from("x")` but are never a database client. */
-const NON_DB_RECEIVER =
-  /^(Array|Buffer|Uint8Array|Uint16Array|Uint32Array|Int8Array|Int16Array|Int32Array|Float32Array|Float64Array|Object|Set|Map|Promise|String|Readable|Observable|Blob|File|Response|Headers|Iterator|rxjs|z|Rx)$/;
+/** Imported names with the line of each one, kept only when some are on another line. */
+function namesOf(
+  bindings: { imported: string; line?: number | undefined }[],
+  statementLine: number,
+) {
+  const first = new Map<string, number>();
+  for (const binding of bindings)
+    if (!first.has(binding.imported)) first.set(binding.imported, binding.line ?? statementLine);
+  const names = [...first.keys()];
+  const lines = [...first.values()];
+  return lines.some((line) => line !== statementLine) ? { names, nameLines: lines } : { names };
+}
+
+export interface ServiceHit {
+  id: string;
+  reason: string;
+  line?: number;
+  /** package name that proved the service */
+  pkg?: string;
+  /** environment variable that proved the service */
+  env?: string;
+}
+
+export interface DescribedFile {
+  file: AnalyzedFile;
+  hits: ServiceHit[];
+  externalPackages: string[];
+  unresolved: number;
+}
+
+/**
+ * Turns one parsed source file into its analysis record: resolved imports, call sites of
+ * imported functions, module-scope env reads and the external services it touches. Shared by
+ * the whole-repository analysis and by the checker for generated code.
+ */
+export function describeFile(
+  path: string,
+  source: ParsedSource,
+  resolver: ImportResolver,
+  packageDir: string,
+): DescribedFile {
+  const hits: ServiceHit[] = [];
+  const externalPackages: string[] = [];
+  const serviceIds = new Set<string>();
+  let unresolved = 0;
+  const importedFunction = new Map<string, { target: string; imported: string }>();
+  const namespaceTarget = new Map<string, string>();
+
+  const imports: ImportRef[] = source.imports.map((raw) => {
+    const resolved = resolver.resolve(path, raw.specifier);
+    if (resolved.kind === "unresolved") unresolved += 1;
+    if (resolved.kind === "external" && resolved.target) {
+      externalPackages.push(resolved.target);
+      const id = serviceForPackage(resolved.target);
+      if (id) {
+        serviceIds.add(id);
+        hits.push({
+          id,
+          reason: `imports "${raw.specifier}"`,
+          line: raw.line,
+          pkg: resolved.target,
+        });
+      }
+    }
+    if (resolved.kind === "internal" && resolved.target && !raw.typeOnly)
+      for (const binding of raw.bindings) {
+        if (binding.imported === "*") {
+          if (binding.local !== "*") namespaceTarget.set(binding.local, resolved.target);
+        } else
+          importedFunction.set(binding.local, {
+            target: resolved.target,
+            imported: binding.imported,
+          });
+      }
+    return {
+      specifier: raw.specifier,
+      line: raw.line,
+      kind: resolved.kind,
+      ...(resolved.target ? { target: resolved.target } : {}),
+      typeOnly: raw.typeOnly,
+      dynamic: raw.dynamic,
+      ...namesOf(raw.bindings, raw.line),
+      ...(raw.reexportAll ? { reexportAll: true } : {}),
+    };
+  });
+
+  for (const url of source.urls) {
+    const id = serviceForHost(url.host);
+    if (!id) continue;
+    serviceIds.add(id);
+    hits.push({ id, reason: `calls https://${url.host}`, line: url.line });
+  }
+  for (const env of source.envVars) {
+    const id = serviceForEnv(env.name);
+    if (!id) continue;
+    serviceIds.add(id);
+    hits.push({ id, reason: `reads ${env.name}`, line: env.line, env: env.name });
+  }
+
+  const calls: CallSite[] = [];
+  for (const call of source.calls) {
+    const base = { args: call.args, ...(call.spread ? { spread: true } : {}), line: call.line };
+    if (call.member) {
+      const target = namespaceTarget.get(call.local);
+      if (target) calls.push({ target, name: call.member, ...base });
+    } else {
+      const hit = importedFunction.get(call.local);
+      if (hit) calls.push({ target: hit.target, name: hit.imported, ...base });
+    }
+  }
+
+  const moduleScopeEnv = [
+    ...new Map(
+      source.envVars
+        .filter((env) => env.moduleScope)
+        .map((env) => [`${env.name}:${env.line}`, { name: env.name, line: env.line }] as const),
+    ).values(),
+  ].slice(0, 30);
+
+  const file: AnalyzedFile = {
+    path,
+    language: languageOf(path),
+    loc: source.loc,
+    packageDir,
+    role: roleOf(path, source),
+    imports,
+    exports: source.exports.slice(0, 100),
+    exportSigs: Object.fromEntries(Object.entries(source.exportSigs).slice(0, 100)),
+    functions: [...new Set(source.functions)].slice(0, 100),
+    classes: [...new Set(source.classes)].slice(0, 50),
+    envVars: [...new Set(source.envVars.map((env) => env.name))],
+    moduleScopeEnv,
+    calls,
+    services: [...serviceIds],
+    resources: [],
+  };
+  return { file, hits, externalPackages, unresolved };
+}
 
 export interface AnalyzeInput {
   ref: string;
@@ -167,6 +308,7 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
   const limitations: string[] = [];
 
   const manifests: PackageManifest[] = [];
+  const packageDeps: PackageDeps[] = [];
   const configs = new Map<string, Record<string, unknown>>();
   const sqlDefinitions: ReturnType<typeof sqlResources> = [];
   const prismaModels: { name: string; path: string }[] = [];
@@ -174,6 +316,22 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
     if (/(^|\/)package\.json$/.test(path)) {
       try {
         const json = JSON.parse(text) as Record<string, unknown>;
+        const deps = new Set<string>();
+        for (const field of [
+          "dependencies",
+          "devDependencies",
+          "peerDependencies",
+          "optionalDependencies",
+        ]) {
+          const group = json[field];
+          if (group && typeof group === "object")
+            for (const name of Object.keys(group)) deps.add(name);
+        }
+        packageDeps.push({
+          dir: dirname(path),
+          ...(typeof json["name"] === "string" ? { name: json["name"] } : {}),
+          deps: [...deps].sort(),
+        });
         manifests.push({
           dir: dirname(path),
           ...(typeof json["name"] === "string" ? { name: json["name"] } : {}),
@@ -198,7 +356,8 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
     }
   }
 
-  const resolver = new ImportResolver(pathSet, manifests, aliasScopes(configs));
+  const scopes = aliasScopes(configs);
+  const resolver = new ImportResolver(pathSet, manifests, scopes);
   const packageDirs = manifests.map((m) => m.dir).sort((a, b) => b.length - a.length);
   const packageDirOf = (path: string) =>
     packageDirs.find((dir) => dir === "" || path.startsWith(`${dir}/`)) ?? "";
@@ -248,61 +407,34 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
   for (const path of sourcePaths) {
     const source = parsed.get(path);
     if (!source) continue;
-    const fileServices = new Set<string>();
-    const imports = source.imports.map((raw) => {
-      const resolved = resolver.resolve(path, raw.specifier);
-      if (resolved.kind === "unresolved") unresolved += 1;
-      if (resolved.kind === "external" && resolved.target) {
-        externalPackages.add(resolved.target);
-        const id = serviceForPackage(resolved.target);
-        if (id) {
-          fileServices.add(id);
-          const entry = service(id);
-          if (!entry.packages.includes(resolved.target)) entry.packages.push(resolved.target);
-          addEvidence(id, path, `imports "${raw.specifier}"`, raw.line);
-        }
-      }
-      return {
-        specifier: raw.specifier,
-        line: raw.line,
-        kind: resolved.kind,
-        ...(resolved.target ? { target: resolved.target } : {}),
-        typeOnly: raw.typeOnly,
-        dynamic: raw.dynamic,
-      };
-    });
-    for (const url of source.urls) {
-      const id = serviceForHost(url.host);
-      if (!id) continue;
-      fileServices.add(id);
-      addEvidence(id, path, `calls https://${url.host}`, url.line);
+    const described = describeFile(path, source, resolver, packageDirOf(path));
+    unresolved += described.unresolved;
+    for (const pkg of described.externalPackages) externalPackages.add(pkg);
+    for (const hit of described.hits) {
+      const entry = service(hit.id);
+      if (hit.pkg && !entry.packages.includes(hit.pkg)) entry.packages.push(hit.pkg);
+      if (hit.env && !entry.envVars.includes(hit.env)) entry.envVars.push(hit.env);
+      addEvidence(hit.id, path, hit.reason, hit.line);
     }
-    const envVars = [...new Set(source.envVars.map((env) => env.name))];
     for (const env of source.envVars) {
       const names = envIndex.get(env.name) ?? new Set<string>();
       names.add(path);
       envIndex.set(env.name, names);
-      const id = serviceForEnv(env.name);
-      if (!id) continue;
-      fileServices.add(id);
-      const entry = service(id);
-      if (!entry.envVars.includes(env.name)) entry.envVars.push(env.name);
-      addEvidence(id, path, `reads ${env.name}`, env.line);
     }
-    files.push({
-      path,
-      language: languageOf(path),
-      loc: source.loc,
-      packageDir: packageDirOf(path),
-      role: roleOf(path, source),
-      imports,
-      exports: source.exports.slice(0, 100),
-      functions: [...new Set(source.functions)].slice(0, 100),
-      classes: [...new Set(source.classes)].slice(0, 50),
-      envVars,
-      services: [...fileServices],
-      resources: [],
-    });
+    files.push(described.file);
+  }
+
+  // Keep only call sites of functions whose real signature is known, retargeted to the file
+  // that declares the function (calls through barrel files are followed).
+  const filesByPath = new Map(files.map((file) => [file.path, file]));
+  for (const file of files) {
+    const kept: CallSite[] = [];
+    for (const call of file.calls) {
+      const origin = exportOrigin(filesByPath, call.target, call.name);
+      if (origin?.sig.kind === "function") kept.push({ ...call, target: origin.path });
+      if (kept.length >= 200) break;
+    }
+    file.calls = kept;
   }
 
   for (const path of paths) {
@@ -342,24 +474,12 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
   for (const [path, source] of parsed) {
     const file = byPath.get(path);
     if (!file) continue;
-    const uses: ResourceUse[] = [];
-    for (const call of source.dataCalls) {
-      if (call.method === "prisma") {
-        uses.push({ id: resource("model", call.name, "prisma").id, line: call.line });
-        continue;
-      }
-      if (NON_DB_RECEIVER.test(call.receiver) || /^[A-Z]\w*$/.test(call.receiver)) continue;
-      const looksLikeClient = /supabase|client|admin|\bdb\b|\bsb\b/i.test(call.receiver);
-      const known = resources.has(
-        `${call.method === "rpc" ? "rpc" : "table"}:${call.name.toLowerCase()}`,
-      );
-      if (!usesSupabase || (!looksLikeClient && !known)) continue;
-      const kind = call.method === "rpc" ? "rpc" : call.method === "storage" ? "bucket" : "table";
-      uses.push({
-        id: resource(kind, kind === "bucket" ? call.name : call.name.toLowerCase(), "supabase").id,
-        line: call.line,
-      });
-    }
+    const uses: ResourceUse[] = dataCallTargets(source.dataCalls, usesSupabase, (kind, name) =>
+      resources.has(`${kind}:${name}`),
+    ).map((target) => ({
+      id: resource(target.kind, target.name, target.owner).id,
+      line: target.line,
+    }));
     file.resources = uses;
     for (const use of uses) resources.get(use.id)!.uses.push({ path, line: use.line });
   }
@@ -373,56 +493,7 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
         .filter((i) => i.kind === "internal" && !i.typeOnly && i.target)
         .map((i) => i.target!),
     );
-  const cycles: string[][] = [];
-  {
-    let index = 0;
-    const indices = new Map<string, number>();
-    const low = new Map<string, number>();
-    const stack: string[] = [];
-    const onStack = new Set<string>();
-    const strongConnect = (start: string) => {
-      // Iterative Tarjan to stay safe on deep import chains.
-      const work: { node: string; next: number }[] = [{ node: start, next: 0 }];
-      indices.set(start, index);
-      low.set(start, index);
-      index += 1;
-      stack.push(start);
-      onStack.add(start);
-      while (work.length) {
-        const frame = work[work.length - 1]!;
-        const neighbours = adjacency.get(frame.node) ?? [];
-        if (frame.next < neighbours.length) {
-          const next = neighbours[frame.next++]!;
-          if (!adjacency.has(next)) continue;
-          if (!indices.has(next)) {
-            indices.set(next, index);
-            low.set(next, index);
-            index += 1;
-            stack.push(next);
-            onStack.add(next);
-            work.push({ node: next, next: 0 });
-          } else if (onStack.has(next)) {
-            low.set(frame.node, Math.min(low.get(frame.node)!, indices.get(next)!));
-          }
-          continue;
-        }
-        work.pop();
-        const parent = work[work.length - 1];
-        if (parent) low.set(parent.node, Math.min(low.get(parent.node)!, low.get(frame.node)!));
-        if (low.get(frame.node) === indices.get(frame.node)) {
-          const component: string[] = [];
-          let member: string | undefined;
-          do {
-            member = stack.pop()!;
-            onStack.delete(member);
-            component.push(member);
-          } while (member !== frame.node);
-          if (component.length > 1) cycles.push(component.sort());
-        }
-      }
-    };
-    for (const path of adjacency.keys()) if (!indices.has(path)) strongConnect(path);
-  }
+  const cycles = findCycles(adjacency);
 
   const internalEdges = files.reduce(
     (sum, file) => sum + file.imports.filter((i) => i.kind === "internal").length,
@@ -447,6 +518,11 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
     method: "typescript-ast",
     ref,
     packages: resolver.workspacePackages,
+    packageDeps,
+    resolver: {
+      manifests,
+      aliases: scopes,
+    },
     files,
     services: [...services.values()].sort((a, b) => b.files.length - a.files.length),
     resources: [...resources.values()].sort(

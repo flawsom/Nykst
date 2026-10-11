@@ -11,15 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
-import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as ApiChangeRouteImport } from './routes/api.change'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
+import { Route as ApiFindingsRouteImport } from './routes/api.findings'
 import { Route as ApiMcpRouteImport } from './routes/api.mcp'
 import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
+import { Route as ApiMemoryRouteImport } from './routes/api.memory'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
@@ -29,8 +31,6 @@ import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscript
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
-import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
-import { Route as ApiIntegrationsGithubFileEvidenceRouteImport } from './routes/api.integrations.github.file-evidence'
 import { Route as ApiIntegrationsGithubIngestRouteImport } from './routes/api.integrations.github.ingest'
 import { Route as ApiIntegrationsGithubLatestRouteImport } from './routes/api.integrations.github.latest'
 import { Route as ApiIntegrationsGithubOrganizationsRouteImport } from './routes/api.integrations.github.organizations'
@@ -46,11 +46,6 @@ const IndexRoute = IndexRouteImport.update({
 const GraphRoute = GraphRouteImport.update({
   id: '/graph',
   path: '/graph',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IntelligenceRoute = IntelligenceRouteImport.update({
-  id: '/intelligence',
-  path: '/intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -78,9 +73,19 @@ const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   path: '/admin/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChangeRoute = ApiChangeRouteImport.update({
+  id: '/api/change',
+  path: '/api/change',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
   id: '/api/diagnosis',
   path: '/api/diagnosis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFindingsRoute = ApiFindingsRouteImport.update({
+  id: '/api/findings',
+  path: '/api/findings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
@@ -91,6 +96,11 @@ const ApiMcpRoute = ApiMcpRouteImport.update({
 const ApiMcpTokensRoute = ApiMcpTokensRouteImport.update({
   id: '/api/mcp-tokens',
   path: '/api/mcp-tokens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMemoryRoute = ApiMemoryRouteImport.update({
+  id: '/api/memory',
+  path: '/api/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
@@ -140,18 +150,6 @@ const ApiIntegrationsGithubCallbackRoute =
     path: '/api/integrations/github/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiIntegrationsGithubCodingRoute =
-  ApiIntegrationsGithubCodingRouteImport.update({
-    id: '/api/integrations/github/coding',
-    path: '/api/integrations/github/coding',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiIntegrationsGithubFileEvidenceRoute =
-  ApiIntegrationsGithubFileEvidenceRouteImport.update({
-    id: '/api/integrations/github/file-evidence',
-    path: '/api/integrations/github/file-evidence',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiIntegrationsGithubIngestRoute =
   ApiIntegrationsGithubIngestRouteImport.update({
     id: '/api/integrations/github/ingest',
@@ -192,15 +190,17 @@ const ApiIntegrationsGithubStartRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
-  '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/change': typeof ApiChangeRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/findings': typeof ApiFindingsRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -210,8 +210,6 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
-  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
-  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -222,15 +220,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
-  '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/change': typeof ApiChangeRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/findings': typeof ApiFindingsRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -240,8 +240,6 @@ export interface FileRoutesByTo {
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
-  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
-  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -253,15 +251,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
-  '/intelligence': typeof IntelligenceRoute
   '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/change': typeof ApiChangeRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/findings': typeof ApiFindingsRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -271,8 +271,6 @@ export interface FileRoutesById {
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
-  '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
-  '/api/integrations/github/file-evidence': typeof ApiIntegrationsGithubFileEvidenceRoute
   '/api/integrations/github/ingest': typeof ApiIntegrationsGithubIngestRoute
   '/api/integrations/github/latest': typeof ApiIntegrationsGithubLatestRoute
   '/api/integrations/github/organizations': typeof ApiIntegrationsGithubOrganizationsRoute
@@ -285,15 +283,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/graph'
-    | '/intelligence'
     | '/mcp'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/change'
     | '/api/diagnosis'
+    | '/api/findings'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/memory'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -303,8 +303,6 @@ export interface FileRouteTypes {
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
-    | '/api/integrations/github/coding'
-    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -315,15 +313,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/graph'
-    | '/intelligence'
     | '/mcp'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/change'
     | '/api/diagnosis'
+    | '/api/findings'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/memory'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -333,8 +333,6 @@ export interface FileRouteTypes {
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
-    | '/api/integrations/github/coding'
-    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -345,15 +343,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/graph'
-    | '/intelligence'
     | '/mcp'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/change'
     | '/api/diagnosis'
+    | '/api/findings'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/memory'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -363,8 +363,6 @@ export interface FileRouteTypes {
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
-    | '/api/integrations/github/coding'
-    | '/api/integrations/github/file-evidence'
     | '/api/integrations/github/ingest'
     | '/api/integrations/github/latest'
     | '/api/integrations/github/organizations'
@@ -376,15 +374,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
-  IntelligenceRoute: typeof IntelligenceRoute
   McpRoute: typeof McpRoute
   RegisterRoute: typeof RegisterRoute
   SubscribeRoute: typeof SubscribeRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  ApiChangeRoute: typeof ApiChangeRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
+  ApiFindingsRoute: typeof ApiFindingsRoute
   ApiMcpRoute: typeof ApiMcpRoute
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
+  ApiMemoryRoute: typeof ApiMemoryRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -393,8 +393,6 @@ export interface RootRouteChildren {
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
-  ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
-  ApiIntegrationsGithubFileEvidenceRoute: typeof ApiIntegrationsGithubFileEvidenceRoute
   ApiIntegrationsGithubIngestRoute: typeof ApiIntegrationsGithubIngestRoute
   ApiIntegrationsGithubLatestRoute: typeof ApiIntegrationsGithubLatestRoute
   ApiIntegrationsGithubOrganizationsRoute: typeof ApiIntegrationsGithubOrganizationsRoute
@@ -417,13 +415,6 @@ declare module '@tanstack/react-router' {
       path: '/graph'
       fullPath: '/graph'
       preLoaderRoute: typeof GraphRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/intelligence': {
-      id: '/intelligence'
-      path: '/intelligence'
-      fullPath: '/intelligence'
-      preLoaderRoute: typeof IntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -461,11 +452,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/change': {
+      id: '/api/change'
+      path: '/api/change'
+      fullPath: '/api/change'
+      preLoaderRoute: typeof ApiChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/diagnosis': {
       id: '/api/diagnosis'
       path: '/api/diagnosis'
       fullPath: '/api/diagnosis'
       preLoaderRoute: typeof ApiDiagnosisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/findings': {
+      id: '/api/findings'
+      path: '/api/findings'
+      fullPath: '/api/findings'
+      preLoaderRoute: typeof ApiFindingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mcp': {
@@ -480,6 +485,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mcp-tokens'
       fullPath: '/api/mcp-tokens'
       preLoaderRoute: typeof ApiMcpTokensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/memory': {
+      id: '/api/memory'
+      path: '/api/memory'
+      fullPath: '/api/memory'
+      preLoaderRoute: typeof ApiMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pre-registration': {
@@ -545,20 +557,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsGithubCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/integrations/github/coding': {
-      id: '/api/integrations/github/coding'
-      path: '/api/integrations/github/coding'
-      fullPath: '/api/integrations/github/coding'
-      preLoaderRoute: typeof ApiIntegrationsGithubCodingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/integrations/github/file-evidence': {
-      id: '/api/integrations/github/file-evidence'
-      path: '/api/integrations/github/file-evidence'
-      fullPath: '/api/integrations/github/file-evidence'
-      preLoaderRoute: typeof ApiIntegrationsGithubFileEvidenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/integrations/github/ingest': {
       id: '/api/integrations/github/ingest'
       path: '/api/integrations/github/ingest'
@@ -619,15 +617,17 @@ const ApiSubscriptionRouteWithChildren = ApiSubscriptionRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
-  IntelligenceRoute: IntelligenceRoute,
   McpRoute: McpRoute,
   RegisterRoute: RegisterRoute,
   SubscribeRoute: SubscribeRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  ApiChangeRoute: ApiChangeRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
+  ApiFindingsRoute: ApiFindingsRoute,
   ApiMcpRoute: ApiMcpRoute,
   ApiMcpTokensRoute: ApiMcpTokensRoute,
+  ApiMemoryRoute: ApiMemoryRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,
@@ -637,9 +637,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,
-  ApiIntegrationsGithubCodingRoute: ApiIntegrationsGithubCodingRoute,
-  ApiIntegrationsGithubFileEvidenceRoute:
-    ApiIntegrationsGithubFileEvidenceRoute,
   ApiIntegrationsGithubIngestRoute: ApiIntegrationsGithubIngestRoute,
   ApiIntegrationsGithubLatestRoute: ApiIntegrationsGithubLatestRoute,
   ApiIntegrationsGithubOrganizationsRoute:
