@@ -85,6 +85,81 @@ export const TOOLS = [
     },
     annotations: { readOnlyHint: true },
   },
+  {
+    name: "get_findings",
+    title: "Problems found in the repository",
+    description:
+      "Provable problems with file and line evidence: import cycles, unresolved imports, secrets read at module load, packages used but not declared, hot files with no tests, orphaned files, files that keep needing fixes. Pass paths to see only those that concern the files you are about to touch. Each includes why it matters and how to fix it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        paths: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional file paths or directory prefixes to filter by.",
+        },
+        ...repositoryArg,
+      },
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: "get_memory",
+    title: "What does the team already know about these files?",
+    description:
+      "Notes, decisions, gotchas and bug-fix explanations people (or agents) recorded for files or folders, including parent folders and repository-wide notes. Read before changing code that has a history.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        paths: { type: "array", items: { type: "string" } },
+        ...repositoryArg,
+      },
+      required: ["paths"],
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: "remember",
+    title: "Record a note for the team",
+    description:
+      "Save something the next person or agent should know: why a choice was made, a trap you hit, how a bug was fixed. Attach it to a file or folder, or leave the path empty for a repository-wide note. Do not store secrets.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "File or folder; empty for the whole repository." },
+        note: { type: "string", description: "Up to 4000 characters." },
+        kind: { type: "string", enum: ["note", "decision", "gotcha", "bug-fix", "convention"] },
+        ...repositoryArg,
+      },
+      required: ["note"],
+    },
+    annotations: { readOnlyHint: false, idempotentHint: false },
+  },
+  {
+    name: "verify_change",
+    title: "Check a change before writing it to disk",
+    description:
+      "Pass the complete new content of every file you changed (content null deletes a file). Nykst checks it against the repository graph: removed or renamed exports still imported elsewhere, changed function signatures vs. their callers, unresolved imports, undeclared packages, new import cycles, syntax errors. Returns a verdict and says what it could not check.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              path: { type: "string" },
+              content: { type: ["string", "null"] },
+            },
+            required: ["path", "content"],
+          },
+        },
+        ...repositoryArg,
+      },
+      required: ["edits"],
+    },
+    annotations: { readOnlyHint: true },
+  },
 ];
 
 export type AnalysisSnapshot = {

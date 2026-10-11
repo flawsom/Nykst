@@ -337,52 +337,110 @@ export const GUIDES: Guide[] = [
         language: "bash",
         code: ({ url, token }) =>
           `curl -s -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${token}" \\\n  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`,
-        note: "A list of five tools means the token and URL are correct.",
+        note: "A list of nine tools means the token and URL are correct.",
       },
     ],
-    verify: "The curl command returns the five tools.",
+    verify: "The curl command returns the nine tools.",
   },
 ];
 
-export type Tool = { name: string; summary: string; example: string };
+export type ToolGroup = { title: string; blurb: string; tools: Tool[] };
+export type Tool = {
+  name: string;
+  summary: string;
+  /** True only for tools that change anything (just `remember`, which adds a note). */
+  writes?: boolean;
+};
 
-export const TOOLS: Tool[] = [
+export const TOOL_GROUPS: ToolGroup[] = [
   {
-    name: "get_impact",
-    summary:
-      "Files, page and API routes, and tests affected by changing the paths you give it, with exact import lines and recent history.",
-    example: "What breaks if I change src/lib/billing.ts?",
+    title: "See what a change will break",
+    blurb: "Read-only questions about the code graph.",
+    tools: [
+      {
+        name: "get_impact",
+        summary:
+          "Files, page and API routes, and tests affected by changing the paths you give it, with exact import lines and recent history.",
+      },
+      {
+        name: "find_usages",
+        summary:
+          "Every file and line that touches a database table, an external service or an environment variable.",
+      },
+      {
+        name: "get_architecture",
+        summary:
+          "Overview of the repository: areas, external services, data, most depended-on files, circular imports.",
+      },
+      { name: "search_files", summary: "Find files by path or exported symbol name." },
+    ],
   },
   {
-    name: "find_usages",
-    summary:
-      "Every file and line that touches a database table, an external service, or an environment variable.",
-    example: "Which code reads or writes the users table?",
+    title: "Know the history",
+    blurb: "What the team and the repository already know.",
+    tools: [
+      {
+        name: "get_memory",
+        summary:
+          "Notes, decisions, gotchas and bug-fix explanations recorded for files or folders. Read before changing code that has a history.",
+      },
+      {
+        name: "get_findings",
+        summary:
+          "Provable problems with file and line evidence: import cycles, unresolved imports, undeclared packages, hot files with no tests, orphaned files.",
+      },
+    ],
   },
   {
-    name: "get_architecture",
-    summary:
-      "Overview of the repo: areas, external services, data, most depended-on files, circular imports.",
-    example: "Give me an overview of this repo's architecture.",
-  },
-  {
-    name: "search_files",
-    summary: "Find files by path or exported symbol name.",
-    example: "Find the file that exports createCheckoutSession.",
-  },
-  {
-    name: "list_repositories",
-    summary: "The repositories you have mapped in Nykst.",
-    example: "Which repositories does Nykst know about?",
+    title: "Check and remember",
+    blurb: "Check an edit before it lands, and leave a note for the next person.",
+    tools: [
+      {
+        name: "verify_change",
+        summary:
+          "Pass the new content of the files you edited. Nykst checks it against the graph for removed exports still in use, changed signatures, unresolved imports, new cycles and syntax errors, and says what it could not check. It does not write anything.",
+      },
+      {
+        name: "remember",
+        writes: true,
+        summary:
+          "Saves a note (a decision, a gotcha, a bug fix) on a file, a folder or the whole repository. This is the only tool that writes, and it only adds a note. Notes can hold no secrets.",
+      },
+    ],
   },
 ];
+
+export const LIST_REPOSITORIES_NOTE =
+  "list_repositories also shows which repositories you have mapped. Your agent calls it when it needs to pick one.";
+
+export const EXAMPLE_PROMPTS = [
+  "Before you change src/lib/auth.ts, use Nykst get_impact and tell me what breaks.",
+  "Which code reads or writes the users table? Use Nykst find_usages.",
+  "Check Nykst get_memory and get_findings for src/lib/billing.ts before editing it.",
+  "After writing the change, run Nykst verify_change on the files you edited and fix anything it reports.",
+];
+
+export const CAN_AND_CANNOT = {
+  can: [
+    "Read the analysis of repositories you mapped: file paths, exports, import connections, history, findings.",
+    "Add notes with remember. Notes are stored in Nykst, and you can see what was added.",
+    "Check proposed edits with verify_change. The check only reports; it saves nothing.",
+  ],
+  cannot: [
+    "Write to your repository, open pull requests or push commits. Nykst's GitHub access is read-only.",
+    "Edit or delete existing notes, or change anything besides adding a note.",
+    "Keep working once you revoke the token. You can revoke any token in step 2.",
+  ],
+};
 
 /** Instruction text that makes agents consult Nykst before editing, for the repo's rules file. */
 export const AGENT_RULES = `## Nykst (code impact)
 Before changing code, use the Nykst MCP tools:
 - Call get_impact with the files you plan to edit. Read the direct importers, the affected routes and the tests it lists.
+- Call get_memory and get_findings for those files, and respect the notes you find.
 - Call find_usages for any database table, external service or environment variable you touch.
-After the change, run the tests Nykst listed and mention anything it flagged in your summary.`;
+After writing the change, call verify_change with the full new content of every file you edited and fix what it reports. Run the tests Nykst listed and mention anything it flagged in your summary.
+If you learn something the next person should know, save it with remember. Never put secrets in a note.`;
 
 export const RULE_FILES = [
   { tool: "Claude Code", file: "CLAUDE.md" },

@@ -77,14 +77,14 @@ export function TokenPanel({ onCreated, token }: Props) {
 
   if (status === "signed-out")
     return (
-      <div className="border-border bg-surface rounded-xl border p-4">
+      <div className="border-border bg-surface rounded-lg border p-4">
         <p className="text-sm">You're not signed in yet.</p>
-        <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
           Connect GitHub and map a repository first, then come back here to create your token.
         </p>
         <Link
           to="/"
-          className="bg-primary text-primary-foreground hover:bg-primary-glow mt-3 inline-block rounded-lg px-4 py-2 text-xs font-semibold"
+          className="bg-primary text-primary-foreground mt-3 inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold hover:opacity-90"
         >
           Connect GitHub
         </Link>
@@ -93,9 +93,9 @@ export function TokenPanel({ onCreated, token }: Props) {
 
   if (status === "error")
     return (
-      <p className="text-sm text-red-400">
+      <p className="text-danger text-sm">
         {message || "Something went wrong."}{" "}
-        <button className="underline" onClick={() => void load()}>
+        <button className="inline-flex min-h-10 items-center underline" onClick={() => void load()}>
           Try again
         </button>
       </p>
@@ -104,15 +104,15 @@ export function TokenPanel({ onCreated, token }: Props) {
   return (
     <div className="space-y-3">
       {token ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <p className="text-xs font-semibold text-amber-300">
+        <div className="border-border bg-warn-soft rounded-lg border p-4">
+          <p className="text-warn text-sm font-semibold">
             Your new token. Copy it now: Nykst can't show it again.
           </p>
-          <div className="border-border bg-background mt-2 flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-            <code className="min-w-0 truncate font-mono text-[12px]">{token}</code>
+          <div className="border-border bg-card mt-2 flex items-center justify-between gap-2 rounded-md border py-0.5 pr-1 pl-3">
+            <code className="min-w-0 truncate font-mono text-sm">{token}</code>
             <CopyButton text={token} />
           </div>
-          <p className="text-muted-foreground mt-2 text-[11px]">
+          <p className="text-muted-foreground mt-2 text-xs">
             The setup snippets below now contain this token.
           </p>
         </div>
@@ -120,7 +120,7 @@ export function TokenPanel({ onCreated, token }: Props) {
         <button
           onClick={() => void create()}
           disabled={busy}
-          className="bg-primary text-primary-foreground hover:bg-primary-glow rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60"
+          className="bg-primary text-primary-foreground inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
         >
           {busy ? "Creating…" : tokens.length ? "Create another token" : "Create access token"}
         </button>
@@ -129,22 +129,22 @@ export function TokenPanel({ onCreated, token }: Props) {
         <button
           onClick={() => void create()}
           disabled={busy}
-          className="text-muted-foreground hover:text-foreground text-[11px] underline disabled:opacity-60"
+          className="text-muted-foreground hover:text-foreground inline-flex min-h-10 items-center text-sm underline disabled:opacity-60"
         >
           Create another token
         </button>
       )}
-      {message && <p className="text-xs text-red-400">{message}</p>}
+      {message && <p className="text-danger text-sm">{message}</p>}
       {tokens.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-muted-foreground text-[11px] font-semibold">Your active tokens</p>
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-sm font-semibold">Your active tokens</p>
           {tokens.map((item) => (
             <div
               key={item.id}
-              className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs"
+              className="border-border bg-card flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border py-1 pr-1 pl-3 text-sm"
             >
               <span className="font-mono">{item.token_prefix}…</span>
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 created {new Date(item.created_at).toLocaleDateString()}
                 {item.last_used_at
                   ? ` · used ${new Date(item.last_used_at).toLocaleDateString()}`
@@ -152,7 +152,8 @@ export function TokenPanel({ onCreated, token }: Props) {
               </span>
               <button
                 onClick={() => void revoke(item.id)}
-                className="text-[11px] text-red-400 hover:underline"
+                aria-label={`Revoke token ${item.token_prefix}`}
+                className="text-danger hover:bg-danger-soft inline-flex min-h-10 items-center rounded-md px-3 text-sm font-medium"
               >
                 Revoke
               </button>

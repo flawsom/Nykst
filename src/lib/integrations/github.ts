@@ -1,3 +1,5 @@
+import { computeFindings, type IssueLike } from "@/lib/analysis/findings";
+import { syncFindings } from "@/lib/memory.server";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
@@ -163,8 +165,6 @@ export type GithubContent = {
   sha: string;
   path: string;
 };
-export type GithubRef = { object: { sha: string } };
-
 export async function githubContent(
   token: string,
   owner: string,
@@ -175,190 +175,6 @@ export async function githubContent(
   return githubFetch<GithubContent>(
     token,
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`,
-  );
-}
-
-export type GithubFileEvidence = {
-  path: string;
-  content?: string;
-  sha?: string;
-  imports: Array<{ target: string; line: number; resolved: boolean }>;
-  dependents: Array<{ path: string; line: number; commitSha: string }>;
-  commits: Array<Record<string, unknown>>;
-  pullRequests: Array<Record<string, unknown>>;
-  coChange: Array<{ path: string; count: number }>;
-  blindSpots: string[];
-};
-
-function importMatches(content: string) {
-  const result: Array<{ target: string; line: number }> = [];
-  const patterns = [
-    /(?:import|export)\s+(?:[^"']+\s+from\s+)?["']([^"']+)["']/g,
-    /require\(\s*["']([^"']+)["']\s*\)/g,
-    /import\(\s*["']([^"']+)["']\s*\)/g,
-  ];
-  for (const pattern of patterns) {
-    for (const match of content.matchAll(pattern)) {
-      result.push({ target: match[1] ?? "", line: content.slice(0, match.index ?? 0).split("\n").length });
-    }
-  }
-  return result;
-}
-
-export async function githubFileEvidence(
-  token: string,
-  owner: string,
-  repo: string,
-  path: string,
-  branch: string,
-): Promise<GithubFileEvidence> {
-  const file = await githubContent(token, owner, repo, path, branch);
-  const content = file.encoding === "base64" && file.content
-    ? Buffer.from(file.content.replace(/\n/g, ""), "base64").toString("utf8")
-    : file.content ?? "";
-  const tree = await githubFetch<{ tree?: GithubFile[] }>(token, `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
-  const paths = new Set((tree.tree ?? []).map((item) => item.path));
-  const resolve = (target: string) => {
-    if (!target.startsWith(".")) return false;
-    const base = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
-    const raw = `${base}${target}`.replace(/^\.\//, "");
-    return [raw, `${raw}.ts`, `${raw}.tsx`, `${raw}.js`, `${raw}.jsx`, `${raw}/index.ts`, `${raw}/index.tsx`].some((candidate) => paths.has(candidate));
-  };
-  const imports = importMatches(content).map((item) => ({ ...item, resolved: resolve(item.target) }));
-  const commits = await paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}`);
-  const commitDetails = await Promise.all(commits.slice(0, 40).map(async (commit) => {
-    const sha = typeof commit["sha"] === "string" ? commit["sha"] : "";
-    if (!sha) return { commit, files: [] as GithubFile[] };
-    try {
-      const detail = await githubFetch<{ files?: GithubFile[] }>(token, `/repos/${owner}/${repo}/commits/${sha}`);
-      return { commit, files: detail.files ?? [] };
-    } catch {
-      return { commit, files: [] as GithubFile[] };
-    }
-  }));
-  const coChangeCounts = new Map<string, number>();
-  for (const detail of commitDetails) {
-    for (const changed of detail.files) {
-      if (!changed.path || changed.path === path) continue;
-      coChangeCounts.set(changed.path, (coChangeCounts.get(changed.path) ?? 0) + 1);
-    }
-  }
-  const recentPrs = await paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/pulls?state=all`);
-  const pullRequests: Record<string, unknown>[] = [];
-  for (const pull of recentPrs.slice(0, 30)) {
-    const number = typeof pull["number"] === "number" ? pull["number"] : null;
-    if (!number) continue;
-    try {
-      const changed = await paginate<GithubFile>(token, `/repos/${owner}/${repo}/pulls/${number}/files`);
-      if (changed.some((item) => item.path === path)) pullRequests.push(pull);
-    } catch {
-      // Keep evidence conservative when GitHub denies a PR file list.
-    }
-  }
-  const candidateDependentPaths = [...new Set(commitDetails.flatMap((detail) => detail.files
-    .map((changed) => changed.path)
-    .filter((changed): changed is string => Boolean(changed && changed !== path))))].slice(0, 60);
-  const dependents: Array<{ path: string; line: number; commitSha: string }> = [];
-  for (const sourcePath of candidateDependentPaths) {
-    try {
-      const source = await githubContent(token, owner, repo, sourcePath, branch);
-      const sourceContent = source.encoding === "base64" && source.content
-        ? Buffer.from(source.content.replace(/\n/g, ""), "base64").toString("utf8")
-        : source.content ?? "";
-      const matches = importMatches(sourceContent).filter((item) => {
-        if (!item.target.startsWith(".")) return false;
-        const base = sourcePath.includes("/") ? sourcePath.slice(0, sourcePath.lastIndexOf("/") + 1) : "";
-        const raw = `${base}${item.target}`.replace(/^\.\//, "");
-        return [raw, `${raw}.ts`, `${raw}.tsx`, `${raw}.js`, `${raw}.jsx`, `${raw}/index.ts`, `${raw}/index.tsx`].includes(path);
-      });
-      for (const match of matches) {
-        const touchingCommit = commitDetails.find((detail) => detail.files.some((changed) => changed.path === sourcePath));
-        dependents.push({ path: sourcePath, line: match.line, commitSha: typeof touchingCommit?.commit["sha"] === "string" ? touchingCommit.commit["sha"] : "" });
-      }
-    } catch {
-      // A dependent's source may be unavailable; do not infer the relationship.
-    }
-  }
-  const blindSpots = [
-    ...imports.filter((item) => item.target.startsWith(".") && !item.resolved).map((item) => `Unresolved import ${item.target} at line ${item.line}`),
-    ...(content.includes("import(") ? ["Dynamic import detected; target resolution may be incomplete."] : []),
-    ...(content.includes("export *") ? ["Re-export detected; complete symbol provenance requires deeper parsing."] : []),
-    ...(candidateDependentPaths.length > dependents.length ? ["Some co-changed files could not be proven to import this file; they are excluded from dependents."] : []),
-  ];
-  return {
-    path, content, sha: file.sha, imports,
-    dependents: [...new Map(dependents.map((item) => [`${item.path}:${item.commitSha}`, item])).values()],
-    commits: commits.slice(0, 40), pullRequests,
-    coChange: [...coChangeCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([changedPath, count]) => ({ path: changedPath, count })),
-    blindSpots: [...new Set(blindSpots)],
-  };
-}
-
-export async function githubBranchSha(token: string, owner: string, repo: string, branch: string) {
-  const ref = await githubFetch<GithubRef>(
-    token,
-    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/ref/heads/${branch.split("/").map(encodeURIComponent).join("/")}`,
-  );
-  return ref.object.sha;
-}
-
-export async function githubCreateBranch(
-  token: string,
-  owner: string,
-  repo: string,
-  branch: string,
-  sha: string,
-) {
-  return githubFetch<{ ref: string }>(token, `/repos/${owner}/${repo}/git/refs`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }),
-  });
-}
-
-export async function githubPutFile(
-  token: string,
-  owner: string,
-  repo: string,
-  path: string,
-  content: string,
-  branch: string,
-  message: string,
-  sha: string,
-) {
-  return githubFetch<{ content?: { html_url?: string }; commit?: { sha?: string } }>(
-    token,
-    `/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`,
-    {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        message,
-        content: Buffer.from(content, "utf8").toString("base64"),
-        branch,
-        sha,
-      }),
-    },
-  );
-}
-
-export async function githubCreatePullRequest(
-  token: string,
-  owner: string,
-  repo: string,
-  title: string,
-  body: string,
-  head: string,
-  base: string,
-) {
-  return githubFetch<{ html_url: string; number: number; title: string }>(
-    token,
-    `/repos/${owner}/${repo}/pulls`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body, head, base }),
-    },
   );
 }
 
@@ -436,11 +252,20 @@ async function paginate<T>(token: string, path: string): Promise<T[]> {
   return result;
 }
 
-export async function ingestGithubRepository(token: string, owner: string, repo: string) {
+export type IngestStage = "repository" | "listing" | "source" | "history" | "findings" | "saving";
+
+export async function ingestGithubRepository(
+  token: string,
+  owner: string,
+  repo: string,
+  progress: (stage: IngestStage, detail?: string) => void = () => undefined,
+) {
+  progress("repository");
   const repository = await githubFetch<GithubRepo>(
     token,
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
   );
+  progress("listing");
   const [files, commits, branches, pullRequests, issues, contributors] = await Promise.all([
     githubFetch<{ tree?: GithubFile[] }>(
       token,
@@ -459,11 +284,16 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/issues?state=all`),
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/contributors`),
   ]);
+  progress("source", `${files.length} files`);
   const [source, history] = await Promise.all([
     analyzeRepositorySource(token, owner, repo, repository.default_branch),
-    buildRepositoryHistory(token, owner, repo, commits, pullRequests),
+    buildRepositoryHistory(token, owner, repo, commits, pullRequests, (kind, done, total) =>
+      progress("history", `${kind === "commits" ? "commit" : "pull request"} ${done} of ${total}`),
+    ),
   ]);
   const { analysis, dependency_graph } = source;
+  progress("findings");
+  const findings = computeFindings(analysis, history, issues as unknown as IssueLike[]);
   const validation_profile = await buildValidationProfile(
     token,
     owner,
@@ -494,6 +324,7 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     validation_profile,
     analysis,
     history,
+    findings,
     summary: {
       file_count: files.length,
       commit_count: commits.length,
@@ -667,6 +498,17 @@ export async function saveIngestion(
     .select("id")
     .single();
   if (error) throw new Error(`Could not save ingestion: ${error.message}`);
+  // Track which findings are new, fixed or came back. Never fail an analysis over it.
+  try {
+    await syncFindings(
+      String(user.id),
+      payload.repository.full_name,
+      payload.findings,
+      payload.analysis.ref,
+    );
+  } catch (syncError) {
+    console.error("Finding history was not updated:", syncError);
+  }
   return data.id;
 }
 

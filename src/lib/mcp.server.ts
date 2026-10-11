@@ -2,6 +2,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runAnalysisTool, str, TOOLS, type AnalysisSnapshot } from "@/lib/analysis/tools";
 import type { RepoAnalysis, RepoHistory } from "@/lib/analysis/types";
+import { computeFindings, findingsForPaths } from "@/lib/analysis/findings";
+import { cleanMemoryPath, isMemoryKind } from "@/lib/analysis/memory-match";
+import { verifyChange } from "@/lib/analysis/verify.server";
+import { addMemory, listMemory } from "@/lib/memory.server";
 
 /**
  * A stateless Model Context Protocol server (streamable HTTP, JSON responses) that
@@ -74,7 +78,7 @@ async function userForToken(request: Request) {
   return data;
 }
 
-async function loadSnapshot(userId: string, repository?: string): Promise<AnalysisSnapshot> {
+export async function loadSnapshot(userId: string, repository?: string): Promise<AnalysisSnapshot> {
   let query = supabaseAdmin
     .from("repository_ingestions")
     .select("repository_full_name, created_at, payload")
@@ -121,10 +125,78 @@ async function listRepositories(userId: string) {
 
 /* --------------------------------- tools --------------------------------- */
 
+const pathList = (value: unknown) =>
+  (Array.isArray(value) ? value : [value]).map(str).map(cleanMemoryPath).filter(Boolean);
+
 async function callTool(userId: string, name: string, args: Record<string, unknown>) {
   if (name === "list_repositories") return { repositories: await listRepositories(userId) };
   const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
-  return runAnalysisTool(snapshot, name, args);
+  const repository = snapshot.repository_full_name;
+
+  if (name === "get_findings") {
+    const all = computeFindings(snapshot.analysis, snapshot.history);
+    const paths = pathList(args["paths"]);
+    const wanted = paths.length
+      ? findingsForPaths(
+          all,
+          snapshot.analysis.files
+            .map((file) => file.path)
+            .filter((file) => paths.some((path) => file === path || file.startsWith(`${path}/`))),
+        )
+      : all;
+    return {
+      repository,
+      total: all.length,
+      shown: Math.min(wanted.length, 60),
+      findings: wanted.slice(0, 60),
+    };
+  }
+
+  if (name === "get_memory") {
+    const paths = pathList(args["paths"]);
+    if (!paths.length) throw new Error("Pass at least one path.");
+    return { repository, notes: await listMemory(userId, repository, paths) };
+  }
+
+  if (name === "remember") {
+    const note = await addMemory(userId, repository, {
+      path: cleanMemoryPath(args["path"]),
+      kind: isMemoryKind(args["kind"]) ? args["kind"] : "note",
+      body: str(args["note"]),
+      source: "agent",
+      commitSha: snapshot.analysis.ref,
+    });
+    return { saved: true, note };
+  }
+
+  if (name === "verify_change") {
+    const raw = Array.isArray(args["edits"]) ? (args["edits"] as Record<string, unknown>[]) : [];
+    if (!raw.length) throw new Error("Pass at least one edit.");
+    const edits = raw.map((item) => {
+      const path = cleanMemoryPath(item["path"]);
+      const content = item["content"];
+      if (!path || (content !== null && typeof content !== "string"))
+        throw new Error(
+          "Every edit needs a path and the complete new content (or null to delete).",
+        );
+      return { path, content: content as string | null };
+    });
+    return { repository, ...(await verifyChange(snapshot.analysis, edits)) };
+  }
+
+  const result = runAnalysisTool(snapshot, name, args) as Record<string, unknown>;
+  if (name === "get_impact" && Array.isArray(result["files"])) {
+    // The team's notes and open problems for the files you are about to touch.
+    const targets = (result["files"] as { path: string }[]).map((file) => file.path);
+    const requested = pathList(args["paths"]);
+    const notes = await listMemory(userId, repository, [...requested, ...targets]).catch(() => []);
+    const findings = findingsForPaths(
+      computeFindings(snapshot.analysis, snapshot.history),
+      targets,
+    );
+    return { ...result, memory: notes.slice(0, 20), findings: findings.slice(0, 15) };
+  }
+  return result;
 }
 
 /* ------------------------------ JSON-RPC layer ----------------------------- */
@@ -156,7 +228,7 @@ async function handleMessage(userId: string, message: RpcRequest) {
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          "Nykst holds a compiler-based map of the user's repository. Before changing code, call get_impact with the files you plan to edit and check the listed dependents, entry points and tests. Use find_usages for database tables, external services and environment variables.",
+          "Nykst holds a compiler-based map of the user's repository. Before changing code, call get_impact with the files you plan to edit and check the listed dependents, entry points, tests, team notes and open findings. After writing a change, call verify_change with the complete new files before telling the user it is done. Use remember to leave a note for the next person when you learn why something is the way it is. Use find_usages for database tables, external services and environment variables.",
       });
     }
     case "ping":
