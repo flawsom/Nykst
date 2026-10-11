@@ -87,7 +87,12 @@ export const demoApi: WorkspaceApi = (() => {
     deleteNote: unavailable,
     findingStates: () => Promise.resolve([]),
     setDismissed: unavailable,
-    verify: unavailable,
+    verify: async (edits) =>
+      (
+        (await post("/api/demo/verify", { edits })) as {
+          report: Awaited<ReturnType<WorkspaceApi["verify"]>>;
+        }
+      ).report,
     generate: unavailable,
   };
 })();

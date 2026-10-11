@@ -182,7 +182,7 @@ function DescribeMode() {
             maxLength={MAX_TASK}
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            placeholder="Make createInvoice accept an optional currency and default to USD"
+            placeholder="Describe the change in a sentence or two"
             className={fieldClass}
           />
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -222,10 +222,12 @@ interface Draft {
   remove: boolean;
 }
 
-function CheckMode() {
+function CheckMode({ initial, autoRun }: { initial?: Draft[]; autoRun?: boolean }) {
   const { api } = useWorkspace();
-  const nextId = useRef(1);
-  const [drafts, setDrafts] = useState<Draft[]>([{ id: 0, path: "", content: "", remove: false }]);
+  const nextId = useRef((initial?.length ?? 0) + 1);
+  const [drafts, setDrafts] = useState<Draft[]>(
+    initial ?? [{ id: 0, path: "", content: "", remove: false }],
+  );
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<VerifyReport | null>(null);
@@ -265,6 +267,11 @@ function CheckMode() {
     }
   }
 
+  useEffect(() => {
+    if (autoRun) void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="space-y-5">
       <p className="text-muted-foreground text-sm">
@@ -295,7 +302,7 @@ function CheckMode() {
                       type="text"
                       value={d.path}
                       onChange={(e) => patch(d.id, { path: e.target.value })}
-                      placeholder="src/lib/invoice.ts"
+                      placeholder="Path from the repository root"
                       aria-invalid={Boolean(problem)}
                       className={cn(fieldClass, "mt-1 min-h-10 font-mono")}
                     />
@@ -397,38 +404,25 @@ function CheckMode() {
 
 /* ----------------------------------- demo ----------------------------------- */
 
-function RecordedExample() {
+/** The demo runs the real checker on the example repository; you edit the file yourself. */
+function DemoCheck() {
   const { data } = useWorkspace();
-  const rec = data.recorded;
-  if (!rec)
-    return (
-      <EmptyState title="Describing a change needs a connected repository">
-        Connect your own repository and Nykst will write a change, then check it against the real
-        import graph.
-      </EmptyState>
-    );
+  const file = data.recorded?.files[0];
+  const initial: Draft[] | undefined =
+    file && file.after !== null
+      ? [{ id: 0, path: file.path, content: file.after, remove: false }]
+      : undefined;
   return (
     <div className="space-y-5">
-      <div className="border-info/30 bg-info-soft text-foreground rounded-xl border p-4 text-sm">
-        <Badge tone="info">Recorded example</Badge>
-        <p className="mt-2">
-          This is a real result computed by Nykst&apos;s checker on this repository for the change
-          below. Connect your own repository to describe changes and get them checked live.
+      <div className="border-info/30 bg-info-soft rounded-xl border p-4 text-sm">
+        <Badge tone="info">Live on the example repository</Badge>
+        <p className="mt-2 leading-relaxed">
+          This runs Nykst&apos;s real checker against {data.repository}. The file below has an
+          exported function renamed; edit it or paste any other file and press Check. Writing a
+          change with AI needs your own connected repository.
         </p>
       </div>
-      <div>
-        <h2 className="text-lg font-semibold">{rec.title}</h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{rec.description}</p>
-      </div>
-      <ReportBody report={rec.report} />
-      <DiffList files={rec.files} />
-      {rec.patch && <PatchActions patch={rec.patch} />}
-      <Transparency
-        checked={rec.report.checked}
-        notChecked={rec.report.notChecked}
-        basis={rec.report.basis}
-        open={rec.report.verdict !== "clear"}
-      />
+      <CheckMode {...(initial ? { initial, autoRun: true } : {})} />
     </div>
   );
 }
@@ -441,7 +435,7 @@ export function ChangeView() {
   if (!canWrite)
     return (
       <div className="mx-auto max-w-3xl p-4 sm:p-6">
-        <RecordedExample />
+        <DemoCheck />
       </div>
     );
   const tabs: { id: Mode; label: string }[] = [
