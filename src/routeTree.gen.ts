@@ -27,6 +27,7 @@ import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
+import { Route as ApiDemoVerifyRouteImport } from './routes/api.demo.verify'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
@@ -128,6 +129,11 @@ const ApiAiTestRoute = ApiAiTestRouteImport.update({
   path: '/api/ai/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDemoVerifyRoute = ApiDemoVerifyRouteImport.update({
+  id: '/api/demo/verify',
+  path: '/api/demo/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/demo/verify': typeof ApiDemoVerifyRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/demo/verify': typeof ApiDemoVerifyRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/demo/verify': typeof ApiDemoVerifyRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/demo/verify'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/demo/verify'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/demo/verify'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -390,6 +402,7 @@ export interface RootRouteChildren {
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
+  ApiDemoVerifyRoute: typeof ApiDemoVerifyRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
@@ -529,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/demo/verify': {
+      id: '/api/demo/verify'
+      path: '/api/demo/verify'
+      fullPath: '/api/demo/verify'
+      preLoaderRoute: typeof ApiDemoVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/subscription/admin': {
       id: '/api/subscription/admin'
       path: '/admin'
@@ -633,6 +653,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
+  ApiDemoVerifyRoute: ApiDemoVerifyRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
