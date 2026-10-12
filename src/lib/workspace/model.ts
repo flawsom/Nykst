@@ -35,7 +35,7 @@ export interface WorkspaceData {
   recorded?: RecordedChange;
 }
 
-export type WorkspaceView = "map" | "findings" | "activity" | "change";
+export type WorkspaceView = "map" | "findings" | "activity" | "pulls" | "change";
 
 /** The stored snapshot as the API returns it. */
 export interface StoredSnapshot {
