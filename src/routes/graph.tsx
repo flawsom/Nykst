@@ -1,476 +1,481 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  Bot,
-  FileCode2,
-  GitPullRequestArrow,
-  Network,
-  PanelRight,
-  RefreshCw,
-  Search,
-} from "lucide-react";
-import { ActivityView } from "@/components/workspace/ActivityView";
-import { ChangeView } from "@/components/workspace/ChangeView";
-import { CommandPalette } from "@/components/workspace/CommandPalette";
-import { Explorer } from "@/components/workspace/Explorer";
-import { FreshnessBanner } from "@/components/workspace/FreshnessBanner";
-import { PullRequestsView } from "@/components/workspace/PullRequestsView";
-import { FindingsView } from "@/components/workspace/FindingsView";
-import { IngestProgress } from "@/components/workspace/IngestProgress";
-import { Inspector } from "@/components/workspace/Inspector";
-import { MapView } from "@/components/workspace/MapView";
-import { WorkspaceProvider } from "@/components/workspace/WorkspaceContext";
-import { Badge, EmptyState, Kbd, Spinner, buttonClass } from "@/components/workspace/ui";
-import { Wordmark } from "@/components/site/SiteHeader";
+import { useEffect, useMemo, useState } from "react";
+import { GraphCanvas } from "@/components/graph/GraphCanvas";
+import { MentorPanel } from "@/components/graph/MentorPanel";
+import { NodeInspector } from "@/components/graph/NodeInspector";
+import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
 import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
-import { cn } from "@/lib/utils";
-import { createWorkspaceApi, demoApi } from "@/lib/workspace/api-client";
-import { runIngest, type IngestStageId } from "@/lib/workspace/ingest-client";
+import { OnboardingTour } from "@/components/graph/OnboardingTour";
+import { TreePanel } from "@/components/graph/TreePanel";
+import { canView, useRole } from "@/lib/access";
+import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
 import {
-  timeAgo,
-  toWorkspace,
-  type SnapshotResult,
-  type StoredSnapshot,
-  type WorkspaceView,
-} from "@/lib/workspace/model";
+  buildRepositoryGraph,
+  traceRepositoryProblems,
+  type RepositorySnapshot,
+} from "@/lib/repository-graph";
+import { X } from "lucide-react";
 
-const VIEWS: WorkspaceView[] = ["map", "findings", "activity", "pulls", "change"];
+type IngestionSnapshot = {
+  repository_full_name: string;
+  created_at: string;
+  payload: RepositorySnapshot;
+};
 
 export const Route = createFileRoute("/graph")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    demo: search["demo"] === 1 || search["demo"] === "1" ? (1 as const) : undefined,
-    file: typeof search["file"] === "string" ? search["file"] : undefined,
-    view: VIEWS.includes(search["view"] as WorkspaceView)
-      ? (search["view"] as WorkspaceView)
-      : undefined,
-  }),
   head: () => ({
     meta: [
-      { title: "Workspace — Nykst" },
+      { title: "Software Graph & Navigator — Nykst" },
       {
         name: "description",
         content:
-          "Explore a repository's real import graph, see the blast radius of any file, review findings and check changes before they land.",
+          "Navigate your organization's software graph: drill from core domains into capabilities, services, modules and individual files, with dependencies and blast radius.",
       },
+      { property: "og:title", content: "Software Graph & Navigator — Nykst" },
+      {
+        property: "og:description",
+        content: "Drill from core domains down to a single file, one click at a time.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: WorkspacePage,
+  component: GraphPage,
 });
 
-type Load =
-  | { state: "loading" }
-  | { state: "signed-out" }
-  | { state: "empty" }
-  | { state: "error"; message: string }
-  | { state: "ready"; result: SnapshotResult };
+function GraphPage() {
+  const [orgSlug, setOrgSlug] = useState("acme");
+  const [provider, setProvider] = useState("github");
+  const [pathIds, setPathIds] = useState<string[]>([]);
+  const [selected, setSelected] = useState<GraphNode | null>(null);
+  const [dossier, setDossier] = useState<GraphNode | null>(null);
+  const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
+  const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
+  const [softModal, setSoftModal] = useState<"premium" | null>(null);
+  const [aiToolsOpen, setAiToolsOpen] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
 
-function WorkspacePage() {
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const demo = search.demo === 1;
-  const [load, setLoad] = useState<Load>({ state: "loading" });
-  const [reanalyzing, setReanalyzing] = useState<string | null>(null);
-
-  const fetchSnapshot = useCallback(async () => {
-    setLoad({ state: "loading" });
+  const reanalyze = async () => {
+    const [owner, repo] = (snapshot?.repository_full_name ?? "").split("/");
+    if (!owner || !repo) return;
+    setReanalyzing(true);
+    setReanalyzeError(null);
     try {
-      if (demo) {
-        const response = await fetch("/demo/snapshot.json");
-        if (!response.ok) throw new Error("The example could not be loaded.");
-        const snapshot = (await response.json()) as StoredSnapshot;
-        setLoad({ state: "ready", result: toWorkspace(snapshot, "demo") });
-        return;
-      }
-      const response = await fetch("/api/integrations/github/latest");
-      if (response.status === 401) return setLoad({ state: "signed-out" });
-      if (!response.ok) throw new Error("Could not load your analysis.");
-      const body = (await response.json()) as { ingestion?: StoredSnapshot | null };
-      if (!body.ingestion) return setLoad({ state: "empty" });
-      setLoad({ state: "ready", result: toWorkspace(body.ingestion, "github") });
-    } catch (error) {
-      setLoad({
-        state: "error",
-        message: error instanceof Error ? error.message : "Something went wrong.",
+      const response = await fetch("/api/integrations/github/ingest", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ owner, repo }),
       });
+      const payload = (await response.json()) as { error?: string } & RepositorySnapshot;
+      if (!response.ok) throw new Error(payload.error ?? "Analysis failed.");
+      const { ingestionId: _id, ...rest } = payload as RepositorySnapshot & {
+        ingestionId?: string;
+      };
+      setSnapshot({
+        repository_full_name: snapshot!.repository_full_name,
+        created_at: new Date().toISOString(),
+        payload: rest,
+      });
+      setPathIds([]);
+      setSelected(null);
+    } catch (error) {
+      setReanalyzeError(error instanceof Error ? error.message : "Analysis failed.");
+    } finally {
+      setReanalyzing(false);
     }
-  }, [demo]);
+  };
 
   useEffect(() => {
-    void fetchSnapshot();
-  }, [fetchSnapshot]);
+    if (typeof window === "undefined") return;
+    const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+    setDemoMode(isDemo);
+    if (isDemo) {
+      setOrgSlug("acme");
+      setProvider("demo");
+      setSnapshot(null);
+      return;
+    }
 
-  if (reanalyzing)
-    return (
-      <Centered>
-        <ReanalyzeRun
-          repository={reanalyzing}
-          onDone={() => {
-            setReanalyzing(null);
-            void fetchSnapshot();
-          }}
-          onCancel={() => setReanalyzing(null)}
-        />
-      </Centered>
-    );
-
-  if (load.state === "loading")
-    return (
-      <Centered>
-        <Spinner label="Loading your analysis…" />
-      </Centered>
-    );
-  if (load.state === "signed-out")
-    return (
-      <Centered>
-        <EmptyState
-          title="Connect GitHub to open your workspace"
-          action={
-            <Link to="/" className={buttonClass.primary}>
-              Go to connect
-            </Link>
-          }
-        >
-          Nykst needs read access to a repository to build its graph. You can also look around the
-          example first.
-        </EmptyState>
-        <a href="/graph?demo=1" className="text-primary text-sm font-medium hover:underline">
-          Open the example workspace
-        </a>
-      </Centered>
-    );
-  if (load.state === "empty")
-    return (
-      <Centered>
-        <EmptyState
-          title="No repository analyzed yet"
-          action={
-            <Link to="/" className={buttonClass.primary}>
-              Choose a repository
-            </Link>
-          }
-        >
-          Pick a repository on the home page and Nykst will analyze it. It takes a minute or two.
-        </EmptyState>
-      </Centered>
-    );
-  if (load.state === "error")
-    return (
-      <Centered>
-        <EmptyState
-          title="Could not open the workspace"
-          action={
-            <button onClick={() => void fetchSnapshot()} className={buttonClass.primary}>
-              Try again
-            </button>
-          }
-        >
-          {load.message}
-        </EmptyState>
-      </Centered>
-    );
-
-  const { result } = load;
-  if (!result.ok)
-    return (
-      <Centered>
-        <EmptyState
-          title={
-            result.reason === "outdated"
-              ? "This analysis is out of date"
-              : "This repository needs a fresh analysis"
-          }
-          action={
-            <button
-              onClick={() => setReanalyzing(result.repository)}
-              className={buttonClass.primary}
-            >
-              <RefreshCw className="size-4" aria-hidden /> Analyze {result.repository}
-            </button>
-          }
-        >
-          {result.reason === "outdated"
-            ? "Nykst's analysis has improved since this repository was analyzed (call sites, signatures, findings). Analyze it again to use the new features."
-            : "The stored snapshot has no code analysis. Analyze it to see the graph."}
-        </EmptyState>
-      </Centered>
-    );
-
-  return (
-    <Workspace
-      key={result.data.repository + result.data.createdAt}
-      data={result.data}
-      file={search.file ?? null}
-      view={search.view ?? "map"}
-      onNavigate={(next) =>
-        void navigate({
-          search: (previous) => ({ ...previous, ...next }),
-          replace: false,
-        })
-      }
-      onReanalyze={() => setReanalyzing(result.data.repository)}
-    />
-  );
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="bg-background flex min-h-screen flex-col items-center justify-center gap-4 p-6">
-      {children}
-    </main>
-  );
-}
-
-function ReanalyzeRun({
-  repository,
-  onDone,
-  onCancel,
-}: {
-  repository: string;
-  onDone(): void;
-  onCancel(): void;
-}) {
-  const [stage, setStage] = useState<IngestStageId | null>(null);
-  const [detail, setDetail] = useState<string | undefined>();
-  const [error, setError] = useState<string | null>(null);
-  const [complete, setComplete] = useState(false);
-  const started = useRef(false);
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const [owner, repo] = repository.split("/");
-    runIngest(owner!, repo!, (update) => {
-      setStage(update.stage);
-      setDetail(update.detail);
-    })
-      .then(() => {
-        setComplete(true);
-        window.setTimeout(onDone, 600);
+    let active = true;
+    const stored = localStorage.getItem("nykst.org");
+    const p = localStorage.getItem("nykst.provider");
+    if (stored) setOrgSlug(stored);
+    if (p) setProvider(p);
+    fetch("/api/integrations/github/latest")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
+        return payload.ingestion ?? null;
       })
-      .catch((failure: Error) => setError(failure.message));
-  }, [repository, onDone]);
+      .then((ingestion) => active && setSnapshot(ingestion))
+      .catch(() => active && setSnapshot(null));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => {
+      const state = window.history.state as { nykstPath?: string[] } | null;
+      setPathIds(Array.isArray(state?.nykstPath) ? state.nykstPath : []);
+      setSelected(null);
+    };
+    window.history.replaceState({ nykstPath: pathIds }, "", window.location.href);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const root = useMemo(
+    () => (snapshot ? buildRepositoryGraph(snapshot.payload) : getOrg(orgSlug)),
+    [orgSlug, snapshot],
+  );
+  const problems = useMemo(
+    () => (snapshot ? traceRepositoryProblems(snapshot.payload) : []),
+    [snapshot],
+  );
+
+  const path = useMemo(() => {
+    const out: GraphNode[] = [root];
+    for (const id of pathIds) {
+      const parent = out[out.length - 1]!;
+      const next = childrenOf(parent).find((c) => c.id === id);
+      if (!next) break;
+      out.push(next);
+    }
+    return out;
+  }, [root, pathIds]);
+
+  const role = useRole();
+  const center = path[path.length - 1]!;
+  const allChildren = useMemo(() => childrenOf(center), [center]);
+  const centerChildren = useMemo(
+    () => allChildren.filter((n) => canView(role, n)),
+    [allChildren, role],
+  );
+  const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
+
+  const drill = (node: GraphNode) => {
+    if (node.expandable) {
+      const nextPath = [...pathIds, node.id];
+      window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+      setPathIds(nextPath);
+      setSelected(null);
+    } else {
+      setSelected(node);
+    }
+  };
+
+  const jumpTo = (node: GraphNode) => {
+    const chain: string[] = [];
+    let cursor: GraphNode = root;
+    while (cursor.id !== node.id) {
+      const next = childrenOf(cursor).find((c) => node.id.startsWith(c.id));
+      if (!next) break;
+      chain.push(next.id);
+      cursor = next;
+    }
+    if (node.expandable) {
+      window.history.pushState({ nykstPath: chain }, "", window.location.href);
+      setPathIds(chain);
+      setSelected(null);
+    } else {
+      const nextPath = chain.slice(0, -1);
+      window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+      setPathIds(nextPath);
+      setSelected(node);
+    }
+  };
+
+  const childKind = (centerChildren[0]?.kind ?? "file") as GraphNode["kind"];
+  const inspected = selected ?? center;
+
   return (
-    <>
-      <IngestProgress
-        repository={repository}
-        stage={stage}
-        detail={detail}
-        complete={complete}
-        error={error}
-      />
-      {error && (
-        <button onClick={onCancel} className={buttonClass.secondary}>
-          Back
-        </button>
-      )}
-    </>
-  );
-}
-
-const VIEW_META: Record<WorkspaceView, { label: string; icon: typeof Network }> = {
-  map: { label: "Map", icon: Network },
-  findings: { label: "Findings", icon: AlertTriangle },
-  activity: { label: "Activity", icon: Activity },
-  pulls: { label: "Pull requests", icon: GitPullRequestArrow },
-  change: { label: "Change", icon: FileCode2 },
-};
-
-type Pane = "files" | "main" | "inspector";
-
-function Workspace(props: {
-  data: Extract<SnapshotResult, { ok: true }>["data"];
-  file: string | null;
-  view: WorkspaceView;
-  onNavigate(next: { file?: string | undefined; view?: WorkspaceView | undefined }): void;
-  onReanalyze(): void;
-}) {
-  const { data, onNavigate } = props;
-  const known = useMemo(() => new Set(data.analysis.files.map((file) => file.path)), [data]);
-  const selected = props.file && known.has(props.file) ? props.file : null;
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [agentsOpen, setAgentsOpen] = useState(false);
-  const [pane, setPane] = useState<Pane>("main");
-  const select = useCallback(
-    (path: string | null) => {
-      onNavigate({ file: path ?? undefined });
-      if (path) setPane((current) => (current === "files" ? "main" : current));
-    },
-    [onNavigate],
-  );
-  const setView = useCallback(
-    (view: WorkspaceView) => {
-      onNavigate({ view });
-      setPane("main");
-    },
-    [onNavigate],
-  );
-  const api = useMemo(
-    () => (data.source === "demo" ? demoApi : createWorkspaceApi(data.repository)),
-    [data.source, data.repository],
-  );
-  const openFindings = data.findings.length;
-
-  return (
-    <WorkspaceProvider
-      data={data}
-      selected={selected}
-      select={select}
-      view={props.view}
-      setView={setView}
-      api={api}
-    >
-      <div className="bg-background flex h-screen flex-col">
-        <header className="border-border flex shrink-0 items-center gap-3 border-b px-3 py-2 sm:px-4">
-          <Wordmark />
-          <span className="text-border" aria-hidden>
-            /
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate font-mono text-sm font-medium">{data.repository}</span>
-              {data.source === "demo" && <Badge tone="info">Example</Badge>}
-            </div>
-            <p className="text-muted-foreground truncate text-xs">
-              {data.analysis.stats.analyzedFiles.toLocaleString("en-US")} files at{" "}
-              <span className="font-mono">{data.analysis.ref.slice(0, 7)}</span> · analyzed{" "}
-              {timeAgo(data.createdAt)}
-            </p>
-          </div>
-          <button
-            onClick={() => setPaletteOpen(true)}
-            className={cn(buttonClass.secondary, "hidden sm:inline-flex")}
-            aria-label="Go to file"
+    <main className="bg-background flex min-h-screen flex-col overflow-hidden lg:h-screen">
+      <header className="border-border flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/"
+            className="border-border bg-surface text-muted-foreground hover:bg-surface-2 hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg border transition-colors"
+            aria-label="Return to opening dashboard"
+            title="Return to opening dashboard"
           >
-            <Search className="size-4" aria-hidden /> Go to file <Kbd>⌘K</Kbd>
-          </button>
-          <button
-            onClick={() => setPaletteOpen(true)}
-            className={cn(buttonClass.ghost, "sm:hidden")}
-            aria-label="Go to file"
-          >
-            <Search className="size-4" aria-hidden />
-          </button>
-          {data.source === "github" && (
-            <>
-              <button onClick={() => setAgentsOpen(true)} className={buttonClass.secondary}>
-                <Bot className="size-4" aria-hidden />
-                <span className="hidden md:inline">Connect AI tools</span>
-              </button>
-              <button
-                onClick={props.onReanalyze}
-                className={buttonClass.ghost}
-                aria-label="Analyze again"
-              >
-                <RefreshCw className="size-4" aria-hidden />
-                <span className="hidden lg:inline">Re-analyze</span>
-              </button>
-            </>
-          )}
-          {data.source === "demo" && (
-            <Link to="/" className={buttonClass.primary}>
-              Use your repository
-            </Link>
-          )}
-        </header>
-
-        <FreshnessBanner onReanalyze={props.onReanalyze} />
-        <div className="flex min-h-0 flex-1">
-          <aside
-            aria-label="Files"
-            className={cn(
-              "border-border bg-surface min-h-0 w-full shrink-0 border-r lg:block lg:w-72 xl:w-80",
-              pane === "files" ? "block" : "hidden",
-            )}
-          >
-            <Explorer />
-          </aside>
-
-          <main
-            className={cn("min-w-0 flex-1 flex-col lg:flex", pane === "main" ? "flex" : "hidden")}
-          >
-            <div
-              role="tablist"
-              aria-label="Views"
-              className="border-border flex shrink-0 gap-1 overflow-x-auto border-b px-3 pt-2"
-            >
-              {VIEWS.map((id) => {
-                const { label, icon: Icon } = VIEW_META[id];
-                const active = props.view === id;
-                return (
-                  <button
-                    key={id}
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setView(id)}
-                    className={cn(
-                      "-mb-px inline-flex min-h-10 items-center gap-2 border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors",
-                      active
-                        ? "border-primary text-foreground"
-                        : "text-muted-foreground hover:text-foreground border-transparent",
-                    )}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    {label}
-                    {id === "findings" && openFindings > 0 && (
-                      <span className="bg-muted text-muted-foreground tabular rounded-full px-1.5 text-xs">
-                        {openFindings}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-              {props.view === "map" && <MapView />}
-              {props.view === "findings" && <FindingsView />}
-              {props.view === "activity" && <ActivityView />}
-              {props.view === "pulls" && <PullRequestsView />}
-              {props.view === "change" && <ChangeView />}
-            </div>
-          </main>
-
-          <aside
-            aria-label="Inspector"
-            className={cn(
-              "border-border bg-surface min-h-0 w-full shrink-0 border-l lg:w-[22rem] xl:w-96",
-              // With nothing selected the inspector is empty, so the map gets the room.
-              selected ? "lg:block" : "lg:hidden",
-              pane === "inspector" ? "block" : "hidden",
-            )}
-          >
-            <Inspector />
-          </aside>
+            <X className="size-4" />
+          </Link>
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="glow-ring bg-primary block size-2 rounded-full" />
+            <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
+          </Link>
         </div>
 
-        <nav
-          aria-label="Panels"
-          className="border-border bg-surface grid shrink-0 grid-cols-3 border-t lg:hidden"
-        >
-          {(
-            [
-              ["files", "Files", FileCode2],
-              ["main", VIEW_META[props.view].label, Network],
-              ["inspector", selected ? "Inspector" : "Inspector", PanelRight],
-            ] as const
-          ).map(([id, label, Icon]) => (
-            <button
-              key={id}
-              onClick={() => setPane(id)}
-              aria-current={pane === id ? "page" : undefined}
-              className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                pane === id ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <Icon className="size-5" aria-hidden />
-              {label}
-            </button>
+        <nav className="order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5 text-sm sm:order-none sm:w-auto sm:flex-1 sm:gap-2.5">
+          {path.map((node, i) => (
+            <span key={node.id} className="flex shrink-0 items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground/60 px-1 text-xs">/</span>}
+              <button
+                onClick={() => {
+                  const nextPath = pathIds.slice(0, i);
+                  window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
+                  setPathIds(nextPath);
+                  setSelected(null);
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  i === path.length - 1
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {node.label}
+              </button>
+            </span>
           ))}
         </nav>
+
+        <div className="order-2 flex w-full items-center gap-2 overflow-x-auto sm:order-none sm:w-auto sm:gap-3">
+          <button
+            onClick={() => setBeforeYouActOpen(true)}
+            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Before You Act <span aria-hidden="true">→</span>
+          </button>
+          {snapshot && (
+            <button
+              onClick={() => setAiToolsOpen(true)}
+              className="border-border bg-surface text-foreground hover:bg-surface-2 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              Connect AI tools
+            </button>
+          )}
+          <button
+            onClick={() => setSoftModal("premium")}
+            className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Premium
+          </button>
+          <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
+            {snapshot ? snapshot.repository_full_name : `${orgSlug} · ${provider}`}
+          </span>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
+        <TreePanel
+          root={root}
+          openIds={openIds}
+          activeId={inspected.id}
+          onSelect={jumpTo}
+          visible={(n) => canView(role, n)}
+        />
+
+        <section className="flex min-h-[calc(100vh-150px)] min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5 md:min-h-0">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
+                {demoMode ? "Demo thesis system map" : kindLabel[center.kind]}
+              </span>
+              <h1 className="text-2xl font-bold tracking-tight mt-0.5">{center.label}</h1>
+            </div>
+          </div>
+
+          {center.summary && (
+            <p className="text-muted-foreground mt-1.5 max-w-2xl text-[12px] leading-relaxed">
+              {center.summary}
+            </p>
+          )}
+
+          {center.metrics && (
+            <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+              {center.metrics.map((m) => (
+                <div key={m.label} className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-semibold">{m.value}</span>
+                  <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
+                    {m.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!snapshot && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[12px]">
+              <p className="font-semibold text-amber-400">Sample data</p>
+              <p className="text-muted-foreground mt-1">
+                This is a generated example organization, not a real system. Connect GitHub from the{" "}
+                <Link to="/" className="text-primary underline">
+                  dashboard
+                </Link>{" "}
+                to map your own repository.
+              </p>
+            </div>
+          )}
+
+          {snapshot && (
+            <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
+                    Live repository intelligence
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-mono text-[10px]">
+                    analyzed {new Date(snapshot.created_at).toLocaleString()}
+                  </span>
+                  <button
+                    onClick={reanalyze}
+                    disabled={reanalyzing}
+                    className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 rounded-lg border px-3 py-1 text-[11px] font-semibold disabled:opacity-60"
+                  >
+                    {reanalyzing ? "Analyzing…" : "Re-analyze"}
+                  </button>
+                </div>
+              </div>
+              {reanalyzeError && <p className="mt-2 text-[11px] text-red-400">{reanalyzeError}</p>}
+              {snapshot.payload.analysis ? (
+                <p className="text-muted-foreground mt-2 text-[11px]">
+                  Parsed {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")}{" "}
+                  source files with the TypeScript compiler ·{" "}
+                  {snapshot.payload.analysis.stats.internalEdges.toLocaleString("en-US")} import
+                  edges · {snapshot.payload.analysis.services.length} external services ·{" "}
+                  {snapshot.payload.analysis.resources.length} data resources
+                  {snapshot.payload.analysis.stats.unresolvedImports
+                    ? ` · ${snapshot.payload.analysis.stats.unresolvedImports} unresolved imports`
+                    : ""}
+                </p>
+              ) : (
+                <p className="mt-2 text-[11px] text-amber-400">
+                  This snapshot predates the code analysis engine — the map below only reflects
+                  folder names. Re-analyze to get real dependencies and impact.
+                </p>
+              )}
+              <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                <span>{snapshot.payload.files?.length ?? 0} files</span>
+                <span>{snapshot.payload.commits?.length ?? 0} commits</span>
+                <span>{snapshot.payload.branches?.length ?? 0} branches</span>
+                <span>{snapshot.payload.pull_requests?.length ?? 0} pull requests</span>
+                <span>{snapshot.payload.issues?.length ?? 0} issues</span>
+                <span>{snapshot.payload.contributors?.length ?? 0} contributors</span>
+              </div>
+              {problems.length > 0 && (
+                <div className="border-border/70 mt-3 border-t pt-3">
+                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
+                    Traceable code problems
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {problems.slice(0, 5).map((problem) => (
+                      <div
+                        key={problem.id}
+                        className="flex items-start justify-between gap-3 text-[11px]"
+                      >
+                        <span className="min-w-0 truncate">{problem.title}</span>
+                        <span className="text-muted-foreground shrink-0 font-mono">
+                          {problem.likelyFiles.length} related files
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="relative mt-5 min-h-[390px] flex-1 sm:min-h-[520px]">
+            <GraphCanvas
+              key={`${center.id}-${role.id}`}
+              center={center}
+              nodes={centerChildren}
+              childKind={childKind}
+              onSelect={drill}
+              onInspect={setDossier}
+              selectedId={selected?.id}
+              technical={true}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              {demoMode ? "Nykst Demo · " : "Software Navigator · "}
+              {center.analysisRef ? "Contents" : childKindLabel[center.kind]} (
+              {centerChildren.length})
+            </span>
+            <span>Choose a node or tree item to drill deeper</span>
+          </div>
+        </section>
+
+        <MentorPanel
+          node={inspected}
+          role={role}
+          related={
+            inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
+          }
+          onOpen={drill}
+          {...(snapshot ? { repositoryProblems: problems } : {})}
+          {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
+        />
       </div>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <ConnectAiTools open={agentsOpen} onClose={() => setAgentsOpen(false)} />
-    </WorkspaceProvider>
+
+      <OnboardingTour />
+
+      <NodeInspector
+        node={dossier}
+        open={dossier !== null}
+        onClose={() => setDossier(null)}
+        {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
+      />
+      <ConnectAiTools open={aiToolsOpen} onClose={() => setAiToolsOpen(false)} />
+      <BeforeYouAct
+        node={inspected}
+        snapshot={snapshot?.payload ?? null}
+        open={beforeYouActOpen}
+        onClose={() => setBeforeYouActOpen(false)}
+      />
+      {softModal && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          role="presentation"
+          onClick={() => setSoftModal(null)}
+        >
+          <section
+            className="border-border bg-card w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="graph-soft-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-primary text-[10px] font-mono uppercase tracking-[0.24em]">
+                  Nykst access
+                </p>
+                <h2 id="graph-soft-modal-title" className="mt-1 text-lg font-semibold">
+                  Premium workspace
+                </h2>
+              </div>
+              <button
+                onClick={() => setSoftModal(null)}
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1"
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+              Premium access adds deeper repository history, broader system context, and team-ready
+              workflows. You can keep exploring the graph without signing in.
+            </p>
+            <button
+              onClick={() => setSoftModal(null)}
+              className="border-border bg-surface hover:bg-surface-2 mt-5 rounded-lg border px-4 py-2 text-xs font-semibold"
+            >
+              Keep exploring
+            </button>
+          </section>
+        </div>
+      )}
+    </main>
   );
 }

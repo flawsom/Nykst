@@ -1,8 +1,8 @@
 import type { HistoryCommit, HistoryPullRequest, RepoHistory } from "./types";
 
 const API = "https://api.github.com";
-export const COMMIT_DETAIL_LIMIT = 200;
-export const PULL_REQUEST_LIMIT = 60;
+const COMMIT_DETAIL_LIMIT = 80;
+const PULL_REQUEST_LIMIT = 40;
 const CONCURRENCY = 8;
 
 type Json = Record<string, unknown>;
@@ -24,14 +24,9 @@ async function get<T>(token: string, path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function pool<T, R>(
-  items: T[],
-  worker: (item: T) => Promise<R>,
-  onTick?: (done: number, total: number) => void,
-): Promise<(R | null)[]> {
+async function pool<T, R>(items: T[], worker: (item: T) => Promise<R>): Promise<(R | null)[]> {
   const results: (R | null)[] = new Array(items.length).fill(null);
   let cursor = 0;
-  let done = 0;
   const run = async () => {
     while (cursor < items.length) {
       const index = cursor++;
@@ -40,8 +35,6 @@ async function pool<T, R>(
       } catch {
         results[index] = null;
       }
-      done += 1;
-      onTick?.(done, items.length);
     }
   };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, items.length) }, run));
@@ -61,37 +54,29 @@ export async function buildRepositoryHistory(
   repo: string,
   commits: Json[],
   pullRequests: Json[],
-  onProgress?: (stage: "commits" | "pulls", done: number, total: number) => void,
 ): Promise<RepoHistory> {
   const base = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
   const limitations: string[] = [];
 
   const recentCommits = commits.slice(0, COMMIT_DETAIL_LIMIT);
-  const commitDetails = await pool(
-    recentCommits,
-    async (commit) => {
-      const detail = await get<Json>(token, `${base}/commits/${str(commit["sha"])}`);
-      const parents = Array.isArray(detail["parents"]) ? detail["parents"].length : 1;
-      const inner = (detail["commit"] ?? {}) as Json;
-      const author = (inner["author"] ?? {}) as Json;
-      const login = str(((detail["author"] ?? {}) as Json)["login"]);
-      const files = Array.isArray(detail["files"]) ? (detail["files"] as Json[]) : [];
-      const [subject = "", ...rest] = str(inner["message"]).split("\n");
-      const body = rest.join("\n").trim().slice(0, 600);
-      const item: HistoryCommit & { merge: boolean } = {
-        sha: str(detail["sha"]),
-        message: subject.slice(0, 200),
-        ...(body ? { body } : {}),
-        author: login || str(author["name"]) || "unknown",
-        date: str(author["date"]),
-        files: files.map((file) => str(file["filename"])).filter(Boolean),
-        ...(str(detail["html_url"]) ? { url: str(detail["html_url"]) } : {}),
-        merge: parents > 1,
-      };
-      return item;
-    },
-    (done, total) => onProgress?.("commits", done, total),
-  );
+  const commitDetails = await pool(recentCommits, async (commit) => {
+    const detail = await get<Json>(token, `${base}/commits/${str(commit["sha"])}`);
+    const parents = Array.isArray(detail["parents"]) ? detail["parents"].length : 1;
+    const inner = (detail["commit"] ?? {}) as Json;
+    const author = (inner["author"] ?? {}) as Json;
+    const login = str(((detail["author"] ?? {}) as Json)["login"]);
+    const files = Array.isArray(detail["files"]) ? (detail["files"] as Json[]) : [];
+    const item: HistoryCommit & { merge: boolean } = {
+      sha: str(detail["sha"]),
+      message: str(inner["message"]).split("\n")[0]!.slice(0, 200),
+      author: login || str(author["name"]) || "unknown",
+      date: str(author["date"]),
+      files: files.map((file) => str(file["filename"])).filter(Boolean),
+      ...(str(detail["html_url"]) ? { url: str(detail["html_url"]) } : {}),
+      merge: parents > 1,
+    };
+    return item;
+  });
   const failedCommits = commitDetails.filter((item) => item === null).length;
   if (failedCommits)
     limitations.push(`${failedCommits} commit(s) could not be expanded with changed files.`);
@@ -101,28 +86,23 @@ export async function buildRepositoryHistory(
     );
 
   const recentPulls = pullRequests.slice(0, PULL_REQUEST_LIMIT);
-  const pullDetails = await pool(
-    recentPulls,
-    async (pull) => {
-      const number = Number(pull["number"]);
-      const files = await get<Json[]>(token, `${base}/pulls/${number}/files?per_page=100`);
-      const body = `${str(pull["title"])}\n${str(pull["body"])}`;
-      const closes = [...new Set([...body.matchAll(CLOSING)].map((match) => Number(match[1])))];
-      const item: HistoryPullRequest = {
-        number,
-        title: str(pull["title"]).slice(0, 200),
-        ...(str(pull["body"]).trim() ? { body: str(pull["body"]).trim().slice(0, 600) } : {}),
-        author: str(((pull["user"] ?? {}) as Json)["login"]) || "unknown",
-        state: str(pull["state"]),
-        mergedAt: str(pull["merged_at"]) || null,
-        ...(str(pull["html_url"]) ? { url: str(pull["html_url"]) } : {}),
-        files: files.map((file) => str(file["filename"])).filter(Boolean),
-        closes,
-      };
-      return item;
-    },
-    (done, total) => onProgress?.("pulls", done, total),
-  );
+  const pullDetails = await pool(recentPulls, async (pull) => {
+    const number = Number(pull["number"]);
+    const files = await get<Json[]>(token, `${base}/pulls/${number}/files?per_page=100`);
+    const body = `${str(pull["title"])}\n${str(pull["body"])}`;
+    const closes = [...new Set([...body.matchAll(CLOSING)].map((match) => Number(match[1])))];
+    const item: HistoryPullRequest = {
+      number,
+      title: str(pull["title"]).slice(0, 200),
+      author: str(((pull["user"] ?? {}) as Json)["login"]) || "unknown",
+      state: str(pull["state"]),
+      mergedAt: str(pull["merged_at"]) || null,
+      ...(str(pull["html_url"]) ? { url: str(pull["html_url"]) } : {}),
+      files: files.map((file) => str(file["filename"])).filter(Boolean),
+      closes,
+    };
+    return item;
+  });
   if (pullRequests.length > PULL_REQUEST_LIMIT)
     limitations.push(
       `Pull request file lists cover the latest ${PULL_REQUEST_LIMIT} of ${pullRequests.length} pull requests.`,

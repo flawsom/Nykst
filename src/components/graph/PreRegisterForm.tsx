@@ -1,8 +1,7 @@
-import { useEffect, useId, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from "lucide-react";
-import { buttonClass } from "@/components/workspace/ui";
 
 const ROLE_OPTIONS = [
   "Software engineer",
@@ -203,154 +202,48 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const titleId = useId();
-  const [stepError, setStepError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const next = () => {
-    if (!canAdvance) {
-      setStepError(
-        step === 0
-          ? "Enter your first name (at least 2 characters) to continue."
-          : step === 5
-            ? "Choose at least one option to continue."
-            : [1, 2, 4, 7].includes(step)
-              ? "Choose an option to continue."
-              : "Write a short answer (at least 4 characters) to continue.",
-      );
-      return;
-    }
-    setStepError(null);
-    setStep((s) => s + 1);
-  };
-
-  const fieldClass =
-    "border-input bg-surface text-foreground focus-visible:border-primary min-h-10 w-full rounded-lg border px-3 text-sm";
-  const optionClass = (selected: boolean) =>
-    cn(
-      "flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-      selected
-        ? "border-primary bg-surface-2 text-foreground font-semibold"
-        : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
-    );
-
-  const textStep = (
-    key:
-      | "frustration"
-      | "dream_feature"
-      | "closing_thoughts"
-      | "knowledge_location"
-      | "hard_won_insight",
-    placeholder: string,
-    rows = 4,
-  ) => (
-    <textarea
-      rows={rows}
-      aria-labelledby={titleId}
-      aria-describedby={stepError ? `${titleId}-err` : undefined}
-      aria-invalid={stepError ? true : undefined}
-      placeholder={placeholder}
-      value={a[key]}
-      onChange={(e) => {
-        set(key, e.target.value);
-        setStepError(null);
-      }}
-      className={cn(fieldClass, "py-2.5 leading-relaxed")}
-      autoFocus
-    />
-  );
-
-  const choose = <K extends "role" | "company_size" | "time_understanding_code" | "would_use">(
-    key: K,
-    options: string[],
-    columns: boolean,
-  ) => (
-    <div
-      role="radiogroup"
-      aria-labelledby={titleId}
-      className={cn("gap-2", columns ? "grid grid-cols-1 sm:grid-cols-2" : "space-y-2")}
-    >
-      {options.map((o) => (
-        <button
-          key={o}
-          type="button"
-          role="radio"
-          aria-checked={a[key] === o}
-          onClick={() => {
-            set(key, o);
-            setStepError(null);
-          }}
-          className={optionClass(a[key] === o)}
-        >
-          <span>{o}</span>
-          {a[key] === o && <Check className="text-primary size-4 shrink-0" aria-hidden />}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="absolute inset-0" onClick={onClose} aria-hidden />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={done ? `${titleId}-done` : titleId}
-        className="border-border bg-card relative max-h-full w-full max-w-2xl overflow-y-auto rounded-xl border p-5 sm:p-8"
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl">
+      <div className="bg-background/85 absolute inset-0" onClick={onClose} />
+      <div className="animate-rise border-border bg-card/95 relative w-full max-w-2xl rounded-2xl border p-8 shadow-2xl">
         <button
           onClick={onClose}
-          className={cn(buttonClass.ghost, "absolute top-3 right-3 w-10 px-0")}
-          aria-label="Close"
+          className="text-muted-foreground hover:text-foreground absolute top-6 right-6 transition-colors"
         >
-          <X className="size-5" aria-hidden />
+          <X className="size-5" />
         </button>
 
         {done ? (
-          <div className="space-y-4 py-10 text-center">
-            <div className="bg-ok-soft text-ok border-ok/30 mx-auto flex size-14 items-center justify-center rounded-full border">
-              <Check className="size-7" aria-hidden />
+          <div className="py-12 text-center space-y-4">
+            <div className="bg-primary/25 text-primary mx-auto flex size-14 items-center justify-center rounded-full border border-primary/40">
+              <Check className="size-7" />
             </div>
-            <h2
-              id={`${titleId}-done`}
-              className="text-foreground text-2xl font-semibold tracking-tight"
-            >
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
               You're on the early access list
             </h2>
             <p className="text-muted-foreground mx-auto max-w-md text-sm leading-relaxed">
               Thank you, <span className="text-foreground font-medium">{a.first_name}</span>. Your
-              answers have been recorded.
+              preferences have been successfully recorded.
             </p>
-            <button onClick={onClose} className={cn(buttonClass.primary, "mt-2")}>
+            <button
+              onClick={onClose}
+              className="bg-primary text-primary-foreground hover:bg-primary-glow mt-4 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors shadow-md"
+            >
               Back to Nykst
             </button>
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="border-border flex items-center justify-between gap-3 border-b pr-10 pb-4">
-              <span className="text-muted-foreground text-sm">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <span className="text-muted-foreground font-mono text-xs uppercase tracking-wider">
                 Step {step + 1} of {STEP_TITLES.length}
               </span>
-              <div
-                className="flex gap-1"
-                role="progressbar"
-                aria-valuemin={1}
-                aria-valuemax={STEP_TITLES.length}
-                aria-valuenow={step + 1}
-                aria-label="Form progress"
-              >
+              <div className="flex gap-1">
                 {STEP_TITLES.map((_, i) => (
                   <div
                     key={i}
                     className={cn(
-                      "h-1.5 w-3 rounded-full sm:w-5",
+                      "h-1.5 w-6 rounded-full transition-all",
                       i <= step ? "bg-primary" : "bg-border",
                     )}
                   />
@@ -358,68 +251,125 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            <h2 id={titleId} className="text-foreground text-lg font-semibold tracking-tight">
-              {STEP_TITLES[step]}
-            </h2>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                {STEP_TITLES[step]}
+              </h2>
+            </div>
 
-            <div className="min-h-[200px]">
+            <div className="py-2 min-h-[220px]">
               {step === 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Alex"
+                      value={a.first_name}
+                      onChange={(e) => set("first_name", e.target.value)}
+                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              )}
+
+              {step === 1 && (
+                <div className="grid grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
+                  {ROLE_OPTIONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => set("role", r)}
+                      className={cn(
+                        "rounded-xl border p-3 text-left text-xs font-medium transition-all flex items-center justify-between",
+                        a.role === r
+                          ? "bg-primary/20 border-primary text-foreground font-semibold"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                      )}
+                    >
+                      <span>{r}</span>
+                      {a.role === r && <Check className="size-4 text-primary shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {SIZE_OPTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => set("company_size", s)}
+                      className={cn(
+                        "rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
+                        a.company_size === s
+                          ? "bg-primary/20 border-primary text-foreground font-semibold"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                      )}
+                    >
+                      <span>{s}</span>
+                      {a.company_size === s && <Check className="size-4 text-primary shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {step === 3 && (
                 <div>
-                  <label htmlFor={`${titleId}-name`} className="mb-1.5 block text-sm font-medium">
-                    First name
-                  </label>
-                  <input
-                    id={`${titleId}-name`}
-                    type="text"
-                    placeholder="Alex"
-                    value={a.first_name}
-                    onChange={(e) => {
-                      set("first_name", e.target.value);
-                      setStepError(null);
-                    }}
-                    aria-describedby={stepError ? `${titleId}-err` : undefined}
-                    aria-invalid={stepError ? true : undefined}
-                    className={fieldClass}
-                    autoComplete="given-name"
+                  <textarea
+                    rows={4}
+                    placeholder="e.g., Finding where business logic lives across 40 microservices without breaking APIs..."
+                    value={a.frustration}
+                    onChange={(e) => set("frustration", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
                     autoFocus
                   />
                 </div>
               )}
 
-              {step === 1 && choose("role", ROLE_OPTIONS, true)}
-              {step === 2 && choose("company_size", SIZE_OPTIONS, true)}
-              {step === 3 &&
-                textStep(
-                  "frustration",
-                  "e.g., Finding where business logic lives across 40 microservices without breaking APIs",
-                )}
-              {step === 4 && choose("time_understanding_code", TIME_OPTIONS, false)}
+              {step === 4 && (
+                <div className="space-y-2">
+                  {TIME_OPTIONS.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => set("time_understanding_code", t)}
+                      className={cn(
+                        "w-full rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
+                        a.time_understanding_code === t
+                          ? "bg-primary/20 border-primary text-foreground font-semibold"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                      )}
+                    >
+                      <span>{t}</span>
+                      {a.time_understanding_code === t && (
+                        <Check className="size-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {step === 5 && (
-                <div>
-                  <p className="text-muted-foreground mb-2 text-sm">Select up to 3.</p>
-                  <div
-                    role="group"
-                    aria-labelledby={titleId}
-                    className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-                  >
+                <div className="space-y-2">
+                  <p className="text-muted-foreground text-xs mb-2">Select up to 3:</p>
+                  <div className="grid grid-cols-2 gap-2">
                     {HARDEST_OPTIONS.map((h) => {
                       const selected = a.hardest_parts.includes(h);
                       return (
                         <button
                           key={h}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => {
-                            toggleHardest(h);
-                            setStepError(null);
-                          }}
-                          className={optionClass(selected)}
+                          onClick={() => toggleHardest(h)}
+                          className={cn(
+                            "rounded-xl border p-3 text-left text-xs font-medium transition-all flex items-center justify-between",
+                            selected
+                              ? "bg-primary/20 border-primary text-foreground font-semibold"
+                              : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                          )}
                         >
                           <span>{h}</span>
-                          {selected && (
-                            <Check className="text-primary size-4 shrink-0" aria-hidden />
-                          )}
+                          {selected && <Check className="size-4 text-primary shrink-0" />}
                         </button>
                       );
                     })}
@@ -427,124 +377,148 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {step === 6 &&
-                textStep(
-                  "dream_feature",
-                  "e.g., Instant natural language codebase search with accurate file references",
-                )}
-              {step === 7 && choose("would_use", USE_OPTIONS, false)}
-              {step === 8 &&
-                textStep(
-                  "closing_thoughts",
-                  "Describe how you currently review the possible impact of an AI-generated code change",
-                )}
-              {step === 9 &&
-                textStep(
-                  "knowledge_location",
-                  "Where do solutions, incident learnings, and architectural decisions live today?",
-                )}
-              {step === 10 &&
-                textStep(
-                  "hard_won_insight",
-                  "Share the insight you learned through experience that others still miss",
-                  5,
-                )}
-
-              {step === 11 && (
-                <div className="space-y-4">
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Every field here is optional. You can leave them all blank.
-                  </p>
-                  <div>
-                    <label
-                      htmlFor={`${titleId}-email`}
-                      className="mb-1.5 block text-sm font-medium"
-                    >
-                      Email address
-                    </label>
-                    <input
-                      id={`${titleId}-email`}
-                      type="email"
-                      autoComplete="email"
-                      placeholder="you@company.com"
-                      value={a.email}
-                      onChange={(e) => set("email", e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor={`${titleId}-linkedin`}
-                      className="mb-1.5 block text-sm font-medium"
-                    >
-                      LinkedIn profile link or account
-                    </label>
-                    <input
-                      id={`${titleId}-linkedin`}
-                      type="text"
-                      value={a.linkedin}
-                      onChange={(e) => set("linkedin", e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`${titleId}-x`} className="mb-1.5 block text-sm font-medium">
-                      X account or profile link
-                    </label>
-                    <input
-                      id={`${titleId}-x`}
-                      type="text"
-                      value={a.x_account}
-                      onChange={(e) => set("x_account", e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
+              {step === 6 && (
+                <div>
+                  <textarea
+                    rows={4}
+                    placeholder="e.g., Instant natural language codebase search with 100% accurate file references..."
+                    value={a.dream_feature}
+                    onChange={(e) => set("dream_feature", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
                 </div>
               )}
 
-              {stepError && (
-                <p
-                  id={`${titleId}-err`}
-                  role="alert"
-                  className="border-danger/30 bg-danger-soft text-danger mt-3 rounded-lg border px-3 py-2 text-sm"
-                >
-                  {stepError}
-                </p>
+              {step === 7 && (
+                <div className="space-y-2.5">
+                  {USE_OPTIONS.map((u) => (
+                    <button
+                      key={u}
+                      onClick={() => set("would_use", u)}
+                      className={cn(
+                        "w-full rounded-xl border p-3.5 text-left text-xs font-medium transition-all flex items-center justify-between",
+                        a.would_use === u
+                          ? "bg-primary/20 border-primary text-foreground font-semibold"
+                          : "border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                      )}
+                    >
+                      <span>{u}</span>
+                      {a.would_use === u && <Check className="size-4 text-primary shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {step === 8 && (
+                <div>
+                  <textarea
+                    rows={4}
+                    placeholder="Describe how you currently review the possible impact of an AI-generated code change..."
+                    value={a.closing_thoughts}
+                    onChange={(e) => set("closing_thoughts", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 9 && (
+                <div>
+                  <textarea
+                    rows={4}
+                    placeholder="Where do solutions, incident learnings, and architectural decisions live today?"
+                    value={a.knowledge_location}
+                    onChange={(e) => set("knowledge_location", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 10 && (
+                <div>
+                  <textarea
+                    rows={5}
+                    placeholder="Share the insight you learned through experience that others still miss..."
+                    value={a.hard_won_insight}
+                    onChange={(e) => set("hard_won_insight", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-4 text-sm outline-none focus:border-primary font-mono leading-relaxed"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {step === 11 && (
+                <div className="space-y-3">
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Optional. Share one or more ways to stay connected. You can leave every field
+                    blank.
+                  </p>
+                  <input
+                    type="email"
+                    placeholder="Email address (optional)"
+                    value={a.email}
+                    onChange={(e) => set("email", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                  />
+                  <input
+                    type="text"
+                    placeholder="LinkedIn profile link or account (optional)"
+                    value={a.linkedin}
+                    onChange={(e) => set("linkedin", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                  />
+                  <input
+                    type="text"
+                    placeholder="X account or profile link (optional)"
+                    value={a.x_account}
+                    onChange={(e) => set("x_account", e.target.value)}
+                    className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-primary font-mono"
+                  />
+                </div>
               )}
             </div>
 
             {error && (
-              <p
-                role="alert"
-                className="border-danger/30 bg-danger-soft text-danger rounded-lg border px-3 py-2 text-sm"
-              >
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs font-mono">
                 {error}
-              </p>
+              </div>
             )}
 
-            <div className="border-border flex items-center justify-between gap-3 border-t pt-4">
+            <div className="flex items-center justify-between border-t border-border pt-4">
               {step > 0 ? (
                 <button
-                  onClick={() => {
-                    setStepError(null);
-                    setStep((s) => s - 1);
-                  }}
-                  className={buttonClass.secondary}
+                  onClick={() => setStep((s) => s - 1)}
+                  className="border-border bg-surface hover:bg-surface-2 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-xs font-medium transition-colors"
                 >
-                  <ArrowLeft className="size-4" aria-hidden /> Back
+                  <ArrowLeft className="size-3.5" /> Back
                 </button>
               ) : (
                 <div />
               )}
 
               {step < last ? (
-                <button onClick={next} className={buttonClass.primary}>
-                  Continue <ArrowRight className="size-4" aria-hidden />
+                <button
+                  disabled={!canAdvance}
+                  onClick={() => setStep((s) => s + 1)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all",
+                    canAdvance
+                      ? "bg-primary text-primary-foreground hover:bg-primary-glow shadow-sm"
+                      : "bg-surface text-muted-foreground opacity-50 cursor-not-allowed border border-border",
+                  )}
+                >
+                  Continue <ArrowRight className="size-3.5" />
                 </button>
               ) : (
-                <button disabled={saving} onClick={submit} className={buttonClass.primary}>
-                  {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
-                  {saving ? "Sending…" : "Complete and request access"}
+                <button
+                  disabled={saving}
+                  onClick={submit}
+                  className="bg-primary text-primary-foreground hover:bg-primary-glow flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md transition-colors"
+                >
+                  {saving && <Loader2 className="size-3.5 animate-spin" />}
+                  Complete & Request Access
                 </button>
               )}
             </div>
