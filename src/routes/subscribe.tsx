@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, Copy, Globe2, X } from "lucide-react";
-import { Badge, ErrorNote, buttonClass } from "@/components/workspace/ui";
-import { cn } from "@/lib/utils";
+import { ArrowLeft, CheckCircle2, Clock3, Copy, Crown, Globe2, ShieldCheck, X } from "lucide-react";
 
 export const Route = createFileRoute("/subscribe")({
-  head: () => ({ meta: [{ title: "Nykst subscription — eSewa" }] }),
+  head: () => ({ meta: [{ title: "Nykst Premium — eSewa subscription" }] }),
   component: SubscribePage,
 });
 
@@ -94,88 +92,105 @@ function SubscribePage() {
   const active = data?.subscription?.status === "active" || data?.submission?.status === "approved";
   const pending = data?.submission?.status === "pending";
 
-  const fieldClass =
-    "border-input bg-surface text-foreground focus-visible:border-primary w-full rounded-lg border px-3 text-sm";
-
   return (
-    <main className="bg-background text-foreground min-h-screen">
-      <header className="border-border bg-card sticky top-0 z-20 flex items-center justify-between gap-2 border-b px-4 py-2 sm:px-6">
-        <Link to="/" className="flex min-h-10 items-center gap-2.5">
-          <span className="bg-primary size-2 rounded-full" aria-hidden />
-          <span className="text-base font-semibold">Nykst</span>
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="border-border bg-card/80 sticky top-0 z-20 flex items-center justify-between border-b px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <Link to="/" className="flex items-center gap-2.5">
+          <span className="glow-ring bg-primary size-2 rounded-full" />
+          <span className="text-[13px] font-semibold uppercase tracking-[0.24em]">Nykst</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               if (window.history.length > 1) window.history.back();
               else window.location.assign("/");
             }}
-            className={buttonClass.ghost}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs"
           >
-            <ArrowLeft className="size-4" aria-hidden /> Back
+            <ArrowLeft className="size-3.5" /> Back one step
           </button>
           <button
             onClick={() => window.location.assign("/")}
-            className={cn(buttonClass.ghost, "w-10 px-0")}
+            className="text-muted-foreground hover:text-foreground rounded-lg p-2"
             aria-label="Close pricing"
           >
-            <X className="size-4" aria-hidden />
+            <X className="size-4" />
           </button>
         </div>
       </header>
 
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <section>
-          <p className="text-primary text-sm font-medium">Nykst subscription</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Subscribe to Nykst
-          </h1>
-          <p className="text-muted-foreground mt-4 max-w-xl text-base leading-relaxed">
-            Basic AI access and the first system-understanding moment stay free. A subscription is
-            arranged personally and paid through eSewa, then reviewed by hand.
+          <p className="text-primary font-mono text-[10px] uppercase tracking-[0.28em]">
+            Nykst Premium
           </p>
-          <ol className="mt-8 space-y-3 text-sm">
-            {[
-              "Choose a plan and pay with the eSewa QR code.",
-              "Enter the transaction reference from your receipt.",
-              "We check the payment manually and activate your subscription.",
-            ].map((item, index) => (
-              <li key={item} className="flex items-start gap-3">
-                <span className="border-border bg-surface text-muted-foreground inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium">
-                  {index + 1}
-                </span>
-                <span className="pt-0.5">{item}</span>
-              </li>
-            ))}
-          </ol>
+          <h1 className="text-gradient mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+            Keep the whole system in memory.
+          </h1>
+          <p className="text-muted-foreground mt-4 max-w-xl text-sm leading-relaxed">
+            Basic AI access and the first system-understanding moment stay free. Premium adds the
+            depth that compounds over time.
+          </p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="border-border bg-card/70 rounded-xl border p-4">
+              <ShieldCheck className="text-primary size-4" />
+              <p className="mt-3 text-xs font-semibold">Persistent memory</p>
+              <p className="text-muted-foreground mt-1 text-[11px]">
+                Your architecture memory keeps updating.
+              </p>
+            </div>
+            <div className="border-border bg-card/70 rounded-xl border p-4">
+              <Clock3 className="text-primary size-4" />
+              <p className="mt-3 text-xs font-semibold">Historical reasoning</p>
+              <p className="text-muted-foreground mt-1 text-[11px]">
+                Decisions, incidents, and what changed.
+              </p>
+            </div>
+            <div className="border-border bg-card/70 rounded-xl border p-4">
+              <Crown className="text-primary size-4" />
+              <p className="mt-3 text-xs font-semibold">System-wide context</p>
+              <p className="text-muted-foreground mt-1 text-[11px]">
+                Higher context and integrations.
+              </p>
+            </div>
+          </div>
         </section>
 
-        <section className="border-border bg-card rounded-xl border p-4 sm:p-5">
+        <section className="border-border bg-card/90 rounded-2xl border p-4 shadow-2xl sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="text-xl font-semibold">Choose your plan</h2>
-            <Badge tone="info">eSewa</Badge>
+            <div>
+              <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-[0.2em]">
+                Choose your plan
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold">Premium access</h2>
+            </div>
+            <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-[10px] font-mono">
+              eSewa
+            </span>
           </div>
 
-          <div className="border-border bg-surface mt-5 rounded-lg border p-4">
+          <div className="border-border bg-surface mt-6 rounded-xl border p-4">
             <div className="flex items-center gap-2">
-              <Globe2 className="text-primary size-4" aria-hidden />
+              <Globe2 className="text-primary size-4" />
               <p className="text-sm font-semibold">Nepal subscription</p>
             </div>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-muted-foreground mt-1 text-xs">
               Nepal subscriptions are handled through eSewa. The monthly plan is NPR 999.
             </p>
           </div>
 
           {loading ? (
-            <p role="status" className="text-muted-foreground mt-8 text-sm">
+            <p className="text-muted-foreground mt-8 text-sm">
               Preparing your payment instructions…
             </p>
           ) : error && !data ? (
             <div className="mt-6 space-y-4">
-              <ErrorNote>{error}</ErrorNote>
+              <p className="border-red-500/30 bg-red-500/10 rounded-xl border px-4 py-3 text-sm text-red-300">
+                {error}
+              </p>
               <a
                 href="/api/integrations/github/start"
-                className={cn(buttonClass.primary, "w-full")}
+                className="bg-primary text-primary-foreground inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold"
               >
                 Connect GitHub to continue
               </a>
@@ -185,28 +200,20 @@ function SubscribePage() {
               {!showPlans ? (
                 <button
                   onClick={() => setShowPlans(true)}
-                  className={cn(buttonClass.primary, "mt-6 w-full")}
+                  className="bg-primary text-primary-foreground mt-6 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold"
                 >
                   See Nepal plans
                 </button>
               ) : (
                 <>
-                  <div role="radiogroup" aria-label="Plan" className="mt-6 grid grid-cols-2 gap-2">
+                  <div className="mt-6 grid grid-cols-2 gap-2">
                     {(["monthly", "annual"] as const).map((item) => (
                       <button
                         key={item}
-                        type="button"
-                        role="radio"
-                        aria-checked={plan === item}
                         onClick={() => setPlan(item)}
-                        className={cn(
-                          "min-h-10 rounded-lg border p-3 text-left transition-colors",
-                          plan === item
-                            ? "border-primary bg-surface-2"
-                            : "border-border bg-surface hover:bg-surface-2",
-                        )}
+                        className={`rounded-xl border p-3 text-left transition-colors ${plan === item ? "border-primary bg-primary/10" : "border-border bg-surface hover:bg-surface-2"}`}
                       >
-                        <span className="block text-sm font-semibold">
+                        <span className="block text-xs font-semibold">
                           {item === "monthly" ? "Monthly" : "Annual"}
                         </span>
                         <span className="text-primary mt-1 block text-lg font-semibold">
@@ -216,16 +223,16 @@ function SubscribePage() {
                     ))}
                   </div>
 
-                  <div className="border-border bg-surface mt-5 rounded-lg border p-4">
-                    <p className="text-sm font-medium">
+                  <div className="border-border bg-surface mt-5 rounded-xl border p-4">
+                    <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-[0.18em]">
                       Scan to pay NPR {selectedPlan.amountNpr.toLocaleString()}
                     </p>
                     <div className="mt-4 grid gap-4 sm:grid-cols-[160px_1fr] sm:items-center">
-                      <div className="border-border rounded-lg border bg-white p-2">
+                      <div className="border-border bg-white rounded-xl border p-2">
                         <img
                           src={data.qr_url}
                           alt="eSewa payment QR code"
-                          className="aspect-square w-full rounded object-contain"
+                          className="aspect-square w-full rounded-lg object-contain"
                         />
                       </div>
                       <div>
@@ -233,17 +240,17 @@ function SubscribePage() {
                           <p className="text-sm font-semibold">{data.display_name}</p>
                           <button
                             onClick={() => void copyName()}
-                            className={cn(buttonClass.ghost, "px-2")}
+                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px]"
                           >
                             {copied ? (
-                              <CheckCircle2 className="text-ok size-4" aria-hidden />
+                              <CheckCircle2 className="size-3.5 text-emerald-300" />
                             ) : (
-                              <Copy className="size-4" aria-hidden />
+                              <Copy className="size-3.5" />
                             )}
-                            <span role="status">{copied ? "Copied" : "Copy name"}</span>
+                            {copied ? "Copied" : "Copy"}
                           </button>
                         </div>
-                        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                        <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
                           {data.instructions}
                         </p>
                       </div>
@@ -251,11 +258,11 @@ function SubscribePage() {
                   </div>
 
                   {active ? (
-                    <div className="border-ok/30 bg-ok-soft mt-4 rounded-lg border p-4">
-                      <p className="text-ok text-sm font-semibold">
+                    <div className="border-emerald-500/30 bg-emerald-500/10 mt-4 rounded-xl border p-4">
+                      <p className="text-sm font-semibold text-emerald-300">
                         Payment approved. Your subscription is active.
                       </p>
-                      <p className="text-muted-foreground mt-1 text-sm">
+                      <p className="text-muted-foreground mt-1 text-xs">
                         Plan: {data.subscription?.plan ?? data.submission?.plan ?? plan}.{" "}
                         {data.subscription?.active_until
                           ? `Active until ${new Date(data.subscription.active_until).toLocaleDateString()}.`
@@ -263,64 +270,46 @@ function SubscribePage() {
                       </p>
                     </div>
                   ) : pending ? (
-                    <div className="border-warn/30 bg-warn-soft mt-4 rounded-lg border p-4">
-                      <p className="text-warn text-sm font-semibold">
+                    <div className="border-amber-500/30 bg-amber-500/10 mt-4 rounded-xl border p-4">
+                      <p className="text-sm font-semibold text-amber-200">
                         Payment submitted for review.
                       </p>
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        Reference:{" "}
-                        <span className="font-mono">{data.submission?.transaction_reference}</span>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Reference: {data.submission?.transaction_reference}
                       </p>
                     </div>
                   ) : (
-                    <div className="mt-5 space-y-4">
-                      <div>
-                        <label htmlFor="esewa-ref" className="mb-1.5 block text-sm font-medium">
-                          eSewa transaction reference
-                        </label>
-                        <input
-                          id="esewa-ref"
-                          value={reference}
-                          onChange={(event) => setReference(event.target.value)}
-                          placeholder="Enter the reference from your receipt"
-                          className={cn(fieldClass, "min-h-10")}
-                          autoComplete="off"
-                          aria-describedby={error ? "esewa-error" : undefined}
-                          aria-invalid={error ? true : undefined}
-                        />
-                        {error && data && (
-                          <p id="esewa-error" role="alert" className="text-danger mt-1.5 text-sm">
-                            {error}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label htmlFor="esewa-note" className="mb-1.5 block text-sm font-medium">
-                          Note <span className="text-muted-foreground font-normal">(optional)</span>
-                        </label>
-                        <textarea
-                          id="esewa-note"
-                          value={note}
-                          onChange={(event) => setNote(event.target.value)}
-                          placeholder="Anything helpful for validation"
-                          className={cn(fieldClass, "min-h-20 resize-none py-2.5")}
-                        />
-                      </div>
+                    <div className="mt-5 space-y-3">
+                      <label className="text-muted-foreground block text-[10px] font-mono uppercase tracking-[0.18em]">
+                        eSewa transaction reference
+                      </label>
+                      <input
+                        value={reference}
+                        onChange={(event) => setReference(event.target.value)}
+                        placeholder="Enter the reference from your receipt"
+                        className="border-border bg-surface w-full rounded-xl border px-3.5 py-3 text-sm outline-none focus:border-primary"
+                        autoComplete="off"
+                      />
+                      <label className="text-muted-foreground block text-[10px] font-mono uppercase tracking-[0.18em]">
+                        Optional note
+                      </label>
+                      <textarea
+                        value={note}
+                        onChange={(event) => setNote(event.target.value)}
+                        placeholder="Anything helpful for validation"
+                        className="border-border bg-surface min-h-20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:border-primary"
+                      />
                       <button
                         onClick={() => void submit()}
                         disabled={submitting || !reference.trim()}
-                        className={cn(buttonClass.primary, "w-full")}
+                        className="bg-primary text-primary-foreground disabled:opacity-40 w-full rounded-xl px-4 py-3 text-sm font-semibold"
                       >
-                        {submitting ? "Submitting…" : "I’ve paid. Submit for validation"}
+                        {submitting ? "Submitting…" : "I’ve paid — submit for validation"}
                       </button>
                     </div>
                   )}
-                  {error && data && (active || pending) && (
-                    <p role="alert" className="text-danger mt-3 text-sm">
-                      {error}
-                    </p>
-                  )}
-                  <p className="text-muted-foreground mt-5 text-xs leading-relaxed">
+                  {error && data && <p className="mt-3 text-xs text-red-300">{error}</p>}
+                  <p className="text-muted-foreground mt-5 text-[10px] leading-relaxed">
                     Payments are manually reviewed. Do not send passwords, OTPs, or account
                     credentials. Keep your eSewa receipt until validation is complete.
                   </p>

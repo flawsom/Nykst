@@ -4,11 +4,7 @@
  * inspector and the MCP endpoint. Keep this file free of server-only imports.
  */
 
-/**
- * 2 added imported names, export signatures, call sites, module-scope env reads, declared
- * dependencies and the resolver configuration. Older snapshots must be re-analyzed.
- */
-export const ANALYSIS_VERSION = 2;
+export const ANALYSIS_VERSION = 1;
 
 export type FileRole =
   | "route"
@@ -34,31 +30,6 @@ export interface ImportRef {
   target?: string;
   typeOnly: boolean;
   dynamic: boolean;
-  /** names taken from the other module: "default", "*" for a namespace, or export names */
-  names: string[];
-  /** line of each name in `names` when it differs from `line` (multi-line imports) */
-  nameLines?: number[];
-  /** true for `export * from "x"`: this file re-exports everything the target exports */
-  reexportAll?: boolean;
-}
-
-export interface ExportSig {
-  kind: "function" | "class" | "variable" | "type" | "enum" | "default" | "reexport";
-  /** parameters a caller must pass (functions only) */
-  required?: number;
-  /** most parameters a caller may pass; null for rest parameters */
-  max?: number | null;
-}
-
-/** A call to a function imported from another repository file. */
-export interface CallSite {
-  /** repository path of the file that exports the function */
-  target: string;
-  /** exported name, e.g. "createUser" */
-  name: string;
-  args: number;
-  spread?: boolean;
-  line: number;
 }
 
 export interface ResourceUse {
@@ -76,14 +47,9 @@ export interface AnalyzedFile {
   role: FileRole;
   imports: ImportRef[];
   exports: string[];
-  exportSigs: Record<string, ExportSig>;
   functions: string[];
   classes: string[];
   envVars: string[];
-  /** environment variables read while the module loads, not inside a function */
-  moduleScopeEnv: { name: string; line: number }[];
-  /** calls to exported functions of other repository files, for signature checks */
-  calls: CallSite[];
   /** external service ids used by this file */
   services: string[];
   resources: ResourceUse[];
@@ -146,35 +112,12 @@ export interface AnalysisStats {
   durationMs: number;
 }
 
-export interface PackageDeps {
-  dir: string;
-  name?: string;
-  /** dependencies, devDependencies, peerDependencies and optionalDependencies */
-  deps: string[];
-}
-
-/** What the import resolver needs, kept so generated code can be checked later. */
-export interface ResolverConfig {
-  manifests: {
-    dir: string;
-    name?: string;
-    main?: string;
-    module?: string;
-    types?: string;
-    source?: string;
-    exports?: unknown;
-  }[];
-  aliases: { dir: string; aliases: { pattern: string; targets: string[] }[] }[];
-}
-
 export interface RepoAnalysis {
   version: number;
   generatedAt: string;
   method: "typescript-ast";
   ref: string;
   packages: WorkspacePackage[];
-  packageDeps: PackageDeps[];
-  resolver: ResolverConfig;
   files: AnalyzedFile[];
   services: ExternalService[];
   resources: DataResource[];
@@ -187,10 +130,7 @@ export interface RepoAnalysis {
 
 export interface HistoryCommit {
   sha: string;
-  /** first line of the commit message */
   message: string;
-  /** rest of the message, trimmed, for "This reverts commit …" and fix references */
-  body?: string;
   author: string;
   date: string;
   files: string[];
@@ -200,8 +140,6 @@ export interface HistoryCommit {
 export interface HistoryPullRequest {
   number: number;
   title: string;
-  /** description, trimmed to the first 600 characters */
-  body?: string;
   author: string;
   state: string;
   mergedAt: string | null;
