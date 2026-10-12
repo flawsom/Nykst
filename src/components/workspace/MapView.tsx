@@ -1,8 +1,9 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { chainFor, type Edge } from "@/lib/analysis/impact";
 import { IMPACT_TONE, SEVERITY_TONE, worstSeverity } from "@/lib/workspace/model";
 import { Attention } from "./Attention";
+import { OrbitMap } from "./OrbitMap";
 import { SystemMap } from "./SystemMap";
 import { useWorkspace } from "./WorkspaceContext";
 import { Badge, EmptyState, FileLink, SectionTitle, buttonClass } from "./ui";
@@ -38,6 +39,74 @@ function Chip({ label, value, tone }: { label: string; value: number; tone?: "wa
   );
 }
 
+type MapModeValue = "orbit" | "treemap";
+const MODE_KEY = "nykst.map-mode";
+const MODES: { id: MapModeValue; label: string }[] = [
+  { id: "orbit", label: "Orbit" },
+  { id: "treemap", label: "Treemap" },
+];
+
+function MapMode() {
+  const [mode, setMode] = useState<MapModeValue>("orbit");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(MODE_KEY);
+      if (saved === "orbit" || saved === "treemap") setMode(saved);
+    } catch {
+      /* storage unavailable: keep the default */
+    }
+  }, []);
+  const choose = (next: MapModeValue) => {
+    setMode(next);
+    try {
+      localStorage.setItem(MODE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  };
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    choose(mode === "orbit" ? "treemap" : "orbit");
+    requestAnimationFrame(() =>
+      document.getElementById(`map-mode-${mode === "orbit" ? "treemap" : "orbit"}`)?.focus(),
+    );
+  };
+  return (
+    <div className="flex flex-col gap-3">
+      <div
+        role="tablist"
+        aria-label="Map style"
+        onKeyDown={onKey}
+        className="border-border bg-surface inline-flex self-start rounded-lg border p-0.5"
+      >
+        {MODES.map((item) => (
+          <button
+            key={item.id}
+            id={`map-mode-${item.id}`}
+            type="button"
+            role="tab"
+            aria-selected={mode === item.id}
+            aria-controls="map-mode-panel"
+            tabIndex={mode === item.id ? 0 : -1}
+            onClick={() => choose(item.id)}
+            className={`min-h-9 rounded-md px-3 text-sm font-medium transition-colors ${
+              mode === item.id
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div id="map-mode-panel" role="tabpanel" aria-labelledby={`map-mode-${mode}`}>
+        {mode === "orbit" ? <OrbitMap /> : <SystemMap />}
+      </div>
+    </div>
+  );
+}
+
 function Overview() {
   const { data } = useWorkspace();
   const { analysis } = data;
@@ -61,7 +130,7 @@ function Overview() {
           {...(high > 0 ? { tone: "danger" as const } : {})}
         />
       </ul>
-      <SystemMap />
+      <MapMode />
       <Attention />
       <details className="border-border bg-surface rounded-lg border">
         <summary className="min-h-10 cursor-pointer px-3 py-2.5 text-sm font-medium">
