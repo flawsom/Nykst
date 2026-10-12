@@ -433,7 +433,9 @@ function Workspace(props: {
           <aside
             aria-label="Inspector"
             className={cn(
-              "border-border bg-surface min-h-0 w-full shrink-0 border-l lg:block lg:w-[22rem] xl:w-96",
+              "border-border bg-surface min-h-0 w-full shrink-0 border-l lg:w-[22rem] xl:w-96",
+              // With nothing selected the inspector is empty, so the map gets the room.
+              selected ? "lg:block" : "lg:hidden",
               pane === "inspector" ? "block" : "hidden",
             )}
           >
