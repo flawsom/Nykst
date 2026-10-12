@@ -15,6 +15,8 @@ import { ActivityView } from "@/components/workspace/ActivityView";
 import { ChangeView } from "@/components/workspace/ChangeView";
 import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { Explorer } from "@/components/workspace/Explorer";
+import { FreshnessBanner } from "@/components/workspace/FreshnessBanner";
+import { PullRequestsView } from "@/components/workspace/PullRequestsView";
 import { FindingsView } from "@/components/workspace/FindingsView";
 import { IngestProgress } from "@/components/workspace/IngestProgress";
 import { Inspector } from "@/components/workspace/Inspector";
@@ -34,7 +36,7 @@ import {
   type WorkspaceView,
 } from "@/lib/workspace/model";
 
-const VIEWS: WorkspaceView[] = ["map", "findings", "activity", "change"];
+const VIEWS: WorkspaceView[] = ["map", "findings", "activity", "pulls", "change"];
 
 export const Route = createFileRoute("/graph")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -270,7 +272,8 @@ const VIEW_META: Record<WorkspaceView, { label: string; icon: typeof Network }> 
   map: { label: "Map", icon: Network },
   findings: { label: "Findings", icon: AlertTriangle },
   activity: { label: "Activity", icon: Activity },
-  change: { label: "Change", icon: GitPullRequestArrow },
+  pulls: { label: "Pull requests", icon: GitPullRequestArrow },
+  change: { label: "Change", icon: FileCode2 },
 };
 
 type Pane = "files" | "main" | "inspector";
@@ -371,6 +374,7 @@ function Workspace(props: {
           )}
         </header>
 
+        <FreshnessBanner onReanalyze={props.onReanalyze} />
         <div className="flex min-h-0 flex-1">
           <aside
             aria-label="Files"
@@ -421,6 +425,7 @@ function Workspace(props: {
               {props.view === "map" && <MapView />}
               {props.view === "findings" && <FindingsView />}
               {props.view === "activity" && <ActivityView />}
+              {props.view === "pulls" && <PullRequestsView />}
               {props.view === "change" && <ChangeView />}
             </div>
           </main>

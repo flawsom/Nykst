@@ -1,9 +1,11 @@
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import { areaOf, chainFor, type Edge } from "@/lib/analysis/impact";
+import { chainFor, type Edge } from "@/lib/analysis/impact";
 import { IMPACT_TONE, SEVERITY_TONE, worstSeverity } from "@/lib/workspace/model";
+import { Attention } from "./Attention";
+import { SystemMap } from "./SystemMap";
 import { useWorkspace } from "./WorkspaceContext";
-import { Badge, EmptyState, FileLink, SectionTitle, Stat, buttonClass } from "./ui";
+import { Badge, EmptyState, FileLink, SectionTitle, buttonClass } from "./ui";
 
 const nf = new Intl.NumberFormat("en-US");
 const base = (path: string) => path.split("/").pop() ?? path;
@@ -15,7 +17,7 @@ const unique = (edges: Edge[]) => {
 export function MapView() {
   const { selected } = useWorkspace();
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
       {selected ? <Neighbourhood path={selected} /> : <Overview />}
     </div>
   );
@@ -23,169 +25,103 @@ export function MapView() {
 
 /* --------------------------------- overview --------------------------------- */
 
+function Chip({ label, value, tone }: { label: string; value: number; tone?: "warn" | "danger" }) {
+  return (
+    <li className="border-border bg-surface flex items-baseline gap-1.5 rounded-md border px-2.5 py-1">
+      <span
+        className={`tabular text-sm font-semibold ${tone === "danger" ? "text-danger" : tone === "warn" ? "text-warn" : ""}`}
+      >
+        {nf.format(value)}
+      </span>
+      <span className="text-muted-foreground text-xs">{label}</span>
+    </li>
+  );
+}
+
 function Overview() {
-  const { data, index, impact } = useWorkspace();
+  const { data } = useWorkspace();
   const { analysis } = data;
   const high = data.findings.filter((f) => f.severity === "high").length;
-
-  const areas = useMemo(() => {
-    const map = new Map<string, { files: number; loc: number; outside: Set<string> }>();
-    for (const file of analysis.files) {
-      const area = areaOf(file.path);
-      const entry = map.get(area) ?? { files: 0, loc: 0, outside: new Set<string>() };
-      entry.files += 1;
-      entry.loc += file.loc;
-      for (const edge of index.dependents.get(file.path) ?? [])
-        if (areaOf(edge.path) !== area) entry.outside.add(edge.path);
-      map.set(area, entry);
-    }
-    return [...map.entries()]
-      .map(([area, v]) => ({ area, files: v.files, loc: v.loc, outside: v.outside.size }))
-      .sort((a, b) => b.files - a.files || a.area.localeCompare(b.area))
-      .slice(0, 12);
-  }, [analysis, index]);
-  const maxFiles = Math.max(1, ...areas.map((a) => a.files));
-
-  const top = useMemo(
-    () =>
-      analysis.files
-        .map((file) => ({
-          path: file.path,
-          count: unique(index.dependents.get(file.path) ?? []).length,
-        }))
-        .filter((item) => item.count > 0)
-        .sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
-        .slice(0, 10),
-    [analysis, index],
-  );
-
   return (
     <>
-      <section aria-label="Repository overview" className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Repository overview</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <Stat label="source files" value={nf.format(analysis.stats.sourceFiles)} />
-          <Stat label="import edges" value={nf.format(analysis.stats.internalEdges)} />
-          <Stat label="external services" value={analysis.services.length} />
-          <Stat label="data resources" value={analysis.resources.length} />
-          <Stat
-            label="circular imports"
-            value={analysis.cycles.length}
-            {...(analysis.cycles.length > 0 ? { tone: "warn" as const } : {})}
+      <h2 className="sr-only">Repository map</h2>
+      <ul aria-label="Repository totals" className="flex flex-wrap gap-2">
+        <Chip label="files" value={analysis.stats.sourceFiles} />
+        <Chip label="import edges" value={analysis.stats.internalEdges} />
+        <Chip label="services" value={analysis.services.length} />
+        <Chip label="data resources" value={analysis.resources.length} />
+        <Chip
+          label="circular imports"
+          value={analysis.cycles.length}
+          {...(analysis.cycles.length > 0 ? { tone: "warn" as const } : {})}
+        />
+        <Chip
+          label={high > 0 ? `findings, ${high} high` : "findings"}
+          value={data.findings.length}
+          {...(high > 0 ? { tone: "danger" as const } : {})}
+        />
+      </ul>
+      <SystemMap />
+      <Attention />
+      <details className="border-border bg-surface rounded-lg border">
+        <summary className="min-h-10 cursor-pointer px-3 py-2.5 text-sm font-medium">
+          External services and data ({analysis.services.length + analysis.resources.length})
+        </summary>
+        <div className="border-border grid gap-6 border-t p-3 md:grid-cols-2">
+          <Collapsible
+            title="External services"
+            empty="No external services were detected."
+            rows={analysis.services.map((s) => ({
+              key: s.id,
+              node: (
+                <>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm">{s.name}</span>
+                    <Badge>{s.category}</Badge>
+                  </span>
+                  <span className="text-muted-foreground tabular shrink-0 text-xs">
+                    {nf.format(s.files.length)} files
+                  </span>
+                </>
+              ),
+            }))}
           />
-          <Stat
-            label={high > 0 ? `open findings, ${high} high` : "open findings"}
-            value={data.findings.length}
-            {...(high > 0 ? { tone: "danger" as const } : {})}
+          <Collapsible
+            title="Data"
+            empty="No database tables, functions or buckets were detected."
+            rows={analysis.resources.map((r) => ({
+              key: r.id,
+              node: (
+                <>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Badge>{r.kind}</Badge>
+                    <span className="truncate font-mono text-sm">{r.name}</span>
+                  </span>
+                  <span className="text-muted-foreground tabular shrink-0 text-xs">
+                    {nf.format(r.uses.length)} uses
+                  </span>
+                </>
+              ),
+            }))}
           />
         </div>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <SectionTitle>Areas</SectionTitle>
-        {areas.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No source files were analysed.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {areas.map((item) => (
-              <li key={item.area} className="border-border bg-surface rounded-lg border p-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <span className="font-mono text-sm break-all">{item.area}</span>
-                  <span className="text-muted-foreground tabular text-xs">
-                    {nf.format(item.files)} files · {nf.format(item.loc)} LOC · imported from
-                    outside by {nf.format(item.outside)}
-                  </span>
-                </div>
-                <div className="bg-muted mt-2 h-2 overflow-hidden rounded-full" aria-hidden>
-                  <div
-                    className="bg-primary h-full rounded-full"
-                    style={{ width: `${Math.max(2, (item.files / maxFiles) * 100)}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <SectionTitle>Most depended-on files</SectionTitle>
-        {top.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No file is imported by another file.</p>
-        ) : (
-          <ul className="divide-border border-border bg-surface divide-y rounded-lg border">
-            {top.map((item) => {
-              const level = impact([item.path]).level;
-              return (
-                <li
-                  key={item.path}
-                  className="flex min-h-10 items-center justify-between gap-3 px-3 py-2"
-                >
-                  <FileLink path={item.path} />
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="text-muted-foreground tabular text-xs">
-                      {nf.format(item.count)} importers
-                    </span>
-                    <Badge tone={IMPACT_TONE[level]}>{level}</Badge>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <div className="grid gap-8 md:grid-cols-2">
-        <Collapsible
-          title="External services"
-          empty="No external services were detected."
-          rows={analysis.services.map((s) => ({
-            key: s.id,
-            node: (
-              <>
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-sm">{s.name}</span>
-                  <Badge>{s.category}</Badge>
-                </span>
-                <span className="text-muted-foreground tabular shrink-0 text-xs">
-                  {nf.format(s.files.length)} files
-                </span>
-              </>
-            ),
-          }))}
-        />
-        <Collapsible
-          title="Data"
-          empty="No database tables, functions or buckets were detected."
-          rows={analysis.resources.map((r) => ({
-            key: r.id,
-            node: (
-              <>
-                <span className="flex min-w-0 items-center gap-2">
-                  <Badge>{r.kind}</Badge>
-                  <span className="truncate font-mono text-sm">{r.name}</span>
-                </span>
-                <span className="text-muted-foreground tabular shrink-0 text-xs">
-                  {nf.format(r.uses.length)} uses
-                </span>
-              </>
-            ),
-          }))}
-        />
-      </div>
-
-      <section className="flex flex-col gap-3">
-        <SectionTitle>What this analysis cannot see</SectionTitle>
-        {analysis.limitations.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No limitations were reported.</p>
-        ) : (
-          <ul className="text-muted-foreground list-disc space-y-1.5 pl-5 text-sm leading-relaxed">
-            {analysis.limitations.map((text) => (
-              <li key={text}>{text}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+      </details>
+      <details className="border-border bg-surface rounded-lg border">
+        <summary className="min-h-10 cursor-pointer px-3 py-2.5 text-sm font-medium">
+          What this analysis cannot see
+        </summary>
+        <div className="border-border border-t p-3">
+          {analysis.limitations.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No limitations were reported.</p>
+          ) : (
+            <ul className="text-muted-foreground list-disc space-y-1.5 pl-5 text-sm leading-relaxed">
+              {analysis.limitations.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
     </>
   );
 }
@@ -293,7 +229,7 @@ function Neighbourhood({ path }: { path: string }) {
       <div className="flex flex-col gap-3">
         <div>
           <button type="button" className={buttonClass.ghost} onClick={() => select(null)}>
-            <ArrowLeft className="size-4" aria-hidden /> Back to overview
+            <ArrowLeft className="size-4" aria-hidden /> Back to the map
           </button>
         </div>
         <h2 className="font-mono text-base font-semibold break-all">{path}</h2>

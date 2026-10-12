@@ -23,6 +23,7 @@ import { Route as ApiMcpRouteImport } from './routes/api.mcp'
 import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
 import { Route as ApiMemoryRouteImport } from './routes/api.memory'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
+import { Route as ApiPullsRouteImport } from './routes/api.pulls'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
@@ -107,6 +108,11 @@ const ApiMemoryRoute = ApiMemoryRouteImport.update({
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
   id: '/api/pre-registration',
   path: '/api/pre-registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPullsRoute = ApiPullsRouteImport.update({
+  id: '/api/pulls',
+  path: '/api/pulls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubscriptionRoute = ApiSubscriptionRouteImport.update({
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/pulls': typeof ApiPullsRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/pulls': typeof ApiPullsRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
+  '/api/pulls': typeof ApiPullsRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/mcp-tokens'
     | '/api/memory'
     | '/api/pre-registration'
+    | '/api/pulls'
     | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/mcp-tokens'
     | '/api/memory'
     | '/api/pre-registration'
+    | '/api/pulls'
     | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/mcp-tokens'
     | '/api/memory'
     | '/api/pre-registration'
+    | '/api/pulls'
     | '/api/subscription'
     | '/api/ai/chat'
     | '/api/ai/key'
@@ -398,6 +410,7 @@ export interface RootRouteChildren {
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
+  ApiPullsRoute: typeof ApiPullsRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
@@ -512,6 +525,13 @@ declare module '@tanstack/react-router' {
       path: '/api/pre-registration'
       fullPath: '/api/pre-registration'
       preLoaderRoute: typeof ApiPreRegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pulls': {
+      id: '/api/pulls'
+      path: '/api/pulls'
+      fullPath: '/api/pulls'
+      preLoaderRoute: typeof ApiPullsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subscription': {
@@ -649,6 +669,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMcpTokensRoute: ApiMcpTokensRoute,
   ApiMemoryRoute: ApiMemoryRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
+  ApiPullsRoute: ApiPullsRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
