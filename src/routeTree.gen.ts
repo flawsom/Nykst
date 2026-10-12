@@ -25,6 +25,7 @@ import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
+import { Route as ApiIntegrationsConnectorsRouteImport } from './routes/api.integrations.connectors'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
@@ -37,6 +38,13 @@ import { Route as ApiIntegrationsGithubOrganizationsRouteImport } from './routes
 import { Route as ApiIntegrationsGithubPersonalRepositoriesRouteImport } from './routes/api.integrations.github.personal-repositories'
 import { Route as ApiIntegrationsGithubRepositoriesRouteImport } from './routes/api.integrations.github.repositories'
 import { Route as ApiIntegrationsGithubStartRouteImport } from './routes/api.integrations.github.start'
+import { Route as ApiIntegrationsJiraCallbackRouteImport } from './routes/api.integrations.jira.callback'
+import { Route as ApiIntegrationsJiraIssuesRouteImport } from './routes/api.integrations.jira.issues'
+import { Route as ApiIntegrationsJiraStartRouteImport } from './routes/api.integrations.jira.start'
+import { Route as ApiIntegrationsSlackCallbackRouteImport } from './routes/api.integrations.slack.callback'
+import { Route as ApiIntegrationsSlackCommandRouteImport } from './routes/api.integrations.slack.command'
+import { Route as ApiIntegrationsSlackNotifyRouteImport } from './routes/api.integrations.slack.notify'
+import { Route as ApiIntegrationsSlackStartRouteImport } from './routes/api.integrations.slack.start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +126,12 @@ const ApiAiTestRoute = ApiAiTestRouteImport.update({
   path: '/api/ai/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsConnectorsRoute =
+  ApiIntegrationsConnectorsRouteImport.update({
+    id: '/api/integrations/connectors',
+    path: '/api/integrations/connectors',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -188,6 +202,48 @@ const ApiIntegrationsGithubStartRoute =
     path: '/api/integrations/github/start',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsJiraCallbackRoute =
+  ApiIntegrationsJiraCallbackRouteImport.update({
+    id: '/api/integrations/jira/callback',
+    path: '/api/integrations/jira/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsJiraIssuesRoute =
+  ApiIntegrationsJiraIssuesRouteImport.update({
+    id: '/api/integrations/jira/issues',
+    path: '/api/integrations/jira/issues',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsJiraStartRoute =
+  ApiIntegrationsJiraStartRouteImport.update({
+    id: '/api/integrations/jira/start',
+    path: '/api/integrations/jira/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsSlackCallbackRoute =
+  ApiIntegrationsSlackCallbackRouteImport.update({
+    id: '/api/integrations/slack/callback',
+    path: '/api/integrations/slack/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsSlackCommandRoute =
+  ApiIntegrationsSlackCommandRouteImport.update({
+    id: '/api/integrations/slack/command',
+    path: '/api/integrations/slack/command',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsSlackNotifyRoute =
+  ApiIntegrationsSlackNotifyRouteImport.update({
+    id: '/api/integrations/slack/notify',
+    path: '/api/integrations/slack/notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsSlackStartRoute =
+  ApiIntegrationsSlackStartRouteImport.update({
+    id: '/api/integrations/slack/start',
+    path: '/api/integrations/slack/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -206,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -218,6 +275,13 @@ export interface FileRoutesByFullPath {
   '/api/integrations/github/personal-repositories': typeof ApiIntegrationsGithubPersonalRepositoriesRoute
   '/api/integrations/github/repositories': typeof ApiIntegrationsGithubRepositoriesRoute
   '/api/integrations/github/start': typeof ApiIntegrationsGithubStartRoute
+  '/api/integrations/jira/callback': typeof ApiIntegrationsJiraCallbackRoute
+  '/api/integrations/jira/issues': typeof ApiIntegrationsJiraIssuesRoute
+  '/api/integrations/jira/start': typeof ApiIntegrationsJiraStartRoute
+  '/api/integrations/slack/callback': typeof ApiIntegrationsSlackCallbackRoute
+  '/api/integrations/slack/command': typeof ApiIntegrationsSlackCommandRoute
+  '/api/integrations/slack/notify': typeof ApiIntegrationsSlackNotifyRoute
+  '/api/integrations/slack/start': typeof ApiIntegrationsSlackStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -236,6 +300,7 @@ export interface FileRoutesByTo {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -248,6 +313,13 @@ export interface FileRoutesByTo {
   '/api/integrations/github/personal-repositories': typeof ApiIntegrationsGithubPersonalRepositoriesRoute
   '/api/integrations/github/repositories': typeof ApiIntegrationsGithubRepositoriesRoute
   '/api/integrations/github/start': typeof ApiIntegrationsGithubStartRoute
+  '/api/integrations/jira/callback': typeof ApiIntegrationsJiraCallbackRoute
+  '/api/integrations/jira/issues': typeof ApiIntegrationsJiraIssuesRoute
+  '/api/integrations/jira/start': typeof ApiIntegrationsJiraStartRoute
+  '/api/integrations/slack/callback': typeof ApiIntegrationsSlackCallbackRoute
+  '/api/integrations/slack/command': typeof ApiIntegrationsSlackCommandRoute
+  '/api/integrations/slack/notify': typeof ApiIntegrationsSlackNotifyRoute
+  '/api/integrations/slack/start': typeof ApiIntegrationsSlackStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -267,6 +339,7 @@ export interface FileRoutesById {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -279,6 +352,13 @@ export interface FileRoutesById {
   '/api/integrations/github/personal-repositories': typeof ApiIntegrationsGithubPersonalRepositoriesRoute
   '/api/integrations/github/repositories': typeof ApiIntegrationsGithubRepositoriesRoute
   '/api/integrations/github/start': typeof ApiIntegrationsGithubStartRoute
+  '/api/integrations/jira/callback': typeof ApiIntegrationsJiraCallbackRoute
+  '/api/integrations/jira/issues': typeof ApiIntegrationsJiraIssuesRoute
+  '/api/integrations/jira/start': typeof ApiIntegrationsJiraStartRoute
+  '/api/integrations/slack/callback': typeof ApiIntegrationsSlackCallbackRoute
+  '/api/integrations/slack/command': typeof ApiIntegrationsSlackCommandRoute
+  '/api/integrations/slack/notify': typeof ApiIntegrationsSlackNotifyRoute
+  '/api/integrations/slack/start': typeof ApiIntegrationsSlackStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -299,6 +379,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -311,6 +392,13 @@ export interface FileRouteTypes {
     | '/api/integrations/github/personal-repositories'
     | '/api/integrations/github/repositories'
     | '/api/integrations/github/start'
+    | '/api/integrations/jira/callback'
+    | '/api/integrations/jira/issues'
+    | '/api/integrations/jira/start'
+    | '/api/integrations/slack/callback'
+    | '/api/integrations/slack/command'
+    | '/api/integrations/slack/notify'
+    | '/api/integrations/slack/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -329,6 +417,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -341,6 +430,13 @@ export interface FileRouteTypes {
     | '/api/integrations/github/personal-repositories'
     | '/api/integrations/github/repositories'
     | '/api/integrations/github/start'
+    | '/api/integrations/jira/callback'
+    | '/api/integrations/jira/issues'
+    | '/api/integrations/jira/start'
+    | '/api/integrations/slack/callback'
+    | '/api/integrations/slack/command'
+    | '/api/integrations/slack/notify'
+    | '/api/integrations/slack/start'
   id:
     | '__root__'
     | '/'
@@ -359,6 +455,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -371,6 +468,13 @@ export interface FileRouteTypes {
     | '/api/integrations/github/personal-repositories'
     | '/api/integrations/github/repositories'
     | '/api/integrations/github/start'
+    | '/api/integrations/jira/callback'
+    | '/api/integrations/jira/issues'
+    | '/api/integrations/jira/start'
+    | '/api/integrations/slack/callback'
+    | '/api/integrations/slack/command'
+    | '/api/integrations/slack/notify'
+    | '/api/integrations/slack/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -390,6 +494,7 @@ export interface RootRouteChildren {
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
+  ApiIntegrationsConnectorsRoute: typeof ApiIntegrationsConnectorsRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
@@ -401,6 +506,13 @@ export interface RootRouteChildren {
   ApiIntegrationsGithubPersonalRepositoriesRoute: typeof ApiIntegrationsGithubPersonalRepositoriesRoute
   ApiIntegrationsGithubRepositoriesRoute: typeof ApiIntegrationsGithubRepositoriesRoute
   ApiIntegrationsGithubStartRoute: typeof ApiIntegrationsGithubStartRoute
+  ApiIntegrationsJiraCallbackRoute: typeof ApiIntegrationsJiraCallbackRoute
+  ApiIntegrationsJiraIssuesRoute: typeof ApiIntegrationsJiraIssuesRoute
+  ApiIntegrationsJiraStartRoute: typeof ApiIntegrationsJiraStartRoute
+  ApiIntegrationsSlackCallbackRoute: typeof ApiIntegrationsSlackCallbackRoute
+  ApiIntegrationsSlackCommandRoute: typeof ApiIntegrationsSlackCommandRoute
+  ApiIntegrationsSlackNotifyRoute: typeof ApiIntegrationsSlackNotifyRoute
+  ApiIntegrationsSlackStartRoute: typeof ApiIntegrationsSlackStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -517,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/connectors': {
+      id: '/api/integrations/connectors'
+      path: '/api/integrations/connectors'
+      fullPath: '/api/integrations/connectors'
+      preLoaderRoute: typeof ApiIntegrationsConnectorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/subscription/admin': {
       id: '/api/subscription/admin'
       path: '/admin'
@@ -601,6 +720,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsGithubStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/jira/callback': {
+      id: '/api/integrations/jira/callback'
+      path: '/api/integrations/jira/callback'
+      fullPath: '/api/integrations/jira/callback'
+      preLoaderRoute: typeof ApiIntegrationsJiraCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/jira/issues': {
+      id: '/api/integrations/jira/issues'
+      path: '/api/integrations/jira/issues'
+      fullPath: '/api/integrations/jira/issues'
+      preLoaderRoute: typeof ApiIntegrationsJiraIssuesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/jira/start': {
+      id: '/api/integrations/jira/start'
+      path: '/api/integrations/jira/start'
+      fullPath: '/api/integrations/jira/start'
+      preLoaderRoute: typeof ApiIntegrationsJiraStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/slack/callback': {
+      id: '/api/integrations/slack/callback'
+      path: '/api/integrations/slack/callback'
+      fullPath: '/api/integrations/slack/callback'
+      preLoaderRoute: typeof ApiIntegrationsSlackCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/slack/command': {
+      id: '/api/integrations/slack/command'
+      path: '/api/integrations/slack/command'
+      fullPath: '/api/integrations/slack/command'
+      preLoaderRoute: typeof ApiIntegrationsSlackCommandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/slack/notify': {
+      id: '/api/integrations/slack/notify'
+      path: '/api/integrations/slack/notify'
+      fullPath: '/api/integrations/slack/notify'
+      preLoaderRoute: typeof ApiIntegrationsSlackNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/slack/start': {
+      id: '/api/integrations/slack/start'
+      path: '/api/integrations/slack/start'
+      fullPath: '/api/integrations/slack/start'
+      preLoaderRoute: typeof ApiIntegrationsSlackStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -633,6 +801,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
+  ApiIntegrationsConnectorsRoute: ApiIntegrationsConnectorsRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
@@ -649,6 +818,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsGithubRepositoriesRoute:
     ApiIntegrationsGithubRepositoriesRoute,
   ApiIntegrationsGithubStartRoute: ApiIntegrationsGithubStartRoute,
+  ApiIntegrationsJiraCallbackRoute: ApiIntegrationsJiraCallbackRoute,
+  ApiIntegrationsJiraIssuesRoute: ApiIntegrationsJiraIssuesRoute,
+  ApiIntegrationsJiraStartRoute: ApiIntegrationsJiraStartRoute,
+  ApiIntegrationsSlackCallbackRoute: ApiIntegrationsSlackCallbackRoute,
+  ApiIntegrationsSlackCommandRoute: ApiIntegrationsSlackCommandRoute,
+  ApiIntegrationsSlackNotifyRoute: ApiIntegrationsSlackNotifyRoute,
+  ApiIntegrationsSlackStartRoute: ApiIntegrationsSlackStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

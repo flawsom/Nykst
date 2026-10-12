@@ -74,7 +74,7 @@ async function userForToken(request: Request) {
   return data;
 }
 
-async function loadSnapshot(userId: string, repository?: string): Promise<AnalysisSnapshot> {
+export async function loadSnapshot(userId: string, repository?: string): Promise<AnalysisSnapshot> {
   let query = supabaseAdmin
     .from("repository_ingestions")
     .select("repository_full_name, created_at, payload")

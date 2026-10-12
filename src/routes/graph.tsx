@@ -5,6 +5,7 @@ import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
 import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
+import { ConnectorsPanel } from "@/components/graph/ConnectorsPanel";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
@@ -54,6 +55,8 @@ function GraphPage() {
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
   const [softModal, setSoftModal] = useState<"premium" | null>(null);
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
+  const [connectorsOpen, setConnectorsOpen] = useState(false);
+  const [connectorMessage, setConnectorMessage] = useState<string | null>(null);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
 
@@ -89,7 +92,18 @@ function GraphPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+    const params = new URLSearchParams(window.location.search);
+    const returned = params.get("connector");
+    if (returned) {
+      setConnectorMessage(
+        returned.endsWith("-failed")
+          ? `Connecting ${returned.startsWith("slack") ? "Slack" : "Jira"} failed: ${params.get("reason") ?? "unknown error"}`
+          : `${returned === "slack" ? "Slack" : "Jira"} connected.`,
+      );
+      setConnectorsOpen(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    const isDemo = params.get("demo") === "1";
     setDemoMode(isDemo);
     if (isDemo) {
       setOrgSlug("acme");
@@ -241,6 +255,14 @@ function GraphPage() {
           >
             Before You Act <span aria-hidden="true">→</span>
           </button>
+          {snapshot && (
+            <button
+              onClick={() => setConnectorsOpen(true)}
+              className="border-border bg-surface text-foreground hover:bg-surface-2 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              Connectors
+            </button>
+          )}
           {snapshot && (
             <button
               onClick={() => setAiToolsOpen(true)}
@@ -427,6 +449,11 @@ function GraphPage() {
         {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
       />
       <ConnectAiTools open={aiToolsOpen} onClose={() => setAiToolsOpen(false)} />
+      <ConnectorsPanel
+        open={connectorsOpen}
+        message={connectorMessage}
+        onClose={() => setConnectorsOpen(false)}
+      />
       <BeforeYouAct
         node={inspected}
         snapshot={snapshot?.payload ?? null}

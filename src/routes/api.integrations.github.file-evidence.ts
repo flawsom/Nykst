@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { githubError, githubFileEvidence, json, requireGithubToken } from "@/lib/integrations/github";
+import {
+  githubError,
+  githubFileEvidence,
+  json,
+  requireGithubToken,
+} from "@/lib/integrations/github";
 
 function clean(value: string | null, max: number) {
   return (value ?? "").trim().slice(0, max);
@@ -17,7 +22,10 @@ export const Route = createFileRoute("/api/integrations/github/file-evidence")({
           const path = clean(url.searchParams.get("path"), 300);
           const branch = clean(url.searchParams.get("branch"), 100) || "main";
           if (!owner || !repo || !path || path.includes("..")) {
-            return json({ error: "A safe GitHub repository file path is required." }, { status: 400 });
+            return json(
+              { error: "A safe GitHub repository file path is required." },
+              { status: 400 },
+            );
           }
           return json({ evidence: await githubFileEvidence(token, owner, repo, path, branch) });
         } catch (error) {
