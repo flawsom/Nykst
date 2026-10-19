@@ -709,7 +709,7 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
     "unresolvedImports": 0,
     "skippedFiles": 1,
     "loc": 24766,
-    "durationMs": 806
+    "durationMs": 814
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
@@ -817,9 +817,9 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric | Measured | Command |
 | :--- | :--- | :--- |
-| Cold AST compile, 164 files | **806 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
+| Cold AST compile, 164 files | **814 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
 | Warm cached response | **11 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Analyzed source | **164 files, 24,766 LOC** | `jq .stats` |
+| Analyzed source | **164 files, 24,782 LOC** | `jq .stats` |
 | Internal import edges | **319, zero unresolved** | `jq .stats.internalEdges, .stats.unresolvedImports` |
 | Cycles | **0** | `jq '.cycles \| length'` |
 | SQL and data resources | **12** | `jq '.resources \| length'` |
