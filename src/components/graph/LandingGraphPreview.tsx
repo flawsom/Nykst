@@ -23,7 +23,7 @@ const RADIUS_Y = 228;
 
 /**
  * Live interactive Graph-RAG preview rendered from the real TypeScript AST analysis
- * of flawsom/nykst-software-intellegence (or the connected repository).
+ * of flawsom/nykst (or the connected repository).
  */
 export function LandingGraphPreview({
   className,
@@ -75,7 +75,7 @@ export function LandingGraphPreview({
             <span className="size-2 rounded-full bg-amber-400/80" />
             <span className="size-2 rounded-full bg-emerald-400/80" />
             <span className="text-muted-foreground ml-2 truncate font-mono text-[10px] tracking-wide">
-              nykst://ast/{liveData?.repository ?? "flawsom/nykst-software-intellegence"}
+              nykst://ast/{liveData?.repository ?? "flawsom/nykst"}
             </span>
           </div>
           <span className="border-primary/40 bg-primary/15 text-primary flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase">

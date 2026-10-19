@@ -238,7 +238,7 @@ function Landing() {
   const marqueeItems = [
     {
       label: "SELF-INDEXED REPO",
-      value: liveSelf?.repository ?? "flawsom/nykst-software-intellegence",
+      value: liveSelf?.repository ?? "flawsom/nykst",
       badge: "LIVE AST",
     },
     {

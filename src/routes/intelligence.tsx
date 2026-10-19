@@ -382,10 +382,12 @@ function IntelligencePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 font-mono text-[10px] sm:px-3 sm:text-xs">
-            <span className="bg-primary size-1.5 rounded-full" />
-            {repositorySnapshot.repository?.full_name ?? "connected repository"}
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="border-primary/30 bg-primary/10 text-primary inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 font-mono text-[10px] sm:px-3 sm:text-xs">
+            <span className="bg-primary size-1.5 shrink-0 rounded-full" />
+            <span className="truncate">
+              {repositorySnapshot.repository?.full_name ?? "connected repository"}
+            </span>
           </span>
         </div>
       </header>

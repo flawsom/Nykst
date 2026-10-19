@@ -6,7 +6,7 @@
 
 <div align="center">
 
-<img src="public/logo.svg" width="240" alt="Nykst" />
+<h1>Nykst</h1>
 
 **Know the blast radius before you change the code.**
 
@@ -19,29 +19,27 @@ Every number it reports is computed from real source, with file and line citatio
 [![Live App](https://img.shields.io/badge/LAUNCH_APP-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
 [![Docs](https://img.shields.io/badge/MCP_SETUP-Guides_for_9_agents-5EEAD4?style=for-the-badge&logo=readthedocs&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes/mcp)
 [![Install](https://img.shields.io/badge/INSTALL-bun_install-8596A7?style=for-the-badge&logo=gnubash&logoColor=eef5fa&labelColor=0b141b)](#quick-start)
-[![Source](https://img.shields.io/badge/SOURCE-flawsom%2Fnykst-8596A7?style=for-the-badge&logo=github&logoColor=eef5fa&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence)
+[![Source](https://img.shields.io/badge/SOURCE-flawsom%2Fnykst-8596A7?style=for-the-badge&logo=github&logoColor=eef5fa&labelColor=0b141b)](https://github.com/flawsom/nykst)
 
 <br/>
 
 [![Version](https://img.shields.io/badge/version-1.0.0-5EEAD4?style=flat-square&labelColor=06110f)](#roadmap)
 [![License](https://img.shields.io/badge/license-MIT-5EEAD4?style=flat-square&labelColor=06110f)](LICENSE)
-[![CI](https://img.shields.io/badge/CI-tsc_%2B_23_tests-5EEAD4?style=flat-square&logo=githubactions&labelColor=06110f)](.github/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-tsc_%2B_unit_tests-5EEAD4?style=flat-square&logo=githubactions&labelColor=06110f)](.github/workflows/ci.yml)
+[![E2E](https://img.shields.io/badge/E2E-Playwright_%2B_visual-5EEAD4?style=flat-square&logo=playwright&labelColor=06110f)](.github/workflows/e2e.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](#tech-stack)
 [![MCP](https://img.shields.io/badge/MCP-2025--06--18-6EE7B7?style=flat-square&labelColor=06110f)](#api)
 [![Runtime](https://img.shields.io/badge/runtime-Bun_1.4_%2F_Node_22-8596A7?style=flat-square&logo=bun&logoColor=white)](#quick-start)
 
-<!-- Repository counters (stars, forks, issues, pull requests, downloads, last commit,
-     contributors) use the GitHub badge endpoints and read as "repo not found" while this
-     repository is private. Uncomment them once the repository is public.
+<br/>
 
-[![Stars](https://img.shields.io/github/stars/flawsom/nykst-software-intellegence?style=flat-square&color=2DD4BF&label=stars)](https://github.com/flawsom/nykst-software-intellegence/stargazers)
-[![Forks](https://img.shields.io/github/forks/flawsom/nykst-software-intellegence?style=flat-square&color=2DD4BF)](https://github.com/flawsom/nykst-software-intellegence/forks)
-[![Downloads](https://img.shields.io/github/downloads/flawsom/nykst-software-intellegence/total?style=flat-square&color=5EEAD4&label=downloads)](https://github.com/flawsom/nykst-software-intellegence/releases)
-[![Issues](https://img.shields.io/github/issues/flawsom/nykst-software-intellegence?style=flat-square&color=FBBF24)](https://github.com/flawsom/nykst-software-intellegence/issues)
-[![PRs](https://img.shields.io/github/issues-pr/flawsom/nykst-software-intellegence?style=flat-square&color=5EEAD4)](https://github.com/flawsom/nykst-software-intellegence/pulls)
-[![Last commit](https://img.shields.io/github/last-commit/flawsom/nykst-software-intellegence?style=flat-square&color=8596A7)](https://github.com/flawsom/nykst-software-intellegence/commits/main)
-[![Contributors](https://img.shields.io/github/contributors/flawsom/nykst-software-intellegence?style=flat-square&color=5EEAD4)](https://github.com/flawsom/nykst-software-intellegence/graphs/contributors)
--->
+[![Stars](https://img.shields.io/github/stars/flawsom/nykst?style=flat-square&color=2DD4BF&label=stars)](https://github.com/flawsom/nykst/stargazers)
+[![Forks](https://img.shields.io/github/forks/flawsom/nykst?style=flat-square&color=2DD4BF&label=forks)](https://github.com/flawsom/nykst/forks)
+[![Downloads](https://img.shields.io/github/downloads/flawsom/nykst/total?style=flat-square&color=5EEAD4&label=downloads)](https://github.com/flawsom/nykst/releases)
+[![Issues](https://img.shields.io/github/issues/flawsom/nykst?style=flat-square&color=FBBF24&label=issues)](https://github.com/flawsom/nykst/issues)
+[![Pull requests](https://img.shields.io/github/issues-pr/flawsom/nykst?style=flat-square&color=5EEAD4&label=pull%20requests)](https://github.com/flawsom/nykst/pulls)
+[![Last commit](https://img.shields.io/github/last-commit/flawsom/nykst?style=flat-square&color=8596A7&label=last%20commit)](https://github.com/flawsom/nykst/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/flawsom/nykst?style=flat-square&color=5EEAD4&label=contributors)](https://github.com/flawsom/nykst/graphs/contributors)
 
 </div>
 
@@ -213,7 +211,20 @@ Real captures from the running application. No mockups.
 </tr>
 <tr>
 <td align="center"><sub><b>MCP setup</b> · revocable <code>nyk_</code> tokens, SHA-256 hashed, copy-paste configs for nine agents</sub></td>
-<td align="center"><sub><b>Mobile</b> · the full dark-glass hierarchy on a narrow viewport</sub></td>
+<td align="center"><sub><b>Mobile landing</b> · the full dark-glass hierarchy on a narrow viewport</sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%" valign="top" align="center">
+<img src="docs/assets/screens/mobile-graph.png" width="100%" alt="Nykst graph navigator on a phone viewport" /><br/>
+<sub><b>Mobile graph</b> · topology, breadcrumb and inspector stack cleanly</sub>
+</td>
+<td width="50%" valign="top" align="center">
+<img src="docs/assets/screens/mobile-mcp.png" width="100%" alt="Nykst MCP token and agent setup on a phone viewport" /><br/>
+<sub><b>Mobile MCP</b> · token mint and agent guide without a horizontal scroll</sub>
+</td>
 </tr>
 </table>
 
@@ -458,8 +469,8 @@ sequenceDiagram
 ### Install and run
 
 ```bash
-git clone https://github.com/flawsom/nykst-software-intellegence.git
-cd nykst-software-intellegence
+git clone https://github.com/flawsom/nykst.git
+cd nykst
 bun install
 bun run dev                  # http://localhost:8080, no credentials required for the live workbench
 ```
@@ -505,7 +516,7 @@ curl -s http://localhost:8080/api/health | jq
 
 ```bash
 bunx tsc -b --noEmit    # strict typecheck, zero errors
-bun test ./tests        # 23 tests, 130 assertions
+bun test ./tests        # 27 tests, 139 assertions
 bun run build           # Nitro SSR production build
 ```
 
@@ -551,7 +562,8 @@ Then deploy `.output` with the command for your platform, listed under [Deployme
 ## 📁 Project structure
 
 ```text
-nykst-software-intellegence/
+nykst/
+├── e2e/                             Playwright route, layout, and asset checks
 ├── public/
 │   ├── favicon.svg                  Hexagonal prism mark
 │   ├── logo.svg                     Wordmark
@@ -559,7 +571,7 @@ nykst-software-intellegence/
 ├── docs/assets/
 │   ├── readme-banner.svg            Hero banner
 │   ├── divider.svg                  Section divider
-│   └── screens/                     Product captures
+│   └── screens/                     Desktop and mobile captures
 ├── src/
 │   ├── components/
 │   │   ├── brand/                   Logo and wordmark components
@@ -597,9 +609,13 @@ nykst-software-intellegence/
 ├── supabase/
 │   ├── schema.sql                   Consolidated idempotent schema
 │   └── migrations/                  15 chronological migrations
-├── scripts/analyze-local.ts         CLI for any local folder
+├── scripts/
+│   ├── analyze-local.ts             CLI for any local folder
+│   ├── snapshot-self.ts             Rebuilds the committed analysis snapshot
+│   └── capture-screens.mjs          Desktop and mobile README captures
 ├── tests/                           bun:test suites
-└── docs/assets/                     README assets
+├── e2e/                             Playwright browser checks
+└── playwright.config.ts             Local build or deployed-origin runner
 ```
 
 <div align="right"><a href="#top">Back to top</a></div>
@@ -683,16 +699,17 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 
 ```json
 {
-  "repository": "flawsom/nykst-software-intellegence",
+  "repository": "flawsom/nykst",
   "stats": {
-    "treeFiles": 214,
-    "sourceFiles": 160,
-    "analyzedFiles": 160,
-    "internalEdges": 317,
-    "externalPackages": 52,
+    "treeFiles": 219,
+    "sourceFiles": 164,
+    "analyzedFiles": 164,
+    "internalEdges": 319,
+    "externalPackages": 53,
     "unresolvedImports": 0,
-    "loc": 24571,
-    "durationMs": 442
+    "skippedFiles": 1,
+    "loc": 24766,
+    "durationMs": 806
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
@@ -796,21 +813,22 @@ jq '{stats, cycles: (.cycles | length)}' /tmp/nykst-ast.json
 
 ## 📊 Performance
 
-Measured on this repository with Bun 1.4.2, from a source checkout, because the analyzer needs the `src/` tree to resolve imports. A bundled deployment that ships without source analyzes the files it carries instead, so its counts are smaller. Reproduce any row with the command beside it.
+Measured on this repository with Bun 1.4.2 on Node 22, from a production build. The committed snapshot keeps the same counts on hosts that ship without a `src/` tree. Reproduce any row with the command beside it.
 
 | Metric | Measured | Command |
 | :--- | :--- | :--- |
-| Cold AST compile, 160 files | **442 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
-| Warm cached response | **4 to 6 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Analyzed source | **160 files, 24,571 LOC** | `jq .stats` |
-| Internal import edges | **317, zero unresolved** | `jq .stats.internalEdges, .stats.unresolvedImports` |
+| Cold AST compile, 164 files | **806 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
+| Warm cached response | **11 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
+| Analyzed source | **164 files, 24,766 LOC** | `jq .stats` |
+| Internal import edges | **319, zero unresolved** | `jq .stats.internalEdges, .stats.unresolvedImports` |
 | Cycles | **0** | `jq '.cycles \| length'` |
 | SQL and data resources | **12** | `jq '.resources \| length'` |
 | External services | **9** | `jq '.services \| length'` |
-| SSR landing response | **42 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/` |
-| Health probe, all tables | **~740 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health` |
-| Client payload, all routes | **926 kB JS + 107 kB CSS** | `du -sh .output/public` |
-| Test suite | **1.65 s, 23 tests** | `bun test ./tests` |
+| SSR landing response | **44 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/` |
+| Health probe, all tables | **450 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health` |
+| Client payload, all routes | **924 kB JS + 107 kB CSS** | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch` |
+| Test suite | **1.77 s, 27 tests, 139 assertions** | `bun test ./tests` |
+| Playwright suite | **5 routes, desktop and mobile** | `bunx playwright test` |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
@@ -837,11 +855,13 @@ Scores are not asserted in CI: they depend on the region, the network, and the S
 ## 🧪 Testing
 
 ```bash
-bun test ./tests              # unit and integration suites
+bun test ./tests              # 27 tests, 139 assertions
 bun test --coverage ./tests   # coverage report
 bunx tsc -b --noEmit          # strict typecheck, project references
 bun run lint                  # ESLint
 bun run format                # Prettier
+bunx playwright test          # browser checks on the built server
+bun run screens               # refresh the README captures
 ```
 
 | Suite | What it proves |
@@ -849,8 +869,12 @@ bun run format                # Prettier
 | `tests/schema.test.ts` | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected |
 | `tests/repository-graph.test.ts` | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children |
 | `tests/connectors.test.ts` | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip |
+| `tests/self-snapshot.test.ts` | The committed analysis snapshot is well formed, reproducible, and keeps the live workbench populated on hosts that ship without a source tree |
+| `e2e/routes.spec.ts` | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
 
-The suite runs offline for the graph and connector tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
+The unit suite runs offline for the graph, connector, and snapshot tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
+
+GitHub Actions runs the typecheck and unit suites in [`ci.yml`](.github/workflows/ci.yml), and the browser matrix in [`e2e.yml`](.github/workflows/e2e.yml): it installs Chromium, builds the Nitro server, runs Playwright against it, and uploads the report as an artifact.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -859,6 +883,12 @@ The suite runs offline for the graph and connector tests. The schema test skips 
 <a id="deploy"></a>
 
 ## 🚀 Deployment
+
+| Surface | URL | Notes |
+| :--- | :--- | :--- |
+| Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes) | Custom domain on Vercel |
+| Vercel alias | [nykst.vercel.app](https://nykst.vercel.app) | Same project and build |
+| Source | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch |
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
 
@@ -913,7 +943,7 @@ npx wrangler deploy
 
 <br/>
 
-1. Create a project from `flawsom/nykst-software-intellegence`.
+1. Create a project from `flawsom/nykst`.
 2. Build `bun install && bun run build`, start `node .output/server/index.mjs`.
 3. Add variables from [Environment variables](#env).
 
@@ -958,7 +988,7 @@ Use the multi-stage file from [Quick start](#quick-start). The runtime image onl
 
 ## 🤝 Contributing
 
-Contributions that sharpen the analysis engine, widen language support, or improve the navigator are welcome.
+Contributions that sharpen the analysis engine, widen language support, or improve the navigator are welcome. The project is maintained by [@flawsom](https://github.com/flawsom).
 
 **Branches** `feat/<scope>`, `fix/<scope>`, `perf/<scope>`, `docs/<scope>`, `test/<scope>`
 
@@ -993,6 +1023,8 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Multi-origin GitHub OAuth
 - [x] Slack and Jira connectors
 - [x] eSewa subscription flow with admin verification
+- [x] Playwright browser matrix in CI, desktop and mobile
+- [x] Committed self-analysis snapshot for source-less production builds
 - [ ] Incremental graph patching on push webhooks, no full tarball re-download
 - [ ] Tree-sitter adapters for Python, Go, and Rust
 - [ ] Cross-repository federation over OpenAPI and gRPC contracts
@@ -1099,7 +1131,7 @@ If Nykst saved you from a bad merge, a star helps other engineers find it.
 
 <div align="center">
 
-[![Star](https://img.shields.io/badge/STAR-flawsom%2Fnykst-2DD4BF?style=for-the-badge&logo=github&logoColor=06110f&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence/stargazers)
+[![Star](https://img.shields.io/badge/STAR-flawsom%2Fnykst-2DD4BF?style=for-the-badge&logo=github&logoColor=06110f&labelColor=0b141b)](https://github.com/flawsom/nykst/stargazers)
 [![Sponsor](https://img.shields.io/badge/SPONSOR-GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=0b141b)](https://github.com/sponsors/flawsom)
 [![Coffee](https://img.shields.io/badge/BUY_ME_A_COFFEE-nykstsoftint-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=0b141b&labelColor=0b141b)](https://www.buymeacoffee.com/nykstsoftint)
 [![Email](https://img.shields.io/badge/EMAIL-nykstsoftint%40gmail.com-60A5FA?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0b141b)](mailto:nykstsoftint@gmail.com)

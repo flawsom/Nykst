@@ -310,7 +310,7 @@ async function providerRequest(
   const baseUrl = openAiBase(key);
   const openRouterHeaders = baseUrl.includes("openrouter.ai")
     ? {
-        "HTTP-Referer": "https://nykst-software-intellegence.vercel.app",
+        "HTTP-Referer": "https://nykst.unifies.codes",
         "X-OpenRouter-Title": "Nykst",
       }
     : {};

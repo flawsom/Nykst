@@ -24,6 +24,10 @@ dist-ssr
 # Vercel (build output + local project link)
 .vercel/
 
+# Test artifacts
+playwright-report/
+test-results/
+
 # Agent and tool run artifacts
 BUFFY_TASK_OUTPUT/
 

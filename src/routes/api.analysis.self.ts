@@ -4,12 +4,14 @@ import { join } from "node:path";
 import { analyzeRepository, MAX_SOURCE_BYTES, wantsContent } from "@/lib/analysis/engine.server";
 import { impactBriefing } from "@/lib/analysis/context";
 import { indexAnalysis } from "@/lib/analysis/impact";
+import { selfSnapshot } from "@/lib/analysis/self-snapshot.server";
 import { runAnalysisTool } from "@/lib/analysis/tools";
 import type { RepoAnalysis } from "@/lib/analysis/types";
 import { json } from "@/lib/integrations/github";
 
 let cachedSelfAnalysis: { analysis: RepoAnalysis; computedAt: number } | null = null;
 const CACHE_TTL_MS = 15_000;
+const MIN_SOURCE_FILES = 80;
 
 const IGNORED_DIRS = new Set([
   "node_modules",
@@ -39,10 +41,12 @@ function walkWorkspace(root: string, rel = "", out: string[] = []): string[] {
 }
 
 async function getSelfAnalysis(force = false): Promise<RepoAnalysis> {
+  const root = process.cwd();
+  // A bundled deployment has no src tree to walk, so it serves the committed snapshot.
+  if (!existsSync(join(root, "src"))) return selfSnapshot;
   if (!force && cachedSelfAnalysis && Date.now() - cachedSelfAnalysis.computedAt < CACHE_TTL_MS) {
     return cachedSelfAnalysis.analysis;
   }
-  const root = process.cwd();
   const paths = walkWorkspace(root);
   const contents = new Map<string, string>();
   let skipped = 0;
@@ -69,6 +73,9 @@ async function getSelfAnalysis(force = false): Promise<RepoAnalysis> {
     contents,
     skipped,
   });
+
+  // A handful of files means the walk landed on build output, not on a source tree.
+  if (analysis.stats.sourceFiles < MIN_SOURCE_FILES) return selfSnapshot;
 
   cachedSelfAnalysis = { analysis, computedAt: Date.now() };
   return analysis;
@@ -145,7 +152,7 @@ export const Route = createFileRoute("/api/analysis/self")({
           let toolOutput: unknown = null;
           if (tool && ["get_architecture", "get_impact", "find_usages", "search_files"].includes(tool)) {
             const snapshot = {
-              repository_full_name: "flawsom/nykst-software-intellegence",
+              repository_full_name: "flawsom/nykst",
               created_at: analysis.generatedAt,
               analysis,
               history: undefined,
@@ -168,10 +175,10 @@ export const Route = createFileRoute("/api/analysis/self")({
 
           const snapshotPayload = {
             repository: {
-              full_name: "flawsom/nykst-software-intellegence",
+              full_name: "flawsom/nykst",
               default_branch: "main",
               description: "Deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture.",
-              html_url: "https://github.com/flawsom/nykst-software-intellegence",
+              html_url: "https://github.com/flawsom/nykst",
             },
             files: analysis.files.map((f) => ({ path: f.path, type: "blob", size: f.loc * 38 })),
             commits: [],
@@ -184,7 +191,7 @@ export const Route = createFileRoute("/api/analysis/self")({
 
           return json(
             {
-              repository: "flawsom/nykst-software-intellegence",
+              repository: "flawsom/nykst",
               generatedAt: analysis.generatedAt,
               method: analysis.method,
               stats: analysis.stats,
