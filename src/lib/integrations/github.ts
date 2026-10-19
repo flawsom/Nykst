@@ -233,7 +233,10 @@ function importMatches(content: string) {
   ];
   for (const pattern of patterns) {
     for (const match of content.matchAll(pattern)) {
-      result.push({ target: match[1] ?? "", line: content.slice(0, match.index ?? 0).split("\n").length });
+      result.push({
+        target: match[1] ?? "",
+        line: content.slice(0, match.index ?? 0).split("\n").length,
+      });
     }
   }
   return result;
@@ -247,29 +250,52 @@ export async function githubFileEvidence(
   branch: string,
 ): Promise<GithubFileEvidence> {
   const file = await githubContent(token, owner, repo, path, branch);
-  const content = file.encoding === "base64" && file.content
-    ? Buffer.from(file.content.replace(/\n/g, ""), "base64").toString("utf8")
-    : file.content ?? "";
-  const tree = await githubFetch<{ tree?: GithubFile[] }>(token, `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
+  const content =
+    file.encoding === "base64" && file.content
+      ? Buffer.from(file.content.replace(/\n/g, ""), "base64").toString("utf8")
+      : (file.content ?? "");
+  const tree = await githubFetch<{ tree?: GithubFile[] }>(
+    token,
+    `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+  );
   const paths = new Set((tree.tree ?? []).map((item) => item.path));
   const resolve = (target: string) => {
     if (!target.startsWith(".")) return false;
     const base = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
     const raw = `${base}${target}`.replace(/^\.\//, "");
-    return [raw, `${raw}.ts`, `${raw}.tsx`, `${raw}.js`, `${raw}.jsx`, `${raw}/index.ts`, `${raw}/index.tsx`].some((candidate) => paths.has(candidate));
+    return [
+      raw,
+      `${raw}.ts`,
+      `${raw}.tsx`,
+      `${raw}.js`,
+      `${raw}.jsx`,
+      `${raw}/index.ts`,
+      `${raw}/index.tsx`,
+    ].some((candidate) => paths.has(candidate));
   };
-  const imports = importMatches(content).map((item) => ({ ...item, resolved: resolve(item.target) }));
-  const commits = await paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}`);
-  const commitDetails = await Promise.all(commits.slice(0, 40).map(async (commit) => {
-    const sha = typeof commit["sha"] === "string" ? commit["sha"] : "";
-    if (!sha) return { commit, files: [] as GithubFile[] };
-    try {
-      const detail = await githubFetch<{ files?: GithubFile[] }>(token, `/repos/${owner}/${repo}/commits/${sha}`);
-      return { commit, files: detail.files ?? [] };
-    } catch {
-      return { commit, files: [] as GithubFile[] };
-    }
+  const imports = importMatches(content).map((item) => ({
+    ...item,
+    resolved: resolve(item.target),
   }));
+  const commits = await paginate<Record<string, unknown>>(
+    token,
+    `/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}`,
+  );
+  const commitDetails = await Promise.all(
+    commits.slice(0, 40).map(async (commit) => {
+      const sha = typeof commit["sha"] === "string" ? commit["sha"] : "";
+      if (!sha) return { commit, files: [] as GithubFile[] };
+      try {
+        const detail = await githubFetch<{ files?: GithubFile[] }>(
+          token,
+          `/repos/${owner}/${repo}/commits/${sha}`,
+        );
+        return { commit, files: detail.files ?? [] };
+      } catch {
+        return { commit, files: [] as GithubFile[] };
+      }
+    }),
+  );
   const coChangeCounts = new Map<string, number>();
   for (const detail of commitDetails) {
     for (const changed of detail.files) {
@@ -277,53 +303,102 @@ export async function githubFileEvidence(
       coChangeCounts.set(changed.path, (coChangeCounts.get(changed.path) ?? 0) + 1);
     }
   }
-  const recentPrs = await paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/pulls?state=all`);
+  const recentPrs = await paginate<Record<string, unknown>>(
+    token,
+    `/repos/${owner}/${repo}/pulls?state=all`,
+  );
   const pullRequests: Record<string, unknown>[] = [];
   for (const pull of recentPrs.slice(0, 30)) {
     const number = typeof pull["number"] === "number" ? pull["number"] : null;
     if (!number) continue;
     try {
-      const changed = await paginate<GithubFile>(token, `/repos/${owner}/${repo}/pulls/${number}/files`);
+      const changed = await paginate<GithubFile>(
+        token,
+        `/repos/${owner}/${repo}/pulls/${number}/files`,
+      );
       if (changed.some((item) => item.path === path)) pullRequests.push(pull);
     } catch {
       // Keep evidence conservative when GitHub denies a PR file list.
     }
   }
-  const candidateDependentPaths = [...new Set(commitDetails.flatMap((detail) => detail.files
-    .map((changed) => changed.path)
-    .filter((changed): changed is string => Boolean(changed && changed !== path))))].slice(0, 60);
+  const candidateDependentPaths = [
+    ...new Set(
+      commitDetails.flatMap((detail) =>
+        detail.files
+          .map((changed) => changed.path)
+          .filter((changed): changed is string => Boolean(changed && changed !== path)),
+      ),
+    ),
+  ].slice(0, 60);
   const dependents: Array<{ path: string; line: number; commitSha: string }> = [];
   for (const sourcePath of candidateDependentPaths) {
     try {
       const source = await githubContent(token, owner, repo, sourcePath, branch);
-      const sourceContent = source.encoding === "base64" && source.content
-        ? Buffer.from(source.content.replace(/\n/g, ""), "base64").toString("utf8")
-        : source.content ?? "";
+      const sourceContent =
+        source.encoding === "base64" && source.content
+          ? Buffer.from(source.content.replace(/\n/g, ""), "base64").toString("utf8")
+          : (source.content ?? "");
       const matches = importMatches(sourceContent).filter((item) => {
         if (!item.target.startsWith(".")) return false;
-        const base = sourcePath.includes("/") ? sourcePath.slice(0, sourcePath.lastIndexOf("/") + 1) : "";
+        const base = sourcePath.includes("/")
+          ? sourcePath.slice(0, sourcePath.lastIndexOf("/") + 1)
+          : "";
         const raw = `${base}${item.target}`.replace(/^\.\//, "");
-        return [raw, `${raw}.ts`, `${raw}.tsx`, `${raw}.js`, `${raw}.jsx`, `${raw}/index.ts`, `${raw}/index.tsx`].includes(path);
+        return [
+          raw,
+          `${raw}.ts`,
+          `${raw}.tsx`,
+          `${raw}.js`,
+          `${raw}.jsx`,
+          `${raw}/index.ts`,
+          `${raw}/index.tsx`,
+        ].includes(path);
       });
       for (const match of matches) {
-        const touchingCommit = commitDetails.find((detail) => detail.files.some((changed) => changed.path === sourcePath));
-        dependents.push({ path: sourcePath, line: match.line, commitSha: typeof touchingCommit?.commit["sha"] === "string" ? touchingCommit.commit["sha"] : "" });
+        const touchingCommit = commitDetails.find((detail) =>
+          detail.files.some((changed) => changed.path === sourcePath),
+        );
+        dependents.push({
+          path: sourcePath,
+          line: match.line,
+          commitSha:
+            typeof touchingCommit?.commit["sha"] === "string" ? touchingCommit.commit["sha"] : "",
+        });
       }
     } catch {
       // A dependent's source may be unavailable; do not infer the relationship.
     }
   }
   const blindSpots = [
-    ...imports.filter((item) => item.target.startsWith(".") && !item.resolved).map((item) => `Unresolved import ${item.target} at line ${item.line}`),
-    ...(content.includes("import(") ? ["Dynamic import detected; target resolution may be incomplete."] : []),
-    ...(content.includes("export *") ? ["Re-export detected; complete symbol provenance requires deeper parsing."] : []),
-    ...(candidateDependentPaths.length > dependents.length ? ["Some co-changed files could not be proven to import this file; they are excluded from dependents."] : []),
+    ...imports
+      .filter((item) => item.target.startsWith(".") && !item.resolved)
+      .map((item) => `Unresolved import ${item.target} at line ${item.line}`),
+    ...(content.includes("import(")
+      ? ["Dynamic import detected; target resolution may be incomplete."]
+      : []),
+    ...(content.includes("export *")
+      ? ["Re-export detected; complete symbol provenance requires deeper parsing."]
+      : []),
+    ...(candidateDependentPaths.length > dependents.length
+      ? [
+          "Some co-changed files could not be proven to import this file; they are excluded from dependents.",
+        ]
+      : []),
   ];
   return {
-    path, content, sha: file.sha, imports,
-    dependents: [...new Map(dependents.map((item) => [`${item.path}:${item.commitSha}`, item])).values()],
-    commits: commits.slice(0, 40), pullRequests,
-    coChange: [...coChangeCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([changedPath, count]) => ({ path: changedPath, count })),
+    path,
+    content,
+    sha: file.sha,
+    imports,
+    dependents: [
+      ...new Map(dependents.map((item) => [`${item.path}:${item.commitSha}`, item])).values(),
+    ],
+    commits: commits.slice(0, 40),
+    pullRequests,
+    coChange: [...coChangeCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 30)
+      .map(([changedPath, count]) => ({ path: changedPath, count })),
     blindSpots: [...new Set(blindSpots)],
   };
 }
@@ -704,6 +779,83 @@ export async function saveIngestion(
   // Push the new snapshot to every open graph for this user, in real time.
   await publishIngestion(String(user.id), data.id);
   return data.id;
+}
+
+export type GithubPullFile = {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+  previous_filename?: string;
+};
+
+export type GithubIssueComment = {
+  id: number;
+  body: string;
+  user?: { login?: string } | null;
+  html_url?: string;
+};
+
+/** Files in a pull request, including renames, with GitHub's own pagination. */
+export async function githubPullRequestFiles(
+  token: string,
+  owner: string,
+  repo: string,
+  number: number,
+) {
+  return paginate<GithubPullFile>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${number}/files`,
+  );
+}
+
+export async function listIssueComments(
+  token: string,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+) {
+  return paginate<GithubIssueComment>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues/${issueNumber}/comments`,
+  );
+}
+
+export async function createIssueComment(
+  token: string,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  body: string,
+) {
+  return githubFetch<GithubIssueComment>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues/${issueNumber}/comments`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ body }),
+    },
+  );
+}
+
+export async function updateIssueComment(
+  token: string,
+  owner: string,
+  repo: string,
+  commentId: number,
+  body: string,
+) {
+  return githubFetch<GithubIssueComment>(
+    token,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues/comments/${commentId}`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ body }),
+    },
+  );
 }
 
 export function cookie(name: string, value: string, options: string[] = []) {

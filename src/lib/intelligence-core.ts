@@ -57,7 +57,8 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           name: "RepositoryTree.json",
           path: `/live/${repo}/RepositoryTree.json`,
           size: size(files.reduce((sum, file) => sum + (file.size ?? 0), 0)),
-          summary: "The file tree and AST statistics used to derive domains, services, modules, and files.",
+          summary:
+            "The file tree and AST statistics used to derive domains, services, modules, and files.",
           content: json({
             repository: repo,
             domains: topLevel,
@@ -93,7 +94,8 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
                 name: "AstDependencyTopology.json",
                 path: `/live/${repo}/AstDependencyTopology.json`,
                 size: `${Math.max(2, Math.round(analysis.stats.internalEdges / 12))} KB`,
-                summary: "TypeScript AST compiler dependency edges, external services, and SQL data resources.",
+                summary:
+                  "TypeScript AST compiler dependency edges, external services, and SQL data resources.",
                 content: json({
                   repository: repo,
                   stats: analysis.stats,

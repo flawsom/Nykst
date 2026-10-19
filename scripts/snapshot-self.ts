@@ -11,7 +11,11 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { analyzeRepository, MAX_SOURCE_BYTES, wantsContent } from "../src/lib/analysis/engine.server";
+import {
+  analyzeRepository,
+  MAX_SOURCE_BYTES,
+  wantsContent,
+} from "../src/lib/analysis/engine.server";
 
 const IGNORED = new Set([
   ".git",

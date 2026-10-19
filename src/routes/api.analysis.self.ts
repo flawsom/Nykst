@@ -120,11 +120,18 @@ export const Route = createFileRoute("/api/analysis/self")({
 
           const domainMap = new Map<
             string,
-            { domain: string; files: number; loc: number; edgesOut: number; edgesIn: number; sampleFiles: string[] }
+            {
+              domain: string;
+              files: number;
+              loc: number;
+              edgesOut: number;
+              edgesIn: number;
+              sampleFiles: string[];
+            }
           >();
           const domainOf = (p: string) => {
             const parts = p.split("/");
-            return parts.length > 2 ? `${parts[0]}/${parts[1]}` : parts[0] ?? "root";
+            return parts.length > 2 ? `${parts[0]}/${parts[1]}` : (parts[0] ?? "root");
           };
 
           for (const file of analysis.files) {
@@ -150,7 +157,16 @@ export const Route = createFileRoute("/api/analysis/self")({
           }
 
           let toolOutput: unknown = null;
-          if (tool && ["get_architecture", "get_impact", "find_usages", "search_files"].includes(tool)) {
+          if (
+            tool &&
+            [
+              "get_architecture",
+              "get_impact",
+              "find_usages",
+              "search_files",
+              "search_memory",
+            ].includes(tool)
+          ) {
             const snapshot = {
               repository_full_name: "flawsom/nykst",
               created_at: analysis.generatedAt,
@@ -170,6 +186,10 @@ export const Route = createFileRoute("/api/analysis/self")({
               toolOutput = runAnalysisTool(snapshot, "search_files", {
                 query: query || "graph",
               });
+            } else if (tool === "search_memory") {
+              toolOutput = runAnalysisTool(snapshot, "search_memory", {
+                query: query || "architecture",
+              });
             }
           }
 
@@ -177,7 +197,8 @@ export const Route = createFileRoute("/api/analysis/self")({
             repository: {
               full_name: "flawsom/nykst",
               default_branch: "main",
-              description: "Deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture.",
+              description:
+                "Deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture.",
               html_url: "https://github.com/flawsom/nykst",
             },
             files: analysis.files.map((f) => ({ path: f.path, type: "blob", size: f.loc * 38 })),
@@ -196,7 +217,9 @@ export const Route = createFileRoute("/api/analysis/self")({
               method: analysis.method,
               stats: analysis.stats,
               snapshotPayload,
-              domains: [...domainMap.values()].sort((a, b) => b.edgesIn + b.edgesOut - (a.edgesIn + a.edgesOut)),
+              domains: [...domainMap.values()].sort(
+                (a, b) => b.edgesIn + b.edgesOut - (a.edgesIn + a.edgesOut),
+              ),
               services: analysis.services.map((s) => ({
                 id: s.id,
                 name: s.name,

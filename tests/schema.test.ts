@@ -74,9 +74,11 @@ describe("supabase/schema.sql matches the generated client types", () => {
 
   test("row-level security is enabled on every created table", () => {
     const rls = new Set(
-      [...schema.matchAll(/alter table public\.([a-z_][a-z0-9_]*)\s*\n?\s*enable row level security/gi)].map(
-        (match) => match[1]!,
-      ),
+      [
+        ...schema.matchAll(
+          /alter table public\.([a-z_][a-z0-9_]*)\s*\n?\s*enable row level security/gi,
+        ),
+      ].map((match) => match[1]!),
     );
     const unprotected = created.filter((table) => !rls.has(table));
     expect(unprotected).toEqual([]);
@@ -117,8 +119,7 @@ describe("supabase/schema.sql matches the generated client types", () => {
 
 const url = process.env["SUPABASE_URL"];
 const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-const publishableKey =
-  process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+const publishableKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
 const live = Boolean(url && serviceKey);
 
 function rest(path: string, key: string) {

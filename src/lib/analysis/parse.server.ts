@@ -29,6 +29,12 @@ export interface RawDataCall {
   line: number;
 }
 
+export interface ParsedEndpoint {
+  path: string;
+  line: number;
+  protocol: "http" | "grpc";
+}
+
 export interface ParsedSource {
   imports: RawImport[];
   exports: string[];
@@ -37,6 +43,8 @@ export interface ParsedSource {
   envVars: { name: string; line: number }[];
   urls: { host: string; line: number }[];
   dataCalls: RawDataCall[];
+  /** literal HTTP routes and gRPC method strings, for federation */
+  endpoints: ParsedEndpoint[];
   loc: number;
 }
 
@@ -96,9 +104,11 @@ export function parseSource(path: string, content: string): ParsedSource {
     envVars: [],
     urls: [],
     dataCalls: [],
+    endpoints: [],
     loc: content.split("\n").filter((line) => line.trim()).length,
   };
   const exports = new Set<string>();
+  const endpoints = new Set<string>();
 
   for (const statement of sf.statements) {
     const exported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
@@ -238,12 +248,30 @@ export function parseSource(path: string, content: string): ParsedSource {
     ) {
       const match = URL_PATTERN.exec(node.text);
       if (match?.[1]) result.urls.push({ host: match[1].toLowerCase(), line: lineOf(node) });
+      const text = node.text;
+      if (
+        text.length <= 200 &&
+        text !== "/" &&
+        !/\s/.test(text) &&
+        !/\.[a-z0-9]{2,5}$/i.test(text) &&
+        ((text.startsWith("/") && /^\/[A-Za-z0-9_\-./{}:$]*$/.test(text)) ||
+          /^[A-Z][A-Za-z0-9_]*\/[A-Z][A-Za-z0-9_]*$/.test(text)) &&
+        !endpoints.has(text)
+      ) {
+        endpoints.add(text);
+        result.endpoints.push({
+          path: text,
+          line: lineOf(node),
+          protocol: text.startsWith("/") ? "http" : "grpc",
+        });
+      }
     }
     ts.forEachChild(node, visit);
   };
   visit(sf);
 
   result.exports = [...exports];
+  result.endpoints = result.endpoints.slice(0, 100);
   return result;
 }
 

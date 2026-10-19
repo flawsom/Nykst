@@ -40,10 +40,7 @@ export const Route = createFileRoute("/api/health")({
             TABLES.map(async (table) => {
               // A real GET with limit 1: PostgREST answers HEAD with 204 even for a
               // missing table, so HEAD would "prove" a schema that isn't there.
-              const { error: tableError } = await supabaseAdmin
-                .from(table)
-                .select("id")
-                .limit(1);
+              const { error: tableError } = await supabaseAdmin.from(table).select("id").limit(1);
               tables[table] = !tableError;
               if (tableError && /schema cache|does not exist/i.test(tableError.message)) {
                 error ??= `${table}: ${tableError.message}`;

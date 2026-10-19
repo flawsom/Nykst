@@ -192,15 +192,17 @@ function Landing() {
 
     void fetch("/api/health")
       .then((r) => r.json())
-      .then((data: { status?: string; project?: string | null; tables?: Record<string, boolean> }) => {
-        if (active && data) {
-          setHealthStatus({
-            status: data.status ?? "ok",
-            project: data.project ?? null,
-            tableCount: Object.values(data.tables ?? {}).filter(Boolean).length,
-          });
-        }
-      })
+      .then(
+        (data: { status?: string; project?: string | null; tables?: Record<string, boolean> }) => {
+          if (active && data) {
+            setHealthStatus({
+              status: data.status ?? "ok",
+              project: data.project ?? null,
+              tableCount: Object.values(data.tables ?? {}).filter(Boolean).length,
+            });
+          }
+        },
+      )
       .catch(() => undefined);
 
     return () => {

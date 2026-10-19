@@ -136,14 +136,25 @@ function enrichRepositoryGraph(root: GraphNode, snapshot: RepositorySnapshot) {
     const descendantModules = new Set(
       leaves.map((leaf) => leaf.detail?.path?.split("/").slice(0, -1).join("/") ?? ""),
     );
-    const downstreamFiles = [...reachable].filter((path) => !leaves.some((leaf) => leaf.detail?.path === path));
-    const downstreamServices = new Set(downstreamFiles.map((path) => path.split("/").slice(0, 2).join("/")));
+    const downstreamFiles = [...reachable].filter(
+      (path) => !leaves.some((leaf) => leaf.detail?.path === path),
+    );
+    const downstreamServices = new Set(
+      downstreamFiles.map((path) => path.split("/").slice(0, 2).join("/")),
+    );
     candidate.blast = {
       services: downstreamServices.size,
       modules: descendantModules.size,
       files: descendantFiles + downstreamFiles.length,
       teams: 0,
-      level: downstreamFiles.length > 50 ? "Critical" : downstreamFiles.length > 20 ? "High" : downstreamFiles.length > 5 ? "Moderate" : "Low",
+      level:
+        downstreamFiles.length > 50
+          ? "Critical"
+          : downstreamFiles.length > 20
+            ? "High"
+            : downstreamFiles.length > 5
+              ? "Moderate"
+              : "Low",
     };
   }
   return root;
@@ -172,27 +183,25 @@ export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
   const domainNodes = [...domains.entries()].map(([domainName, services]) => {
     const serviceNodes = [...services.entries()].map(([serviceName, modules]) => {
       const moduleNodes = [...modules.entries()].map(([moduleName, paths]) => {
-        const fileNodes = paths
-          .sort()
-          .map((path) =>
-            node(
-              `${repo}/file:${path}`,
-              "file",
-              path.split("/").pop() ?? path,
-              `Real file from ${repo}.`,
-              [],
-              repo,
-              {
-                path,
-                language: path.split(".").pop()?.toUpperCase() || "Unknown",
-                loc: 0,
-                classes: [],
-                functions: [],
-                tests: [],
-                history: [],
-              },
-            ),
-          );
+        const fileNodes = paths.sort().map((path) =>
+          node(
+            `${repo}/file:${path}`,
+            "file",
+            path.split("/").pop() ?? path,
+            `Real file from ${repo}.`,
+            [],
+            repo,
+            {
+              path,
+              language: path.split(".").pop()?.toUpperCase() || "Unknown",
+              loc: 0,
+              classes: [],
+              functions: [],
+              tests: [],
+              history: [],
+            },
+          ),
+        );
         return node(
           `${repo}/module:${domainName}/${serviceName}/${moduleName}`,
           "module",
@@ -222,12 +231,12 @@ export function buildRepositoryGraph(snapshot: RepositorySnapshot): GraphNode {
   });
   return enrichRepositoryGraph(
     node(
-    `org:${repo}`,
-    "org",
-    repo,
-    `Repository-derived system map for ${repo}.`,
-    domainNodes,
-    repo,
+      `org:${repo}`,
+      "org",
+      repo,
+      `Repository-derived system map for ${repo}.`,
+      domainNodes,
+      repo,
     ),
     snapshot,
   );

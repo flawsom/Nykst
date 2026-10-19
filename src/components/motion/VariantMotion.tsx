@@ -122,8 +122,7 @@ export function TiltCard({
     });
   };
 
-  const onLeave = () =>
-    setStyle((prev) => ({ ...prev, rotateX: 0, rotateY: 0, hovered: false }));
+  const onLeave = () => setStyle((prev) => ({ ...prev, rotateX: 0, rotateY: 0, hovered: false }));
 
   return (
     <div

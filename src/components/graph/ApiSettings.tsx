@@ -4,7 +4,12 @@ import { fetchKeyStatus, type KeyStatus } from "@/lib/ai-client";
 import { cn } from "@/lib/utils";
 
 const PROVIDERS = [
-  { id: "custom", label: "Nara / OpenRouter", hint: "nara_... or sk-or-...", model: "agnes-2.5-flash" },
+  {
+    id: "custom",
+    label: "Nara / OpenRouter",
+    hint: "nara_... or sk-or-...",
+    model: "agnes-2.5-flash",
+  },
   { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
   { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
   { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.5-flash-lite" },
@@ -196,8 +201,9 @@ function ApiSettingsDialog({
           <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
             <p className="text-xs font-medium">Nara Router & OpenAI-compatible endpoints</p>
             <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-              Defaults to <code className="text-primary font-mono">https://router.bynara.id/v1</code>{" "}
-              with <code className="text-primary font-mono">agnes-2.5-flash</code>. Expand advanced
+              Defaults to{" "}
+              <code className="text-primary font-mono">https://router.bynara.id/v1</code> with{" "}
+              <code className="text-primary font-mono">agnes-2.5-flash</code>. Expand advanced
               settings to switch to OpenRouter or any custom endpoint.
             </p>
             <button

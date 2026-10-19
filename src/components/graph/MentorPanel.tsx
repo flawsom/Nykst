@@ -202,7 +202,10 @@ function trackersFor(
       headline: incidents.length
         ? `Recurring trigger: ${incidents[0]!.pattern}.`
         : "No incident history recorded here.",
-      detail: incidents.map((i) => `${i.pattern} · ${i.when}${i.minutes === undefined ? " · duration unavailable" : ` · ${i.minutes}m impact`}`),
+      detail: incidents.map(
+        (i) =>
+          `${i.pattern} · ${i.when}${i.minutes === undefined ? " · duration unavailable" : ` · ${i.minutes}m impact`}`,
+      ),
       evidence: [
         ...incidents.map((i) => ({ kind: "incident" as const, label: `${i.pattern} (${i.when})` })),
         ...nodeEv.slice(0, 1),
@@ -301,7 +304,10 @@ function answerFor(
   if (low.includes("incident") || low.includes("outage") || low.includes("history"))
     return {
       text: `Recorded GitHub history on ${node.label}: ${incidentsOf(node, repositorySnapshot)
-        .map((i) => `${i.pattern} (${i.when}${i.minutes === undefined ? ", duration unavailable" : `, ${i.minutes}m`})`)
+        .map(
+          (i) =>
+            `${i.pattern} (${i.when}${i.minutes === undefined ? ", duration unavailable" : `, ${i.minutes}m`})`,
+        )
         .join("; ")}.`,
       evidence: [...incEv, ...nodeEv.slice(0, 1)],
     };
@@ -341,7 +347,9 @@ function repositoryContext(
   issues: (IssueLike & { severity: string })[],
 ) {
   const record = (value: Record<string, unknown>, fields: string[]) =>
-    Object.fromEntries(fields.filter((field) => field in value).map((field) => [field, value[field]]));
+    Object.fromEntries(
+      fields.filter((field) => field in value).map((field) => [field, value[field]]),
+    );
   const records = (values: Record<string, unknown>[] | undefined, fields: string[]) =>
     (values ?? []).map((value) => record(value, fields));
   return {
@@ -367,12 +375,56 @@ function repositoryContext(
     })),
     // With a compiler-based analysis the node briefing below replaces the raw file list.
     files: snapshot.analysis?.files ? undefined : (snapshot.files ?? []),
-    commits: records(snapshot.commits, ["sha", "html_url", "message", "author", "committer", "commit"]),
+    commits: records(snapshot.commits, [
+      "sha",
+      "html_url",
+      "message",
+      "author",
+      "committer",
+      "commit",
+    ]),
     branches: records(snapshot.branches, ["name", "sha", "protected", "commit"]),
-    pull_requests: records(snapshot.pull_requests, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "merged_at", "html_url", "head", "base"]),
-    issues: records(snapshot.issues, ["number", "title", "body", "state", "user", "assignee", "assignees", "labels", "created_at", "updated_at", "closed_at", "html_url", "comments", "pull_request"]),
+    pull_requests: records(snapshot.pull_requests, [
+      "number",
+      "title",
+      "body",
+      "state",
+      "user",
+      "assignee",
+      "assignees",
+      "labels",
+      "created_at",
+      "updated_at",
+      "closed_at",
+      "merged_at",
+      "html_url",
+      "head",
+      "base",
+    ]),
+    issues: records(snapshot.issues, [
+      "number",
+      "title",
+      "body",
+      "state",
+      "user",
+      "assignee",
+      "assignees",
+      "labels",
+      "created_at",
+      "updated_at",
+      "closed_at",
+      "html_url",
+      "comments",
+      "pull_request",
+    ]),
     issue_findings_in_scope: issues,
-    contributors: records(snapshot.contributors, ["login", "id", "contributions", "type", "html_url"]),
+    contributors: records(snapshot.contributors, [
+      "login",
+      "id",
+      "contributions",
+      "type",
+      "html_url",
+    ]),
     ...(snapshot.analysis?.files
       ? {
           code_analysis: impactBriefing(
@@ -825,7 +877,8 @@ export function MentorPanel({
             {askError && (
               <div className="border-border bg-primary/10 text-muted-foreground rounded-lg border px-3 py-2 text-[11px] leading-relaxed">
                 <span className="text-primary font-medium">AI provider: </span>
-                {askError} The graph-grounded answer is shown below; no generic answer was substituted.
+                {askError} The graph-grounded answer is shown below; no generic answer was
+                substituted.
               </div>
             )}
             {asking && (

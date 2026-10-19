@@ -107,17 +107,14 @@ export function useChatMemory(nodeLabel: string) {
     [activeId, nodeLabel],
   );
 
-  const remove = useCallback(
-    (id: string) => {
-      setChats((prev) => {
-        const next = prev.filter((c) => c.id !== id);
-        write(next);
-        setActiveId((cur) => (cur === id ? (next[0]?.id ?? null) : cur));
-        return next;
-      });
-    },
-    [],
-  );
+  const remove = useCallback((id: string) => {
+    setChats((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      write(next);
+      setActiveId((cur) => (cur === id ? (next[0]?.id ?? null) : cur));
+      return next;
+    });
+  }, []);
 
   const rename = useCallback((id: string, title: string) => {
     setChats((prev) => {

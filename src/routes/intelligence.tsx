@@ -557,9 +557,7 @@ function IntelligencePage() {
                     <span className="text-primary font-mono uppercase tracking-wider">
                       What it does
                     </span>
-                    <p className="text-muted-foreground mt-1 leading-relaxed">
-                      {memoryGuide.does}
-                    </p>
+                    <p className="text-muted-foreground mt-1 leading-relaxed">{memoryGuide.does}</p>
                   </div>
                   <div>
                     <span className="text-primary font-mono uppercase tracking-wider">

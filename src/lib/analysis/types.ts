@@ -4,7 +4,10 @@
  * inspector and the MCP endpoint. Keep this file free of server-only imports.
  */
 
-export const ANALYSIS_VERSION = 1;
+export const ANALYSIS_VERSION = 2;
+
+/** Languages the compiler can turn into dependency edges. */
+export type SourceLanguage = "ts" | "tsx" | "js" | "jsx" | "py" | "go" | "rust";
 
 export type FileRole =
   | "route"
@@ -38,9 +41,16 @@ export interface ResourceUse {
   line: number;
 }
 
+export interface EndpointRef {
+  /** literal route such as "/api/users/42" or "Users/Get" */
+  path: string;
+  line: number;
+  protocol: "http" | "grpc";
+}
+
 export interface AnalyzedFile {
   path: string;
-  language: "ts" | "tsx" | "js" | "jsx";
+  language: SourceLanguage;
   loc: number;
   /** workspace package directory ("" for the repository root package) */
   packageDir: string;
@@ -53,6 +63,8 @@ export interface AnalyzedFile {
   /** external service ids used by this file */
   services: string[];
   resources: ResourceUse[];
+  /** literal HTTP route or gRPC method strings, used by cross-repository federation */
+  endpoints?: EndpointRef[];
 }
 
 export interface ServiceEvidence {
@@ -112,6 +124,107 @@ export interface AnalysisStats {
   durationMs: number;
 }
 
+/* ------------------------- contracts and evidence ------------------------- */
+
+export interface OpenApiOperation {
+  id: string;
+  source: string;
+  path: string;
+  method: string;
+  operationId?: string;
+  summary?: string;
+  tags: string[];
+  requestSchema?: string;
+  responseSchema?: string;
+}
+
+export interface OpenApiContract {
+  source: string;
+  title: string;
+  version: string;
+  servers: string[];
+  operations: OpenApiOperation[];
+}
+
+export interface ProtoRpc {
+  name: string;
+  request: string;
+  response: string;
+  clientStreaming: boolean;
+  serverStreaming: boolean;
+}
+
+export interface ProtoServiceContract {
+  id: string;
+  source: string;
+  package: string;
+  name: string;
+  rpcs: ProtoRpc[];
+}
+
+export interface ContractCatalog {
+  openapi: OpenApiContract[];
+  grpc: ProtoServiceContract[];
+}
+
+export type MemoryKind = "adr" | "diagram" | "migration" | "contract" | "image";
+
+export interface MemoryCitation {
+  path: string;
+  line?: number;
+}
+
+export interface MemoryEntity {
+  kind:
+    | "table"
+    | "column"
+    | "service"
+    | "operation"
+    | "node"
+    | "edge"
+    | "message"
+    | "decision"
+    | "status"
+    | "image";
+  value: string;
+}
+
+export interface MemoryRecord {
+  id: string;
+  kind: MemoryKind;
+  title: string;
+  summary: string;
+  /** bounded, quotable evidence text; never a model-generated paraphrase */
+  text: string;
+  citations: MemoryCitation[];
+  /** SHA-256 of the evidence body, so a stale claim is detectable */
+  checksum: string;
+  tags: string[];
+  entities: MemoryEntity[];
+  media?: {
+    type: "mermaid" | "image";
+    alt?: string;
+    path?: string;
+    format?: string;
+  };
+  status?: "proposed" | "accepted" | "rejected" | "superseded" | "amended" | "unknown";
+}
+
+/** Enough resolver state to re-parse a changed file without a full checkout. */
+export interface ResolverSnapshot {
+  aliases: { dir: string; aliases: { pattern: string; targets: string[] }[] }[];
+  manifests: {
+    dir: string;
+    name?: string;
+    main?: string;
+    module?: string;
+    types?: string;
+    source?: string;
+    exports?: unknown;
+  }[];
+  goModule?: string;
+}
+
 export interface RepoAnalysis {
   version: number;
   generatedAt: string;
@@ -126,6 +239,12 @@ export interface RepoAnalysis {
   stats: AnalysisStats;
   /** honest list of what the analysis could not see */
   limitations: string[];
+  /** resolver state that makes incremental patching exact */
+  resolver?: ResolverSnapshot;
+  /** OpenAPI and gRPC contracts found in the repository */
+  contracts?: ContractCatalog;
+  /** citations extracted from ADRs, diagrams, migrations and image references */
+  memory?: MemoryRecord[];
 }
 
 export interface HistoryCommit {

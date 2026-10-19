@@ -215,7 +215,10 @@ function GraphPage() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const root = useMemo(() => (snapshot ? buildRepositoryGraph(snapshot.payload) : null), [snapshot]);
+  const root = useMemo(
+    () => (snapshot ? buildRepositoryGraph(snapshot.payload) : null),
+    [snapshot],
+  );
   const problems = useMemo(
     () => (snapshot ? traceRepositoryProblems(snapshot.payload) : []),
     [snapshot],
@@ -241,7 +244,9 @@ function GraphPage() {
     [allChildren, role],
   );
   const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
-  const checkedSecondsAgo = lastChecked ? Math.max(0, Math.round((Date.now() - lastChecked) / 1000)) : null;
+  const checkedSecondsAgo = lastChecked
+    ? Math.max(0, Math.round((Date.now() - lastChecked) / 1000))
+    : null;
 
   if (loading && !snapshot) {
     return (
@@ -262,7 +267,9 @@ function GraphPage() {
             Software graph
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight">
-            {unauthenticated ? "Connect a repository to build your map" : "Your map is not available"}
+            {unauthenticated
+              ? "Connect a repository to build your map"
+              : "Your map is not available"}
           </h1>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
             {unauthenticated

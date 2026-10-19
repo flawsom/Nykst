@@ -176,7 +176,9 @@ export function LiveGraphRagExplorer({
   const [selectedPath, setSelectedPath] = useState("src/lib/integrations/github.ts");
   const [activeLayer, setActiveLayer] = useState(0);
   const [activeTab, setActiveTab] = useState<"blast" | "sql" | "mcp">("blast");
-  const [mcpTool, setMcpTool] = useState<"get_impact" | "get_architecture" | "find_usages" | "search_files">("get_impact");
+  const [mcpTool, setMcpTool] = useState<
+    "get_impact" | "get_architecture" | "find_usages" | "search_files"
+  >("get_impact");
   const [mcpQuery, setMcpQuery] = useState("repository_ingestions");
   const [mcpResult, setMcpResult] = useState<unknown>(null);
   const [loadingTarget, setLoadingTarget] = useState(false);
@@ -268,9 +270,9 @@ export function LiveGraphRagExplorer({
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed sm:text-base">
             Every code-chat wrapper on the market chunks your files into flat 500-token vectors,
-            runs cosine similarity, and hopes an LLM can guess your architecture. Nykst compiles
-            the repository into a deterministic AST, resolves every alias and SQL table, computes
-            Tarjan strongly-connected components, and traces exact blast radius before any model is
+            runs cosine similarity, and hopes an LLM can guess your architecture. Nykst compiles the
+            repository into a deterministic AST, resolves every alias and SQL table, computes Tarjan
+            strongly-connected components, and traces exact blast radius before any model is
             invoked.
           </p>
 
@@ -407,7 +409,11 @@ export function LiveGraphRagExplorer({
             {(
               [
                 { id: "blast", label: "Blast Radius & Importers", icon: Zap },
-                { id: "sql", label: `SQL & Services (${resources.length + services.length})`, icon: Database },
+                {
+                  id: "sql",
+                  label: `SQL & Services (${resources.length + services.length})`,
+                  icon: Database,
+                },
                 { id: "mcp", label: "Live MCP Tool Runner", icon: Terminal },
               ] as const
             ).map((tab) => (

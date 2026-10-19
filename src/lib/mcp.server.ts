@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { federateRepositories } from "@/lib/analysis/federation";
+import { overlayTelemetry, parseOtlpSpans } from "@/lib/analysis/telemetry";
 import { runAnalysisTool, str, TOOLS, type AnalysisSnapshot } from "@/lib/analysis/tools";
 import type { RepoAnalysis, RepoHistory } from "@/lib/analysis/types";
 
@@ -119,10 +121,63 @@ async function listRepositories(userId: string) {
   return [...latest.entries()].map(([repository, analyzed_at]) => ({ repository, analyzed_at }));
 }
 
+async function loadSnapshots(userId: string, repository?: string): Promise<AnalysisSnapshot[]> {
+  let query = supabaseAdmin
+    .from("repository_ingestions")
+    .select("repository_full_name, created_at, payload")
+    .eq("provider", "github")
+    .eq("provider_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (repository) query = query.eq("repository_full_name", repository);
+  const { data, error } = await query;
+  if (error) throw new Error(`Could not load repository analyses: ${error.message}`);
+  const latest = new Map<string, AnalysisSnapshot>();
+  for (const row of data ?? []) {
+    if (latest.has(row.repository_full_name)) continue;
+    const payload = (row.payload ?? {}) as { analysis?: RepoAnalysis; history?: RepoHistory };
+    if (!payload.analysis?.files?.length) continue;
+    latest.set(row.repository_full_name, {
+      repository_full_name: row.repository_full_name,
+      created_at: row.created_at,
+      analysis: payload.analysis,
+      history: payload.history,
+    });
+  }
+  return [...latest.values()];
+}
+
 /* --------------------------------- tools --------------------------------- */
 
 async function callTool(userId: string, name: string, args: Record<string, unknown>) {
   if (name === "list_repositories") return { repositories: await listRepositories(userId) };
+  if (name === "get_federation") {
+    const snapshots = await loadSnapshots(userId, str(args["repository"]) || undefined);
+    return {
+      ...federateRepositories(
+        snapshots.map((snapshot) => ({
+          repository: snapshot.repository_full_name,
+          analysis: snapshot.analysis,
+        })),
+      ),
+      repositories: snapshots.map((snapshot) => ({
+        repository: snapshot.repository_full_name,
+        analyzed_at: snapshot.created_at,
+      })),
+    };
+  }
+  if (name === "get_trace_overlay") {
+    const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
+    const raw = args["spans"];
+    const input = typeof raw === "string" ? (JSON.parse(raw) as unknown) : raw;
+    const spans = parseOtlpSpans(input);
+    return {
+      repository: snapshot.repository_full_name,
+      commit: snapshot.analysis.ref,
+      analyzed_at: snapshot.created_at,
+      ...overlayTelemetry(snapshot.analysis, spans),
+    };
+  }
   const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
   return runAnalysisTool(snapshot, name, args);
 }

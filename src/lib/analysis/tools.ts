@@ -1,6 +1,7 @@
 import { impactBriefing } from "./context";
 import { historyFor, indexAnalysis } from "./impact";
-import type { RepoAnalysis, RepoHistory } from "./types";
+import { searchMemory } from "../memory/evidence";
+import type { MemoryKind, RepoAnalysis, RepoHistory } from "./types";
 
 /** Read-only tools over a repository analysis, shared by the MCP endpoint. */
 
@@ -85,6 +86,52 @@ export const TOOLS = [
     },
     annotations: { readOnlyHint: true },
   },
+  {
+    name: "search_memory",
+    title: "Search evidence memory",
+    description:
+      "Search cited memory extracted from ADRs, Mermaid diagrams, SQL migrations and image references. Every result carries a file citation and a checksum; nothing is model-generated.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Case-insensitive text to find." },
+        kind: {
+          type: "string",
+          enum: ["adr", "diagram", "migration", "contract", "image"],
+          description: "Optional memory kind filter.",
+        },
+        ...repositoryArg,
+      },
+      required: ["query"],
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: "get_federation",
+    title: "Federate OpenAPI and gRPC contracts",
+    description:
+      "Match provider OpenAPI operations and gRPC methods across every analyzed repository against literal consumer routes in the graph. Returns cross-repository edges, unmatched endpoints and honest contract limitations.",
+    inputSchema: { type: "object", properties: { ...repositoryArg } },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: "get_trace_overlay",
+    title: "Overlay OpenTelemetry spans on the graph",
+    description:
+      "Attach OTLP JSON spans to analyzed files by code.filepath, then mark observed caller-callee edges that also exist in the static import graph. Unmatched spans are reported, never guessed. Read-only.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        spans: {
+          anyOf: [{ type: "object" }, { type: "array" }],
+          description: "OTLP JSON export ({ resourceSpans: [...] }) or a flat span array.",
+        },
+        ...repositoryArg,
+      },
+      required: ["spans"],
+    },
+    annotations: { readOnlyHint: true },
+  },
 ];
 
 export type AnalysisSnapshot = {
@@ -155,6 +202,27 @@ function architecture(snapshot: AnalysisSnapshot) {
       .slice(0, 15),
     entrypoints: analysis.files.filter((file) => file.role === "route" || file.role === "api")
       .length,
+    languages: analysis.files.reduce<Record<string, number>>((counts, file) => {
+      counts[file.language] = (counts[file.language] ?? 0) + 1;
+      return counts;
+    }, {}),
+    contracts: {
+      openapi: analysis.contracts?.openapi.length ?? 0,
+      grpc: analysis.contracts?.grpc.length ?? 0,
+      operations:
+        (analysis.contracts?.openapi ?? []).reduce(
+          (total, contract) => total + contract.operations.length,
+          0,
+        ) +
+        (analysis.contracts?.grpc ?? []).reduce((total, service) => total + service.rpcs.length, 0),
+    },
+    memory: {
+      records: analysis.memory?.length ?? 0,
+      by_kind: (analysis.memory ?? []).reduce<Record<string, number>>((counts, record) => {
+        counts[record.kind] = (counts[record.kind] ?? 0) + 1;
+        return counts;
+      }, {}),
+    },
     circular_imports: analysis.cycles.slice(0, 10),
     limitations: analysis.limitations,
   };
@@ -284,6 +352,33 @@ export function runAnalysisTool(
         last_changed: historyFor(history, [file.path]).commits[0]?.date?.slice(0, 10) ?? null,
       }));
     return { ...header, results: hits };
+  }
+
+  if (name === "search_memory") {
+    const query = str(args["query"]);
+    if (!query) throw new Error("Pass a query.");
+    const kinds: MemoryKind[] = ["adr", "diagram", "migration", "contract", "image"];
+    const requested = str(args["kind"]) as MemoryKind;
+    const kind = kinds.includes(requested) ? requested : undefined;
+    const results = searchMemory(analysis.memory ?? [], query, kind);
+    return {
+      ...header,
+      query,
+      ...(kind ? { kind } : {}),
+      total: results.length,
+      results: results.map((record) => ({
+        id: record.id,
+        kind: record.kind,
+        title: record.title,
+        summary: record.summary,
+        status: record.status ?? null,
+        tags: record.tags,
+        citations: record.citations,
+        entities: record.entities.slice(0, 30),
+        media: record.media ?? null,
+        checksum: record.checksum,
+      })),
+    };
   }
 
   throw new Error(`Unknown tool: ${name}`);

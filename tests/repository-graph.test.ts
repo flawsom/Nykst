@@ -26,7 +26,11 @@ const PATHS = [
 
 function snapshot(overrides: Partial<RepositorySnapshot> = {}): RepositorySnapshot {
   return {
-    repository: { full_name: "acme/payments", default_branch: "main", html_url: "https://github.com/acme/payments" },
+    repository: {
+      full_name: "acme/payments",
+      default_branch: "main",
+      html_url: "https://github.com/acme/payments",
+    },
     files: PATHS.map((path, i) => ({ path, type: "blob", size: 100 + i })),
     commits: [],
     issues: [],

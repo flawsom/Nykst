@@ -15,7 +15,9 @@ describe("self analysis snapshot", () => {
   });
 
   test("every analyzed path still exists", () => {
-    const missing = snapshot.files.filter((file) => !existsSync(file.path)).map((file) => file.path);
+    const missing = snapshot.files
+      .filter((file) => !existsSync(file.path))
+      .map((file) => file.path);
     expect(missing).toEqual([]);
   });
 

@@ -265,7 +265,8 @@ export function LandingGraphPreview({
               textAnchor="middle"
               className="fill-muted-foreground font-mono text-[9px]"
             >
-              Real-time TypeScript AST telemetry · parsed in {stats.durationMs}ms · 0 simulated nodes
+              Real-time TypeScript AST telemetry · parsed in {stats.durationMs}ms · 0 simulated
+              nodes
             </text>
           </svg>
         </div>

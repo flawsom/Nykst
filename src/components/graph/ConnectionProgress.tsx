@@ -67,7 +67,9 @@ export function ConnectionProgress({
             <p className="text-primary text-[10px] font-semibold tracking-[0.3em] uppercase">
               {complete ? "System map ready" : "Repository connected"}
             </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight">NYKST IS MAPPING YOUR SYSTEM</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight">
+              NYKST IS MAPPING YOUR SYSTEM
+            </h2>
             <p className="text-muted-foreground mt-2 max-w-sm text-xs leading-relaxed">
               {complete
                 ? "The evidence is indexed. Your software map is ready to explore."
@@ -113,10 +115,16 @@ export function ConnectionProgress({
                   >
                     {item.label}
                   </span>
-                  <span className="text-muted-foreground mt-0.5 block text-[11px]">{item.detail}</span>
+                  <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                    {item.detail}
+                  </span>
                 </span>
-                {finished && <span className="text-primary pt-0.5 text-[10px] font-mono">indexed</span>}
-                {active && <span className="text-primary pt-0.5 text-[10px] font-mono">reading…</span>}
+                {finished && (
+                  <span className="text-primary pt-0.5 text-[10px] font-mono">indexed</span>
+                )}
+                {active && (
+                  <span className="text-primary pt-0.5 text-[10px] font-mono">reading…</span>
+                )}
               </li>
             );
           })}
@@ -124,7 +132,8 @@ export function ConnectionProgress({
 
         <div className="border-border mt-6 border-t pt-4">
           <p className="text-muted-foreground text-[11px] leading-relaxed">
-            Nykst is ingesting repository evidence before applying intelligence. AI analysis comes after the system relationships are normalized.
+            Nykst is ingesting repository evidence before applying intelligence. AI analysis comes
+            after the system relationships are normalized.
           </p>
         </div>
       </div>

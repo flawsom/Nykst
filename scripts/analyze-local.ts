@@ -10,6 +10,7 @@ import {
   wantsContent,
 } from "../src/lib/analysis/engine.server";
 import { isSourcePath } from "../src/lib/analysis/resolve";
+import { computeDiffBlastRadius, formatBlastRadiusMarkdown } from "../src/lib/analysis/diff";
 
 const root = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : process.cwd();
 const jsonOut = process.argv.includes("--json")
@@ -70,3 +71,17 @@ console.log(
   ),
 );
 console.log("limitations", analysis.limitations);
+
+const changedIndex = process.argv.indexOf("--changed");
+if (changedIndex !== -1) {
+  const paths = (process.argv[changedIndex + 1] ?? "")
+    .split(",")
+    .map((path) => path.trim())
+    .filter(Boolean);
+  if (!paths.length) {
+    console.error("--changed needs a comma-separated list of repository paths.");
+    process.exitCode = 1;
+  } else {
+    console.log(formatBlastRadiusMarkdown(computeDiffBlastRadius(analysis, paths)));
+  }
+}

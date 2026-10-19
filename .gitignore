@@ -42,3 +42,5 @@ BUFFY_TASK_OUTPUT/
 *.sln
 *.sw?
 .env
+.vercel
+.env*

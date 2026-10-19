@@ -236,9 +236,14 @@ export class ImportResolver {
   }
 }
 
+const POLYGLOT_EXTENSIONS = [".py", ".go", ".rs"];
+
 export function isSourcePath(path: string) {
+  const supported =
+    SOURCE_EXTENSIONS.some((ext) => path.endsWith(ext)) ||
+    POLYGLOT_EXTENSIONS.some((ext) => path.endsWith(ext));
   return (
-    SOURCE_EXTENSIONS.some((ext) => path.endsWith(ext)) &&
+    supported &&
     !path.endsWith(".d.ts") &&
     !/\.min\.[cm]?js$/.test(path) &&
     !/(^|\/)(node_modules|dist|build|out|\.next|\.nuxt|\.output|\.vercel|\.turbo|coverage|vendor|\.git)\//.test(

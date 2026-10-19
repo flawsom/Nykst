@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { 
-  Network, 
-  ShieldAlert, 
-  Cpu, 
-  GitBranch, 
-  BookOpen, 
-  Folder, 
-  FileCode, 
-  Sparkles, 
+import {
+  Network,
+  ShieldAlert,
+  Cpu,
+  GitBranch,
+  BookOpen,
+  Folder,
+  FileCode,
+  Sparkles,
   RefreshCw,
-  ArrowRight
+  ArrowRight,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ interface MemoryModule {
   id: string;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   description: string;
   files: MemoryFile[];
 }
@@ -43,16 +44,18 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/structural/DependencyGraph.json",
         size: "42 KB",
         summary: "Live node adjacency matrix across repositories",
-        content: "{\n  \"org\": \"enterprise-core\",\n  \"nodes\": 214,\n  \"edges\": 1428,\n  \"syncStatus\": \"active\"\n}"
+        content:
+          '{\n  "org": "enterprise-core",\n  "nodes": 214,\n  "edges": 1428,\n  "syncStatus": "active"\n}',
       },
       {
         name: "ApiContracts.ts",
         path: "/memory/structural/ApiContracts.ts",
         size: "18 KB",
         summary: "gRPC and REST endpoint specifications",
-        content: "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}"
-      }
-    ]
+        content:
+          "export interface ApiContract {\n  endpoint: string;\n  version: string;\n  payloadSchema: Record<string, any>;\n}",
+      },
+    ],
   },
   {
     id: "vault",
@@ -66,9 +69,10 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/vault/ERR_CONCURRENCY_092.json",
         size: "8.4 KB",
         summary: "Deadlock stack trace in SessionStore.ts & fix",
-        content: "{\n  \"incidentId\": \"ERR_CONCURRENCY_092\",\n  \"component\": \"SessionStore.ts\",\n  \"patchApplied\": \"Mutex lock around session writes\"\n}"
-      }
-    ]
+        content:
+          '{\n  "incidentId": "ERR_CONCURRENCY_092",\n  "component": "SessionStore.ts",\n  "patchApplied": "Mutex lock around session writes"\n}',
+      },
+    ],
   },
   {
     id: "behavioral",
@@ -82,9 +86,9 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/behavioral/CodingStandards.yaml",
         size: "14 KB",
         summary: "Team style preferences and monad/async rules",
-        content: "preferences:\n  errorHandling: \"Explicit Result monads\"\n  strictCasts: true\n"
-      }
-    ]
+        content: 'preferences:\n  errorHandling: "Explicit Result monads"\n  strictCasts: true\n',
+      },
+    ],
   },
   {
     id: "treepub",
@@ -98,9 +102,9 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/treepub/PositiveCorpusIndex.json",
         size: "22 KB",
         summary: "List of clean 100% typed production files",
-        content: "{\n  \"corpusType\": \"positive\",\n  \"filesCount\": 3840\n}"
-      }
-    ]
+        content: '{\n  "corpusType": "positive",\n  "filesCount": 3840\n}',
+      },
+    ],
   },
   {
     id: "instruction",
@@ -114,10 +118,10 @@ const MEMORIES: MemoryModule[] = [
         path: "/memory/instruction/ADR-042-AuthFederation.md",
         size: "16 KB",
         summary: "Architecture Decision Record for OIDC",
-        content: "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14"
-      }
-    ]
-  }
+        content: "# ADR-042: OIDC Identity Federation\n\nStatus: Accepted\nDate: 2026-02-14",
+      },
+    ],
+  },
 ];
 
 export function IntelligenceDashboard() {
@@ -138,7 +142,9 @@ export function IntelligenceDashboard() {
     setAiResult(null);
     setTimeout(() => {
       setLoading(false);
-      setAiResult(`[Nykst AI Architect Analysis]\nFile: ${activeFile.name}\nRelevance: 100% synchronized with live repository AST. Zero drift detected.`);
+      setAiResult(
+        `[Nykst AI Architect Analysis]\nFile: ${activeFile.name}\nRelevance: 100% synchronized with live repository AST. Zero drift detected.`,
+      );
     }, 700);
   };
 
@@ -155,7 +161,9 @@ export function IntelligenceDashboard() {
               onClick={() => handleSelectModule(m)}
               className={cn(
                 "p-1.5 rounded-md flex flex-col items-center justify-center transition-all",
-                isSelected ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                isSelected
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
               )}
               title={m.title}
             >
@@ -173,7 +181,9 @@ export function IntelligenceDashboard() {
 
       {/* Files List */}
       <div className="space-y-1">
-        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Files & Folders</span>
+        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
+          Files & Folders
+        </span>
         {activeModule.files.map((file) => {
           const isSelected = activeFile.path === file.path;
           return (
@@ -182,7 +192,9 @@ export function IntelligenceDashboard() {
               onClick={() => setActiveFile(file)}
               className={cn(
                 "w-full flex items-center justify-between p-2 rounded-lg text-left transition-all font-mono text-[11px]",
-                isSelected ? "bg-secondary text-secondary-foreground border border-primary/40 font-medium" : "bg-surface/60 border border-border text-foreground hover:bg-surface"
+                isSelected
+                  ? "bg-secondary text-secondary-foreground border border-primary/40 font-medium"
+                  : "bg-surface/60 border border-border text-foreground hover:bg-surface",
               )}
             >
               <div className="flex items-center gap-1.5 truncate">
@@ -197,7 +209,9 @@ export function IntelligenceDashboard() {
 
       {/* File Content Preview */}
       <div className="space-y-1">
-        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">File Content</span>
+        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
+          File Content
+        </span>
         <div className="bg-surface border border-border rounded-lg p-2.5 font-mono text-[10px] text-foreground overflow-x-auto max-h-28 shadow-inner">
           <pre>{activeFile.content}</pre>
         </div>
@@ -222,7 +236,11 @@ export function IntelligenceDashboard() {
             disabled={loading}
             className="bg-primary text-primary-foreground hover:bg-primary-glow px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 shrink-0"
           >
-            {loading ? <RefreshCw className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+            {loading ? (
+              <RefreshCw className="size-3 animate-spin" />
+            ) : (
+              <Sparkles className="size-3" />
+            )}
             Ask
           </button>
         </div>

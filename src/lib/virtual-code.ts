@@ -51,7 +51,10 @@ function subtreeFiles(node: GraphNode, limit = 12): string[] {
 }
 
 function slug(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 /**
@@ -60,11 +63,7 @@ function slug(s: string) {
  */
 export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
   const kids = childrenOf(node);
-  const allowedModules = [
-    ...node.dependencies,
-    ...kids.map((k) => k.label),
-    node.label,
-  ].map(slug);
+  const allowedModules = [...node.dependencies, ...kids.map((k) => k.label), node.label].map(slug);
   const knownFiles = subtreeFiles(node);
   const lines = code.split("\n");
   const findings: CodeFinding[] = [];
@@ -80,7 +79,11 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
       const spec = imp[1]!;
       const local = spec.startsWith(".") || spec.startsWith("@/");
       const target = slug(spec.replace(/^[@./]+/, "").split("/")[0] ?? "");
-      if (local && target && !allowedModules.some((m) => m.includes(target) || target.includes(m))) {
+      if (
+        local &&
+        target &&
+        !allowedModules.some((m) => m.includes(target) || target.includes(m))
+      ) {
         add({
           id: `imp-${line}`,
           severity: "error",
@@ -112,7 +115,9 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
         apply: (c) =>
           c
             .split("\n")
-            .map((l, idx) => (idx === i ? `  // virtual fix: read inside the handler\n  ${text}` : l))
+            .map((l, idx) =>
+              idx === i ? `  // virtual fix: read inside the handler\n  ${text}` : l,
+            )
             .join("\n"),
       });
     }
@@ -130,7 +135,10 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
             .split("\n")
             .map((l, idx) =>
               idx === i
-                ? l.replace(/while\s*\(\s*true\s*\)|for\s*\(\s*;;\s*\)/, "for (let attempt = 0; attempt < 5; attempt++)")
+                ? l.replace(
+                    /while\s*\(\s*true\s*\)|for\s*\(\s*;;\s*\)/,
+                    "for (let attempt = 0; attempt < 5; attempt++)",
+                  )
                 : l,
             )
             .join("\n"),
@@ -179,7 +187,8 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
       title: "Async path with no error handling",
       why: `Failures here surface to ${node.dependents.slice(0, 2).join(", ") || "downstream consumers"} untyped.`,
       fix: "Wrap the await in try/catch and map to a typed error.",
-      apply: (c) => `${c}\n\n// virtual fix: map failures to a typed error before they leave ${node.label}`,
+      apply: (c) =>
+        `${c}\n\n// virtual fix: map failures to a typed error before they leave ${node.label}`,
     });
   }
 
@@ -213,7 +222,9 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
 const INTENT_RULES: { match: RegExp; build: (node: GraphNode, prompt: string) => string }[] = [
   {
     match: /retry|backoff|resilien|robust/i,
-    build: (node) => `export async function call${pascal(node.label)}(input: unknown): Promise<unknown> {
+    build: (
+      node,
+    ) => `export async function call${pascal(node.label)}(input: unknown): Promise<unknown> {
   const maxAttempts = 5;
   let lastError: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -273,7 +284,9 @@ export async function emit(event: WebhookEvent): Promise<void> {
   },
   {
     match: /valid|schema|parse|check|zod/i,
-    build: (node) => `export function validate(input: unknown): { ok: true; data: unknown } | { ok: false; errors: string[] } {
+    build: (
+      node,
+    ) => `export function validate(input: unknown): { ok: true; data: unknown } | { ok: false; errors: string[] } {
   if (input == null || typeof input !== "object") {
     return { ok: false, errors: ["expected an object"] };
   }
@@ -399,7 +412,9 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   steps[3]!.status = blastErrors.length ? "fail" : warnings.length ? "warn" : "ok";
   if (blastErrors.length) {
     steps[3]!.detail = `${blastErrors.length} blast risk(s)`;
-    output.push(`✗ ${blastErrors.length} finding(s) threaten ${node.blast.services} downstream services`);
+    output.push(
+      `✗ ${blastErrors.length} finding(s) threaten ${node.blast.services} downstream services`,
+    );
   } else {
     output.push(`✓ Blast radius contained: ${node.blast.level}`);
   }
@@ -410,7 +425,9 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
     output.push(`✓ No boundary violation found for ${node.label} by the static checks`);
   } else {
     steps[4]!.detail = `${errors.length} blocking error(s)`;
-    output.push(`✗ Does not fit ${node.label}: ${errors.length} structural error(s) block injection`);
+    output.push(
+      `✗ Does not fit ${node.label}: ${errors.length} structural error(s) block injection`,
+    );
   }
 
   const passed = check.fits && hasSyntax && importErrors.length === 0 && blastErrors.length === 0;

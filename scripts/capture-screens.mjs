@@ -89,7 +89,9 @@ async function capture(viewport, isMobile, shots) {
       console.log(`${file} ${fs.statSync(output).size} bytes from ${target}`);
     } catch (error) {
       failed = true;
-      console.error(`${file} failed from ${target}: ${error instanceof Error ? error.message : error}`);
+      console.error(
+        `${file} failed from ${target}: ${error instanceof Error ? error.message : error}`,
+      );
     }
   }
 
