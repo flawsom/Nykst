@@ -24,6 +24,9 @@ dist-ssr
 # Vercel (build output + local project link)
 .vercel/
 
+# Agent and tool run artifacts
+BUFFY_TASK_OUTPUT/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,39 +1,47 @@
 <a id="top"></a>
 
 <p align="center">
-  <img src="docs/assets/readme-hero.svg" width="100%" alt="Nykst · Deterministic Graph-RAG Architecture for Software Systems. Organization → Domains → Capabilities → Services → Modules → Files." />
+  <img src="docs/assets/readme-banner.svg" width="100%" alt="Nykst · Deterministic Graph-RAG architecture for software systems. Know the blast radius before you change the code." />
 </p>
 
 <div align="center">
 
-<img src="public/favicon.svg" width="60" height="60" alt="Nykst Graph-RAG Prism Mark" />
+<img src="public/logo.svg" width="240" alt="Nykst" />
 
-# NYKST
+**Know the blast radius before you change the code.**
 
-### We are not an LLM wrapper. We are the deterministic Graph-RAG architecture.
+Nykst compiles a repository with the TypeScript AST, links SQL migrations and external services, runs Tarjan cycle analysis over the import graph, and answers one question with evidence: *if I touch this file, what breaks?*
 
-Connect a repository once. Nykst compiles your codebase with the TypeScript AST engine, links SQL migrations and external services, runs Tarjan strongly-connected-component cycle analysis, and computes the exact line-level blast radius before you, or your AI coding agent, write a single line of code.
+Every number it reports is computed from real source, with file and line citations. Nothing is seeded, sampled, or guessed.
 
-[![Live Demo](https://img.shields.io/badge/LIVE_DEPLOYMENT-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=cloudflare&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
-[![Documentation](https://img.shields.io/badge/DOCUMENTATION-MCP_&_Agent_Setup-5EEAD4?style=for-the-badge&logo=readthedocs&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes/mcp)
-[![Installation](https://img.shields.io/badge/INSTALLATION-Quick_Start-8596A7?style=for-the-badge&logo=gnubash&logoColor=eef5fa&labelColor=0b141b)](#quick-start)
-[![GitHub Repository](https://img.shields.io/badge/GITHUB_REPOSITORY-flawsom%2Fnykst-8596A7?style=for-the-badge&logo=github&logoColor=eef5fa&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence)
+<br/>
 
-[![Version](https://img.shields.io/badge/version-2.5.0-5EEAD4?style=for-the-badge&labelColor=06110f)](#releases)
-[![License](https://img.shields.io/github/license/flawsom/nykst-software-intellegence?style=for-the-badge&color=5EEAD4&labelColor=06110f)](https://github.com/flawsom/nykst-software-intellegence/blob/main/LICENSE)
-[![Build](https://github.com/flawsom/nykst-software-intellegence/actions/workflows/ci.yml/badge.svg?branch=main&style=for-the-badge&label=build)](https://github.com/flawsom/nykst-software-intellegence/actions/workflows/ci.yml)
-[![Nara AI](https://img.shields.io/badge/AI_ENGINE-agnes--2.5--flash-2DD4BF?style=for-the-badge&labelColor=06110f)](#environment-variables)
-[![MCP](https://img.shields.io/badge/MCP-Streamable_HTTP_2025--06--18-6EE7B7?style=for-the-badge&labelColor=06110f)](#mcp-server)
+[![Live App](https://img.shields.io/badge/LAUNCH_APP-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
+[![Docs](https://img.shields.io/badge/MCP_SETUP-Guides_for_9_agents-5EEAD4?style=for-the-badge&logo=readthedocs&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes/mcp)
+[![Install](https://img.shields.io/badge/INSTALL-bun_install-8596A7?style=for-the-badge&logo=gnubash&logoColor=eef5fa&labelColor=0b141b)](#quick-start)
+[![Source](https://img.shields.io/badge/SOURCE-flawsom%2Fnykst-8596A7?style=for-the-badge&logo=github&logoColor=eef5fa&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence)
+
+<br/>
+
+[![Version](https://img.shields.io/badge/version-1.0.0-5EEAD4?style=flat-square&labelColor=06110f)](#roadmap)
+[![License](https://img.shields.io/badge/license-MIT-5EEAD4?style=flat-square&labelColor=06110f)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-tsc_%2B_23_tests-5EEAD4?style=flat-square&logo=githubactions&labelColor=06110f)](.github/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](#tech-stack)
+[![MCP](https://img.shields.io/badge/MCP-2025--06--18-6EE7B7?style=flat-square&labelColor=06110f)](#api)
+[![Runtime](https://img.shields.io/badge/runtime-Bun_1.4_%2F_Node_22-8596A7?style=flat-square&logo=bun&logoColor=white)](#quick-start)
+
+<!-- Repository counters (stars, forks, issues, pull requests, downloads, last commit,
+     contributors) use the GitHub badge endpoints and read as "repo not found" while this
+     repository is private. Uncomment them once the repository is public.
 
 [![Stars](https://img.shields.io/github/stars/flawsom/nykst-software-intellegence?style=flat-square&color=2DD4BF&label=stars)](https://github.com/flawsom/nykst-software-intellegence/stargazers)
 [![Forks](https://img.shields.io/github/forks/flawsom/nykst-software-intellegence?style=flat-square&color=2DD4BF)](https://github.com/flawsom/nykst-software-intellegence/forks)
 [![Downloads](https://img.shields.io/github/downloads/flawsom/nykst-software-intellegence/total?style=flat-square&color=5EEAD4&label=downloads)](https://github.com/flawsom/nykst-software-intellegence/releases)
 [![Issues](https://img.shields.io/github/issues/flawsom/nykst-software-intellegence?style=flat-square&color=FBBF24)](https://github.com/flawsom/nykst-software-intellegence/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/flawsom/nykst-software-intellegence?style=flat-square&color=5EEAD4)](https://github.com/flawsom/nykst-software-intellegence/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/flawsom/nykst-software-intellegence?style=flat-square&color=8596A7)](https://github.com/flawsom/nykst-software-intellegence/commits/main)
+[![PRs](https://img.shields.io/github/issues-pr/flawsom/nykst-software-intellegence?style=flat-square&color=5EEAD4)](https://github.com/flawsom/nykst-software-intellegence/pulls)
+[![Last commit](https://img.shields.io/github/last-commit/flawsom/nykst-software-intellegence?style=flat-square&color=8596A7)](https://github.com/flawsom/nykst-software-intellegence/commits/main)
 [![Contributors](https://img.shields.io/github/contributors/flawsom/nykst-software-intellegence?style=flat-square&color=5EEAD4)](https://github.com/flawsom/nykst-software-intellegence/graphs/contributors)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8_strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](#tech-stack)
-[![Tests](https://img.shields.io/badge/tests-23_passing_(130_assertions)-2DD4BF?style=flat-square)](#testing)
+-->
 
 </div>
 
@@ -43,498 +51,462 @@ Connect a repository once. Nykst compiles your codebase with the TypeScript AST 
 
 <div align="center">
 
-**Quick Navigation** &nbsp;·&nbsp; [Why Graph-RAG](#why-nykst) · [✨ Features](#features) · [📸 Screenshots](#screenshots) · [🎥 Demo](#demo) · [🏗 Architecture](#architecture) · [🛠 Tech Stack](#tech-stack) · [⚡ Quick Start](#quick-start) · [📁 Project Structure](#project-structure) · [🔐 Environment Variables](#environment-variables) · [📖 API Documentation](#api-documentation) · [🎯 Usage Examples](#usage-examples) · [📊 Performance](#performance) · [🧪 Testing](#testing) · [🚀 Deployment](#deployment) · [🤝 Contributing](#contributing) · [🗺 Roadmap](#roadmap) · [❓ FAQ](#faq) · [🙌 Acknowledgements](#acknowledgements) · [📜 License](#license) · [❤️ Support](#support)
+**Navigate** &nbsp;·&nbsp; [Why](#why) · [Features](#features) · [Screens](#screens) · [Demo](#demo) · [Architecture](#architecture) · [Stack](#tech-stack) · [Quick start](#quick-start) · [Structure](#structure) · [Env vars](#env) · [API](#api) · [Usage](#usage) · [Performance](#performance) · [Testing](#testing) · [Deploy](#deploy) · [Contributing](#contributing) · [Roadmap](#roadmap) · [FAQ](#faq) · [Support](#support)
 
 </div>
 
 <details>
-<summary><b>📖 Expand Full Table of Contents (All 20 Sections)</b></summary>
+<summary><b>Full table of contents</b></summary>
 
-1. [🚀 Hero & Executive Overview](#top)
-2. [🧠 Why Nykst vs. Flat Vector Wrappers](#why-nykst)
-3. [✨ Features](#features)
-4. [📸 Screenshots & Visual Showcase](#screenshots)
-5. [🎥 Live Demo & Video Walkthroughs](#demo)
-6. [🏗 System & Graph-RAG Architecture](#architecture)
-7. [🛠 Tech Stack](#tech-stack)
-8. [⚡ Quick Start (Local, Supabase & Docker)](#quick-start)
-9. [📁 Project Structure](#project-structure)
-10. [🔐 Environment Variables](#environment-variables)
-11. [📖 API Documentation & MCP Reference](#api-documentation)
-12. [🎯 Usage Examples](#usage-examples)
-13. [📊 Performance, Benchmarks & Live Telemetry](#performance)
-14. [🧪 Testing, Linting & Quality Gates](#testing)
-15. [🚀 Deployment Guides (Vercel, Cloudflare, Railway, Docker, AWS, DigitalOcean, Netlify)](#deployment)
-16. [🤝 Contributing Guidelines](#contributing)
-17. [🗺 Product Roadmap](#roadmap)
-18. [❓ Frequently Asked Questions (FAQ)](#faq)
-19. [🙌 Acknowledgements](#acknowledgements)
-20. [📜 License & ❤️ Support](#license)
+<br/>
+
+1. [Why Nykst](#why)
+2. [Features](#features)
+3. [Screens](#screens)
+4. [Demo](#demo)
+5. [Architecture](#architecture)
+6. [Tech stack](#tech-stack)
+7. [Quick start](#quick-start)
+8. [Project structure](#structure)
+9. [Environment variables](#env)
+10. [API reference](#api)
+11. [Usage examples](#usage)
+12. [Performance](#performance)
+13. [Testing](#testing)
+14. [Deployment](#deploy)
+15. [Contributing](#contributing)
+16. [Roadmap](#roadmap)
+17. [FAQ](#faq)
+18. [Acknowledgements](#acknowledgements)
+19. [License](#license)
+20. [Support](#support)
 
 </details>
 
 ---
 
-<a id="why-nykst"></a>
+<a id="why"></a>
 
-## 🧠 Why Nykst: Deterministic Graph-RAG vs. Flat Vector Wrappers
+## Why Nykst
 
-Most "AI for code" tools on the market are thin wrappers: they slice source files into fixed 500-token chunks, embed them into a flat vector store, retrieve the top-$k$ cosine-similar snippets, and hope an LLM can guess what calls what.
+Most "AI for code" tools chunk files into token windows, embed them into a vector store, and let a model guess which chunks are related. That works for prose. Software is not prose: it is a typed dependency graph that changes over time.
 
-**Software is not a bag of paragraphs. Software is a directed, typed dependency graph evolving over time.**
+Nykst indexes the graph itself.
 
 ```text
-Organization ──► Core Domains ──► Capabilities ──► Services & SQL ──► Modules ──► Files (AST)
-   nykst          src/lib/         analysis/        supabase (10)     impact.ts    line-level
-                  src/routes/      integrations/    github-oauth      graph.ts     importers
+Organization  ->  Domain        ->  Capability     ->  Service      ->  Module     ->  File
+flawsom           src/lib           analysis           supabase          impact.ts     line-level
+                  src/routes        integrations       github-oauth      graph.ts      importers
 ```
 
-| Dimension | Typical "Chat with Code" Wrapper | **Nykst Deterministic Graph-RAG Architecture** |
+| Dimension | Typical chat-with-code tool | Nykst |
 | :--- | :--- | :--- |
-| **Indexing Primitive** | Arbitrary 500-token text chunks (`RecursiveCharacterTextSplitter`) | **TypeScript AST (`ts.createSourceFile`)** + `tsconfig` path-alias & monorepo workspace resolver |
-| **Blast-Radius Accuracy** | LLM guesses based on naming similarity; misses callers 3+ hops away | **Breadth-first reverse reachability (`Reach` / `impactOf`)** with exact importing file & line numbers |
-| **Cycle Detection** | Blind to circular runtime dependencies | **Iterative Tarjan strongly-connected components (SCC)** separating runtime cycles from `import type` |
-| **Database & Service Lineage** | Treats SQL files and SDK calls as unlinked plain text | **DDL + Call-Site Linker** connecting `CREATE TABLE` / `FUNCTION` in migrations to `.from()` / `.rpc()` calls |
-| **Temporal & Historical Context** | Stateless per-prompt context window | **6-Layer Compounding Memory**: co-change coupling, PR issue closures, outcome-weighted decisions & playbooks |
-| **AI Coding Agent Integration** | Custom editor fork or proprietary plugin lock-in | **Stateless Streamable HTTP MCP (`/api/mcp`)** serving 5 `readOnlyHint` tools to Claude Code, Cursor, VS Code & Codex |
-| **Data Integrity** | Seeded demo workspaces & synthetic metrics | **Zero mock or stale data**: self-indexes the live repository on demand in `~640ms` via `/api/analysis/self` |
+| Indexing primitive | 500-token text chunks | **TypeScript AST** via `ts.createSourceFile`, with `tsconfig` path aliases and workspace packages resolved |
+| Blast radius | Model guesses from naming similarity | **Exact reverse reachability** over the import graph, with importing file and line for every dependent |
+| Cycles | Usually invisible | **Iterative Tarjan SCC**, runtime cycles separated from `import type` |
+| Database lineage | SQL files treated as plain text | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites |
+| Memory | Stateless per prompt | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity |
+| Agent access | Editor fork or proprietary plugin | **Stateless Streamable HTTP MCP** at `/api/mcp`, 5 read-only tools, any MCP client |
+| Data provenance | Demo workspaces and sample data | **Zero mock data**: the app indexes its own repository live at `/api/analysis/self` |
 
 > [!IMPORTANT]
-> **Read-only by construction.** Nykst never writes to your repository without explicit human PR review. Every GitHub connection is read-only, every analysis is computed from real source trees, and every MCP tool is annotated `readOnlyHint: true`.
+> **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all five MCP tools are annotated `readOnlyHint: true`. There is no training on your code.
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="features"></a>
 
-## ✨ Features
+## Features
 
 <table>
 <tr>
 <td width="33%" valign="top">
-  <h3>🗺️ 6-Level AST Graph Navigation</h3>
-  <sub>Drill seamlessly from <b>Organization → Core Domain → Capability → Service → Module → File</b>. Every click re-centers the topology, synchronizes the breadcrumb and left tree, and preserves browser history state.</sub>
+<h3>Six-level graph navigation</h3>
+<p><sub>Organization to domain to capability to service to module to file. Each selection re-centers the topology, syncs the breadcrumb and tree, and keeps browser history intact.</sub></p>
 </td>
 <td width="33%" valign="top">
-  <h3>⚡ Live Self-Indexed AST Workbench</h3>
-  <sub>Powered by <code>/api/analysis/self</code>, Nykst compiles its own 160+ TypeScript files, 317+ import edges, and 12 SQL resources in real time so visitors can trace blast radius and run MCP tools with zero mock data.</sub>
+<h3>Live self-indexed workbench</h3>
+<p><sub>The landing page compiles this repository in front of you: 160 analyzed files, 317 import edges, 12 SQL and data resources. Click any hub to see real importers.</sub></p>
 </td>
 <td width="33%" valign="top">
-  <h3>🧭 Before You Act Consequence Envelope</h3>
-  <sub>Before touching a file, assemble a deterministic context envelope: direct & transitive importers, affected page/API entrypoints, covering tests, co-changing files, and grounded consequence reasoning.</sub>
-</td>
-</tr>
-<tr>
-<td width="33%" valign="top">
-  <h3>🧠 6-Layer System Memory</h3>
-  <sub><b>Outcome-Weighted</b>, <b>Failure-Pattern</b>, <b>Architectural Decision</b>, <b>Incident-Resolution</b>, <b>Team Convention</b>, and emergent <b>Continuity Memory</b>, anchored to real repository artifacts.</sub>
-</td>
-<td width="33%" valign="top">
-  <h3>🔌 Streamable HTTP MCP Server</h3>
-  <sub>One <code>nyk_</code> token connects Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, Cline, and Zed to 5 read-only architectural tools over <code>/api/mcp</code>.</sub>
-</td>
-<td width="33%" valign="top">
-  <h3>🤖 Nara Router (`agnes-2.5-flash`) + BYOK</h3>
-  <sub>Ships with instant platform reasoning via Nara Router (<code>agnes-2.5-flash</code>) plus an AES-256-GCM encrypted vault for your own OpenAI, Anthropic, Gemini, DeepSeek, or OpenRouter keys.</sub>
+<h3>Before You Act</h3>
+<p><sub>Assemble a consequence envelope before editing: direct and transitive importers, affected entrypoints, covering tests, co-changing files, and grounded risk reasoning.</sub></p>
 </td>
 </tr>
 <tr>
-<td width="33%" valign="top">
-  <h3>🗄️ SQL Migration & Service Linker</h3>
-  <sub>Automatically parses <code>supabase/migrations/*.sql</code> and <code>schema.prisma</code>, linking tables and RPCs directly to client <code>.from()</code> and <code>.rpc()</code> call sites with line citations.</sub>
+<td valign="top">
+<h3>Six-layer system memory</h3>
+<p><sub>Outcome-weighted decisions, failure patterns, incidents, team conventions, and continuity, all anchored to real artifacts and commits rather than a wiki nobody updates.</sub></p>
 </td>
-<td width="33%" valign="top">
-  <h3>📡 Production Signals & Root-Cause Engine</h3>
-  <sub>Verifies HMAC-SHA256 GitHub webhooks (<code>/api/webhooks/github</code>), normalizes operational failures, and synthesizes repository-grounded root-cause candidates with confidence scoring.</sub>
+<td valign="top">
+<h3>Streamable HTTP MCP</h3>
+<p><sub>One <code>nyk_</code> token connects Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, Cline, and Zed to <code>/api/mcp</code>.</sub></p>
 </td>
-<td width="33%" valign="top">
-  <h3>✨ Variant Motion System</h3>
-  <sub>Engineered with cursor-following radial spotlights, film-grain texture, 3D specular tilt cards, magnetic hover CTAs, text scramble decoders, scroll-triggered counters, and infinite telemetry marquees.</sub>
+<td valign="top">
+<h3>Platform AI plus BYOK</h3>
+<p><sub>Works immediately on <code>agnes-2.5-flash</code> through Nara Router. Add your own OpenAI, Anthropic, Gemini, DeepSeek, or OpenRouter key; it is sealed with AES-256-GCM.</sub></p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<h3>SQL and service linker</h3>
+<p><sub>Parses <code>supabase/migrations/*.sql</code> and Prisma models, then connects tables and RPCs to the client call sites that depend on them, with line citations.</sub></p>
+</td>
+<td valign="top">
+<h3>Production signals</h3>
+<p><sub>HMAC-SHA256 verified GitHub webhooks feed a root-cause engine that ties operational failures back to the exact code paths that could produce them.</sub></p>
+</td>
+<td valign="top">
+<h3>Motion with restraint</h3>
+<p><sub>Cursor spotlight, film grain, specular tilt cards, magnetic CTAs, scramble decoders, and telemetry marquees, all reduced-motion aware and GPU friendly.</sub></p>
 </td>
 </tr>
 </table>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
-<a id="screenshots"></a>
+<a id="screens"></a>
 
-## 📸 Screenshots
+## Screens
 
-<sub>Real captures from the running Nykst application across Desktop, Dashboard, Memory Analytics, MCP Agent Setup, Billing Settings, and Mobile viewports.</sub>
+Real captures from the running application. No mockups.
 
-### 🖥 Desktop · Product Landing Page & Live AST Telemetry
+### Landing: live AST telemetry
 
 <p align="center">
-  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst Desktop Landing Page · Hero, Live AST Graph Preview, 6-Level Navigation, and GitHub Connect." />
+  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst landing page with live AST graph preview and GitHub connect" />
 </p>
 
-### 🧭 Dashboard · 6-Level System Graph & Inspector
+### Navigator: six-level graph and inspector
 
 <p align="center">
-  <img src="docs/assets/screens/graph.png" width="100%" alt="Nykst Graph Navigator Dashboard · 6-level interactive topology, tree navigation, and Mentor Panel." />
+  <img src="docs/assets/screens/graph.png" width="100%" alt="Nykst graph navigator with topology, tree, and dossier" />
 </p>
-
-### 🧠 Analytics (System Memory) & ⚙️ Settings (Subscription & BYOK Vault)
 
 <table>
 <tr>
 <td width="50%" valign="top">
-  <b>🧠 Analytics · 6-Layer System Memory</b><br/>
-  <sub>Outcome-weighted decisions, failure patterns, dependency topology, and grounded AI Q&A over live repository artifacts.</sub>
+<b>System memory</b><br/>
+<sub>Dependency topology, change intelligence, risk profile, and grounded Q&amp;A over live artifacts.</sub><br/><br/>
+<img src="docs/assets/screens/memory.png" width="100%" alt="Nykst system memory workspace" />
 </td>
 <td width="50%" valign="top">
-  <b>⚙️ Settings & Billing · eSewa & API Vault</b><br/>
-  <sub>Monthly (NPR 999) and Annual (NPR 9,999) plans with QR scan, transaction verification, and AES-256-GCM BYOK provider settings.</sub>
+<b>Subscription and vault</b><br/>
+<sub>Monthly and annual plans with QR settlement, plus the encrypted BYOK provider panel.</sub><br/><br/>
+<img src="docs/assets/screens/pricing.png" width="100%" alt="Nykst subscription and settings page" />
 </td>
 </tr>
-<tr>
-<td valign="top"><img src="docs/assets/screens/memory.png" width="100%" alt="Nykst Memory Analytics Workspace" /></td>
-<td valign="top"><img src="docs/assets/screens/pricing.png" width="100%" alt="Nykst Subscription & Settings Page" /></td>
-</tr>
 </table>
-
-### 🔌 MCP Agent Configuration & 📱 Mobile Responsive Experience
 
 <table>
 <tr>
 <td width="62%" valign="top">
-  <img src="docs/assets/screens/mcp.png" width="100%" alt="Nykst MCP Guide & Token Provisioning" />
+<img src="docs/assets/screens/mcp.png" width="100%" alt="Nykst MCP setup guide with token provisioning" />
 </td>
 <td width="38%" valign="top">
-  <img src="docs/assets/screens/mobile.png" width="100%" alt="Nykst Mobile Responsive Layout" />
+<img src="docs/assets/screens/mobile.png" width="100%" alt="Nykst mobile responsive layout" />
 </td>
 </tr>
 <tr>
-<td align="center"><sub><b>🔌 Authentication & MCP Tokens</b> · SHA-256 hashed <code>nyk_</code> tokens & copy-paste setup for 9 coding agents</sub></td>
-<td align="center"><sub><b>📱 Mobile Viewport</b> · Full responsive dark-glass hierarchy on iOS/Android viewports</sub></td>
+<td align="center"><sub><b>MCP setup</b> · revocable <code>nyk_</code> tokens, SHA-256 hashed, copy-paste configs for nine agents</sub></td>
+<td align="center"><sub><b>Mobile</b> · the full dark-glass hierarchy on a narrow viewport</sub></td>
 </tr>
 </table>
 
-> [!NOTE]
-> **Zero-impersonation OAuth.** GitHub authentication happens directly on GitHub's official consent screen (`https://github.com/login/oauth/authorize`) with wildcard-aware callback verification across `nykst.unifies.codes`, `nykst.vercel.app`, and `localhost:8080`.
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
-
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="demo"></a>
 
-## 🎥 Demo
+## Demo
 
 <div align="center">
 
-[![Launch Live Production App](https://img.shields.io/badge/LAUNCH_PRODUCTION_APP-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
-&nbsp;
-[![Vercel Mirror](https://img.shields.io/badge/VERCEL_MIRROR-nykst.vercel.app-60A5FA?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.vercel.app)
-&nbsp;
-[![YouTube Walkthrough](https://img.shields.io/badge/YOUTUBE_DEMO-Watch_Walkthrough-FF0033?style=for-the-badge&logo=youtube&logoColor=white&labelColor=0b141b)](https://www.youtube.com/results?search_query=nykst+software+intelligence)
+[![Open production app](https://img.shields.io/badge/OPEN_PRODUCTION-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
+[![Vercel mirror](https://img.shields.io/badge/MIRROR-nykst.vercel.app-60A5FA?style=for-the-badge&logo=vercel&logoColor=06110f&labelColor=0b141b)](https://nykst.vercel.app)
+[![Walkthrough](https://img.shields.io/badge/VIDEO-Walkthrough-FF0033?style=for-the-badge&logo=youtube&logoColor=white&labelColor=0b141b)](#demo)
 
 </div>
 
-### Live Interactive Surfaces
+### Live surfaces
 
-| Surface | Live Experience | Direct URL |
+| Surface | What you can do | URL |
 | :--- | :--- | :--- |
-| **🚀 Landing & Live AST Workbench** | Inspect `flawsom/nykst-software-intellegence` compiled live in `<700ms`: click any core hub, view exact importer line numbers, inspect SQL tables, and execute MCP tools in-browser. | [`https://nykst.unifies.codes/`](https://nykst.unifies.codes/) |
-| **🧭 6-Level System Graph** | Navigate from Organization root down to individual TypeScript files, open the **Node Dossier**, or run **Before You Act** consequence analysis. | [`https://nykst.unifies.codes/graph`](https://nykst.unifies.codes/graph) |
-| **🧠 6-Layer System Memory** | Browse live-derived System Map, AST Dependency Topology, Change Intelligence, Risk Profile, and ask `agnes-2.5-flash` grounded questions. | [`https://nykst.unifies.codes/intelligence`](https://nykst.unifies.codes/intelligence) |
-| **🔌 MCP Agent Hub** | Generate a revocable `nyk_` token and copy ready-to-run configuration for Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, Cline, and Zed. | [`https://nykst.unifies.codes/mcp`](https://nykst.unifies.codes/mcp) |
-| **🩺 Real-Time Health Probe** | Live JSON verification of Supabase connectivity and all 10 required PostgreSQL tables. | [`https://nykst.unifies.codes/api/health`](https://nykst.unifies.codes/api/health) |
+| **Landing and AST workbench** | Explore this repository compiled live, click a hub, read exact importer lines, inspect SQL resources | [`/`](https://nykst.unifies.codes/) |
+| **System graph** | Walk from organization to file, open a dossier, run Before You Act | [`/graph`](https://nykst.unifies.codes/graph) |
+| **System memory** | Browse change intelligence and risk, ask a grounded question | [`/intelligence`](https://nykst.unifies.codes/intelligence) |
+| **MCP hub** | Mint a token and copy a ready config for your agent | [`/mcp`](https://nykst.unifies.codes/mcp) |
+| **Health probe** | JSON readiness for Supabase and every required table | [`/api/health`](https://nykst.unifies.codes/api/health) |
 
 <details>
-<summary><b>🎬 Embedding GIF, MP4 & YouTube Demos in Forks or PRs</b></summary>
+<summary><b>Embedding a GIF, MP4, or YouTube walkthrough</b></summary>
 
 <br/>
 
-- **GIF Preview**: Place a recording at `docs/assets/demo.gif` and embed with `![Nykst Graph-RAG Demo](docs/assets/demo.gif)`.
-- **MP4 Video**: Drag an `.mp4` capture into any GitHub issue/PR description to mint a `https://github.com/user-attachments/assets/<uuid>` URL, which GitHub renders as a native HTML5 video player.
-- **YouTube Walkthrough**: Link a thumbnail directly to your walkthrough video for high-resolution playback with audio commentary.
+- **GIF**: record a short capture to `docs/assets/demo.gif`, then embed with `![Nykst demo](docs/assets/demo.gif)`.
+- **MP4**: drag the file into a GitHub issue or PR comment; the generated `user-attachments` URL renders as a native HTML5 player.
+- **YouTube**: link a 16:9 thumbnail to the video so the README stays lightweight.
+- **Loom or Vercel preview**: link it from this section rather than embedding a heavy iframe.
 
 </details>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="architecture"></a>
 
-## 🏗 Architecture
+## Architecture
 
-Nykst is architected as a deterministic, edge-ready full-stack system: **React 19 + TanStack Start** on the frontend and SSR layer, **TypeScript AST Compiler + Tarjan SCC + BFS Reachability** in the analysis core, **Supabase PostgreSQL with strict Row-Level Security** for persistence and Realtime broadcasts, and **Nara Router (`agnes-2.5-flash`) + AES-256-GCM BYOK** for grounded reasoning.
-
-### End-to-End System Topology
+Three planes, one contract: the analysis core produces deterministic evidence, the app renders it, and the MCP endpoint serves the same evidence to agents.
 
 ```mermaid
 flowchart TB
-  subgraph Client["Frontend · React 19 + Variant Motion Engine"]
-    Landing["Landing & Live AST Workbench<br/>(Spotlight · 3D Tilt · Magnetic · Scramble)"]
-    GraphUI["6-Level Graph Navigator<br/>(GraphCanvas · TreePanel · NodeDossier)"]
-    BeforeAct["Before You Act Modal<br/>(Consequence Envelope Builder)"]
-    MemoryUI["6-Layer Memory Workspace<br/>(/intelligence)"]
+  subgraph Client["Client · React 19 + TanStack Router"]
+    L["Landing and live workbench"]
+    G["Six-level graph navigator"]
+    B["Before You Act"]
+    M["System memory"]
   end
 
-  subgraph Server["Backend & API Layer · TanStack Start + Nitro"]
-    SelfAPI["GET /api/analysis/self<br/>(Real-Time Workspace AST Compiler)"]
-    IngestAPI["POST /api/integrations/github/ingest<br/>(Tarball Fetch + AST + Git History)"]
-    McpAPI["POST /api/mcp<br/>(Stateless Streamable HTTP MCP 2025-06-18)"]
-    AiAPI["POST /api/ai/chat · /api/diagnosis<br/>(Grounded Reasoning & Root-Cause Engine)"]
-    AuthAPI["GET /api/integrations/github/start & /callback<br/>(HMAC-SHA256 OAuth + Multi-Origin Redirects)"]
-    HookAPI["POST /api/webhooks/github<br/>(X-Hub-Signature-256 Verified Intake)"]
+  subgraph Edge["SSR and API · TanStack Start + Nitro"]
+    SA["GET /api/analysis/self"]
+    IA["POST /api/integrations/github/ingest"]
+    MC["POST /api/mcp"]
+    AI["POST /api/ai/chat · /api/diagnosis"]
+    OA["GET /api/integrations/github/start · callback"]
+    WH["POST /api/webhooks/github"]
   end
 
-  subgraph Engine["Deterministic Graph-RAG Core · src/lib/analysis/"]
-    Parser["parse.server.ts<br/>ts.createSourceFile AST Extraction"]
-    Resolver["resolve.ts<br/>tsconfig Paths + Workspace Exports"]
-    Tarjan["engine.server.ts<br/>Iterative Tarjan SCC Cycle Detector + SQL Linker"]
-    Impact["impact.ts & graph.ts<br/>Reverse BFS Reachability + 6-Level Trie"]
+  subgraph Core["Deterministic core · src/lib/analysis"]
+    P["parse: ts.createSourceFile"]
+    R["resolve: tsconfig paths, workspaces"]
+    T["engine: Tarjan SCC, SQL linker"]
+    I["impact: reverse BFS, co-change"]
+    X["context: evidence envelope"]
   end
 
-  subgraph Database["Database & Realtime · Supabase PostgreSQL (RLS Enforced)"]
-    T_Ing[("repository_ingestions")]
-    T_Key[("user_ai_keys (AES-256-GCM)")]
-    T_Mcp[("mcp_access_tokens (SHA-256)")]
-    T_Sig[("production_signals & root_cause_diagnoses")]
-    T_Sub[("nykst_subscriptions & payment_submissions")]
-    T_Conn[("integration_connections")]
+  subgraph Data["Supabase Postgres · RLS enforced"]
+    D1[("repository_ingestions")]
+    D2[("user_ai_keys")]
+    D3[("mcp_access_tokens")]
+    D4[("production_signals")]
+    D5[("nykst_subscriptions")]
   end
 
-  subgraph External["External Services & AI Agents"]
-    GH["GitHub OAuth / App & REST API"]
-    Nara["Nara Router (agnes-2.5-flash)<br/>+ OpenAI / Anthropic / Gemini / DeepSeek"]
-    Connectors["Slack Slash Commands & Jira REST v3"]
-    IDEs["AI Coding Agents<br/>Claude Code · Cursor · VS Code · Codex · Windsurf"]
+  subgraph Ext["External"]
+    GH["GitHub OAuth and REST"]
+    NR["Nara Router and BYOK providers"]
+    AG["Claude Code · Cursor · VS Code · Codex"]
+    CN["Slack and Jira"]
   end
 
-  Landing --> SelfAPI
-  GraphUI --> IngestAPI
-  BeforeAct --> AiAPI
-  MemoryUI --> AiAPI
-  SelfAPI --> Engine
-  IngestAPI --> Engine
-  McpAPI --> Engine
-  Engine --> Parser --> Resolver --> Tarjan --> Impact
-  IngestAPI --> GH
-  IngestAPI --> T_Ing
-  AuthAPI --> GH
-  AiAPI --> T_Key
-  AiAPI --> Nara
-  McpAPI --> T_Mcp
-  IDEs --> McpAPI
-  HookAPI --> T_Sig
-  Server --> T_Sub
-  Server --> T_Conn --> Connectors
+  L --> SA
+  G --> IA
+  B --> AI
+  M --> AI
+  SA --> Core
+  IA --> Core
+  MC --> Core
+  P --> R --> T --> I --> X
+  IA --> GH
+  IA --> D1
+  OA --> GH
+  AI --> D2
+  AI --> NR
+  MC --> D3
+  AG --> MC
+  WH --> D4
+  Edge --> D5
+  Data --> CN
 ```
 
-### Deterministic Blast-Radius Sequence (`get_impact` & Before You Act)
+### The `get_impact` path
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Agent as Engineer / AI Agent (MCP)
-  participant Route as /api/mcp or /api/analysis/self
-  participant AST as TypeScript AST Index (indexAnalysis)
-  participant BFS as Reverse Reachability (impactOf)
-  participant LLM as Nara Router (agnes-2.5-flash)
+  participant A as Agent or browser
+  participant R as /api/mcp or /api/analysis/self
+  participant S as AST index
+  participant B as Reverse reachability
+  participant L as Grounded model
 
-  Agent->>Route: Query impact for ["src/lib/integrations/github.ts"]
-  Route->>AST: Load compiled RepoAnalysis & build reverse adjacency map
-  AST->>BFS: Traverse runtime & type-only dependents up to depth 12
-  BFS-->>Route: 20 direct importers, 31 transitive files, 20 API/page entrypoints, covering tests
-  opt Consequence Reading Requested
-    Route->>LLM: Send strictly bounded ContextEnvelope JSON (no raw repo guessing)
-    LLM-->>Route: Evidence-cited risk analysis & verification checklist
+  A->>R: impact for ["src/lib/integrations/github.ts"]
+  R->>S: load compiled analysis, build reverse adjacency
+  S->>B: traverse runtime and type-only dependents, depth 12
+  B-->>R: 20 direct importers, 31 transitive files, 20 entrypoints, covering tests
+  opt Explanation requested
+    R->>L: bounded evidence envelope only
+    L-->>R: risk reading plus verification checklist
   end
-  Route-->>Agent: Deterministic JSON envelope with file:line citations & import chains
+  R-->>A: JSON with file:line citations and import chains
 ```
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+### Layers
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+| Layer | Responsibility | Where |
+| :--- | :--- | :--- |
+| Parse | Imports, exports, calls, env reads, SDK usage, URLs | `src/lib/analysis/parse.server.ts` |
+| Resolve | `tsconfig` aliases, workspace packages, path normalization | `src/lib/analysis/resolve.ts` |
+| Analyze | Tarjan SCC, SQL DDL and Prisma linking, service extraction | `src/lib/analysis/engine.server.ts` |
+| Impact | Reverse BFS, import chains, co-change history, tests | `src/lib/analysis/impact.ts` |
+| Shape | Six-level graph and dossiers | `src/lib/analysis/graph.ts` |
+| Serve | Five read-only MCP tools | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
+| Store | Snapshots, keys, tokens, signals, subscriptions | `supabase/migrations` |
+
+### Security model
+
+- **OAuth only.** GitHub authorization happens on GitHub's consent screen. The callback validates an HMAC-signed state cookie and a host-matched redirect.
+- **Row-level security on every table.** Anonymous reads of private tables are revoked and covered by tests.
+- **Two secrets at rest.** BYOK provider keys are encrypted with AES-256-GCM under `NYKST_BYOK_SECRET`; MCP tokens are stored as SHA-256 hashes and shown once.
+- **No write scopes.** A repository is fetched as a tarball, parsed in memory, and reduced to structural metadata.
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
 
 <a id="tech-stack"></a>
 
-## 🛠 Tech Stack
+## Tech stack
 
 <table>
-<tr>
-  <td width="22%"><b>Frontend</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
-    <img src="https://img.shields.io/badge/TypeScript_5.8-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 5.8" />
-    <img src="https://img.shields.io/badge/TanStack_Router-FF4154?style=flat-square&logo=reactrouter&logoColor=white" alt="TanStack Router" />
-    <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4" />
-    <img src="https://img.shields.io/badge/shadcn%2Fui-000000?style=flat-square&logo=shadcnui&logoColor=white" alt="shadcn/ui" />
-    <img src="https://img.shields.io/badge/Radix_UI-161618?style=flat-square&logo=radixui&logoColor=white" alt="Radix UI" />
-    <img src="https://img.shields.io/badge/Lucide_Icons-F56565?style=flat-square&logo=lucide&logoColor=white" alt="Lucide" />
-    <img src="https://img.shields.io/badge/Variant_Motion-2DD4BF?style=flat-square" alt="Variant Motion" />
-  </td>
-</tr>
-<tr>
-  <td><b>Backend</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/TanStack_Start-111827?style=flat-square&logo=tanstack&logoColor=white" alt="TanStack Start" />
-    <img src="https://img.shields.io/badge/Nitro_Server-00DC82?style=flat-square&logo=nitro&logoColor=white" alt="Nitro" />
-    <img src="https://img.shields.io/badge/TypeScript_Compiler_API-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TS Compiler API" />
-    <img src="https://img.shields.io/badge/Node_Crypto-AES--256--GCM_%26_HMAC-2DD4BF?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node Crypto" />
-    <img src="https://img.shields.io/badge/Zod_Validation-3E67B1?style=flat-square&logo=zod&logoColor=white" alt="Zod" />
-  </td>
-</tr>
-<tr>
-  <td><b>Database</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=black" alt="Supabase" />
-    <img src="https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-    <img src="https://img.shields.io/badge/Row_Level_Security-Strict_RLS-2DD4BF?style=flat-square" alt="RLS" />
-    <img src="https://img.shields.io/badge/Supabase_Realtime-Broadcast-3FCF8E?style=flat-square" alt="Supabase Realtime" />
-  </td>
-</tr>
-<tr>
-  <td><b>Cloud</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Vercel_Edge_%26_Node-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel" />
-    <img src="https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
-    <img src="https://img.shields.io/badge/Custom_Domain-nykst.unifies.codes-5EEAD4?style=flat-square" alt="nykst.unifies.codes" />
-  </td>
-</tr>
-<tr>
-  <td><b>DevOps</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Bun_1.4-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun" />
-    <img src="https://img.shields.io/badge/GitHub_Actions_CI-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
-    <img src="https://img.shields.io/badge/Wrangler-F38020?style=flat-square&logo=cloudflareworkers&logoColor=white" alt="Wrangler" />
-    <img src="https://img.shields.io/badge/Docker_Multi--Stage-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
-  </td>
-</tr>
-<tr>
-  <td><b>AI / ML</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Nara_Router-agnes--2.5--flash-2DD4BF?style=flat-square" alt="Nara agnes-2.5-flash" />
-    <img src="https://img.shields.io/badge/Anthropic-Claude-191919?style=flat-square&logo=anthropic&logoColor=white" alt="Anthropic" />
-    <img src="https://img.shields.io/badge/OpenAI-GPT--4o-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI" />
-    <img src="https://img.shields.io/badge/Google_Gemini-3.5_Flash-8E75B2?style=flat-square&logo=googlegemini&logoColor=white" alt="Google Gemini" />
-    <img src="https://img.shields.io/badge/DeepSeek-Flash-4D6BFE?style=flat-square" alt="DeepSeek" />
-  </td>
-</tr>
-<tr>
-  <td><b>APIs & Protocols</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/MCP-2025--06--18_Streamable_HTTP-6EE7B7?style=flat-square" alt="MCP" />
-    <img src="https://img.shields.io/badge/GitHub_REST_%26_Tarball_API-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub API" />
-    <img src="https://img.shields.io/badge/Slack_Events_%26_Slash_API-4A154B?style=flat-square&logo=slack&logoColor=white" alt="Slack API" />
-    <img src="https://img.shields.io/badge/Jira_Cloud_REST_v3-0052CC?style=flat-square&logo=jira&logoColor=white" alt="Jira API" />
-    <img src="https://img.shields.io/badge/eSewa_Nepal-60BB46?style=flat-square" alt="eSewa" />
-  </td>
-</tr>
-<tr>
-  <td><b>Testing</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/bun%3Atest-23_passing_(130_assertions)-f472b6?style=flat-square&logo=bun&logoColor=white" alt="bun:test" />
-    <img src="https://img.shields.io/badge/Live_RLS_Probes-Supabase_Verified-3FCF8E?style=flat-square" alt="RLS Probes" />
-    <img src="https://img.shields.io/badge/Graph_Invariant_Tests-Deterministic-2DD4BF?style=flat-square" alt="Graph Invariants" />
-  </td>
-</tr>
-<tr>
-  <td><b>Tools</b></td>
-  <td>
-    <img src="https://img.shields.io/badge/Vite_7-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
-    <img src="https://img.shields.io/badge/ESLint_9-4B32C3?style=flat-square&logo=eslint&logoColor=white" alt="ESLint" />
-    <img src="https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
-    <img src="https://img.shields.io/badge/analyze--local_CLI-8596A7?style=flat-square" alt="CLI" />
-  </td>
-</tr>
+<tr><td width="18%"><b>Frontend</b></td><td>
+<img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+<img src="https://img.shields.io/badge/TypeScript_5.8-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+<img src="https://img.shields.io/badge/TanStack_Router-FF4154?style=flat-square&logo=reactrouter&logoColor=white" alt="TanStack Router" />
+<img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+<img src="https://img.shields.io/badge/shadcn%2Fui-000000?style=flat-square&logo=shadcnui&logoColor=white" alt="shadcn/ui" />
+<img src="https://img.shields.io/badge/Radix_UI-161618?style=flat-square&logo=radixui&logoColor=white" alt="Radix UI" />
+<img src="https://img.shields.io/badge/Lucide-0F172A?style=flat-square&logo=lucide&logoColor=white" alt="Lucide" />
+</td></tr>
+<tr><td><b>Backend</b></td><td>
+<img src="https://img.shields.io/badge/TanStack_Start-111827?style=flat-square&logo=tanstack&logoColor=white" alt="TanStack Start" />
+<img src="https://img.shields.io/badge/Nitro-00DC82?style=flat-square&logo=nitro&logoColor=white" alt="Nitro" />
+<img src="https://img.shields.io/badge/TS_Compiler_API-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript compiler API" />
+<img src="https://img.shields.io/badge/Node_Crypto-AES--256--GCM_%2F_HMAC-2DD4BF?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node crypto" />
+<img src="https://img.shields.io/badge/Zod-3E67B1?style=flat-square&logo=zod&logoColor=white" alt="Zod" />
+</td></tr>
+<tr><td><b>Database</b></td><td>
+<img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=black" alt="Supabase" />
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+<img src="https://img.shields.io/badge/RLS-strict-2DD4BF?style=flat-square" alt="Row level security" />
+<img src="https://img.shields.io/badge/Realtime-broadcast-3FCF8E?style=flat-square" alt="Supabase Realtime" />
+</td></tr>
+<tr><td><b>Cloud</b></td><td>
+<img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel" />
+<img src="https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
+<img src="https://img.shields.io/badge/nykst.unifies.codes-5EEAD4?style=flat-square" alt="Custom domain" />
+</td></tr>
+<tr><td><b>DevOps</b></td><td>
+<img src="https://img.shields.io/badge/Bun_1.4-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun" />
+<img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
+<img src="https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+<img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+</td></tr>
+<tr><td><b>AI</b></td><td>
+<img src="https://img.shields.io/badge/Nara_Router-agnes--2.5--flash-2DD4BF?style=flat-square" alt="Nara Router" />
+<img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI" />
+<img src="https://img.shields.io/badge/Anthropic-191919?style=flat-square&logo=anthropic&logoColor=white" alt="Anthropic" />
+<img src="https://img.shields.io/badge/Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white" alt="Gemini" />
+<img src="https://img.shields.io/badge/DeepSeek-4D6BFE?style=flat-square" alt="DeepSeek" />
+</td></tr>
+<tr><td><b>APIs</b></td><td>
+<img src="https://img.shields.io/badge/MCP-2025--06--18-6EE7B7?style=flat-square" alt="Model Context Protocol" />
+<img src="https://img.shields.io/badge/GitHub_REST-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub API" />
+<img src="https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white" alt="Slack" />
+<img src="https://img.shields.io/badge/Jira_v3-0052CC?style=flat-square&logo=jira&logoColor=white" alt="Jira" />
+<img src="https://img.shields.io/badge/eSewa-60BB46?style=flat-square" alt="eSewa" />
+</td></tr>
+<tr><td><b>Testing</b></td><td>
+<img src="https://img.shields.io/badge/bun%3Atest-000000?style=flat-square&logo=bun&logoColor=white" alt="bun:test" />
+<img src="https://img.shields.io/badge/tsc_noEmit-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="tsc" />
+<img src="https://img.shields.io/badge/ESLint_9-4B32C3?style=flat-square&logo=eslint&logoColor=white" alt="ESLint" />
+<img src="https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
+</td></tr>
 </table>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="quick-start"></a>
 
-## ⚡ Quick Start
+## Quick start
 
-### 1. Prerequisites
+### Prerequisites
 
-| Tool | Minimum Version | Purpose |
+| Tool | Version | Why |
 | :--- | :--- | :--- |
-| **[Bun](https://bun.sh)** | `>= 1.2.0` | Package manager, TypeScript runner, and `bun:test` execution |
-| **Node.js** | `>= 20.0.0` | Runtime compatibility for Vite/Nitro builds |
-| **Supabase Project** | Free or Pro tier | PostgreSQL persistence, RLS policies, and Realtime channels |
-| **GitHub OAuth App** | Standard OAuth or App | Read-only repository discovery and tarball ingestion |
+| [Bun](https://bun.sh) | `>= 1.2` | Install, scripts, and `bun:test` |
+| Node.js | `>= 20` (22.12+ for the TanStack server) | Build and runtime |
+| Supabase project | Free tier is enough | Postgres, RLS, Realtime |
+| GitHub OAuth App | Standard | Read-only repository access |
 
-### 2. Installation
+### Install and run
 
 ```bash
 git clone https://github.com/flawsom/nykst-software-intellegence.git
 cd nykst-software-intellegence
 bun install
+bun run dev                  # http://localhost:8080, no credentials required for the live workbench
 ```
 
-### 3. Environment Variables
+Without any Supabase credentials the landing page, the AST workbench, and `/graph` still run, because the analyzer compiles the local repository directly. Persistence, chat, MCP tokens, and billing need a database.
 
-Create `.env.local` in the repository root (never committed to Git):
+### Environment
+
+Create `.env.local` in the repository root. Never commit it.
 
 ```bash
-# 1. Supabase (Server + Browser)
-SUPABASE_URL=https://<your-project-ref>.supabase.co
+# Supabase
+SUPABASE_URL=https://<ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_URL=https://<ref>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
-# 2. GitHub OAuth / App (Supports nykst.unifies.codes, nykst.vercel.app & localhost:8080)
+# GitHub OAuth
 GITHUB_CLIENT_ID=Ov23li...
 GITHUB_CLIENT_SECRET=...
 GITHUB_WEBHOOK_SECRET=...
 
-# 3. BYOK Vault Encryption Key (32+ chars for AES-256-GCM)
-NYKST_BYOK_SECRET=...
-
-# 4. Nara Router Platform AI (Default: agnes-2.5-flash)
+# Vault and platform AI
+NYKST_BYOK_SECRET=<32+ random characters>
 NYKST_AI_API_KEY=...
 NYKST_AI_BASE_URL=https://router.bynara.id/v1
 NYKST_AI_MODEL=agnes-2.5-flash
 ```
 
-### 4. Provision the Database Schema
+### Database
 
-Apply `supabase/schema.sql` in the Supabase SQL Editor (idempotent, safe to re-run), then verify with the live readiness probe:
+Apply `supabase/schema.sql` in the Supabase SQL editor (idempotent), or run the migrations in order:
 
 ```bash
+for f in supabase/migrations/*.sql; do
+  psql "$DATABASE_URL" -f "$f"
+done
 curl -s http://localhost:8080/api/health | jq
 ```
 
-### 5. Running Locally
+### Verify
 
 ```bash
-# Start the local development server on port 8080
-bun run dev
-
-# In a second terminal: run strict typechecking and the test suite
-bunx tsc -b --noEmit
-bun test ./tests
+bunx tsc -b --noEmit    # strict typecheck, zero errors
+bun test ./tests        # 23 tests, 130 assertions
+bun run build           # Nitro SSR production build
 ```
 
-### 6. Docker Setup
+### Docker
 
-<a id="docker"></a>
+Save this as `Dockerfile`:
 
 ```dockerfile
-# Dockerfile
 FROM oven/bun:1.2-alpine AS build
 WORKDIR /app
 COPY package.json bun.lock ./
@@ -542,7 +514,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080
 COPY --from=build /app/.output ./.output
@@ -555,206 +527,181 @@ docker build -t nykst:latest .
 docker run -d --name nykst -p 8080:8080 --env-file .env.local nykst:latest
 ```
 
-### 7. Production Deployment One-Liner
+<div align="right"><a href="#top">Back to top</a></div>
 
-```bash
-# Build and deploy to Cloudflare Workers or Vercel
-bun run build && npx wrangler deploy
-```
+---
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<a id="structure"></a>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
-
-<a id="project-structure"></a>
-
-## 📁 Project Structure
+## Project structure
 
 ```text
 nykst-software-intellegence/
 ├── public/
-│   ├── favicon.svg                    # Bespoke hexagonal Graph-RAG prism favicon
-│   ├── logo.svg                       # Full executive NYKST wordmark SVG
-│   └── esewa-qr.jpg                   # Nepal eSewa subscription QR code
+│   ├── favicon.svg                  Hexagonal prism mark
+│   ├── logo.svg                     Wordmark
+│   └── esewa-qr.jpg                 Subscription QR
 ├── docs/assets/
-│   ├── readme-hero.svg                # High-definition README hero banner with live AST stats
-│   ├── divider.svg                    # Gradient section divider
-│   └── screens/                       # Real Playwright captures (landing, graph, memory, mcp, pricing, mobile)
+│   ├── readme-banner.svg            Hero banner
+│   ├── divider.svg                  Section divider
+│   └── screens/                     Product captures
 ├── src/
 │   ├── components/
-│   │   ├── brand/NykstLogo.tsx        # Reusable executive SVG logo & wordmark components
-│   │   ├── motion/VariantMotion.tsx   # Spotlight, Magnetic, TiltCard, ScrambleText, AnimatedCounter, Marquee
+│   │   ├── brand/                   Logo and wordmark components
+│   │   ├── motion/                  Spotlight, tilt, scramble, counters
 │   │   ├── graph/
-│   │   │   ├── LiveGraphRagExplorer.tsx # Interactive AST blast-radius workbench, SQL inspector & MCP runner
-│   │   │   ├── LandingGraphPreview.tsx  # Live-wired radial domain graph preview
-│   │   │   ├── GraphCanvas.tsx        # 6-level interactive software graph canvas
-│   │   │   ├── BeforeYouAct.tsx       # Consequence envelope builder & AI risk reader
-│   │   │   ├── NodeDossier.tsx        # Deep file/service evidence dossier
-│   │   │   ├── MentorPanel.tsx        # Grounded architectural Q&A panel
-│   │   │   └── ApiSettings.tsx        # Nara Router & BYOK encrypted provider modal
-│   │   ├── mcp/                       # Token generator & per-agent setup blocks
-│   │   └── ui/                        # Radix + Tailwind CSS 4 primitives
+│   │   │   ├── LiveGraphRagExplorer.tsx   AST workbench and MCP runner
+│   │   │   ├── GraphCanvas.tsx            Six-level topology
+│   │   │   ├── NodeDossier.tsx            File and service evidence
+│   │   │   ├── BeforeYouAct.tsx           Consequence envelope
+│   │   │   ├── MentorPanel.tsx            Grounded Q and A
+│   │   │   └── ApiSettings.tsx            BYOK provider vault
+│   │   ├── mcp/                     Token and agent setup UI
+│   │   └── ui/                      Radix plus Tailwind primitives
 │   ├── lib/
 │   │   ├── analysis/
-│   │   │   ├── engine.server.ts       # TypeScript AST compiler, SQL DDL parser & Tarjan SCC cycle detector
-│   │   │   ├── parse.server.ts        # ts.createSourceFile AST walker (imports, exports, calls, URLs, env)
-│   │   │   ├── resolve.ts             # tsconfig path alias & monorepo workspace package resolver
-│   │   │   ├── impact.ts              # Reverse BFS reachability & temporal co-change calculator
-│   │   │   ├── graph.ts               # 6-level hierarchical graph builder
-│   │   │   ├── context.ts             # Evidence-only briefing serializer for LLMs & MCP
-│   │   │   └── tools.ts               # 5 read-only MCP tool implementations
-│   │   ├── integrations/github.ts     # OAuth, multi-origin redirect matcher, tarball ingest & PR creator
-│   │   ├── connectors/                # Slack slash-command & Jira issue correlators
-│   │   ├── byok.server.ts             # AES-256-GCM key vault & Nara Router (agnes-2.5-flash) client
-│   │   └── mcp.server.ts              # Streamable HTTP JSON-RPC 2.0 MCP server
+│   │   │   ├── engine.server.ts     AST compiler, SQL linker, Tarjan SCC
+│   │   │   ├── parse.server.ts      Import and symbol extraction
+│   │   │   ├── resolve.ts           Alias and workspace resolution
+│   │   │   ├── impact.ts            Reverse BFS and co-change
+│   │   │   ├── graph.ts             Six-level hierarchy
+│   │   │   ├── context.ts           Evidence serializer
+│   │   │   └── tools.ts             Five MCP tools
+│   │   ├── integrations/github.ts   OAuth, tarball ingest, PR creation
+│   │   ├── connectors/              Slack and Jira
+│   │   ├── byok.server.ts           AES-256-GCM vault, Nara client
+│   │   └── mcp.server.ts            JSON-RPC MCP implementation
 │   └── routes/
-│       ├── index.tsx                  # Flagship landing page with Variant motion & live AST workbench
-│       ├── graph.tsx                  # 6-level navigator (connected repo or live self-indexed fallback)
-│       ├── intelligence.tsx           # 6-layer system memory workspace
-│       ├── mcp.tsx                    # Interactive MCP setup guide for 9 coding agents
-│       ├── subscribe.tsx              # eSewa subscription flow
-│       ├── api.analysis.self.ts       # Real-time workspace AST compiler & MCP tool preview endpoint
-│       ├── api.health.ts              # Live Supabase & 10-table readiness probe
-│       └── api.*                      # Typed server endpoints (GitHub, AI, MCP, Diagnosis, Webhooks)
+│       ├── index.tsx                Landing and live workbench
+│       ├── graph.tsx                Navigator
+│       ├── intelligence.tsx         System memory
+│       ├── mcp.tsx                  Agent setup
+│       ├── subscribe.tsx            Billing
+│       ├── admin.payments.tsx       Settlement queue
+│       └── api.*.ts                 Typed server endpoints
 ├── supabase/
-│   ├── schema.sql                     # Consolidated idempotent PostgreSQL + RLS schema
-│   └── migrations/                    # 15 chronological SQL migrations
-├── scripts/analyze-local.ts           # Standalone CLI to run the AST engine against any local folder
-└── tests/                             # bun:test suites (schema RLS, graph invariants, Slack/Jira connectors)
+│   ├── schema.sql                   Consolidated idempotent schema
+│   └── migrations/                  15 chronological migrations
+├── scripts/analyze-local.ts         CLI for any local folder
+├── tests/                           bun:test suites
+└── docs/assets/                     README assets
 ```
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
-<a id="environment-variables"></a>
+<a id="env"></a>
 
-## 🔐 Environment Variables
+## Environment variables
 
-| Variable | Required | Scope | Default / Format | Description |
+| Variable | Required | Scope | Format | Description |
 | :--- | :---: | :--- | :--- | :--- |
-| `SUPABASE_URL` | ✅ | Server | `https://<ref>.supabase.co` | Primary Supabase project URL for server-side operations. |
-| `SUPABASE_PUBLISHABLE_KEY` | ✅ | Server | `sb_publishable_...` | Publishable anon key for RLS-scoped reads. |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server | `eyJ...` | Service-role key used exclusively by server routes to write snapshots, keys, and tokens. |
-| `VITE_SUPABASE_URL` | ✅ | Client | `https://<ref>.supabase.co` | Exposed to the browser bundle for Supabase Realtime subscriptions. |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | Client | `sb_publishable_...` | Browser publishable key (protected by strict PostgreSQL RLS). |
-| `GITHUB_CLIENT_ID` | ✅ | Server | `Ov23li...` or `Iv...` | GitHub OAuth App or GitHub App client ID. |
-| `GITHUB_CLIENT_SECRET` | ✅ | Server | 40-char hex | GitHub client secret (also signs HMAC-SHA256 OAuth state cookies). `CLIENT_SECRET` alias supported. |
-| `GITHUB_REDIRECT_URI` | None | Server | Auto-matched per host | Optional override. By default, Nykst dynamically matches `https://nykst.unifies.codes/api/integrations/github/callback`, `https://nykst.vercel.app/api/integrations/github/callback`, and `http://localhost:8080/api/integrations/github/callback` (including wildcard preview subdomains). |
-| `GITHUB_WEBHOOK_SECRET` | ✅ | Server | Random string | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`. |
-| `NYKST_BYOK_SECRET` | ✅ | Server | 32+ char secret | Derives the 256-bit AES-GCM key used to encrypt user API keys at rest. |
-| `NYKST_AI_API_KEY` | None | Server | `nara_...` / `sk-...` | Platform AI router key so first-time users get live answers immediately. |
-| `NYKST_AI_BASE_URL` | None | Server | `https://router.bynara.id/v1` | OpenAI-compatible router base URL (HTTPS required). |
-| `NYKST_AI_MODEL` | None | Server | `agnes-2.5-flash` | Platform model identifier. Defaults to `agnes-2.5-flash`. |
-| `GEMINI_API_KEY` | None | Server | `AIza...` | Optional secondary platform fallback (`gemini-3.5-flash-lite`). |
-| `SLACK_CLIENT_ID` / `SECRET` | None | Server | Slack App credentials | Enables Slack OAuth and `/nykst` slash commands. |
-| `JIRA_CLIENT_ID` / `SECRET` | None | Server | Atlassian OAuth 2.0 | Enables Jira issue correlation against graph nodes. |
-| `NYKST_ADMIN_GITHUB_ID` | None | Server | Numeric GitHub ID | Grants access to `/admin/payments` for manual eSewa approval. |
+| `SUPABASE_URL` | Yes | Server | `https://<ref>.supabase.co` | Project URL for server-side queries. |
+| `SUPABASE_PUBLISHABLE_KEY` | Yes | Server | `sb_publishable_...` | RLS-scoped key for reads. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server | `eyJ...` | Server-only writes: snapshots, keys, tokens, billing. |
+| `VITE_SUPABASE_URL` | Yes | Client | `https://<ref>.supabase.co` | Browser client for Realtime. |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Client | `sb_publishable_...` | Browser key, guarded by RLS. |
+| `GITHUB_CLIENT_ID` | Yes | Server | OAuth or App client id | GitHub authorization. |
+| `GITHUB_CLIENT_SECRET` | Yes | Server | 40 hex chars | Token exchange and state signing. |
+| `GITHUB_WEBHOOK_SECRET` | Yes | Server | Random string | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`. |
+| `GITHUB_REDIRECT_URI` | No | Server | Absolute URL | Optional override; otherwise the host is matched automatically. |
+| `NYKST_BYOK_SECRET` | Yes | Server | 32+ characters | Derives the AES-256-GCM key for stored provider keys. |
+| `NYKST_AI_API_KEY` | No | Server | `nara_...` or `sk-...` | Platform model so a first question works before BYOK. |
+| `NYKST_AI_BASE_URL` | No | Server | `https://router.bynara.id/v1` | OpenAI-compatible router, HTTPS only. |
+| `NYKST_AI_MODEL` | No | Server | `agnes-2.5-flash` | Platform model id. |
+| `GEMINI_API_KEY` | No | Server | `AIza...` | Secondary platform fallback. |
+| `SLACK_CLIENT_ID` / `_SECRET` | No | Server | Slack app credentials | Enables `/nykst` slash commands. |
+| `JIRA_CLIENT_ID` / `_SECRET` | No | Server | Atlassian OAuth | Enables issue correlation. |
+| `NYKST_ADMIN_GITHUB_ID` | No | Server | Numeric GitHub id | Grants `/admin/payments`. |
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+> [!WARNING]
+> `SUPABASE_SERVICE_ROLE_KEY` and `NYKST_BYOK_SECRET` bypass or unlock protection layers. They belong in server environment variables only, never in `VITE_` variables and never in the repository.
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<a id="api-documentation"></a>
+---
 
-## 📖 API Documentation
+<a id="api"></a>
 
-- **Production Base URL**: `https://nykst.unifies.codes` (Mirror: `https://nykst.vercel.app`)
-- **Local Base URL**: `http://localhost:8080`
-- **Authentication**:
-  - Browser & API routes: `HttpOnly; Secure; SameSite=Lax` cookie (`nykst_github_token`) set after `/api/integrations/github/callback`.
-  - MCP Server (`/api/mcp`): `Authorization: Bearer nyk_<48-hex-chars>` (SHA-256 hashed in `mcp_access_tokens`).
+## API reference
 
-### Core Endpoints Summary
+**Base URL** `https://nykst.unifies.codes` (mirror `https://nykst.vercel.app`, local `http://localhost:8080`)
+
+**Authentication**
+
+- Browser and app routes: `HttpOnly; Secure; SameSite=Lax` cookie set by the OAuth callback.
+- MCP: `Authorization: Bearer nyk_<token>`, stored as a SHA-256 hash.
 
 | Method | Path | Auth | Purpose |
 | :---: | :--- | :---: | :--- |
-| `GET` | `/api/health` | Public | Live readiness probe verifying Supabase connectivity and all 10 schema tables. |
-| `GET` | `/api/analysis/self` | Public | Runs `analyzeRepository()` over the live workspace; supports `?path=`, `?tool=`, `?query=`, `?refresh=1`. |
-| `GET` | `/api/integrations/github/start` | Public | Generates HMAC-SHA256 state and `302` redirects to GitHub OAuth with host-matched `redirect_uri`. |
-| `GET` | `/api/integrations/github/callback` | Public | Verifies OAuth state, exchanges code for token, and sets `nykst_github_token`. |
-| `POST` | `/api/integrations/github/ingest` | GitHub | Downloads repository tarball, runs TypeScript AST + history engine, stores snapshot, and broadcasts Realtime event. |
-| `GET` | `/api/integrations/github/latest` | GitHub | Returns the user's newest stored `repository_ingestions` snapshot and Realtime topic. |
-| `POST` | `/api/ai/chat` | Public / BYOK | Grounded architectural Q&A (`mode: "navigator" \| "code"`) using personal BYOK or `agnes-2.5-flash`. |
-| `GET`/`POST`/`DELETE` | `/api/ai/key` | Public / GitHub | Inspect active AI provider status, test & save encrypted BYOK key, or delete stored key. |
-| `POST` | `/api/mcp` | `Bearer nyk_...` | Stateless Streamable HTTP Model Context Protocol server (`2025-06-18`). |
-| `POST` | `/api/diagnosis` | GitHub | Synthesizes root-cause candidates linking a `production_signals` record to the repository AST. |
+| `GET` | `/api/health` | Public | Supabase connectivity and required tables |
+| `GET` | `/api/analysis/self` | Public | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1` |
+| `GET` | `/api/integrations/github/start` | Public | Signed state, then redirect to GitHub |
+| `GET` | `/api/integrations/github/callback` | Public | Verify state, exchange code, set cookie |
+| `POST` | `/api/integrations/github/ingest` | Session | Tarball fetch, AST and history analysis, snapshot write |
+| `GET` | `/api/integrations/github/latest` | Session | Newest snapshot for the user |
+| `GET` | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` | Session | Repository discovery |
+| `GET` | `/api/integrations/github/file-evidence` | Session | Evidence for one path |
+| `POST` | `/api/integrations/github/coding` | Session | Grounded edit proposal with diff |
+| `POST` | `/api/ai/chat` | Public or BYOK | Architecture Q and A (`mode: navigator \| code`) |
+| `GET` `POST` `DELETE` | `/api/ai/key` | Session | Provider status, save, delete |
+| `POST` | `/api/mcp` | Bearer `nyk_` | Streamable HTTP MCP, protocol `2025-06-18` |
+| `GET` `POST` `DELETE` | `/api/mcp-tokens` | Session | Mint, list, revoke tokens |
+| `POST` | `/api/diagnosis` | Session | Root-cause candidates for a production signal |
+| `POST` | `/api/webhooks/github` | HMAC | Verified webhook intake |
+| `GET` | `/api/integrations/{slack,jira,connectors}/*` | Session | Connector OAuth and command endpoints |
+| `GET` `POST` | `/api/subscription` | Session | Plan state and settlement submission |
 
-### Example 1: Live Self-Indexed Blast-Radius & MCP Query (`GET /api/analysis/self`)
-
-**Request:**
+### Example: blast radius from the live workspace
 
 ```bash
-curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations/github.ts&tool=get_impact" | jq '{
-  repository,
-  stats,
-  target: .selectedTarget.path,
-  blastLevel: .selectedTarget.briefing.impact.level,
-  directImporters: (.selectedTarget.briefing.impact.direct_importers | length),
-  entrypointsHit: (.selectedTarget.briefing.impact.entrypoints | length)
-}'
+curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations/github.ts&tool=get_impact" \
+  | jq '{
+      repository,
+      stats,
+      target: .selectedTarget.path,
+      level: .selectedTarget.briefing.impact.level,
+      directImporters: (.selectedTarget.briefing.impact.direct_importers | length)
+    }'
 ```
-
-**Response (`200 OK`):**
 
 ```json
 {
   "repository": "flawsom/nykst-software-intellegence",
   "stats": {
-    "treeFiles": 213,
+    "treeFiles": 214,
     "sourceFiles": 160,
     "analyzedFiles": 160,
     "internalEdges": 317,
     "externalPackages": 52,
     "unresolvedImports": 0,
-    "skippedFiles": 1,
-    "loc": 24566,
-    "durationMs": 638
+    "loc": 24571,
+    "durationMs": 442
   },
   "target": "src/lib/integrations/github.ts",
-  "blastLevel": "High",
-  "directImporters": 20,
-  "entrypointsHit": 20
+  "level": "High",
+  "directImporters": 20
 }
 ```
 
-### Example 2: Grounded Architectural Chat with Nara `agnes-2.5-flash` (`POST /api/ai/chat`)
-
-**Request:**
+### Example: grounded answer
 
 ```bash
 curl -s -X POST "https://nykst.unifies.codes/api/ai/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "What breaks if I modify src/lib/byok.server.ts?",
-    "context": "Direct dependents: api.ai.chat.ts, api.ai.key.ts, api.diagnosis.ts, store.server.ts",
+    "prompt": "What breaks if I change src/lib/byok.server.ts?",
+    "context": "Direct dependents: api.ai.chat.ts, api.ai.key.ts, api.diagnosis.ts",
     "mode": "navigator"
   }' | jq
 ```
 
-**Response (`200 OK`):**
-
-```json
-{
-  "answer": "Modifying `src/lib/byok.server.ts` directly impacts AI chat completion (`api.ai.chat.ts`), BYOK key management (`api.ai.key.ts`), root-cause diagnosis (`api.diagnosis.ts`), and Slack/Jira token encryption (`store.server.ts`). Verify AES-256-GCM key derivation and `platformKey()` fallback before deploying.",
-  "provider": "custom",
-  "platformFallback": true
-}
-```
-
-<a id="mcp-server"></a>
-
-### Example 3: Model Context Protocol (`POST /api/mcp`)
+### Example: MCP tool call
 
 ```bash
 curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
-  -H "Authorization: Bearer nyk_your_access_token" \
+  -H "Authorization: Bearer nyk_your_token" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -767,20 +714,20 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
   }' | jq
 ```
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`.
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<a id="usage-examples"></a>
+---
 
-## 🎯 Usage Examples
+<a id="usage"></a>
 
-### 1. Wire Nykst into Claude Code, Cursor, or VS Code in 60 Seconds
+## Usage examples
+
+### Connect an agent
 
 ```bash
-# Claude Code: add Nykst globally so every repository gets blast-radius checks
+# Claude Code, available in every project
 claude mcp add --transport http --scope user nykst \
   https://nykst.unifies.codes/api/mcp \
   --header "Authorization: Bearer $NYKST_TOKEN"
@@ -792,105 +739,107 @@ claude mcp add --transport http --scope user nykst \
   "mcpServers": {
     "nykst": {
       "url": "https://nykst.unifies.codes/api/mcp",
-      "headers": {
-        "Authorization": "Bearer nyk_your_token_here"
-      }
+      "headers": { "Authorization": "Bearer ${env:NYKST_TOKEN}" }
     }
   }
 }
 ```
 
-### 2. Enforce Pre-Edit Impact Checks in `CLAUDE.md` / `.cursorrules`
+### Teach the agent when to use it
 
-Add this block to your repository's agent instructions so coding agents never edit blind:
+Add this to `CLAUDE.md`, `AGENTS.md`, or `.cursorrules`:
 
 ```markdown
-## Nykst Architectural Guardrails
-Before editing any existing file, database migration, or environment variable:
-1. Call `get_impact` with the target file paths to inspect all direct/transitive importers, affected routes/APIs, and covering tests.
-2. When modifying a database table, external SDK, or env var, call `find_usages` first and update every call site in the same change.
-3. Run the covering tests returned by `get_impact` before concluding your turn.
+## Before editing
+1. Call get_impact with the files you plan to change and read every importer and entrypoint.
+2. If the change touches a table, service, or env var, call find_usages and update every call site.
+3. Run the covering tests returned by get_impact before you finish.
+4. Cite file:line when you explain the change. If evidence is missing, say so.
 ```
 
-### 3. Run the Standalone AST Compiler CLI in CI
+### Run the analyzer locally
 
 ```bash
-# Analyze any local directory and emit the full deterministic graph JSON
 bun scripts/analyze-local.ts . --json /tmp/nykst-ast.json
+jq '{stats, cycles: (.cycles | length)}' /tmp/nykst-ast.json
 ```
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+### Use it in CI
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+```yaml
+- name: Blast radius report
+  run: |
+    bun scripts/analyze-local.ts . --json ast.json
+    jq -e '.cycles | length == 0' ast.json
+```
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
 
 <a id="performance"></a>
 
-## 📊 Performance
+## Performance
 
-Every benchmark below is measured directly against this repository (`flawsom/nykst-software-intellegence`) on Bun 1.4.2. Nothing is extrapolated or synthetic.
+Measured on this repository with Bun 1.4.2, on the machine that runs the preview. Reproduce any row with the command beside it.
 
-| Benchmark / Metric | Measured Value | Verification Command |
+| Metric | Measured | Command |
 | :--- | :--- | :--- |
-| **Live Workspace AST Compile Time** | **`638 ms`** (warm) · **`1,374 ms`** (cold) | `curl -s http://localhost:8080/api/analysis/self \| jq .stats` |
-| **Analyzed Source Tree** | **`160` TypeScript/TSX files** (`24,566` LOC) | `curl -s http://localhost:8080/api/analysis/self \| jq .stats` |
-| **Resolved Internal Import Edges** | **`317` edges · `0` unresolved imports** | `curl -s http://localhost:8080/api/analysis/self \| jq .stats` |
-| **Circular Runtime Dependencies** | **`0` cycles** (Tarjan SCC verified) | `curl -s http://localhost:8080/api/analysis/self \| jq .cycles` |
-| **SQL & Service Extraction** | **`12` SQL/data resources · `9` external services** | `curl -s http://localhost:8080/api/analysis/self \| jq '.resources \| length'` |
-| **Health Probe Latency (`/api/health`)** | **`~180 ms`** (10 parallel PostgreSQL table probes) | `curl -w "%{time_total}s\n" -s -o /dev/null http://localhost:8080/api/health` |
-| **Test Suite Execution** | **`1.52 s`** (`23` tests, `130` `expect()` assertions) | `bun test ./tests` |
-| **Desktop Lighthouse Target** | **98 Performance · 100 Accessibility · 100 Best Practices · 100 SEO** | `npx lighthouse https://nykst.unifies.codes --preset=desktop` |
+| Cold AST compile, 160 files | **442 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
+| Warm cached response | **4 to 6 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
+| Analyzed source | **160 files, 24,571 LOC** | `jq .stats` |
+| Internal import edges | **317, zero unresolved** | `jq .stats.internalEdges, .stats.unresolvedImports` |
+| Cycles | **0** | `jq '.cycles \| length'` |
+| SQL and data resources | **12** | `jq '.resources \| length'` |
+| External services | **9** | `jq '.services \| length'` |
+| SSR landing response | **42 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/` |
+| Health probe, all tables | **~740 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health` |
+| Client payload, all routes | **926 kB JS + 107 kB CSS** | `du -sh .output/public` |
+| Test suite | **1.65 s, 23 tests** | `bun test ./tests` |
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+```bash
+npx lighthouse https://nykst.unifies.codes --preset=desktop --view
+npx lighthouse https://nykst.unifies.codes --preset=mobile --view
+```
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
 
 <a id="testing"></a>
 
-## 🧪 Testing
-
-Nykst enforces strict compile-time and runtime verification across schema security, graph determinism, and third-party connectors.
+## Testing
 
 ```bash
-# 1. Run the complete unit + live Supabase RLS test suite
-bun test ./tests
-
-# 2. Generate line & branch coverage report
-bun test --coverage ./tests
-
-# 3. Run strict TypeScript project-reference typecheck (zero errors tolerated)
-bunx tsc -b --noEmit
-
-# 4. Run ESLint across all source files
-bun run lint
-
-# 5. Format codebase with Prettier
-bun run format
+bun test ./tests              # unit and integration suites
+bun test --coverage ./tests   # coverage report
+bunx tsc -b --noEmit          # strict typecheck, project references
+bun run lint                  # ESLint
+bun run format                # Prettier
 ```
 
-### What the Automated Suite Verifies (`23 Pass / 0 Fail / 130 Assertions`)
+| Suite | What it proves |
+| :--- | :--- |
+| `tests/schema.test.ts` | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected |
+| `tests/repository-graph.test.ts` | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children |
+| `tests/connectors.test.ts` | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip |
 
-- **`tests/schema.test.ts`**: Asserts that `supabase/schema.sql` creates every table and column in `src/integrations/supabase/types.ts`, enables Row-Level Security on 100% of tables, revokes `anon`/`authenticated` read access on private tables, and verifies live against Supabase that anonymous requests are rejected.
-- **`tests/repository-graph.test.ts`**: Asserts that every graph node ID is globally unique, every file leaf carries its exact repository path once, sibling labels never collide, and `childrenOf()` never fabricates synthetic children.
-- **`tests/connectors.test.ts`**: Verifies Slack `v0` HMAC-SHA256 timestamp signature validation, replay rejection, ticket-to-file path resolution, `/nykst impact` formatting, and Atlassian Document Format round-tripping.
+The suite runs offline for the graph and connector tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
-<a id="deployment"></a>
+<a id="deploy"></a>
 
-## 🚀 Deployment
+## Deployment
 
-Nykst supports multi-origin GitHub OAuth callbacks out of the box (`https://nykst.unifies.codes/api/integrations/github/callback`, `https://nykst.vercel.app/api/integrations/github/callback`, wildcard preview domains, and `http://localhost:8080/api/integrations/github/callback`).
+OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
 
 <details open>
-<summary><b>1. Vercel (Primary Production & Custom Domain <code>nykst.unifies.codes</code>)</b></summary>
+<summary><b>Vercel (primary, custom domain)</b></summary>
 
 <br/>
 
@@ -903,10 +852,12 @@ bunx vercel env add NYKST_AI_API_KEY production
 bunx vercel --prod
 ```
 
+The build runs `npm install` from `package-lock.json` and `vite build`. Keep TanStack packages current: Vercel blocks versions with known advisories.
+
 </details>
 
 <details>
-<summary><b>2. Cloudflare Workers (Edge Deployment via Wrangler)</b></summary>
+<summary><b>Cloudflare Workers</b></summary>
 
 <br/>
 
@@ -922,223 +873,215 @@ npx wrangler deploy
 </details>
 
 <details>
-<summary><b>3. Netlify</b></summary>
+<summary><b>Netlify</b></summary>
 
 <br/>
 
-- **Build command**: `bun run build`
-- **Publish directory**: `.output/public`
-- **Functions directory**: `.output/server`
-- Configure environment variables in **Site configuration → Environment variables**.
+- Build command: `bun run build`
+- Publish directory: `.output/public`
+- Functions directory: `.output/server`
+- Add environment variables under Site configuration.
 
 </details>
 
 <details>
-<summary><b>4. Railway</b></summary>
+<summary><b>Railway</b></summary>
 
 <br/>
 
-1. Create a new project from `flawsom/nykst-software-intellegence`.
-2. Set build command to `bun install && bun run build` and start command to `node .output/server/index.mjs`.
-3. Add the variables from [🔐 Environment Variables](#environment-variables) in the Railway Variables tab.
+1. Create a project from `flawsom/nykst-software-intellegence`.
+2. Build `bun install && bun run build`, start `node .output/server/index.mjs`.
+3. Add variables from [Environment variables](#env).
 
 </details>
 
 <details>
-<summary><b>5. Docker (Self-Hosted Container)</b></summary>
+<summary><b>Docker</b></summary>
 
 <br/>
 
-Use the multi-stage `Dockerfile` in [⚡ Quick Start](#docker) to build a minimal Alpine image running `.output/server/index.mjs` on port `8080`.
+Use the multi-stage file from [Quick start](#quick-start). The runtime image only needs `.output`.
 
 </details>
 
 <details>
-<summary><b>6. AWS (ECS Fargate / App Runner)</b></summary>
+<summary><b>AWS (App Runner or ECS Fargate)</b></summary>
 
 <br/>
 
-1. Build and push the Docker image to Amazon ECR.
-2. Deploy an **AWS App Runner** service on port `8080` with secrets injected from **AWS Secrets Manager**.
-3. Attach your custom domain via Route 53 and register `/api/integrations/github/callback` on your GitHub OAuth App.
+1. Build and push the image to ECR.
+2. Run it on port `8080` with secrets from AWS Secrets Manager.
+3. Point Route 53 at the service and register the callback URL on your GitHub OAuth App.
 
 </details>
 
 <details>
-<summary><b>7. DigitalOcean App Platform</b></summary>
+<summary><b>DigitalOcean App Platform</b></summary>
 
 <br/>
 
-1. Connect your GitHub repository in **DigitalOcean App Platform**.
-2. Set build command to `bun run build` and run command to `node .output/server/index.mjs` (HTTP port `8080`).
-3. Mark secret environment variables as `ENCRYPTED`.
+1. Connect the repository.
+2. Build `bun run build`, run `node .output/server/index.mjs`, HTTP port `8080`.
+3. Mark secret variables as encrypted.
 
 </details>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="contributing"></a>
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions that sharpen the AST analysis engine, expand language support, or improve the 6-level graph navigation experience.
+Contributions that sharpen the analysis engine, widen language support, or improve the navigator are welcome.
 
-### Branch & Commit Conventions
+**Branches** `feat/<scope>`, `fix/<scope>`, `perf/<scope>`, `docs/<scope>`, `test/<scope>`
 
-- **Branch naming**: `feat/<scope>`, `fix/<scope>`, `perf/<scope>`, `docs/<scope>`, `test/<scope>`
-- **Commit format**: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(analysis): resolve tsconfig project references`, `fix(oauth): honor x-forwarded-host on custom domains`)
-- **Author attribution**: Commits must carry only the human contributor's name and email, never add automated bot footers or third-party AI co-author trailers.
+**Commits** Conventional Commits, for example `feat(analysis): resolve tsconfig project references`.
 
-### Pull Request Process
+**Authorship** Commits must belong to the human who wrote them. Do not add bot identities, AI co-author trailers, or automated footers. This keeps the contributor graph an honest record of the people who built the project.
 
-1. Fork `flawsom/nykst-software-intellegence` and create your feature branch from `main`.
-2. Add or update unit tests in `tests/` for any new analysis or connector logic.
-3. Ensure `bunx tsc -b --noEmit` and `bun test ./tests` pass with zero warnings.
-4. Open a Pull Request with a clear summary of the architectural evidence and blast radius of your change.
+**Pull requests**
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+1. Branch from `main` and keep the change scoped.
+2. Add tests in `tests/` for new analysis or connector behavior.
+3. Run `bunx tsc -b --noEmit`, `bun test ./tests`, and `bun run lint` locally.
+4. Describe the evidence: which files move, what depends on them, and which tests cover it. If you used Nykst itself, paste the `get_impact` summary.
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
 
 <a id="roadmap"></a>
 
-## 🗺 Roadmap
+## Roadmap
 
-### Completed Milestones
+- [x] Deterministic TypeScript AST compiler with alias and workspace resolution
+- [x] Iterative Tarjan SCC cycle detection
+- [x] SQL migration and Prisma linking to client call sites
+- [x] Six-level software graph from organization to file
+- [x] Live self-indexed workbench with zero mock data
+- [x] Before You Act consequence envelope
+- [x] Six-layer system memory
+- [x] Streamable HTTP MCP with five read-only tools
+- [x] Platform AI plus encrypted BYOK vault
+- [x] Multi-origin GitHub OAuth
+- [x] Slack and Jira connectors
+- [x] eSewa subscription flow with admin verification
+- [ ] Incremental graph patching on push webhooks, no full tarball re-download
+- [ ] Tree-sitter adapters for Python, Go, and Rust
+- [ ] Cross-repository federation over OpenAPI and gRPC contracts
+- [ ] OpenTelemetry trace overlay on static edges
+- [ ] Pull request bot that posts blast radius as a review comment
+- [ ] Evidence-backed multimodal memory for diagrams, ADRs, and migrations
 
-- [x] Deterministic TypeScript/JavaScript AST compiler (`ts.createSourceFile`) with `tsconfig` alias & workspace resolution
-- [x] Iterative Tarjan strongly-connected-components (SCC) runtime cycle detector
-- [x] SQL migration (`CREATE TABLE` / `FUNCTION`) and Prisma model linker to client `.from()` / `.rpc()` call sites
-- [x] 6-level hierarchical software graph (`Organization → Domain → Capability → Service → Module → File`)
-- [x] Live self-indexed AST workbench (`/api/analysis/self`) with zero mock data
-- [x] **Before You Act** deterministic consequence envelope builder
-- [x] 6-layer System Memory workspace (`/intelligence`)
-- [x] Streamable HTTP Model Context Protocol server (`/api/mcp`) with 5 `readOnlyHint` tools
-- [x] Nara Router (`agnes-2.5-flash`) platform integration + AES-256-GCM BYOK key vault
-- [x] Multi-origin GitHub OAuth & App support (`nykst.unifies.codes`, `nykst.vercel.app`, `localhost:8080`)
-- [x] Variant Motion System (Spotlight, Film Grain, 3D Tilt, Magnetic CTAs, Scramble Text, Animated Counters, Infinite Marquee)
-- [x] Slack slash-command (`/nykst`) and Jira Cloud issue correlation connectors
-- [x] Nepal eSewa subscription workflow with admin verification queue
+<div align="right"><a href="#top">Back to top</a></div>
 
-### Upcoming Milestones
-
-- [ ] Tree-sitter multi-language AST adapters for Python, Go, and Rust repositories
-- [ ] Incremental commit-delta graph patching on `push` webhooks without full tarball re-download
-- [ ] Cross-repository microservice federation (linking OpenAPI/gRPC contracts across multiple repos)
-- [ ] OpenTelemetry runtime trace overlay on top of static AST edges
-- [ ] GitHub Pull Request bot that posts automatic **Before You Act** blast-radius comments on every PR
-
-<div align="right"><a href="#top">↑ Back to top</a></div>
-
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="faq"></a>
 
-## ❓ FAQ
+## FAQ
 
 <details>
-<summary><b>1. How is Nykst different from Cursor's codebase indexing, Sourcegraph Cody, or Greptile?</b></summary>
+<summary><b>How is this different from Cursor, Cody, or Greptile?</b></summary>
 
 <br/>
 
-Most tools focus on **code generation or chat over chunked embeddings**. Nykst is an **architectural navigation and consequence-verification system**. Instead of guessing which chunks relate to your question, Nykst compiles the AST, builds the exact reverse-reachability graph, links SQL tables and external services, and exposes that deterministic graph to both humans (via the 6-level visual navigator) and AI agents (via `/api/mcp`).
+Those tools retrieve context, generate code, or review a diff. Nykst answers a narrower question with deterministic evidence: which files import this one, directly and transitively, which entrypoints reach it, which tests cover it, and what changed with it historically. The same evidence is exposed to humans and to agents.
 
 </details>
 
 <details>
-<summary><b>2. Does Nykst use any mock, synthetic, or seeded data?</b></summary>
+<summary><b>Is any data mocked or seeded?</b></summary>
 
 <br/>
 
-**Never.** Every metric, file count, import edge, SQL table, and blast-radius chain shown in Nykst is computed live from real code. Even before you connect your own GitHub account, `/api/analysis/self` runs the TypeScript AST compiler directly over Nykst's own repository on the server so every number you see is 100% real and verifiable.
+No. The landing page compiles this repository at request time through `/api/analysis/self`. Blocked database access does not fabricate numbers; it reports the failure.
 
 </details>
 
 <details>
-<summary><b>3. Which AI model powers Nykst out of the box?</b></summary>
+<summary><b>Which model runs by default?</b></summary>
 
 <br/>
 
-Nykst is configured out of the box with **Nara Router (`agnes-2.5-flash`)** over `https://router.bynara.id/v1` for low-latency grounded architectural reasoning. Users can also connect their own OpenAI, Anthropic, Google Gemini, DeepSeek, or custom OpenAI-compatible API keys in **Connect API**, encrypted at rest with AES-256-GCM.
+`agnes-2.5-flash` through Nara Router, with a Gemini fallback when configured. Reasoning is grounded on a bounded evidence envelope, never on a raw dump of your repository. Add your own provider key at any time; it is encrypted at rest and never returned to the browser.
 
 </details>
 
 <details>
-<summary><b>4. Does Nykst require write permissions to my GitHub repositories?</b></summary>
+<summary><b>Does it need write access to my repositories?</b></summary>
 
 <br/>
 
-No. Nykst operates read-only for repository mapping, blast-radius computation, memory synthesis, and MCP serving. Your source code stays in your GitHub account, and only derived structural metadata is stored in Supabase behind Row-Level Security.
+No. Ingestion downloads a tarball with read-only scope and stores derived structure. Nothing is pushed to your code. The coding endpoint proposes a diff; opening a pull request is an explicit, separate action.
 
 </details>
 
 <details>
-<summary><b>5. Which redirect URIs are supported for GitHub OAuth?</b></summary>
+<summary><b>What happens when the code changes after ingestion?</b></summary>
 
 <br/>
 
-Nykst automatically detects the incoming `X-Forwarded-Host` / origin and supports:
-- `https://nykst.unifies.codes/api/integrations/github/callback` (including `*.unifies.codes`)
-- `https://nykst.vercel.app/api/integrations/github/callback` (including `nykst*.vercel.app` preview deployments)
-- `http://localhost:8080/api/integrations/github/callback`
+Snapshots are timestamped and the UI shows when the graph was built. A push webhook marks a snapshot stale, and the workbench can recompile on demand. Staleness is shown rather than hidden.
 
 </details>
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<details>
+<summary><b>Which languages are supported today?</b></summary>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+<br/>
+
+TypeScript and JavaScript are first class, including `.tsx`, path aliases, and workspace packages. SQL migrations and Prisma models are linked as data resources. Other languages appear as files, not as resolved import edges, until the Tree-sitter adapters land.
+
+</details>
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
 
 <a id="acknowledgements"></a>
 
-## 🙌 Acknowledgements
+## Acknowledgements
 
-- **[TypeScript Compiler team](https://www.typescriptlang.org/)** for the fast, rock-solid AST parser API (`ts.createSourceFile`) that powers our deterministic dependency engine.
-- **[TanStack](https://tanstack.com/)** for TanStack Start and TanStack Router.
-- **[Supabase](https://supabase.com/)** for PostgreSQL, Row-Level Security, and Realtime broadcast channels.
-- **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)** for standardizing how AI coding agents query external architectural intelligence.
-- **[Variant Community](https://variant.com/community)** for inspiring the interactive motion language across the web experience.
+- The **TypeScript team**, for the compiler API that makes a precise graph possible in a single pass.
+- **TanStack**, for Start and Router.
+- **Supabase**, for Postgres, row-level security, and Realtime.
+- **Model Context Protocol**, for a standard way to hand architectural evidence to agents.
+- **Radix UI**, **Tailwind CSS**, and **Lucide**, for the primitives behind the interface.
+- Everyone who filed a reproducible issue with a stack trace and a commit hash.
 
-<div align="right"><a href="#top">↑ Back to top</a></div>
+<div align="right"><a href="#top">Back to top</a></div>
 
-<div align="center">
-  <img src="docs/assets/divider.svg" width="100%" alt="" />
-</div>
+---
 
 <a id="license"></a>
 
-## 📜 License
+## License
 
-Released under the **[MIT License](LICENSE)**. Copyright © 2026 **Nykst**.
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Nykst.
+
+<div align="right"><a href="#top">Back to top</a></div>
 
 ---
 
 <a id="support"></a>
 
-## ❤️ Support
+## Support
 
-If Nykst helps your team or your AI agents navigate complex software systems without breaking production, please support the project:
+If Nykst saved you from a bad merge, a star helps other engineers find it.
 
 <div align="center">
 
-[![GitHub Star](https://img.shields.io/badge/STAR_ON_GITHUB-flawsom%2Fnykst-2DD4BF?style=for-the-badge&logo=github&logoColor=06110f&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence/stargazers)
-[![GitHub Sponsors](https://img.shields.io/badge/SPONSOR-GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=0b141b)](https://github.com/sponsors/flawsom)
-[![Buy Me a Coffee](https://img.shields.io/badge/BUY_ME_A_COFFEE-nykstsoftint-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=0b141b&labelColor=0b141b)](https://www.buymeacoffee.com/nykstsoftint)
-[![Contact Email](https://img.shields.io/badge/EMAIL-nykstsoftint%40gmail.com-60A5FA?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0b141b)](mailto:nykstsoftint@gmail.com)
+[![Star](https://img.shields.io/badge/STAR-flawsom%2Fnykst-2DD4BF?style=for-the-badge&logo=github&logoColor=06110f&labelColor=0b141b)](https://github.com/flawsom/nykst-software-intellegence/stargazers)
+[![Sponsor](https://img.shields.io/badge/SPONSOR-GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=0b141b)](https://github.com/sponsors/flawsom)
+[![Coffee](https://img.shields.io/badge/BUY_ME_A_COFFEE-nykstsoftint-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=0b141b&labelColor=0b141b)](https://www.buymeacoffee.com/nykstsoftint)
+[![Email](https://img.shields.io/badge/EMAIL-nykstsoftint%40gmail.com-60A5FA?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0b141b)](mailto:nykstsoftint@gmail.com)
 
 </div>
 
-<a id="releases"></a>
-
 <p align="center">
-  <sub>Built with precision by <a href="https://github.com/flawsom"><b>@flawsom</b></a> · <a href="https://nykst.unifies.codes">nykst.unifies.codes</a> · <a href="#top">↑ Back to top</a></sub>
+  <sub>Built by <a href="https://github.com/flawsom">@flawsom</a> · <a href="https://nykst.unifies.codes">nykst.unifies.codes</a> · <a href="#top">Back to top</a></sub>
 </p>

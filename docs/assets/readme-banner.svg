@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600" role="img" aria-labelledby="bannerTitle bannerDesc">
+  <title id="bannerTitle">Nykst · Deterministic Graph-RAG architecture for software systems</title>
+  <desc id="bannerDesc">Dark glass banner with the Nykst prism mark, the value proposition, and live self-indexed telemetry: 160 analyzed files, 317 import edges, 0 unresolved imports.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04070b"/>
+      <stop offset="48%" stop-color="#061019"/>
+      <stop offset="100%" stop-color="#050b12"/>
+    </linearGradient>
+    <linearGradient id="wordmark" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f4fbfd"/>
+      <stop offset="62%" stop-color="#d9fbf5"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+    <linearGradient id="prism" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="52%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="hairline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0"/>
+      <stop offset="28%" stop-color="#2dd4bf" stop-opacity="0.55"/>
+      <stop offset="50%" stop-color="#5eead4" stop-opacity="0.95"/>
+      <stop offset="72%" stop-color="#2dd4bf" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="auroraA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="auroraB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="auroraC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glassTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.055"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="mesh" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0v64" fill="none" stroke="#16232f" stroke-width="1"/>
+    </pattern>
+    <style>
+      .sans { font-family: Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <!-- Backdrop -->
+  <rect width="1600" height="600" fill="url(#sky)"/>
+  <rect width="1600" height="600" fill="url(#mesh)" opacity="0.42"/>
+  <ellipse cx="330" cy="70" rx="560" ry="330" fill="url(#auroraA)"/>
+  <ellipse cx="1400" cy="560" rx="560" ry="360" fill="url(#auroraB)"/>
+  <ellipse cx="800" cy="290" rx="620" ry="360" fill="url(#auroraC)"/>
+
+  <!-- Constellation field -->
+  <g stroke="#1d3a4a" stroke-width="1" opacity="0.75">
+    <line x1="86" y1="132" x2="212" y2="96"/>
+    <line x1="212" y1="96" x2="318" y2="168"/>
+    <line x1="318" y1="168" x2="212" y2="96"/>
+    <line x1="1282" y1="120" x2="1396" y2="164"/>
+    <line x1="1396" y1="164" x2="1508" y2="108"/>
+    <line x1="1396" y1="164" x2="1330" y2="252"/>
+    <line x1="96" y1="470" x2="196" y2="424"/>
+    <line x1="196" y1="424" x2="286" y2="492"/>
+    <line x1="1346" y1="486" x2="1452" y2="440"/>
+    <line x1="1452" y1="440" x2="1540" y2="506"/>
+  </g>
+  <g fill="#2dd4bf" opacity="0.55">
+    <circle cx="86" cy="132" r="2.6"/><circle cx="212" cy="96" r="3.4"/><circle cx="318" cy="168" r="2.4"/>
+    <circle cx="1282" cy="120" r="2.4"/><circle cx="1396" cy="164" r="3.4"/><circle cx="1508" cy="108" r="2.4"/>
+    <circle cx="96" cy="470" r="2.4"/><circle cx="196" cy="424" r="3.2"/><circle cx="286" cy="492" r="2.4"/>
+    <circle cx="1346" cy="486" r="2.4"/><circle cx="1452" cy="440" r="3.2"/><circle cx="1540" cy="506" r="2.4"/>
+  </g>
+
+  <!-- Glass plate -->
+  <g>
+    <rect x="168" y="46" width="1264" height="508" rx="30" fill="#070f17" fill-opacity="0.72" stroke="#20313f" stroke-width="1.4"/>
+    <rect x="168" y="46" width="1264" height="132" rx="30" fill="url(#glassTop)"/>
+    <rect x="168" y="546" width="1264" height="8" rx="4" fill="url(#hairline)" opacity="0.5"/>
+  </g>
+
+  <!-- Prism mark -->
+  <g transform="translate(752, 86)">
+    <rect width="96" height="96" rx="24" fill="#050c13" stroke="#263f52" stroke-width="1.6"/>
+    <polygon points="48,12 78,30 78,66 48,84 18,66 18,30" fill="none" stroke="#2dd4bf" stroke-opacity="0.35" stroke-width="1.4"/>
+    <path d="M29,67 L29,29 L67,67 L67,29" fill="none" stroke="url(#prism)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="29" y1="48" x2="67" y2="48" stroke="#60a5fa" stroke-width="1.6" stroke-dasharray="3 3" opacity="0.85"/>
+    <circle cx="29" cy="29" r="5" fill="#050c13" stroke="#5eead4" stroke-width="2.4"/>
+    <circle cx="67" cy="67" r="5" fill="#050c13" stroke="#2dd4bf" stroke-width="2.4"/>
+    <circle cx="29" cy="67" r="3.6" fill="#60a5fa"/>
+    <circle cx="67" cy="29" r="3.6" fill="#a78bfa"/>
+    <circle cx="48" cy="48" r="4.6" fill="#5eead4"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="800" y="278" text-anchor="middle" class="sans" font-size="118" font-weight="700" letter-spacing="26" fill="url(#wordmark)">NYKST</text>
+
+  <!-- Value proposition -->
+  <text x="800" y="340" text-anchor="middle" class="sans" font-size="30" font-weight="600" fill="#eef6fc">Know the blast radius before you change the code.</text>
+  <text x="800" y="384" text-anchor="middle" class="sans" font-size="21" fill="#93a8ba">TypeScript AST · Tarjan SCC · reverse reachability · compounding system memory · streamable MCP</text>
+
+  <!-- Hairline -->
+  <rect x="456" y="416" width="688" height="1.6" fill="url(#hairline)"/>
+  <circle cx="800" cy="416.8" r="4.4" fill="#5eead4"/>
+  <circle cx="800" cy="416.8" r="10" fill="#5eead4" fill-opacity="0.12"/>
+
+  <!-- Live telemetry -->
+  <g class="sans" text-anchor="middle">
+    <text x="418" y="470" font-size="44" font-weight="700" fill="#f4fbfd">160</text>
+    <text x="418" y="498" class="mono" font-size="13" letter-spacing="2.4" fill="#7f97aa">FILES ANALYZED</text>
+
+    <text x="800" y="470" font-size="44" font-weight="700" fill="#5eead4">317</text>
+    <text x="800" y="498" class="mono" font-size="13" letter-spacing="2.4" fill="#7f97aa">IMPORT EDGES</text>
+
+    <text x="1182" y="470" font-size="44" font-weight="700" fill="#f4fbfd">0</text>
+    <text x="1182" y="498" class="mono" font-size="13" letter-spacing="2.4" fill="#7f97aa">UNRESOLVED IMPORTS</text>
+  </g>
+
+  <!-- Bottom accent -->
+  <rect y="596" width="1600" height="4" fill="#0b1620"/>
+  <rect y="596" width="620" height="4" fill="#2dd4bf" opacity="0.9"/>
+  <rect x="620" y="596" width="520" height="4" fill="#60a5fa" opacity="0.55"/>
+  <rect x="1140" y="596" width="460" height="4" fill="#a78bfa" opacity="0.38"/>
+</svg>
