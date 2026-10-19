@@ -28,13 +28,13 @@ type IngestionSnapshot = {
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
-      { title: "Software Graph & Navigator — Nykst" },
+      { title: "Software Graph & Navigator · Nykst" },
       {
         name: "description",
         content:
           "Navigate your organization's software graph: drill from core domains into capabilities, services, modules and individual files, with dependencies and blast radius.",
       },
-      { property: "og:title", content: "Software Graph & Navigator — Nykst" },
+      { property: "og:title", content: "Software Graph & Navigator · Nykst" },
       {
         property: "og:description",
         content: "Drill from core domains down to a single file, one click at a time.",
@@ -266,7 +266,7 @@ function GraphPage() {
           </h1>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
             {unauthenticated
-              ? "Nykst only ever renders a real system. Connect GitHub, pick a repository, and the graph is built from your actual import graph, commit history and entry points — nothing is simulated."
+              ? "Nykst only ever renders a real system. Connect GitHub, pick a repository, and the graph is built from your actual import graph, commit history and entry points, nothing is simulated."
               : (loadError ?? "The latest analysis could not be loaded.")}
           </p>
           {loadError && !unauthenticated && (
@@ -487,7 +487,7 @@ function GraphPage() {
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] text-amber-400">
-                  This snapshot predates the code analysis engine — the map below only reflects
+                  This snapshot predates the code analysis engine, the map below only reflects
                   folder names. Re-analyze to get real dependencies and impact.
                 </p>
               )}

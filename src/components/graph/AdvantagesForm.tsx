@@ -14,7 +14,7 @@ const ADVANTAGE_REASONS: Reason[] = [
   {
     title: "1. Stop paying for the same understanding twice",
     subtitle:
-      "Every undocumented fix becomes a future investigation—and every lost engineer takes context with them.",
+      "Every undocumented fix becomes a future investigation, and every lost engineer takes context with them.",
     pitch:
       "Your team solves hard problems every week, but the reasoning often disappears across commits, dashboards, tickets, and private conversations. Nykst connects those fragments into a living record of what changed, why it changed, and what the system taught you afterward. The advantage is direct: less rediscovery, faster onboarding, and better decisions every time the codebase changes.",
   },
@@ -23,12 +23,12 @@ const ADVANTAGE_REASONS: Reason[] = [
     subtitle:
       "The value of a software organization should compound instead of resetting after every incident or handoff.",
     pitch:
-      "Nykst turns engineering history into usable context. A verified fix strengthens future diagnosis; an accepted design decision guides future changes; a rejected approach becomes a boundary the team can avoid. Over time, your system becomes more understandable because it carries forward the evidence your organization has earned—not because people are forced to remember everything themselves.",
+      "Nykst turns engineering history into usable context. A verified fix strengthens future diagnosis; an accepted design decision guides future changes; a rejected approach becomes a boundary the team can avoid. Over time, your system becomes more understandable because it carries forward the evidence your organization has earned, not because people are forced to remember everything themselves.",
   },
   {
     title: "3. Know what a code change can disturb before it reaches users",
     subtitle:
-      "The dangerous part of a deployment is rarely the line you edited—it is the dependency you did not see.",
+      "The dangerous part of a deployment is rarely the line you edited; it is the dependency you did not see.",
     pitch:
       "A small change to an authentication flow can affect an API gateway, a queue consumer, a database migration, and a customer journey. Nykst traces those relationships across your actual repositories, services, configuration, and runtime signals. Instead of approving changes on intuition alone, your team can review the likely blast radius and verify the paths that matter most.",
   },
@@ -81,7 +81,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
     };
 
     try {
-      // Written straight to the database with row-level security — no browser-side copy of
+      // Written straight to the database with row-level security, no browser-side copy of
       // the submitted contact details.
       const { error: supabaseError } = await supabase.from("advantages_feedback").insert(payload);
 

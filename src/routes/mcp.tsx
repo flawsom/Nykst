@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/mcp")({
   head: () => ({
     meta: [
-      { title: "Connect Nykst to your AI coding agent — MCP guide" },
+      { title: "Connect Nykst to your AI coding agent · MCP guide" },
       {
         name: "description",
         content:

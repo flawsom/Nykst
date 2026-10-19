@@ -1,7 +1,7 @@
 <a id="top"></a>
 
 <p align="center">
-  <img src="docs/assets/readme-hero.svg" width="100%" alt="Nykst — Deterministic Graph-RAG Architecture for Software Systems. Organization → Domains → Capabilities → Services → Modules → Files." />
+  <img src="docs/assets/readme-hero.svg" width="100%" alt="Nykst · Deterministic Graph-RAG Architecture for Software Systems. Organization → Domains → Capabilities → Services → Modules → Files." />
 </p>
 
 <div align="center">
@@ -12,7 +12,7 @@
 
 ### We are not an LLM wrapper. We are the deterministic Graph-RAG architecture.
 
-Connect a repository once. Nykst compiles your codebase with the TypeScript AST engine, links SQL migrations and external services, runs Tarjan strongly-connected-component cycle analysis, and computes the exact line-level blast radius before you — or your AI coding agent — write a single line of code.
+Connect a repository once. Nykst compiles your codebase with the TypeScript AST engine, links SQL migrations and external services, runs Tarjan strongly-connected-component cycle analysis, and computes the exact line-level blast radius before you, or your AI coding agent, write a single line of code.
 
 [![Live Demo](https://img.shields.io/badge/LIVE_DEPLOYMENT-nykst.unifies.codes-2DD4BF?style=for-the-badge&logo=cloudflare&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes)
 [![Documentation](https://img.shields.io/badge/DOCUMENTATION-MCP_&_Agent_Setup-5EEAD4?style=for-the-badge&logo=readthedocs&logoColor=06110f&labelColor=0b141b)](https://nykst.unifies.codes/mcp)
@@ -130,7 +130,7 @@ Organization ──► Core Domains ──► Capabilities ──► Services & 
 <tr>
 <td width="33%" valign="top">
   <h3>🧠 6-Layer System Memory</h3>
-  <sub><b>Outcome-Weighted</b>, <b>Failure-Pattern</b>, <b>Architectural Decision</b>, <b>Incident-Resolution</b>, <b>Team Convention</b>, and emergent <b>Continuity Memory</b> — anchored to real repository artifacts.</sub>
+  <sub><b>Outcome-Weighted</b>, <b>Failure-Pattern</b>, <b>Architectural Decision</b>, <b>Incident-Resolution</b>, <b>Team Convention</b>, and emergent <b>Continuity Memory</b>, anchored to real repository artifacts.</sub>
 </td>
 <td width="33%" valign="top">
   <h3>🔌 Streamable HTTP MCP Server</h3>
@@ -169,16 +169,16 @@ Organization ──► Core Domains ──► Capabilities ──► Services & 
 
 <sub>Real captures from the running Nykst application across Desktop, Dashboard, Memory Analytics, MCP Agent Setup, Billing Settings, and Mobile viewports.</sub>
 
-### 🖥 Desktop — Product Landing Page & Live AST Telemetry
+### 🖥 Desktop · Product Landing Page & Live AST Telemetry
 
 <p align="center">
-  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst Desktop Landing Page — Hero, Live AST Graph Preview, 6-Level Navigation, and GitHub Connect." />
+  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst Desktop Landing Page · Hero, Live AST Graph Preview, 6-Level Navigation, and GitHub Connect." />
 </p>
 
-### 🧭 Dashboard — 6-Level System Graph & Inspector
+### 🧭 Dashboard · 6-Level System Graph & Inspector
 
 <p align="center">
-  <img src="docs/assets/screens/graph.png" width="100%" alt="Nykst Graph Navigator Dashboard — 6-level interactive topology, tree navigation, and Mentor Panel." />
+  <img src="docs/assets/screens/graph.png" width="100%" alt="Nykst Graph Navigator Dashboard · 6-level interactive topology, tree navigation, and Mentor Panel." />
 </p>
 
 ### 🧠 Analytics (System Memory) & ⚙️ Settings (Subscription & BYOK Vault)
@@ -186,11 +186,11 @@ Organization ──► Core Domains ──► Capabilities ──► Services & 
 <table>
 <tr>
 <td width="50%" valign="top">
-  <b>🧠 Analytics — 6-Layer System Memory</b><br/>
+  <b>🧠 Analytics · 6-Layer System Memory</b><br/>
   <sub>Outcome-weighted decisions, failure patterns, dependency topology, and grounded AI Q&A over live repository artifacts.</sub>
 </td>
 <td width="50%" valign="top">
-  <b>⚙️ Settings & Billing — eSewa & API Vault</b><br/>
+  <b>⚙️ Settings & Billing · eSewa & API Vault</b><br/>
   <sub>Monthly (NPR 999) and Annual (NPR 9,999) plans with QR scan, transaction verification, and AES-256-GCM BYOK provider settings.</sub>
 </td>
 </tr>
@@ -212,8 +212,8 @@ Organization ──► Core Domains ──► Capabilities ──► Services & 
 </td>
 </tr>
 <tr>
-<td align="center"><sub><b>🔌 Authentication & MCP Tokens</b> — SHA-256 hashed <code>nyk_</code> tokens & copy-paste setup for 9 coding agents</sub></td>
-<td align="center"><sub><b>📱 Mobile Viewport</b> — Full responsive dark-glass hierarchy on iOS/Android viewports</sub></td>
+<td align="center"><sub><b>🔌 Authentication & MCP Tokens</b> · SHA-256 hashed <code>nyk_</code> tokens & copy-paste setup for 9 coding agents</sub></td>
+<td align="center"><sub><b>📱 Mobile Viewport</b> · Full responsive dark-glass hierarchy on iOS/Android viewports</sub></td>
 </tr>
 </table>
 
@@ -644,16 +644,16 @@ nykst-software-intellegence/
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | Client | `sb_publishable_...` | Browser publishable key (protected by strict PostgreSQL RLS). |
 | `GITHUB_CLIENT_ID` | ✅ | Server | `Ov23li...` or `Iv...` | GitHub OAuth App or GitHub App client ID. |
 | `GITHUB_CLIENT_SECRET` | ✅ | Server | 40-char hex | GitHub client secret (also signs HMAC-SHA256 OAuth state cookies). `CLIENT_SECRET` alias supported. |
-| `GITHUB_REDIRECT_URI` | — | Server | Auto-matched per host | Optional override. By default, Nykst dynamically matches `https://nykst.unifies.codes/api/integrations/github/callback`, `https://nykst.vercel.app/api/integrations/github/callback`, and `http://localhost:8080/api/integrations/github/callback` (including wildcard preview subdomains). |
+| `GITHUB_REDIRECT_URI` | None | Server | Auto-matched per host | Optional override. By default, Nykst dynamically matches `https://nykst.unifies.codes/api/integrations/github/callback`, `https://nykst.vercel.app/api/integrations/github/callback`, and `http://localhost:8080/api/integrations/github/callback` (including wildcard preview subdomains). |
 | `GITHUB_WEBHOOK_SECRET` | ✅ | Server | Random string | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`. |
 | `NYKST_BYOK_SECRET` | ✅ | Server | 32+ char secret | Derives the 256-bit AES-GCM key used to encrypt user API keys at rest. |
-| `NYKST_AI_API_KEY` | — | Server | `nara_...` / `sk-...` | Platform AI router key so first-time users get live answers immediately. |
-| `NYKST_AI_BASE_URL` | — | Server | `https://router.bynara.id/v1` | OpenAI-compatible router base URL (HTTPS required). |
-| `NYKST_AI_MODEL` | — | Server | `agnes-2.5-flash` | Platform model identifier. Defaults to `agnes-2.5-flash`. |
-| `GEMINI_API_KEY` | — | Server | `AIza...` | Optional secondary platform fallback (`gemini-3.5-flash-lite`). |
-| `SLACK_CLIENT_ID` / `SECRET` | — | Server | Slack App credentials | Enables Slack OAuth and `/nykst` slash commands. |
-| `JIRA_CLIENT_ID` / `SECRET` | — | Server | Atlassian OAuth 2.0 | Enables Jira issue correlation against graph nodes. |
-| `NYKST_ADMIN_GITHUB_ID` | — | Server | Numeric GitHub ID | Grants access to `/admin/payments` for manual eSewa approval. |
+| `NYKST_AI_API_KEY` | None | Server | `nara_...` / `sk-...` | Platform AI router key so first-time users get live answers immediately. |
+| `NYKST_AI_BASE_URL` | None | Server | `https://router.bynara.id/v1` | OpenAI-compatible router base URL (HTTPS required). |
+| `NYKST_AI_MODEL` | None | Server | `agnes-2.5-flash` | Platform model identifier. Defaults to `agnes-2.5-flash`. |
+| `GEMINI_API_KEY` | None | Server | `AIza...` | Optional secondary platform fallback (`gemini-3.5-flash-lite`). |
+| `SLACK_CLIENT_ID` / `SECRET` | None | Server | Slack App credentials | Enables Slack OAuth and `/nykst` slash commands. |
+| `JIRA_CLIENT_ID` / `SECRET` | None | Server | Atlassian OAuth 2.0 | Enables Jira issue correlation against graph nodes. |
+| `NYKST_ADMIN_GITHUB_ID` | None | Server | Numeric GitHub ID | Grants access to `/admin/payments` for manual eSewa approval. |
 
 <div align="right"><a href="#top">↑ Back to top</a></div>
 
@@ -780,7 +780,7 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
 ### 1. Wire Nykst into Claude Code, Cursor, or VS Code in 60 Seconds
 
 ```bash
-# Claude Code — add Nykst globally so every repository gets blast-radius checks
+# Claude Code: add Nykst globally so every repository gets blast-radius checks
 claude mcp add --transport http --scope user nykst \
   https://nykst.unifies.codes/api/mcp \
   --header "Authorization: Bearer $NYKST_TOKEN"
@@ -991,7 +991,7 @@ We welcome contributions that sharpen the AST analysis engine, expand language s
 
 - **Branch naming**: `feat/<scope>`, `fix/<scope>`, `perf/<scope>`, `docs/<scope>`, `test/<scope>`
 - **Commit format**: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(analysis): resolve tsconfig project references`, `fix(oauth): honor x-forwarded-host on custom domains`)
-- **Author attribution**: Commits must carry only the human contributor's name and email — never add automated bot footers or third-party AI co-author trailers.
+- **Author attribution**: Commits must carry only the human contributor's name and email, never add automated bot footers or third-party AI co-author trailers.
 
 ### Pull Request Process
 

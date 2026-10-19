@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // Live readiness probe: reports whether Supabase is configured and whether the
-// schema Nykst needs is actually present. Every value is measured on request —
+// schema Nykst needs is actually present. Every value is measured on request,
 // nothing is cached and nothing is assumed.
 const TABLES = [
   "pre_registration",

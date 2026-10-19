@@ -102,7 +102,7 @@ function ShowMore<T>({
   );
 }
 
-/** What breaks if this node changes — computed from the compiler-based import graph. */
+/** What breaks if this node changes, computed from the compiler-based import graph. */
 export function ImpactPanel({ snapshot, node }: { snapshot: RepositorySnapshot; node: GraphNode }) {
   const analysis = snapshot.analysis!;
   const link = useLinks(snapshot);

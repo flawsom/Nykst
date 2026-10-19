@@ -1,4 +1,4 @@
--- Nykst — complete Supabase schema.
+-- Nykst: complete Supabase schema.
 --
 -- This is every file in supabase/migrations/ applied in order, merged into one
 -- idempotent script. Safe to run more than once: it never drops user data and

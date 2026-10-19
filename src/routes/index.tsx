@@ -45,7 +45,7 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst — Deterministic Graph-RAG Architecture & System Intelligence" },
+      { title: "Nykst · Deterministic Graph-RAG Architecture & System Intelligence" },
       {
         name: "description",
         content:
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Nykst — Deterministic Graph-RAG Architecture & System Intelligence",
+        content: "Nykst · Deterministic Graph-RAG Architecture & System Intelligence",
       },
       {
         property: "og:description",
@@ -87,7 +87,7 @@ const LEVELS = [
     level: "03",
     title: "Capability",
     count: "Ranked by reverse dependency weight",
-    copy: "What each domain delivers for the system — AST parsing, OAuth verification, blast-radius computation, or MCP serving — ranked by caller reachability.",
+    copy: "What each domain delivers for the system: AST parsing, OAuth verification, blast-radius computation, or MCP serving, ranked by caller reachability.",
   },
   {
     icon: Server,
@@ -438,8 +438,8 @@ function Landing() {
               style={{ animationDelay: "130ms" }}
             >
               We are not a chat wrapper over flat vector chunks. Nykst compiles your repository into
-              a deterministic AST & dependency topology — core domains, capabilities, services, SQL
-              tables, modules, and individual files — and computes the exact line-level blast radius
+              a deterministic AST & dependency topology (core domains, capabilities, services, SQL
+              tables, modules, and individual files) and computes the exact line-level blast radius
               before you or your AI agent writes a single line of code.
             </p>
 
@@ -666,7 +666,7 @@ function Landing() {
                 {
                   step: "2",
                   title: "Pick a repository",
-                  copy: "Personal account or organization — public and private repositories are supported.",
+                  copy: "Personal account or organization; public and private repositories are supported.",
                 },
                 {
                   step: "3",

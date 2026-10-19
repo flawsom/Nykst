@@ -418,7 +418,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
                     )}
                     <span className="text-[11px]">{s.label}</span>
                     {s.detail && (
-                      <span className="text-muted-foreground text-[10px]">— {s.detail}</span>
+                      <span className="text-muted-foreground text-[10px]">: {s.detail}</span>
                     )}
                   </div>
                 ))}
@@ -506,7 +506,7 @@ export function VirtualCodeLab({ node }: { node: GraphNode }) {
               <div className="text-[12px] font-semibold">
                 {verdict.passed
                   ? `No static issue found in ${context.scope}`
-                  : `Does not fit ${context.scope} — injection blocked`}
+                  : `Does not fit ${context.scope}: injection blocked`}
               </div>
               <p className="text-muted-foreground text-[10px] leading-relaxed">
                 {verdict.passed

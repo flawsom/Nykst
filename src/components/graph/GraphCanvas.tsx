@@ -332,7 +332,7 @@ export function GraphCanvas({
             textAnchor="middle"
             className="fill-muted-foreground font-mono text-[11px]"
           >
-            +{hiddenCount} more — see the system tree
+            +{hiddenCount} more, see the system tree
           </text>
         )}
       </svg>

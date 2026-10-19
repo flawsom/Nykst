@@ -11,19 +11,19 @@ import { cn } from "@/lib/utils";
 
 /** Plain-language consequence of each issue class, for non-technical roles. */
 const BUSINESS_MEANING: Record<string, string> = {
-  "Cyclic dependency detected": "Teams block each other — shipping here is slower than it looks.",
+  "Cyclic dependency detected": "Teams block each other, shipping here is slower than it looks.",
   "Missing test coverage on error paths": "Failures reach customers before anyone notices.",
   "Deprecated API still referenced": "Carrying old work that will force an unplanned migration.",
   "Unbounded retry loop": "One slow partner can take this area down entirely.",
   "Secrets read at module scope":
-    "Credential exposure risk — a compliance finding waiting to happen.",
+    "Credential exposure risk, a compliance finding waiting to happen.",
   "Hot path allocates per request": "Higher infrastructure spend and slower response for users.",
-  "Ownership unclear — no CODEOWNERS entry": "No accountable team — incidents here have no owner.",
+  "Ownership unclear: no CODEOWNERS entry": "No accountable team, incidents here have no owner.",
 };
 
 /**
  * Problems are never generated. They come from the repository analysis
- * (`traceRepositoryProblems`) — with no repository attached there is nothing to list,
+ * (`traceRepositoryProblems`), with no repository attached there is nothing to list,
  * so this returns an empty set instead of inventing findings.
  */
 function issuesOf(_n: GraphNode): (IssueLike & { severity: string })[] {
@@ -157,7 +157,7 @@ function trackersFor(
         .slice(0, 4)
         .map((i) =>
           voice === "executive"
-            ? `${BUSINESS_MEANING[i.title] ?? i.title} — ${i.owner}`
+            ? `${BUSINESS_MEANING[i.title] ?? i.title} · ${i.owner}`
             : `${i.title} · ${i.area} · ${i.severity} · ${i.owner}`,
         ),
       evidence: [...nodeEv, ...fileEv.slice(0, 2)],
@@ -172,7 +172,7 @@ function trackersFor(
           ? "Failures here can reach customers before anyone is paged."
           : `${errorPaths.length} finding${errorPaths.length === 1 ? "" : "s"} sit on failure handling paths.`
         : "No unguarded failure paths flagged.",
-      detail: errorPaths.slice(0, 3).map((i) => `${i.title} — ${stepsFor(i)[0]}`),
+      detail: errorPaths.slice(0, 3).map((i) => `${i.title} · ${stepsFor(i)[0]}`),
       evidence: fileEv.length ? fileEv : nodeEv,
     },
     {
@@ -220,7 +220,7 @@ function trackersFor(
         : `Accountable: ${node.owners.join(" and ")}.`,
       detail: [
         `Owners: ${node.owners.join(", ")}`,
-        ...security.slice(0, 2).map((i) => `${i.title} — ${i.owner}`),
+        ...security.slice(0, 2).map((i) => `${i.title} · ${i.owner}`),
       ],
       evidence: [
         ...node.owners.map((o) => ({ kind: "metric" as const, label: o })),
@@ -263,7 +263,7 @@ function answerFor(
   )
     return {
       text: exec
-        ? `Touching ${node.label} affects ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""} — ${b.level.toLowerCase()} exposure. Expect coordination across those teams and a longer release window.`
+        ? `Touching ${node.label} affects ${b.services.toLocaleString()} services across ${b.teams} team${b.teams > 1 ? "s" : ""}: ${b.level.toLowerCase()} exposure. Expect coordination across those teams and a longer release window.`
         : `Blast radius ${b.level}: ${b.services} services, ${b.modules} modules, ${b.files} files, ${b.teams} teams. Downstream consumers: ${node.dependents.slice(0, 4).join(", ") || "none tracked"}. Gate the change behind dependent verification.`,
       evidence: [...blastEv, ...nodeEv, ...incEv.slice(0, 1)],
     };
@@ -281,7 +281,7 @@ function answerFor(
 
   if (low.includes("own") || low.includes("who") || low.includes("review"))
     return {
-      text: `Accountable: ${node.owners.join(" and ")}${exec ? "." : ` — route PRs and incident pages here.`}`,
+      text: `Accountable: ${node.owners.join(" and ")}${exec ? "." : `, route PRs and incident pages here.`}`,
       evidence: [
         ...node.owners.map((o) => ({ kind: "metric" as const, label: o })),
         ...fileEv.slice(0, 2),
@@ -322,7 +322,7 @@ function answerFor(
   return {
     text: exec
       ? `${node.label}: ${node.summary} ${b.teams} team${b.teams > 1 ? "s" : ""} own it, ${b.services} services depend on it.`
-      : `${node.label} — ${kindLabel[node.kind].toLowerCase()}. ${node.summary} ${node.dependencies.length} upstream / ${node.dependents.length} downstream.`,
+      : `${node.label}: ${kindLabel[node.kind].toLowerCase()}. ${node.summary} ${node.dependencies.length} upstream / ${node.dependents.length} downstream.`,
     evidence: [...nodeEv, ...blastEv.slice(0, 1)],
   };
 }
@@ -507,7 +507,7 @@ export function MentorPanel({
       const answer = ai.ok
         ? ai.answer
         : repositorySnapshot
-          ? `No answer was generated because the AI provider could not be reached. Nothing is written in its place — the live evidence for this node is still listed below (${repositorySnapshot.commits?.length ?? 0} commits, ${repositorySnapshot.pull_requests?.length ?? 0} pull requests, ${repositorySnapshot.issues?.length ?? 0} issues in the snapshot).`
+          ? `No answer was generated because the AI provider could not be reached. Nothing is written in its place; the live evidence for this node is still listed below (${repositorySnapshot.commits?.length ?? 0} commits, ${repositorySnapshot.pull_requests?.length ?? 0} pull requests, ${repositorySnapshot.issues?.length ?? 0} issues in the snapshot).`
           : "No repository analysis is attached to this node, so there is no evidence to answer from.";
       if (!ai.ok) setAskError(ai.error);
       setThread((t) => [...t, { q: query, a: answer, evidence: res.evidence }]);
@@ -676,7 +676,7 @@ export function MentorPanel({
 
                         {known && !solved && (
                           <p className="text-primary mt-2 ml-3.5 text-[11px]">
-                            Pattern already solved on {known.provenOn} — needs approval.
+                            Pattern already solved on {known.provenOn}, needs approval.
                           </p>
                         )}
 
@@ -701,7 +701,7 @@ export function MentorPanel({
                             </button>
                           ) : (
                             <span className="text-muted-foreground text-[11px]">
-                              Needs {known ? "approver" : "an engineer"} — outside your role
+                              Needs {known ? "approver" : "an engineer"}, outside your role
                             </span>
                           )}
                         </div>

@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, Clock3, Copy, Crown, Globe2, ShieldCheck, X } 
 import { NykstBrand } from "@/components/brand/NykstLogo";
 
 export const Route = createFileRoute("/subscribe")({
-  head: () => ({ meta: [{ title: "Nykst Premium — eSewa subscription" }] }),
+  head: () => ({ meta: [{ title: "Nykst Premium · eSewa subscription" }] }),
   component: SubscribePage,
 });
 
@@ -304,7 +304,7 @@ function SubscribePage() {
                         disabled={submitting || !reference.trim()}
                         className="bg-primary text-primary-foreground disabled:opacity-40 w-full rounded-xl px-4 py-3 text-sm font-semibold"
                       >
-                        {submitting ? "Submitting…" : "I’ve paid — submit for validation"}
+                        {submitting ? "Submitting…" : "I’ve paid, submit for validation"}
                       </button>
                     </div>
                   )}

@@ -286,7 +286,7 @@ export function buildAnalysisGraph(
     ].sort((a, b) => importance(b) - importance(a) || a.label.localeCompare(b.label));
     const paths = allFiles(dir);
     const described = describeFiles(paths);
-    const summary = `${plural(paths.length, ["source file", "source files"])} in ${dir.path || "the repository root"}${described.roleText ? ` — ${described.roleText}` : ""}.${described.services.length ? ` Talks to ${described.services.join(", ")}.` : ""}`;
+    const summary = `${plural(paths.length, ["source file", "source files"])} in ${dir.path || "the repository root"}${described.roleText ? `: ${described.roleText}` : ""}.${described.services.length ? ` Talks to ${described.services.join(", ")}.` : ""}`;
     return groupNode(
       id,
       kindAt(depth),
@@ -320,7 +320,7 @@ export function buildAnalysisGraph(
             `${dir.name} (entry files)`,
             dir.files,
             children,
-            `Files directly inside ${dir.path}/ — usually application entry points and wiring.`,
+            `Files directly inside ${dir.path}/, usually application entry points and wiring.`,
             "directory",
             `${dir.path}/*`,
           ),

@@ -7,7 +7,7 @@ interface Props {
   activeId: string;
   openIds: Set<string>;
   onSelect: (node: GraphNode) => void;
-  /** access filter — nodes outside the viewer's scope are never listed */
+  /** access filter: nodes outside the viewer's scope are never listed */
   visible?: ((n: GraphNode) => boolean) | undefined;
 }
 

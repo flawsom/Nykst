@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   {
     title: "This graph is the navigator",
-    body: "Your repository sits in the middle. Around it are the areas of your code, the external services it talks to and its data — ordered by how much depends on them.",
+    body: "Your repository sits in the middle. Around it are the areas of your code, the external services it talks to and its data, ordered by how much depends on them.",
   },
   {
     title: "Click to go one level deeper",

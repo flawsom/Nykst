@@ -47,7 +47,7 @@ const HARDEST_OPTIONS = [
 const USE_OPTIONS = [
   "Yes, immediately",
   "Yes, if it fits our stack",
-  "Maybe — I'd trial it first",
+  "Maybe, I'd trial it first",
   "Probably not",
 ];
 
@@ -94,8 +94,8 @@ const STEP_TITLES = [
   "What is the hardest part when making a change?",
   "If you were building Nykst, what one feature would make you use it every single day?",
   "If Nykst saved you several hours a week, would you use it?",
-  "When an AI changes your code, how do you know what else could break—and how do you currently verify the impact?",
-  "When you solve a difficult problem, where does that knowledge live so the next engineer—or the AI—can use it?",
+  "When an AI changes your code, how do you know what else could break, and how do you currently verify the impact?",
+  "When you solve a difficult problem, where does that knowledge live so the next engineer, or the AI, can use it?",
   "What hard-won lesson from your experience do smart people still misunderstand about your work, and what do they continue to get wrong?",
   "Where can we stay in touch? (Optional)",
 ];

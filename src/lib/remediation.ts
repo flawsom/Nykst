@@ -83,7 +83,7 @@ const PLAYBOOK: Record<string, string[]> = {
     "Batch writes on the hot path",
     "Re-baseline p99 after the change",
   ],
-  "Ownership unclear — no CODEOWNERS entry": [
+  "Ownership unclear: no CODEOWNERS entry": [
     "Assign the owning team in CODEOWNERS",
     "Wire review routing to that team",
     "Record the owner on the node",
@@ -100,7 +100,7 @@ export function stepsFor(issue: IssueLike): string[] {
   );
 }
 
-/** Everything this fix must move with — derived from the node's own graph edges. */
+/** Everything this fix must move with, derived from the node's own graph edges. */
 export function linkedTo(node: GraphNode): string[] {
   return [
     ...node.dependencies.map((d) => `Depends on ${d}`),

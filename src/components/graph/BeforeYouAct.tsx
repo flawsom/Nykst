@@ -263,7 +263,7 @@ function EnvelopeBody({
         <EnvelopeSection
           icon={ChevronRight}
           title="What tends to move with it"
-          subtitle="Repeated or inferred coupling—not a generic dependency list"
+          subtitle="Repeated or inferred coupling, not a generic dependency list"
         >
           <div className="space-y-2">
             {envelope.coChanged.length ? (
@@ -336,7 +336,7 @@ function EnvelopeBody({
               />
               <div>
                 <span className="font-medium">{item.label}</span>
-                <span className="text-muted-foreground"> — {item.detail}</span>
+                <span className="text-muted-foreground">: {item.detail}</span>
               </div>
             </div>
           ))}

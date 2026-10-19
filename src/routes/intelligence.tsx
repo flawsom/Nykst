@@ -30,7 +30,7 @@ import { NykstBrand } from "@/components/brand/NykstLogo";
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
     meta: [
-      { title: "Memory — Nykst" },
+      { title: "Memory · Nykst" },
       {
         name: "description",
         content: "Explore system memory, repository evidence, and work with Nykst Memory.",
@@ -324,7 +324,7 @@ function IntelligencePage() {
             Nothing is remembered until a repository is connected.
           </h1>
           <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
-            Memory is built from the stored analysis of your repository — commits, pull requests,
+            Memory is built from the stored analysis of your repository: commits, pull requests,
             issues and the import graph. There is no seeded example history, so this page stays
             empty until you connect GitHub.
           </p>

@@ -702,7 +702,7 @@ export function LiveGraphRagExplorer({
                           className="text-muted-foreground font-mono text-[10px]"
                         >
                           <span className="text-foreground">{ev.path}</span>
-                          {ev.line ? `:${ev.line}` : ""} — {ev.reason}
+                          {ev.line ? `:${ev.line}` : ""}: {ev.reason}
                         </div>
                       ))}
                     </div>

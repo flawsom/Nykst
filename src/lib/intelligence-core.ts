@@ -245,7 +245,7 @@ export function buildGroundedAiBrief(snapshot: RepositorySnapshot, query: string
   const issues = snapshot.issues?.length ?? 0;
   const prs = snapshot.pull_requests?.length ?? 0;
   const commits = snapshot.commits?.length ?? 0;
-  return `[Nykst AI Architect — grounded repository analysis]\n\nQuestion: ${query}\nArtifact: ${file.name}\nRepository: ${snapshot.repository?.full_name ?? "connected repository"}\n\nSystem evidence\n• ${files} files indexed into the system map\n• ${commits} commits and ${prs} pull requests available for change context\n• ${issues} issues available for problem and risk tracing\n\nInterpretation\n${file.summary} The safest next step is to inspect this artifact’s path in the graph, compare its recent changes, and review related open problems before modifying it. This answer is grounded in the latest repository snapshot of the connected repository.`;
+  return `[Nykst AI Architect: grounded repository analysis]\n\nQuestion: ${query}\nArtifact: ${file.name}\nRepository: ${snapshot.repository?.full_name ?? "connected repository"}\n\nSystem evidence\n• ${files} files indexed into the system map\n• ${commits} commits and ${prs} pull requests available for change context\n• ${issues} issues available for problem and risk tracing\n\nInterpretation\n${file.summary} The safest next step is to inspect this artifact’s path in the graph, compare its recent changes, and review related open problems before modifying it. This answer is grounded in the latest repository snapshot of the connected repository.`;
 }
 
 export { Cpu };

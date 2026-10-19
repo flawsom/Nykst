@@ -54,7 +54,7 @@ export interface GraphNode {
   };
 }
 
-/** Children of a real node. Nodes without children are leaves — nothing is generated. */
+/** Children of a real node. Nodes without children are leaves, nothing is generated. */
 export function childrenOf(node: GraphNode): GraphNode[] {
   if (node.children) return node.children;
   return [];

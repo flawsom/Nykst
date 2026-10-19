@@ -105,7 +105,7 @@ export function ConnectAiTools({ open, onClose }: { open: boolean; onClose: () =
             <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
               Let Claude Code, Cursor or any MCP client ask Nykst what a change will break before it
               writes code. It gets read-only access to the analysis of repositories you have
-              connected — never your GitHub token.
+              connected, never your GitHub token.
             </p>
           </div>
 
@@ -143,15 +143,15 @@ export function ConnectAiTools({ open, onClose }: { open: boolean; onClose: () =
             </p>
             <ul className="text-muted-foreground list-disc space-y-1 pl-4 text-xs">
               <li>
-                <span className="text-foreground font-mono">get_impact</span> — files, entry points
+                <span className="text-foreground font-mono">get_impact</span>: files, entry points
                 and tests affected by changing given paths
               </li>
               <li>
-                <span className="text-foreground font-mono">find_usages</span> — every line touching
+                <span className="text-foreground font-mono">find_usages</span>: every line touching
                 a table, external service or env var
               </li>
               <li>
-                <span className="text-foreground font-mono">get_architecture</span> — areas,
+                <span className="text-foreground font-mono">get_architecture</span>: areas,
                 services, data, hotspots and cycles
               </li>
               <li>

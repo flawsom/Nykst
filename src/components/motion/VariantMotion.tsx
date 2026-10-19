@@ -184,7 +184,7 @@ export function ScrambleText({
       const next = text
         .split("")
         .map((char, idx) => {
-          if (char === " " || char === "·" || char === "—" || idx < settledCount) return char;
+          if (char === " " || char === "·" || idx < settledCount) return char;
           return GLYPHS[(idx + frame * 3) % GLYPHS.length]!;
         })
         .join("");

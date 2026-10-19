@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Repository snapshots are service-role only, so the browser can never subscribe to the
 // table itself. Instead the server publishes a "an analysis was stored" signal on a
-// Realtime broadcast channel and clients react to it — the payload carries no repository
+// Realtime broadcast channel and clients react to it; the payload carries no repository
 // data, only the fact that the stored analysis changed.
 
 export const INGESTION_EVENT = "ingestion";

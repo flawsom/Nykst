@@ -123,7 +123,7 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
         severity: "error",
         line,
         title: "Unbounded retry loop",
-        why: `${node.label} fans out to ${node.blast.services} services — an unbounded loop here becomes a retry storm.`,
+        why: `${node.label} fans out to ${node.blast.services} services, so an unbounded loop here becomes a retry storm.`,
         fix: "Bound the loop with an attempt counter and backoff.",
         apply: (c) =>
           c
@@ -188,7 +188,7 @@ export function runVirtualCheck(code: string, node: GraphNode): VirtualRun {
       id: "no-export",
       severity: "error",
       line: 1,
-      title: "Nothing exported — the graph cannot attach this file",
+      title: "Nothing exported, the graph cannot attach this file",
       why: `Every file under ${node.label} attaches to the graph through its exported symbols.`,
       fix: "Export the entry symbol.",
       apply: (c) => c.replace(/^(\s*)(function|const|class)\s/m, "$1export $2 "),
@@ -343,7 +343,7 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   steps.push({
     label: "Async safety heuristic",
     status: "pending",
-    detail: "pattern match only — no tests are executed",
+    detail: "pattern match only, no tests are executed",
   });
   steps.push({
     label: "Check blast radius",
@@ -359,17 +359,17 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
   const errors = check.findings.filter((f) => f.severity === "error");
   const warnings = check.findings.filter((f) => f.severity === "warning");
 
-  // step 0 — parse
+  // step 0: parse
   const hasSyntax = /\bexport\b/.test(code) && /[{};:]/.test(code);
   steps[0]!.status = hasSyntax ? "ok" : "fail";
   if (!hasSyntax) {
-    steps[0]!.detail = "syntax error — no export or malformed code";
+    steps[0]!.detail = "syntax error, no export or malformed code";
     output.push("✗ Shape check failed: no export or code structure found");
   } else {
     output.push("✓ Has an export and code structure (not type-checked)");
   }
 
-  // step 1 — imports
+  // step 1: imports
   const importErrors = errors.filter((e) => e.id.startsWith("imp-"));
   steps[1]!.status = importErrors.length ? "fail" : "ok";
   if (importErrors.length) {
@@ -379,7 +379,7 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
     output.push("✓ All imports resolve within declared dependencies");
   }
 
-  // step 2 — tests
+  // step 2: tests
   const hasAsync = /\basync\b/.test(code);
   const hasTry = /try\s*\{/.test(code);
   if (hasAsync && !hasTry) {
@@ -394,23 +394,23 @@ export function simulateExecution(code: string, node: GraphNode, check: VirtualR
     output.push("✓ No async-safety issue matched (no tests were run)");
   }
 
-  // step 3 — blast radius
+  // step 3: blast radius
   const blastErrors = errors.filter((e) => e.id.startsWith("loop-") || e.id.startsWith("env-"));
   steps[3]!.status = blastErrors.length ? "fail" : warnings.length ? "warn" : "ok";
   if (blastErrors.length) {
     steps[3]!.detail = `${blastErrors.length} blast risk(s)`;
     output.push(`✗ ${blastErrors.length} finding(s) threaten ${node.blast.services} downstream services`);
   } else {
-    output.push(`✓ Blast radius contained — ${node.blast.level}`);
+    output.push(`✓ Blast radius contained: ${node.blast.level}`);
   }
 
-  // step 4 — fit
+  // step 4: fit
   steps[4]!.status = check.fits ? "ok" : "fail";
   if (check.fits) {
     output.push(`✓ No boundary violation found for ${node.label} by the static checks`);
   } else {
     steps[4]!.detail = `${errors.length} blocking error(s)`;
-    output.push(`✗ Does not fit ${node.label} — ${errors.length} structural error(s) block injection`);
+    output.push(`✗ Does not fit ${node.label}: ${errors.length} structural error(s) block injection`);
   }
 
   const passed = check.fits && hasSyntax && importErrors.length === 0 && blastErrors.length === 0;
