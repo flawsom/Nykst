@@ -87,7 +87,7 @@ Every number it reports is computed from real source, with file and line citatio
 
 <a id="why"></a>
 
-## Why Nykst
+## 🧠 Why Nykst
 
 Most "AI for code" tools chunk files into token windows, embed them into a vector store, and let a model guess which chunks are related. That works for prose. Software is not prose: it is a typed dependency graph that changes over time.
 
@@ -118,7 +118,7 @@ flawsom           src/lib           analysis           supabase          impact.
 
 <a id="features"></a>
 
-## Features
+## ✨ Features
 
 <table>
 <tr>
@@ -171,7 +171,7 @@ flawsom           src/lib           analysis           supabase          impact.
 
 <a id="screens"></a>
 
-## Screens
+## 📸 Screens
 
 Real captures from the running application. No mockups.
 
@@ -223,7 +223,7 @@ Real captures from the running application. No mockups.
 
 <a id="demo"></a>
 
-## Demo
+## 🎥 Demo
 
 <div align="center">
 
@@ -261,7 +261,7 @@ Real captures from the running application. No mockups.
 
 <a id="architecture"></a>
 
-## Architecture
+## 🏗 Architecture
 
 Three planes, one contract: the analysis core produces deterministic evidence, the app renders it, and the MCP endpoint serves the same evidence to agents.
 
@@ -373,7 +373,7 @@ sequenceDiagram
 
 <a id="tech-stack"></a>
 
-## Tech stack
+## 🛠 Tech stack
 
 <table>
 <tr><td width="18%"><b>Frontend</b></td><td>
@@ -427,7 +427,14 @@ sequenceDiagram
 <img src="https://img.shields.io/badge/bun%3Atest-000000?style=flat-square&logo=bun&logoColor=white" alt="bun:test" />
 <img src="https://img.shields.io/badge/tsc_noEmit-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="tsc" />
 <img src="https://img.shields.io/badge/ESLint_9-4B32C3?style=flat-square&logo=eslint&logoColor=white" alt="ESLint" />
+<img src="https://img.shields.io/badge/live_RLS_probes-3FCF8E?style=flat-square" alt="Live RLS probes" />
+</td></tr>
+<tr><td><b>Tools</b></td><td>
+<img src="https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+<img src="https://img.shields.io/badge/Wrangler-F38020?style=flat-square&logo=cloudflareworkers&logoColor=white" alt="Wrangler" />
 <img src="https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
+<img src="https://img.shields.io/badge/Mermaid-FF3670?style=flat-square&logo=mermaid&logoColor=white" alt="Mermaid" />
+<img src="https://img.shields.io/badge/analyze--local_CLI-8596A7?style=flat-square" alt="analyze-local CLI" />
 </td></tr>
 </table>
 
@@ -437,7 +444,7 @@ sequenceDiagram
 
 <a id="quick-start"></a>
 
-## Quick start
+## ⚡ Quick start
 
 ### Prerequisites
 
@@ -527,13 +534,21 @@ docker build -t nykst:latest .
 docker run -d --name nykst -p 8080:8080 --env-file .env.local nykst:latest
 ```
 
+### Production
+
+```bash
+bun run build          # emits .output (Nitro SSR) and .vercel/output
+```
+
+Then deploy `.output` with the command for your platform, listed under [Deployment](#deploy).
+
 <div align="right"><a href="#top">Back to top</a></div>
 
 ---
 
 <a id="structure"></a>
 
-## Project structure
+## 📁 Project structure
 
 ```text
 nykst-software-intellegence/
@@ -593,7 +608,7 @@ nykst-software-intellegence/
 
 <a id="env"></a>
 
-## Environment variables
+## 🔐 Environment variables
 
 | Variable | Required | Scope | Format | Description |
 | :--- | :---: | :--- | :--- | :--- |
@@ -624,7 +639,7 @@ nykst-software-intellegence/
 
 <a id="api"></a>
 
-## API reference
+## 📖 API reference
 
 **Base URL** `https://nykst.unifies.codes` (mirror `https://nykst.vercel.app`, local `http://localhost:8080`)
 
@@ -722,7 +737,7 @@ MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`,
 
 <a id="usage"></a>
 
-## Usage examples
+## 🎯 Usage examples
 
 ### Connect an agent
 
@@ -779,7 +794,7 @@ jq '{stats, cycles: (.cycles | length)}' /tmp/nykst-ast.json
 
 <a id="performance"></a>
 
-## Performance
+## 📊 Performance
 
 Measured on this repository with Bun 1.4.2, from a source checkout, because the analyzer needs the `src/` tree to resolve imports. A bundled deployment that ships without source analyzes the files it carries instead, so its counts are smaller. Reproduce any row with the command beside it.
 
@@ -804,13 +819,22 @@ npx lighthouse https://nykst.unifies.codes --preset=desktop --view
 npx lighthouse https://nykst.unifies.codes --preset=mobile --view
 ```
 
+| Lighthouse category | Target | How to check |
+| :--- | :--- | :--- |
+| Performance | 90 or higher on desktop | `npx lighthouse <url> --preset=desktop` |
+| Accessibility | 100, every image has `alt` and every control a name | same report, Accessibility tab |
+| Best practices | 100, HTTPS and no console errors | same report |
+| SEO | 100, unique title and description per route | same report |
+
+Scores are not asserted in CI: they depend on the region, the network, and the Supabase latency of your deployment. Run the two commands above against your own URL before claiming a number.
+
 <div align="right"><a href="#top">Back to top</a></div>
 
 ---
 
 <a id="testing"></a>
 
-## Testing
+## 🧪 Testing
 
 ```bash
 bun test ./tests              # unit and integration suites
@@ -834,7 +858,7 @@ The suite runs offline for the graph and connector tests. The schema test skips 
 
 <a id="deploy"></a>
 
-## Deployment
+## 🚀 Deployment
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
 
@@ -932,7 +956,7 @@ Use the multi-stage file from [Quick start](#quick-start). The runtime image onl
 
 <a id="contributing"></a>
 
-## Contributing
+## 🤝 Contributing
 
 Contributions that sharpen the analysis engine, widen language support, or improve the navigator are welcome.
 
@@ -955,7 +979,7 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 
 <a id="roadmap"></a>
 
-## Roadmap
+## 🗺 Roadmap
 
 - [x] Deterministic TypeScript AST compiler with alias and workspace resolution
 - [x] Iterative Tarjan SCC cycle detection
@@ -982,7 +1006,7 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 
 <a id="faq"></a>
 
-## FAQ
+## ❓ FAQ
 
 <details>
 <summary><b>How is this different from Cursor, Cody, or Greptile?</b></summary>
@@ -1044,7 +1068,7 @@ TypeScript and JavaScript are first class, including `.tsx`, path aliases, and w
 
 <a id="acknowledgements"></a>
 
-## Acknowledgements
+## 🙌 Acknowledgements
 
 - The **TypeScript team**, for the compiler API that makes a precise graph possible in a single pass.
 - **TanStack**, for Start and Router.
@@ -1059,7 +1083,7 @@ TypeScript and JavaScript are first class, including `.tsx`, path aliases, and w
 
 <a id="license"></a>
 
-## License
+## 📜 License
 
 Released under the [MIT License](LICENSE). Copyright (c) 2026 Nykst.
 
@@ -1069,7 +1093,7 @@ Released under the [MIT License](LICENSE). Copyright (c) 2026 Nykst.
 
 <a id="support"></a>
 
-## Support
+## ❤️ Support
 
 If Nykst saved you from a bad merge, a star helps other engineers find it.
 
