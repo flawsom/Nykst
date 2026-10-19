@@ -22,7 +22,7 @@ interface Props {
 }
 
 /** Above this many children the ring layout overlaps, so switch to a grid. */
-const DENSE_THRESHOLD = 14;
+const DENSE_THRESHOLD = 11;
 
 function truncate(s: string, max: number) {
   if (s.length <= max) return s;
@@ -115,6 +115,20 @@ export function GraphCanvas({
 
   const dense = children.length > DENSE_THRESHOLD;
   const points = useMemo(() => {
+    if (dense && children.length <= 18) {
+      // Two flanking columns keep 11–18 children readable without the ring overlapping.
+      // The first half reads down the left side, the second half down the right side.
+      const perColumn = Math.ceil(children.length / 2);
+      const top = 56;
+      const bottom = H - 56;
+      return children.map((child, i) => {
+        const column = i < perColumn ? -1 : 1;
+        const row = i < perColumn ? i : i - perColumn;
+        const rows = i < perColumn ? perColumn : children.length - perColumn;
+        const step = rows > 1 ? (bottom - top) / (rows - 1) : 0;
+        return { node: child, x: cx + column * 430, y: top + row * step };
+      });
+    }
     if (dense) {
       // Grid of slots around the center, nearest first, so the most important
       // children (they arrive sorted) sit closest to the node they belong to.

@@ -18,6 +18,7 @@ import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as ApiMcpRouteImport } from './routes/api.mcp'
 import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
@@ -25,6 +26,7 @@ import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
+import { Route as ApiAnalysisSelfRouteImport } from './routes/api.analysis.self'
 import { Route as ApiIntegrationsConnectorsRouteImport } from './routes/api.integrations.connectors'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
@@ -91,6 +93,11 @@ const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
   path: '/api/diagnosis',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
   id: '/api/mcp',
   path: '/api/mcp',
@@ -124,6 +131,11 @@ const ApiAiKeyRoute = ApiAiKeyRouteImport.update({
 const ApiAiTestRoute = ApiAiTestRouteImport.update({
   id: '/api/ai/test',
   path: '/api/ai/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAnalysisSelfRoute = ApiAnalysisSelfRouteImport.update({
+  id: '/api/analysis/self',
+  path: '/api/analysis/self',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsConnectorsRoute =
@@ -255,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -262,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
@@ -293,6 +307,7 @@ export interface FileRoutesByTo {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -300,6 +315,7 @@ export interface FileRoutesByTo {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
@@ -332,6 +348,7 @@ export interface FileRoutesById {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -339,6 +356,7 @@ export interface FileRoutesById {
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
+  '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
@@ -372,6 +390,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/health'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -379,6 +398,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/analysis/self'
     | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
@@ -410,6 +430,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/health'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -417,6 +438,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/analysis/self'
     | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
@@ -448,6 +470,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/admin/payments'
     | '/api/diagnosis'
+    | '/api/health'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -455,6 +478,7 @@ export interface FileRouteTypes {
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
+    | '/api/analysis/self'
     | '/api/integrations/connectors'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
@@ -487,6 +511,7 @@ export interface RootRouteChildren {
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiMcpRoute: typeof ApiMcpRoute
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
@@ -494,6 +519,7 @@ export interface RootRouteChildren {
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
+  ApiAnalysisSelfRoute: typeof ApiAnalysisSelfRoute
   ApiIntegrationsConnectorsRoute: typeof ApiIntegrationsConnectorsRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -580,6 +606,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDiagnosisRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mcp': {
       id: '/api/mcp'
       path: '/api/mcp'
@@ -627,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/test'
       fullPath: '/api/ai/test'
       preLoaderRoute: typeof ApiAiTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/analysis/self': {
+      id: '/api/analysis/self'
+      path: '/api/analysis/self'
+      fullPath: '/api/analysis/self'
+      preLoaderRoute: typeof ApiAnalysisSelfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/connectors': {
@@ -794,6 +834,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiMcpRoute: ApiMcpRoute,
   ApiMcpTokensRoute: ApiMcpTokensRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
@@ -801,6 +842,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
+  ApiAnalysisSelfRoute: ApiAnalysisSelfRoute,
   ApiIntegrationsConnectorsRoute: ApiIntegrationsConnectorsRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:

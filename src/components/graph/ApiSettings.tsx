@@ -4,11 +4,11 @@ import { fetchKeyStatus, type KeyStatus } from "@/lib/ai-client";
 import { cn } from "@/lib/utils";
 
 const PROVIDERS = [
+  { id: "custom", label: "Nara / OpenRouter", hint: "nara_... or sk-or-...", model: "agnes-2.5-flash" },
   { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
+  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
   { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.5-flash-lite" },
-  { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-chat" },
-  { id: "custom", label: "OpenRouter", hint: "sk-or-v1-...", model: "openrouter/free" },
+  { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-flash" },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]["id"];
@@ -75,7 +75,7 @@ function ApiSettingsDialog({
     PROVIDERS.find((item) => item.id === status.provider)?.label ?? status.provider;
 
   useEffect(() => {
-    setApiBaseUrl(provider === "custom" ? "https://openrouter.ai/api/v1" : "");
+    setApiBaseUrl(provider === "custom" ? "https://router.bynara.id/v1" : "");
     setModel(selected.model);
     setAdvanced(false);
     setMessage(null);
@@ -150,16 +150,20 @@ function ApiSettingsDialog({
         {status.configured && (
           <div className="border-primary/25 bg-primary/5 mt-4 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
             <span className="flex items-center gap-2 text-xs">
-              <ShieldCheck className="text-primary size-4" /> {connectedLabel} connected · ends in{" "}
-              {status.last4}
+              <ShieldCheck className="text-primary size-4" />{" "}
+              {status.platformDefault
+                ? `Nara Router (${status.model ?? "agnes-2.5-flash"}) active · platform key · ends in ${status.last4}`
+                : `${connectedLabel} connected · ends in ${status.last4}`}
             </span>
-            <button
-              onClick={remove}
-              disabled={busy !== null}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[11px]"
-            >
-              <Trash2 className="size-3.5" /> Remove
-            </button>
+            {!status.platformDefault && (
+              <button
+                onClick={remove}
+                disabled={busy !== null}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[11px]"
+              >
+                <Trash2 className="size-3.5" /> Remove
+              </button>
+            )}
           </div>
         )}
 
@@ -190,17 +194,18 @@ function ApiSettingsDialog({
 
         {provider === "custom" && (
           <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
-            <p className="text-xs font-medium">OpenRouter — one key, many models</p>
+            <p className="text-xs font-medium">Nara Router & OpenAI-compatible endpoints</p>
             <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-              Paste your OpenRouter key below. Nykst automatically uses the OpenRouter endpoint and
-              its free router, so you do not need to remember any links or model names.
+              Defaults to <code className="text-primary font-mono">https://router.bynara.id/v1</code>{" "}
+              with <code className="text-primary font-mono">agnes-2.5-flash</code>. Expand advanced
+              settings to switch to OpenRouter or any custom endpoint.
             </p>
             <button
               type="button"
               onClick={() => setAdvanced((value) => !value)}
               className="text-primary mt-2 text-[11px] font-medium hover:underline"
             >
-              {advanced ? "Hide advanced settings" : "Use another compatible provider"}
+              {advanced ? "Hide advanced settings" : "Configure endpoint or model"}
             </button>
             {advanced && (
               <div className="mt-3 grid gap-3">

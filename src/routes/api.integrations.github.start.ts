@@ -20,10 +20,13 @@ export const Route = createFileRoute("/api/integrations/github/start")({
             },
           });
         } catch (error) {
-          return new Response(
-            error instanceof Error ? error.message : "GitHub OAuth is not configured",
-            { status: 503 },
-          );
+          // A missing client secret (or a bad configuration) should land the visitor back on
+          // the landing page with a readable notice, not on a bare 503 text response.
+          console.error("GitHub OAuth start failed:", error);
+          return new Response(null, {
+            status: 302,
+            headers: { Location: "/?github=failed&reason=oauth_not_configured" },
+          });
         }
       },
     },

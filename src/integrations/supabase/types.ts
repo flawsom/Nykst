@@ -308,35 +308,169 @@ export type Database = {
       user_ai_keys: {
         Row: {
           ai_provider: string
+          api_base_url: string | null
           auth_provider: string
           created_at: string
           id: string
           key_ciphertext: string
           key_last4: string
+          model_name: string | null
           provider_user_id: string
           updated_at: string
         }
         Insert: {
           ai_provider: string
+          api_base_url?: string | null
           auth_provider?: string
           created_at?: string
           id?: string
           key_ciphertext: string
           key_last4: string
+          model_name?: string | null
           provider_user_id: string
           updated_at?: string
         }
         Update: {
           ai_provider?: string
+          api_base_url?: string | null
           auth_provider?: string
           created_at?: string
           id?: string
           key_ciphertext?: string
           key_last4?: string
+          model_name?: string | null
           provider_user_id?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      integration_connections: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          external_id: string
+          id: string
+          kind: string
+          label: string
+          meta: Json
+          provider: string
+          provider_user_id: string
+          secrets: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          external_id: string
+          id?: string
+          kind: string
+          label?: string
+          meta?: Json
+          provider?: string
+          provider_user_id: string
+          secrets: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          external_id?: string
+          id?: string
+          kind?: string
+          label?: string
+          meta?: Json
+          provider?: string
+          provider_user_id?: string
+          secrets?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nykst_subscriptions: {
+        Row: {
+          active_until: string | null
+          created_at: string
+          id: string
+          plan: string
+          provider_user_id: string
+          provider_username: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          plan?: string
+          provider_user_id: string
+          provider_username: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          plan?: string
+          provider_user_id?: string
+          provider_username?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nykst_payment_submissions: {
+        Row: {
+          amount_npr: number
+          created_at: string
+          id: string
+          payer_note: string | null
+          plan: string
+          provider: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          subscription_id: string
+          transaction_reference: string
+        }
+        Insert: {
+          amount_npr?: number
+          created_at?: string
+          id?: string
+          payer_note?: string | null
+          plan?: string
+          provider?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          subscription_id: string
+          transaction_reference: string
+        }
+        Update: {
+          amount_npr?: number
+          created_at?: string
+          id?: string
+          payer_note?: string | null
+          plan?: string
+          provider?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          subscription_id?: string
+          transaction_reference?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nykst_payment_submissions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "nykst_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

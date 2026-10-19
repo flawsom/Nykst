@@ -32,13 +32,20 @@ export async function askNykstAi(
   }
 }
 
-export type KeyStatus = { configured: boolean; provider: string | null; last4: string | null };
+export type KeyStatus = {
+  configured: boolean;
+  provider: string | null;
+  last4: string | null;
+  platformDefault?: boolean;
+  model?: string | null;
+};
 
 export async function fetchKeyStatus(): Promise<KeyStatus> {
   try {
     const res = await fetch("/api/ai/key");
-    if (!res.ok) return { configured: false, provider: null, last4: null };
-    return (await res.json()) as KeyStatus;
+    const data = (await res.json()) as KeyStatus;
+    if (typeof data?.configured === "boolean") return data;
+    return { configured: false, provider: null, last4: null };
   } catch {
     return { configured: false, provider: null, last4: null };
   }

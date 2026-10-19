@@ -81,14 +81,8 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
     };
 
     try {
-      try {
-        const existing = JSON.parse(localStorage.getItem("nykst.advantages_submissions") || "[]");
-        existing.push(payload);
-        localStorage.setItem("nykst.advantages_submissions", JSON.stringify(existing));
-      } catch (storageError) {
-        console.error("Local storage backup error:", storageError);
-      }
-
+      // Written straight to the database with row-level security — no browser-side copy of
+      // the submitted contact details.
       const { error: supabaseError } = await supabase.from("advantages_feedback").insert(payload);
 
       if (supabaseError) {

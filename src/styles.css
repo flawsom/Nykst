@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Nykst design system — Apple-level ultra-premium dark aesthetic.
+ * Nykst design system — Apple + Vercel + Variant ultra-premium dark aesthetic.
  * All colors are oklch semantic tokens.
  */
 
@@ -51,26 +51,26 @@
 :root {
   --radius: 1rem;
 
-  --background: oklch(0.13 0.01 250);
-  --foreground: oklch(0.97 0.002 250);
+  --background: oklch(0.125 0.012 250);
+  --foreground: oklch(0.975 0.002 250);
 
-  --surface: oklch(0.17 0.012 252);
-  --surface-2: oklch(0.21 0.015 252);
+  --surface: oklch(0.165 0.014 252);
+  --surface-2: oklch(0.205 0.016 252);
 
-  --card: oklch(0.17 0.012 252 / 0.85);
-  --card-foreground: oklch(0.97 0.002 250);
-  --popover: oklch(0.17 0.012 252 / 0.95);
-  --popover-foreground: oklch(0.97 0.002 250);
+  --card: oklch(0.165 0.014 252 / 0.86);
+  --card-foreground: oklch(0.975 0.002 250);
+  --popover: oklch(0.165 0.014 252 / 0.96);
+  --popover-foreground: oklch(0.975 0.002 250);
 
-  --primary: oklch(0.82 0.14 185);
-  --primary-foreground: oklch(0.13 0.02 250);
-  --primary-glow: oklch(0.88 0.12 175);
+  --primary: oklch(0.83 0.145 182);
+  --primary-foreground: oklch(0.125 0.02 250);
+  --primary-glow: oklch(0.89 0.125 175);
 
-  --secondary: oklch(0.22 0.015 252);
-  --secondary-foreground: oklch(0.95 0.002 250);
+  --secondary: oklch(0.215 0.016 252);
+  --secondary-foreground: oklch(0.955 0.002 250);
 
-  --muted: oklch(0.22 0.015 252);
-  --muted-foreground: oklch(0.65 0.012 250);
+  --muted: oklch(0.215 0.016 252);
+  --muted-foreground: oklch(0.66 0.013 250);
 
   --accent: oklch(0.75 0.14 275);
   --accent-foreground: oklch(0.13 0.02 250);
@@ -78,25 +78,25 @@
   --destructive: oklch(0.65 0.2 22);
   --destructive-foreground: oklch(0.97 0.005 250);
 
-  --border: oklch(0.27 0.015 252);
-  --input: oklch(0.27 0.015 252);
-  --ring: oklch(0.82 0.14 185);
+  --border: oklch(0.265 0.016 252);
+  --input: oklch(0.265 0.016 252);
+  --ring: oklch(0.83 0.145 182);
   --grid: oklch(0.22 0.015 252);
 
-  --node-domain: oklch(0.82 0.14 185);
+  --node-domain: oklch(0.83 0.145 182);
   --node-capability: oklch(0.78 0.14 230);
   --node-service: oklch(0.76 0.14 275);
   --node-module: oklch(0.81 0.14 325);
   --node-file: oklch(0.84 0.13 90);
 
   --gradient-hero: radial-gradient(
-    ellipse 80% 60% at 50% -10%,
-    color-mix(in oklab, var(--primary) 22%, transparent),
-    transparent 70%
+    ellipse 85% 60% at 50% -10%,
+    color-mix(in oklab, var(--primary) 24%, transparent),
+    transparent 72%
   );
-  --shadow-glow: 0 0 50px -10px color-mix(in oklab, var(--primary) 35%, transparent);
-  --shadow-panel: 0 30px 70px -20px oklch(0 0 0 / 0.8), 0 0 1px 1px oklch(1 0 0 / 0.08);
-  --shadow-card-3d: 0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  --shadow-glow: 0 0 50px -10px color-mix(in oklab, var(--primary) 38%, transparent);
+  --shadow-panel: 0 30px 70px -20px oklch(0 0 0 / 0.82), 0 0 1px 1px oklch(1 0 0 / 0.08);
+  --shadow-card-3d: 0 20px 40px -15px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 @layer base {
@@ -194,6 +194,33 @@
   }
 }
 
+@keyframes nykst-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes nykst-grain {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-2%, 2%);
+  }
+  40% {
+    transform: translate(2%, -1%);
+  }
+  60% {
+    transform: translate(-1%, -2%);
+  }
+  80% {
+    transform: translate(1%, 2%);
+  }
+}
+
 @utility animate-node-in {
   animation: nykst-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -209,6 +236,15 @@
 @utility edge-flow {
   stroke-dasharray: 6 10;
   animation: nykst-dash 1.5s linear infinite;
+}
+
+@utility animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: nykst-marquee 38s linear infinite;
+  &:hover {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes nykst-aurora {
@@ -244,4 +280,9 @@
   &:active {
     transform: translateY(0) scale(0.98);
   }
+}
+
+@utility film-grain {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 0);
+  background-size: 24px 24px;
 }

@@ -9,26 +9,6 @@ import { impactBriefing } from "@/lib/analysis/context";
 import { VirtualCodeLab } from "./VirtualCodeLab";
 import { cn } from "@/lib/utils";
 
-/* deterministic scoring, identical approach to the dossier */
-function score(id: string) {
-  let h = 2166136261;
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967296;
-}
-
-const ISSUE_KINDS = [
-  ["Cyclic dependency detected", "Architecture", "High"],
-  ["Missing test coverage on error paths", "Quality", "Medium"],
-  ["Deprecated API still referenced", "Maintenance", "Medium"],
-  ["Unbounded retry loop", "Reliability", "Critical"],
-  ["Secrets read at module scope", "Security", "High"],
-  ["Hot path allocates per request", "Performance", "Medium"],
-  ["Ownership unclear — no CODEOWNERS entry", "Governance", "Low"],
-] as const;
-
 /** Plain-language consequence of each issue class, for non-technical roles. */
 const BUSINESS_MEANING: Record<string, string> = {
   "Cyclic dependency detected": "Teams block each other — shipping here is slower than it looks.",
@@ -41,20 +21,13 @@ const BUSINESS_MEANING: Record<string, string> = {
   "Ownership unclear — no CODEOWNERS entry": "No accountable team — incidents here have no owner.",
 };
 
-function issuesOf(n: GraphNode): (IssueLike & { severity: string })[] {
-  const s = score(`${n.id}#issues`);
-  const count = 2 + Math.floor(s * 4);
-  return Array.from({ length: count }, (_, i) => {
-    const offset = Math.floor(score(`${n.id}#issue-kind-${i}-${i * 7 + 3}`) * ISSUE_KINDS.length);
-    const k = ISSUE_KINDS[(offset + i) % ISSUE_KINDS.length]!;
-    return {
-      id: `${n.id}-issue-${i}`,
-      title: k[0],
-      area: k[1],
-      severity: k[2] as string,
-      owner: n.owners[i % n.owners.length] ?? n.owners[0]!,
-    };
-  });
+/**
+ * Problems are never generated. They come from the repository analysis
+ * (`traceRepositoryProblems`) — with no repository attached there is nothing to list,
+ * so this returns an empty set instead of inventing findings.
+ */
+function issuesOf(_n: GraphNode): (IssueLike & { severity: string })[] {
+  return [];
 }
 
 const sevTone: Record<string, string> = {
@@ -97,14 +70,6 @@ function evidenceSources(node: GraphNode, kids: GraphNode[]) {
   return { nodes, files };
 }
 
-const INCIDENT_PATTERNS = [
-  "Retry storm during partner degradation",
-  "Auth token expiry cascade",
-  "Cache stampede after deploy",
-  "Schema drift on a shared contract",
-  "Config rollout with no kill switch",
-];
-
 function incidentsOf(node: GraphNode, snapshot?: RepositorySnapshot) {
   if (snapshot) {
     const nodePath = node.detail?.path;
@@ -125,18 +90,8 @@ function incidentsOf(node: GraphNode, snapshot?: RepositorySnapshot) {
         minutes: undefined,
       }));
   }
-  const count = 1 + Math.floor(score(`${node.id}#inc`) * 3);
-  return Array.from({ length: count }, (_, i) => {
-    const p =
-      INCIDENT_PATTERNS[Math.floor(score(`${node.id}#inc-${i}`) * INCIDENT_PATTERNS.length)]!;
-    const days = 8 + Math.floor(score(`${node.id}#inc-age-${i}`) * 300);
-    return {
-      id: `${node.id}-inc-${i}`,
-      pattern: p,
-      when: `${days}d ago`,
-      minutes: 12 + Math.floor(score(`${node.id}#inc-min-${i}`) * 180),
-    };
-  });
+  // No snapshot means no recorded history: report nothing rather than inventing incidents.
+  return [];
 }
 
 /* ---------------- role voice ---------------- */
@@ -536,7 +491,7 @@ export function MentorPanel({
     const context = repositorySnapshot
       ? JSON.stringify(repositoryContext(repositorySnapshot, node, related, issues))
       : [
-          "No GitHub snapshot is connected. This is demo graph data, not repository evidence.",
+          "No repository snapshot is attached to this node.",
           `Selected ${kindLabel[node.kind]}: ${node.label}`,
           `Summary: ${node.summary}`,
           `Owners: ${node.owners.join(", ") || "unassigned"}`,
@@ -552,8 +507,8 @@ export function MentorPanel({
       const answer = ai.ok
         ? ai.answer
         : repositorySnapshot
-          ? `I could not reach the connected AI provider. I will not fabricate a repository answer. Available live evidence includes ${repositorySnapshot.files?.length ?? 0} files, ${repositorySnapshot.commits?.length ?? 0} commits, ${repositorySnapshot.pull_requests?.length ?? 0} pull requests, and ${repositorySnapshot.issues?.length ?? 0} issues.`
-          : res.text;
+          ? `No answer was generated because the AI provider could not be reached. Nothing is written in its place — the live evidence for this node is still listed below (${repositorySnapshot.commits?.length ?? 0} commits, ${repositorySnapshot.pull_requests?.length ?? 0} pull requests, ${repositorySnapshot.issues?.length ?? 0} issues in the snapshot).`
+          : "No repository analysis is attached to this node, so there is no evidence to answer from.";
       if (!ai.ok) setAskError(ai.error);
       setThread((t) => [...t, { q: query, a: answer, evidence: res.evidence }]);
       memory.addTurn({

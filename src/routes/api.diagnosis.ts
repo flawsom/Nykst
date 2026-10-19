@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { AiKeyError, chatWithUserKey, currentUserId, loadUserKey } from "@/lib/byok.server";
+import {
+  AiKeyError,
+  chatWithUserKey,
+  currentUserId,
+  loadUserKey,
+  platformKey,
+} from "@/lib/byok.server";
 
 const SYSTEM = `You are Nykst Evidence Engine. Analyze only the supplied evidence. Never claim certainty when the evidence is incomplete. Return strict JSON with this shape: {"title": string, "confidence": "low"|"medium"|"high", "explanation": string, "evidence": [{"source": string, "detail": string}], "dependencies": string[], "recommendedNextSteps": string[]}. Every evidence item must identify its source. If runtime evidence is absent, explicitly say that this is a repository-grounded candidate, not a proven production root cause.`;
 
@@ -43,7 +49,7 @@ export const Route = createFileRoute("/api/diagnosis")({
           const body = (await request.json()) as { signalId?: string };
           if (!body.signalId)
             return Response.json({ error: "A signal id is required." }, { status: 400 });
-          const key = await loadUserKey(userId);
+          const key = (await loadUserKey(userId)) ?? platformKey();
           if (!key)
             return Response.json(
               { error: "Connect an AI provider before diagnosing a signal." },

@@ -4,7 +4,7 @@ import {
   chatWithUserKey,
   currentUserId,
   loadUserKey,
-  platformGeminiKey,
+  platformKey,
 } from "@/lib/byok.server";
 
 const SYSTEM = [
@@ -23,21 +23,17 @@ export const Route = createFileRoute("/api/ai/chat")({
     handlers: {
       POST: async ({ request }) => {
         const userId = await currentUserId(request);
-        if (!userId)
-          return Response.json(
-            { error: "Connect your organization to use AI features.", needsKey: false },
-            { status: 401 },
-          );
-
-        const personalKey = await loadUserKey(userId);
-        const key = personalKey ?? platformGeminiKey();
+        const personalKey = userId ? await loadUserKey(userId) : null;
+        const key = personalKey ?? platformKey();
         if (!key)
           return Response.json(
             {
-              error: "Add your AI provider key in API Settings to run code intelligence and chat.",
-              needsKey: true,
+              error: userId
+                ? "Add your AI provider key in API Settings to run code intelligence and chat."
+                : "Connect your organization or configure a provider key to use AI features.",
+              needsKey: Boolean(userId),
             },
-            { status: 428 },
+            { status: userId ? 428 : 401 },
           );
 
         try {

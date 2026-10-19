@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Network,
   ShieldAlert,
@@ -16,8 +16,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { buildGroundedAiBrief, type CoreModule, type CoreFile } from "@/lib/intelligence-core";
+import { askNykstAi } from "@/lib/ai-client";
+import {
+  buildCoreModules,
+  buildGroundedAiBrief,
+  type CoreModule,
+  type CoreFile,
+} from "@/lib/intelligence-core";
 import type { RepositorySnapshot } from "@/lib/repository-graph";
+import { subscribeToIngestion } from "@/lib/realtime";
+import { NykstBrand } from "@/components/brand/NykstLogo";
 
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
@@ -203,25 +211,61 @@ function IntelligencePage() {
   );
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [realtimeTopic, setRealtimeTopic] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("demo") === "1") return;
-    fetch("/api/integrations/github/latest")
-      .then(async (response) => {
-        if (!response.ok) return null;
+  /** Loads the newest stored analysis, or falls back to the live self-indexed AST of this repository. */
+  const loadLatest = useCallback(async () => {
+    try {
+      const response = await fetch("/api/integrations/github/latest", { cache: "no-store" });
+      if (response.ok) {
         const data = (await response.json()) as {
           ingestion?: { payload?: RepositorySnapshot } | null;
+          realtime?: { topic?: string };
         };
-        return data.ingestion?.payload ?? null;
-      })
-      .then((snapshot) => {
-        if (!snapshot) return;
-        setRepositorySnapshot(snapshot);
-        // Keep the six memory types as the stable navigation model in live mode too.
-        // Repository evidence grounds the Memory query below without replacing the taxonomy.
-      })
-      .catch(() => undefined);
+        if (data.realtime?.topic) setRealtimeTopic(data.realtime.topic);
+        const snapshot = data.ingestion?.payload;
+        if (snapshot) {
+          setRepositorySnapshot(snapshot);
+          const real = buildCoreModules(snapshot);
+          const first = real.find((mod) => mod.files.length > 0);
+          if (first) {
+            setModules(real);
+            setActiveModule(first);
+            setActiveFile(first.files[0]!);
+          }
+          return;
+        }
+      }
+      // Fall back to live self-indexed AST of this repository
+      const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
+      if (selfRes.ok) {
+        const selfData = (await selfRes.json()) as { snapshotPayload?: RepositorySnapshot };
+        if (selfData.snapshotPayload) {
+          setRepositorySnapshot(selfData.snapshotPayload);
+          const real = buildCoreModules(selfData.snapshotPayload);
+          const first = real.find((mod) => mod.files.length > 0);
+          if (first) {
+            setModules(real);
+            setActiveModule(first);
+            setActiveFile(first.files[0]!);
+          }
+        }
+      }
+    } catch {
+      // No repository evidence, no memory: the empty state stands.
+    }
   }, []);
+
+  useEffect(() => {
+    void loadLatest();
+  }, [loadLatest]);
+
+  // Real-time push: the server broadcasts the moment a new analysis is stored, so this
+  // page never shows a superseded snapshot once a repository is connected.
+  useEffect(
+    () => subscribeToIngestion(realtimeTopic, () => void loadLatest()),
+    [realtimeTopic, loadLatest],
+  );
 
   const handleSelectModule = (mod: MemoryModule | CoreModule) => {
     setActiveModule(mod);
@@ -229,18 +273,98 @@ function IntelligencePage() {
     setAiResult(null);
   };
 
-  const handleAskAi = () => {
+  const memoryGuide = MEMORY_GUIDE[activeModule.id];
+
+  const handleAskAi = async () => {
+    if (!repositorySnapshot) return;
     setLoading(true);
     setAiResult(null);
-    window.setTimeout(() => {
-      setLoading(false);
-      setAiResult(
-        repositorySnapshot
-          ? buildGroundedAiBrief(repositorySnapshot, query, activeFile)
-          : `[Nykst Memory Analysis — ${activeFile.name}]\n1. File Purpose: ${activeFile.summary}\n2. Structural Relevance: Directly tied to ${activeModule.subtitle}.\n3. Verification Status: Demo memory only; connect GitHub to ground this analysis in a real repository.`,
-      );
-    }, 450);
+    const evidence = buildGroundedAiBrief(repositorySnapshot, query, activeFile);
+    const answer = await askNykstAi(
+      [
+        query,
+        "",
+        "Answer only from the supplied repository evidence and cite the file paths, commit SHAs, pull request and issue numbers that appear in it.",
+        "Never invent files, owners, incidents, dates or history that the evidence does not contain. If the evidence is insufficient, say exactly what is missing.",
+      ].join("\n"),
+      evidence,
+    );
+    setLoading(false);
+    setAiResult(
+      answer.ok
+        ? answer.answer
+        : `No AI provider answered this request (${answer.error}). The repository evidence sent with it is reproduced below, with nothing added.\n\n${evidence}`,
+    );
   };
+
+  if (!repositorySnapshot) {
+    return (
+      <main className="bg-background text-foreground flex min-h-screen flex-col">
+        <header className="border-border bg-card/90 sticky top-0 z-50 flex items-center justify-between gap-3 border-b px-3 py-3 backdrop-blur sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <Link
+              to="/graph"
+              className="border-border bg-surface hover:bg-surface-2 flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-medium transition-colors sm:px-3 sm:text-xs"
+            >
+              <ArrowLeft className="size-3.5" /> Back to Graph
+            </Link>
+            <span className="glow-ring bg-primary block size-2 rounded-full" />
+            <span className="text-foreground truncate text-sm font-semibold">Nykst Memory</span>
+          </div>
+          <span className="text-muted-foreground font-mono text-[10px] sm:text-xs">
+            no repository connected
+          </span>
+        </header>
+
+        <section className="mx-auto w-full max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
+          <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
+            System memory
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+            Nothing is remembered until a repository is connected.
+          </h1>
+          <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+            Memory is built from the stored analysis of your repository — commits, pull requests,
+            issues and the import graph. There is no seeded example history, so this page stays
+            empty until you connect GitHub.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a
+              href="/api/integrations/github/start"
+              className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-xs font-semibold"
+            >
+              Connect GitHub
+            </a>
+            <Link to="/graph" className="text-primary text-xs underline">
+              See what the analysis contains
+            </Link>
+          </div>
+
+          <div className="border-border mt-10 border-t pt-8">
+            <h2 className="text-lg font-semibold tracking-tight">
+              The six memory types Nykst builds from that analysis
+            </h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {MEMORIES.map((memory) => (
+                <div key={memory.id} className="border-border bg-card/70 rounded-xl border p-4">
+                  <div className="flex items-center gap-2">
+                    <memory.icon className="text-primary size-4" />
+                    <p className="text-sm font-medium">{memory.title}</p>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 font-mono text-[10px]">
+                    {memory.subtitle}
+                  </p>
+                  <p className="text-muted-foreground mt-2 text-[11px] leading-relaxed">
+                    {memory.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col">
@@ -254,15 +378,14 @@ function IntelligencePage() {
             <ArrowLeft className="size-3.5" /> Back to Graph
           </Link>
           <div className="flex items-center gap-2.5">
-            <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="truncate text-sm font-semibold text-foreground">Nykst Memory</span>
+            <NykstBrand subtitle="Memory" size={26} />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-[10px] text-emerald-400 sm:px-3 sm:text-xs">
-            <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            24/7 Live Sync Active
+          <span className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 font-mono text-[10px] sm:px-3 sm:text-xs">
+            <span className="bg-primary size-1.5 rounded-full" />
+            {repositorySnapshot.repository?.full_name ?? "connected repository"}
           </span>
         </div>
       </header>
@@ -426,14 +549,14 @@ function IntelligencePage() {
                   Instant Codebase QA
                 </span>
               </div>
-              {MEMORY_GUIDE[activeModule.id] && (
+              {memoryGuide && (
                 <div className="grid gap-3 border-t border-border pt-3 text-[11px] md:grid-cols-3">
                   <div>
                     <span className="text-primary font-mono uppercase tracking-wider">
                       What it does
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">
-                      {MEMORY_GUIDE[activeModule.id].does}
+                      {memoryGuide.does}
                     </p>
                   </div>
                   <div>
@@ -441,7 +564,7 @@ function IntelligencePage() {
                       Data source
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">
-                      {MEMORY_GUIDE[activeModule.id].source}
+                      {memoryGuide.source}
                     </p>
                   </div>
                   <div>
@@ -449,7 +572,7 @@ function IntelligencePage() {
                       Used for
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">
-                      {MEMORY_GUIDE[activeModule.id].usedFor}
+                      {memoryGuide.usedFor}
                     </p>
                   </div>
                 </div>

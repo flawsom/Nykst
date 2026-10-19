@@ -4,14 +4,23 @@ import {
   deleteUserKey,
   isAiProvider,
   loadUserKey,
+  platformKey,
   saveUserKey,
   testProviderKey,
   AiKeyError,
 } from "@/lib/byok.server";
 
 function unauthorized() {
+  const fallback = platformKey();
   return Response.json(
-    { error: "Connect your GitHub organization first so we can store your key securely." },
+    {
+      configured: Boolean(fallback),
+      provider: fallback?.provider ?? null,
+      last4: fallback?.last4 ?? null,
+      platformDefault: Boolean(fallback),
+      model: fallback?.model ?? null,
+      error: "Connect your GitHub organization first so we can store a personal key securely.",
+    },
     { status: 401 },
   );
 }
@@ -22,11 +31,14 @@ export const Route = createFileRoute("/api/ai/key")({
       GET: async ({ request }) => {
         const userId = await currentUserId(request);
         if (!userId) return unauthorized();
-        const key = await loadUserKey(userId);
+        const personal = await loadUserKey(userId);
+        const active = personal ?? platformKey();
         return Response.json({
-          configured: Boolean(key),
-          provider: key?.provider ?? null,
-          last4: key?.last4 ?? null,
+          configured: Boolean(active),
+          provider: active?.provider ?? null,
+          last4: active?.last4 ?? null,
+          platformDefault: !personal && Boolean(active),
+          model: active?.model ?? null,
         });
       },
       POST: async ({ request }) => {

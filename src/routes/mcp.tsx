@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { NykstBrand } from "@/components/brand/NykstLogo";
 import { CodeBlock } from "@/components/mcp/CodeBlock";
 import { TokenPanel } from "@/components/mcp/TokenPanel";
 import {
@@ -87,8 +88,7 @@ function McpGuidePage() {
     <main className="bg-background text-foreground min-h-screen">
       <header className="border-border bg-card/80 sticky top-0 z-20 flex items-center justify-between border-b px-4 py-3 backdrop-blur sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="glow-ring bg-primary size-2 rounded-full" />
-          <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
+          <NykstBrand subtitle="MCP Protocol" size={26} />
         </Link>
         <nav className="flex items-center gap-4 text-xs">
           <Link to="/graph" className="text-muted-foreground hover:text-foreground">

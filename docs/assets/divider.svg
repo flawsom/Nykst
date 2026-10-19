@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="30" viewBox="0 0 1200 30" role="img" aria-label="Section divider">
+  <defs>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0"/>
+      <stop offset="35%" stop-color="#2dd4bf" stop-opacity="0.55"/>
+      <stop offset="50%" stop-color="#5eead4" stop-opacity="0.95"/>
+      <stop offset="65%" stop-color="#2dd4bf" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="14" width="1200" height="1.5" fill="url(#line)"/>
+  <circle cx="600" cy="15" r="4" fill="#5eead4"/>
+  <circle cx="600" cy="15" r="9" fill="#5eead4" fill-opacity="0.12"/>
+  <circle cx="452" cy="15" r="2" fill="#2dd4bf" fill-opacity="0.7"/>
+  <circle cx="748" cy="15" r="2" fill="#2dd4bf" fill-opacity="0.7"/>
+</svg>

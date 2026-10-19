@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Clock3, Copy, Crown, Globe2, ShieldCheck, X } from "lucide-react";
+import { NykstBrand } from "@/components/brand/NykstLogo";
 
 export const Route = createFileRoute("/subscribe")({
   head: () => ({ meta: [{ title: "Nykst Premium — eSewa subscription" }] }),
@@ -96,8 +97,7 @@ function SubscribePage() {
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-border bg-card/80 sticky top-0 z-20 flex items-center justify-between border-b px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="glow-ring bg-primary size-2 rounded-full" />
-          <span className="text-[13px] font-semibold uppercase tracking-[0.24em]">Nykst</span>
+          <NykstBrand subtitle="Premium" size={26} />
         </Link>
         <div className="flex items-center gap-2">
           <button

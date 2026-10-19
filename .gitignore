@@ -15,10 +15,14 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+*.tsbuildinfo
 
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+
+# Vercel (build output + local project link)
+.vercel/
 
 # Editor directories and files
 .vscode/*

@@ -1,5 +1,8 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "nykst-software-intelligence",
+  "version": "1.0.0",
+  "description": "System-understanding platform: navigate any codebase as a live six-level software graph and know the blast radius before you change it.",
+  "license": "MIT",
   "private": true,
   "sideEffects": false,
   "type": "module",

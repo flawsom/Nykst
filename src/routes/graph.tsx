@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
@@ -9,12 +9,14 @@ import { ConnectorsPanel } from "@/components/graph/ConnectorsPanel";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
-import { childKindLabel, childrenOf, getOrg, kindLabel, type GraphNode } from "@/lib/graph-data";
+import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/graph-data";
 import {
   buildRepositoryGraph,
   traceRepositoryProblems,
   type RepositorySnapshot,
 } from "@/lib/repository-graph";
+import { subscribeToIngestion } from "@/lib/realtime";
+import { NykstBrand } from "@/components/brand/NykstLogo";
 import { X } from "lucide-react";
 
 type IngestionSnapshot = {
@@ -45,13 +47,15 @@ export const Route = createFileRoute("/graph")({
 });
 
 function GraphPage() {
-  const [orgSlug, setOrgSlug] = useState("acme");
-  const [provider, setProvider] = useState("github");
   const [pathIds, setPathIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [dossier, setDossier] = useState<GraphNode | null>(null);
   const [snapshot, setSnapshot] = useState<IngestionSnapshot | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
+  const [realtimeTopic, setRealtimeTopic] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [lastChecked, setLastChecked] = useState<number | null>(null);
+  const [polling, setPolling] = useState(true);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
   const [softModal, setSoftModal] = useState<"premium" | null>(null);
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
@@ -65,6 +69,7 @@ function GraphPage() {
     if (!owner || !repo) return;
     setReanalyzing(true);
     setReanalyzeError(null);
+    setPolling(false);
     try {
       const response = await fetch("/api/integrations/github/ingest", {
         method: "POST",
@@ -83,12 +88,65 @@ function GraphPage() {
       });
       setPathIds([]);
       setSelected(null);
+      setLastChecked(Date.now());
     } catch (error) {
       setReanalyzeError(error instanceof Error ? error.message : "Analysis failed.");
     } finally {
       setReanalyzing(false);
+      setPolling(true);
     }
   };
+
+  /** Loads the newest stored analysis, or falls back to the live self-indexed AST of this repository. */
+  const loadLatest = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const response = await fetch("/api/integrations/github/latest", { cache: "no-store" });
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          ingestion?: IngestionSnapshot | null;
+          realtime?: { topic?: string };
+        };
+        if (payload.realtime?.topic) setRealtimeTopic(payload.realtime.topic);
+        if (payload.ingestion) {
+          setSnapshot(payload.ingestion);
+          setLoadError(null);
+          return;
+        }
+      }
+      // If unauthenticated or no user ingestion yet, load the live self-indexed AST of this repository
+      const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
+      if (selfRes.ok) {
+        const selfData = (await selfRes.json()) as {
+          repository: string;
+          generatedAt: string;
+          snapshotPayload?: RepositorySnapshot;
+        };
+        if (selfData.snapshotPayload) {
+          setSnapshot({
+            repository_full_name: selfData.repository,
+            created_at: selfData.generatedAt,
+            payload: selfData.snapshotPayload,
+          });
+          setLoadError(null);
+          return;
+        }
+      }
+      if (response.status === 401) {
+        setSnapshot(null);
+        setLoadError("unauthenticated");
+        return;
+      }
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      setSnapshot(null);
+      setLoadError(payload.error ?? `Could not load your system map (${response.status}).`);
+    } catch {
+      setLoadError("Network error while loading your system map.");
+    } finally {
+      setLastChecked(Date.now());
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -103,56 +161,68 @@ function GraphPage() {
       setConnectorsOpen(true);
       window.history.replaceState(null, "", window.location.pathname);
     }
-    const isDemo = params.get("demo") === "1";
-    setDemoMode(isDemo);
-    if (isDemo) {
-      setOrgSlug("acme");
-      setProvider("demo");
-      setSnapshot(null);
-      return;
-    }
-
-    let active = true;
-    const stored = localStorage.getItem("nykst.org");
-    const p = localStorage.getItem("nykst.provider");
-    if (stored) setOrgSlug(stored);
-    if (p) setProvider(p);
-    fetch("/api/integrations/github/latest")
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const payload = (await response.json()) as { ingestion?: IngestionSnapshot | null };
-        return payload.ingestion ?? null;
-      })
-      .then((ingestion) => active && setSnapshot(ingestion))
-      .catch(() => active && setSnapshot(null));
-
-    return () => {
-      active = false;
-    };
   }, []);
+
+  // Real-time freshness: reload on focus and every 30s while the tab is visible, so the
+  // map never shows a superseded analysis. Polling pauses while a re-analysis runs.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    void loadLatest();
+    const reload = () => {
+      if (polling) void loadLatest(true);
+    };
+    const onFocus = () => {
+      if (document.visibilityState === "visible") reload();
+    };
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") reload();
+    }, 30_000);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.clearInterval(timer);
+    };
+  }, [loadLatest, polling]);
+
+  // Real-time push: the server broadcasts on the user's Realtime channel the moment a new
+  // analysis is stored, so every open graph updates immediately. The interval above stays
+  // as a fallback for a dropped socket.
+  useEffect(() => {
+    if (!realtimeTopic) return;
+    return subscribeToIngestion(realtimeTopic, () => {
+      if (polling) void loadLatest(true);
+    });
+  }, [realtimeTopic, polling, loadLatest]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Restore the drill path after a reload: the history entry is the deepest state we keep,
+    // so refreshing a page five levels down does not throw the user back to the organization.
+    const state = window.history.state as { nykstPath?: string[] } | null;
+    const restored = Array.isArray(state?.nykstPath) ? state.nykstPath : [];
+    setPathIds(restored);
+    window.history.replaceState({ nykstPath: restored }, "", window.location.href);
+
     const onPopState = () => {
-      const state = window.history.state as { nykstPath?: string[] } | null;
-      setPathIds(Array.isArray(state?.nykstPath) ? state.nykstPath : []);
+      const next = window.history.state as { nykstPath?: string[] } | null;
+      setPathIds(Array.isArray(next?.nykstPath) ? next.nykstPath : []);
       setSelected(null);
+      setDossier(null);
     };
-    window.history.replaceState({ nykstPath: pathIds }, "", window.location.href);
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const root = useMemo(
-    () => (snapshot ? buildRepositoryGraph(snapshot.payload) : getOrg(orgSlug)),
-    [orgSlug, snapshot],
-  );
+  const root = useMemo(() => (snapshot ? buildRepositoryGraph(snapshot.payload) : null), [snapshot]);
   const problems = useMemo(
     () => (snapshot ? traceRepositoryProblems(snapshot.payload) : []),
     [snapshot],
   );
 
   const path = useMemo(() => {
+    if (!root) return [];
     const out: GraphNode[] = [root];
     for (const id of pathIds) {
       const parent = out[out.length - 1]!;
@@ -164,13 +234,72 @@ function GraphPage() {
   }, [root, pathIds]);
 
   const role = useRole();
-  const center = path[path.length - 1]!;
-  const allChildren = useMemo(() => childrenOf(center), [center]);
+  const center = path[path.length - 1] ?? null;
+  const allChildren = useMemo(() => (center ? childrenOf(center) : []), [center]);
   const centerChildren = useMemo(
     () => allChildren.filter((n) => canView(role, n)),
     [allChildren, role],
   );
   const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
+  const checkedSecondsAgo = lastChecked ? Math.max(0, Math.round((Date.now() - lastChecked) / 1000)) : null;
+
+  if (loading && !snapshot) {
+    return (
+      <main className="bg-background flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground font-mono text-xs tracking-[0.2em] uppercase">
+          Loading your system map…
+        </p>
+      </main>
+    );
+  }
+
+  if (!snapshot || !root || !center) {
+    const unauthenticated = loadError === "unauthenticated";
+    return (
+      <main className="bg-background flex min-h-screen items-center justify-center px-4">
+        <section className="border-border bg-card w-full max-w-xl rounded-2xl border p-7">
+          <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
+            Software graph
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight">
+            {unauthenticated ? "Connect a repository to build your map" : "Your map is not available"}
+          </h1>
+          <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            {unauthenticated
+              ? "Nykst only ever renders a real system. Connect GitHub, pick a repository, and the graph is built from your actual import graph, commit history and entry points — nothing is simulated."
+              : (loadError ?? "The latest analysis could not be loaded.")}
+          </p>
+          {loadError && !unauthenticated && (
+            <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 font-mono text-[11px] text-amber-400">
+              {loadError}
+            </p>
+          )}
+          <ol className="text-muted-foreground mt-5 space-y-1.5 text-[12px]">
+            <li>1 · Authorize the read-only GitHub connection.</li>
+            <li>2 · Choose the repository to analyze.</li>
+            <li>3 · The graph, dossier and impact envelope are built from that analysis.</li>
+          </ol>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a
+              href="/api/integrations/github/start"
+              className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-xs font-semibold"
+            >
+              Connect GitHub
+            </a>
+            <button
+              onClick={() => void loadLatest()}
+              className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-4 py-2 text-xs font-semibold"
+            >
+              Retry
+            </button>
+            <Link to="/" className="text-primary text-xs underline">
+              What Nykst reads
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   const drill = (node: GraphNode) => {
     if (node.expandable) {
@@ -220,8 +349,7 @@ function GraphPage() {
             <X className="size-4" />
           </Link>
           <Link to="/" className="flex items-center gap-2.5">
-            <span className="glow-ring bg-primary block size-2 rounded-full" />
-            <span className="text-[13px] font-semibold tracking-[0.24em] uppercase">Nykst</span>
+            <NykstBrand subtitle={null} size={26} />
           </Link>
         </div>
 
@@ -278,7 +406,7 @@ function GraphPage() {
             Premium
           </button>
           <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
-            {snapshot ? snapshot.repository_full_name : `${orgSlug} · ${provider}`}
+            {snapshot.repository_full_name}
           </span>
         </div>
       </header>
@@ -296,7 +424,7 @@ function GraphPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
-                {demoMode ? "Demo thesis system map" : kindLabel[center.kind]}
+                {kindLabel[center.kind]}
               </span>
               <h1 className="text-2xl font-bold tracking-tight mt-0.5">{center.label}</h1>
             </div>
@@ -321,19 +449,6 @@ function GraphPage() {
             </div>
           )}
 
-          {!snapshot && (
-            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[12px]">
-              <p className="font-semibold text-amber-400">Sample data</p>
-              <p className="text-muted-foreground mt-1">
-                This is a generated example organization, not a real system. Connect GitHub from the{" "}
-                <Link to="/" className="text-primary underline">
-                  dashboard
-                </Link>{" "}
-                to map your own repository.
-              </p>
-            </div>
-          )}
-
           {snapshot && (
             <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -346,6 +461,8 @@ function GraphPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground font-mono text-[10px]">
                     analyzed {new Date(snapshot.created_at).toLocaleString()}
+                    {checkedSecondsAgo !== null &&
+                      ` · rechecked ${checkedSecondsAgo < 5 ? "just now" : `${checkedSecondsAgo}s ago`}`}
                   </span>
                   <button
                     onClick={reanalyze}
@@ -420,8 +537,7 @@ function GraphPage() {
 
           <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
             <span>
-              {demoMode ? "Nykst Demo · " : "Software Navigator · "}
-              {center.analysisRef ? "Contents" : childKindLabel[center.kind]} (
+              Software Navigator · {center.analysisRef ? "Contents" : childKindLabel[center.kind]} (
               {centerChildren.length})
             </span>
             <span>Choose a node or tree item to drill deeper</span>

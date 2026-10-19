@@ -8,7 +8,13 @@ import {
   json,
   requireGithubToken,
 } from "@/lib/integrations/github";
-import { AiKeyError, chatWithUserKey, currentUserId, loadUserKey } from "@/lib/byok.server";
+import {
+  AiKeyError,
+  chatWithUserKey,
+  currentUserId,
+  loadUserKey,
+  platformKey,
+} from "@/lib/byok.server";
 
 const SYSTEM = `You are Nykst Memory's safe code-change engine. Return only the complete proposed replacement file between the exact markers BEGIN_FILE and END_FILE. Do not include markdown fences, commentary, or any other file. Preserve existing behavior unless the requested change requires it. Never invent APIs or dependencies.`;
 
@@ -68,7 +74,7 @@ export const Route = createFileRoute("/api/integrations/github/coding")({
             const userId = await currentUserId(request);
             if (!userId)
               return json({ error: "Connect GitHub before generating a change." }, { status: 401 });
-            const key = await loadUserKey(userId);
+            const key = (await loadUserKey(userId)) ?? platformKey();
             if (!key)
               return json(
                 {

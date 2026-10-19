@@ -19,7 +19,7 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     model: "gpt-4o-mini",
     baseUrl: "https://api.openai.com/v1",
   },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-3-5-haiku-latest" },
+  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
   {
     id: "gemini",
     label: "Google Gemini",
@@ -31,15 +31,15 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: "deepseek",
     label: "DeepSeek",
     hint: "sk-...",
-    model: "deepseek-chat",
+    model: "deepseek-flash",
     baseUrl: "https://api.deepseek.com/v1",
   },
   {
     id: "custom",
-    label: "Custom / Kimi",
+    label: "Nara / OpenRouter",
     hint: "Provider API key",
-    model: "provider-model",
-    baseUrl: "",
+    model: "agnes-2.5-flash",
+    baseUrl: "https://router.bynara.id/v1",
   },
 ];
 
@@ -96,6 +96,34 @@ export function platformGeminiKey(): StoredKey | null {
     apiBaseUrl: "https://generativelanguage.googleapis.com",
     model: "gemini-3.5-flash-lite",
   };
+}
+
+/**
+ * Platform router key (any OpenAI-compatible endpoint) so a first-time user can ask a
+ * question before adding their own. Configuration lives in the host's secret store, never
+ * in the client bundle: NYKST_AI_API_KEY, NYKST_AI_BASE_URL and NYKST_AI_MODEL.
+ */
+export function platformRouterKey(): StoredKey | null {
+  const apiKey = process.env["NYKST_AI_API_KEY"]?.trim();
+  if (!apiKey) return null;
+  let apiBaseUrl: string | null;
+  try {
+    apiBaseUrl = safeBaseUrl(process.env["NYKST_AI_BASE_URL"], "custom");
+  } catch {
+    return null;
+  }
+  return {
+    provider: "custom",
+    last4: apiKey.slice(-4),
+    apiKey,
+    apiBaseUrl,
+    model: safeModel(process.env["NYKST_AI_MODEL"]?.trim() || "agnes-2.5-flash", "custom"),
+  };
+}
+
+/** The platform-provided key used when a user has not connected their own provider. */
+export function platformKey(): StoredKey | null {
+  return platformRouterKey() ?? platformGeminiKey();
 }
 
 function providerDefinition(provider: AiProvider) {
@@ -200,6 +228,8 @@ function friendly(status: number, providerMessage?: string): string {
     return "Your API key was rejected by the provider. Update it in Connect API.";
   if (status === 429)
     return "Your provider account is rate limited or out of quota. Check your plan, then retry.";
+  if (status === 402)
+    return "Your AI provider account has no credit left. Top up the balance, then retry.";
   if (status === 400 || status === 404)
     return (
       providerMessage ||

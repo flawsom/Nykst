@@ -10,8 +10,11 @@
   "vars": {
     "SUPABASE_URL": "https://lpfjvufpibnxefqnispk.supabase.co",
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_7XzrpmR_BfT53-68YjDYEA_g2e0ulbR",
-    "GITHUB_CLIENT_ID": "Iv23lijw4x7cs78Ekr5i",
-    "GITHUB_APP_SLUG": "nykst-software-intelligence",
-    "NYKST_ADMIN_GITHUB_ID": "297429012"
+    // OAuth App client id (public). Set GITHUB_APP_SLUG here instead to switch the
+    // connect flow to a GitHub App; the two modes are mutually exclusive.
+    "GITHUB_CLIENT_ID": "Ov23liop0HWjpzTRSmqj",
+    "NYKST_ADMIN_GITHUB_ID": "297429012",
+    "NYKST_AI_BASE_URL": "https://router.bynara.id/v1",
+    "NYKST_AI_MODEL": "agnes-2.5-flash"
   }
 }

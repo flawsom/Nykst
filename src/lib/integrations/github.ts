@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { analyzeRepository, MAX_SOURCE_BYTES, wantsContent } from "@/lib/analysis/engine.server";
+import { publishIngestion } from "@/lib/realtime.server";
 import { buildRepositoryHistory } from "@/lib/analysis/history.server";
 import { isSourcePath } from "@/lib/analysis/resolve";
 import { fetchRepositoryTarball } from "@/lib/analysis/tarball.server";
@@ -38,7 +39,7 @@ function getConfig() {
     process.env["CLIENT_SECRET"]?.trim() || process.env["GITHUB_CLIENT_SECRET"]?.trim();
   if (!clientId || !clientSecret)
     throw new Error(
-      "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel.",
+      "GitHub OAuth is not configured on this deployment. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET on the server.",
     );
   return { clientId, clientSecret };
 }
@@ -61,12 +62,45 @@ export function verifyOauthState(state: string) {
   return timingSafeEqual(Buffer.from(received, "hex"), Buffer.from(expected, "hex"));
 }
 
+const ALLOWED_REDIRECT_URIS = new Set([
+  "https://nykst.unifies.codes/api/integrations/github/callback",
+  "https://nykst.vercel.app/api/integrations/github/callback",
+  "http://localhost:8080/api/integrations/github/callback",
+]);
+
+function matchesAllowedOrigin(origin: string): boolean {
+  try {
+    const u = new URL(origin);
+    const host = u.hostname.toLowerCase();
+    return (
+      host === "nykst.unifies.codes" ||
+      host.endsWith(".unifies.codes") ||
+      host === "nykst.vercel.app" ||
+      (host.startsWith("nykst") && host.endsWith(".vercel.app")) ||
+      host === "localhost" ||
+      host === "127.0.0.1"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function githubRedirectUri(request: Request) {
-  return (
-    process.env["GITHUB_REDIRECT_URI"]?.trim() ||
-    // Follow whatever host served the request (workers.dev, a custom domain, local dev).
-    new URL("/api/integrations/github/callback", request.url).toString()
-  );
+  const configured = process.env["GITHUB_REDIRECT_URI"]?.trim();
+  if (configured) return configured;
+
+  const reqUrl = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const effectiveOrigin = forwardedHost
+    ? `${forwardedProto || reqUrl.protocol.replace(":", "")}://${forwardedHost}`
+    : reqUrl.origin;
+
+  const candidate = new URL("/api/integrations/github/callback", effectiveOrigin).toString();
+  if (ALLOWED_REDIRECT_URIS.has(candidate) || matchesAllowedOrigin(effectiveOrigin)) {
+    return candidate;
+  }
+  return new URL("/api/integrations/github/callback", request.url).toString();
 }
 
 export function githubAppSlug() {
@@ -667,6 +701,8 @@ export async function saveIngestion(
     .select("id")
     .single();
   if (error) throw new Error(`Could not save ingestion: ${error.message}`);
+  // Push the new snapshot to every open graph for this user, in real time.
+  await publishIngestion(String(user.id), data.id);
   return data.id;
 }
 
@@ -702,6 +738,10 @@ export function json(data: unknown, init?: ResponseInit) {
   });
 }
 export function githubError(error: unknown) {
+  // requireGithubToken and other guards throw ready-made Responses (401/403). Preserve them
+  // instead of flattening every failure into a 400, so clients can tell "connect GitHub" apart
+  // from a broken request.
+  if (error instanceof Response) return error;
   return json(
     { error: error instanceof Error ? error.message : "GitHub request failed" },
     { status: 400 },

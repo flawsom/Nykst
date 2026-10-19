@@ -173,14 +173,8 @@ export function PreRegisterForm({ onClose }: { onClose: () => void }) {
         x_account: a.x_account.trim() || null,
       };
 
-      try {
-        const existing = JSON.parse(localStorage.getItem("nykst.preregistrations") || "[]");
-        existing.push(payload);
-        localStorage.setItem("nykst.preregistrations", JSON.stringify(existing));
-      } catch (e) {
-        console.error("Local storage backup error:", e);
-      }
-
+      // Persisted server-side only: the request is stored in Supabase, never mirrored into
+      // browser storage.
       const response = await fetch("/api/pre-registration", {
         method: "POST",
         headers: { "content-type": "application/json" },
