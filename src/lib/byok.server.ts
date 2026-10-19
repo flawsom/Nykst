@@ -275,14 +275,18 @@ function openAiBase(key: { provider: AiProvider; apiBaseUrl: string | null }): s
   );
 }
 
+const PROVIDER_TIMEOUT_MS = 25_000;
+
 async function providerRequest(
   key: { provider: AiProvider; apiKey: string; apiBaseUrl: string | null; model: string },
   system: string,
   prompt: string,
 ) {
+  const signal = AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
   if (key.provider === "anthropic") {
     return fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal,
       headers: {
         "x-api-key": key.apiKey,
         "anthropic-version": "2023-06-01",
@@ -300,6 +304,7 @@ async function providerRequest(
     const endpoint = `${key.apiBaseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(key.model)}:generateContent`;
     return fetch(endpoint, {
       method: "POST",
+      signal,
       headers: { "content-type": "application/json", "x-goog-api-key": key.apiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
@@ -316,6 +321,7 @@ async function providerRequest(
     : {};
   return fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
+    signal,
     headers: {
       Authorization: `Bearer ${key.apiKey}`,
       "content-type": "application/json",
@@ -347,6 +353,7 @@ export async function testProviderKey(
         `${baseUrl || "https://generativelanguage.googleapis.com"}/v1beta/models/${encodeURIComponent(modelName)}:generateContent`,
         {
           method: "POST",
+          signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
           headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] }),
         },
@@ -354,6 +361,7 @@ export async function testProviderKey(
     } else if (provider === "anthropic") {
       response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
         headers: {
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
@@ -367,7 +375,10 @@ export async function testProviderKey(
       });
     } else {
       const base = baseUrl || "https://api.openai.com/v1";
-      response = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${apiKey}` } });
+      response = await fetch(`${base}/models`, {
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
     }
   } catch {
     throw new AiKeyError("Could not reach the provider. Check the endpoint and try again.", 502);
@@ -387,7 +398,12 @@ export async function chatWithUserKey(
   let response: Response;
   try {
     response = await providerRequest(key, system, prompt);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+      throw new AiKeyError(
+        "The AI provider did not answer within 25 seconds. Retry, or add your own provider key in API Settings.",
+        504,
+      );
     throw new AiKeyError("Could not reach your AI provider. Please try again.", 502);
   }
   if (!response.ok)
