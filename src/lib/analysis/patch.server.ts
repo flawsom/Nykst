@@ -3,9 +3,9 @@ import {
   buildAnalyzedFile,
   findCycles,
   parseAnySource,
-  sqlResources,
   type FileBuildContext,
 } from "./engine.server";
+import { hydrateColumnContracts, parseSqlSchema } from "./sql";
 import { loadParser, type ParsedSource, type RawImport } from "./parse.server";
 import { polyglotLanguageOf, resolvePolyglotImport } from "./polyglot";
 import { ImportResolver, isSourcePath, type AliasScope, type PackageManifest } from "./resolve";
@@ -173,14 +173,26 @@ export function patchLoaded(existing: RepoAnalysis, changedFiles: ChangedFile[])
 
   for (const resource of existing.resources) {
     const definedIn = resource.definedIn.filter((path) => !changes.has(path) && !removed.has(path));
-    if (!definedIn.length) continue;
+    const keptEvents = (resource.sqlEvents ?? []).filter(
+      (event) => !changes.has(event.path) && !removed.has(event.path),
+    );
+    if (!definedIn.length && !keptEvents.length) continue;
     const entry = addResource(resource.kind, resource.name, resource.service);
     entry.definedIn.push(...definedIn);
+    if (keptEvents.length) entry.sqlEvents = keptEvents;
   }
   for (const [path, content] of written) {
     if (path.endsWith(".sql")) {
-      for (const definition of sqlResources(path, content))
-        addResource(definition.kind, definition.name, "supabase").definedIn.push(path);
+      const parsedSql = parseSqlSchema(path, content);
+      for (const definition of parsedSql.resources) {
+        const entry = addResource(definition.kind, definition.name, "supabase");
+        if (!entry.definedIn.includes(path)) entry.definedIn.push(path);
+      }
+      for (const event of parsedSql.events) {
+        const entry = addResource("table", event.table, "supabase");
+        if (!entry.definedIn.includes(path)) entry.definedIn.push(path);
+        entry.sqlEvents = entry.sqlEvents ? [...entry.sqlEvents, event] : [event];
+      }
     }
     if (/(^|\/)schema\.prisma$/.test(path)) {
       for (const match of content.matchAll(/^\s*model\s+(\w+)\s*\{/gm))
@@ -232,6 +244,8 @@ export function patchLoaded(existing: RepoAnalysis, changedFiles: ChangedFile[])
         use.id.slice(use.id.indexOf(":") + 1),
         resourceMap.get(use.id)?.service ?? "supabase",
       ).uses.push({ path: file.path, line: use.line });
+
+  hydrateColumnContracts([...resourceMap.values()], orderedFiles);
 
   const resources = [...resourceMap.values()]
     .filter((resource) => resource.definedIn.length || resource.uses.length)

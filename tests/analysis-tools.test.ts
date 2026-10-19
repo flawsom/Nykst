@@ -92,6 +92,8 @@ describe("analysis tools", () => {
     expect(names).toContain("search_memory");
     expect(names).toContain("get_federation");
     expect(names).toContain("get_trace_overlay");
+    expect(names).toContain("simulate_change");
+    expect(names).toContain("generate_fix_patch");
     for (const tool of TOOLS) expect(tool.annotations.readOnlyHint).toBe(true);
   });
 

@@ -1,5 +1,6 @@
 import { impactBriefing } from "./context";
 import { historyFor, indexAnalysis } from "./impact";
+import { summarizeSymbol } from "./symbols";
 import { searchMemory } from "../memory/evidence";
 import type { MemoryKind, RepoAnalysis, RepoHistory } from "./types";
 
@@ -115,6 +116,64 @@ export const TOOLS = [
     annotations: { readOnlyHint: true },
   },
   {
+    name: "simulate_change",
+    title: "Simulate a change before writing it",
+    description:
+      "Apply file writes or deletions to an in-memory graph overlay and return the blast radius, new cycles, newly unresolved imports and SQL column drift. Nothing is persisted; the stored snapshot is never modified.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        changes: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              path: { type: "string", description: "Repository-relative path." },
+              content: {
+                type: ["string", "null"],
+                description: "New file content, or null to simulate deletion.",
+              },
+            },
+            required: ["path"],
+          },
+          description: "At most 50 file writes or deletions to overlay.",
+        },
+        paths: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional paths to measure; defaults to the changed paths.",
+        },
+        ...repositoryArg,
+      },
+      required: ["changes"],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false },
+  },
+  {
+    name: "generate_fix_patch",
+    title: "Generate a verified fix diff",
+    description:
+      "For a file with unresolved imports, select exact existing targets, rewrite the import specifiers, apply the result to an in-memory graph, and return the unified diff only when the unresolved count falls without adding cycles. Pass the current file content.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Repository-relative source file to repair." },
+        content: {
+          type: "string",
+          description: "Current file content, used to build and verify the exact diff.",
+        },
+        issue: {
+          type: "string",
+          enum: ["unresolved-import"],
+          description: "Remediation class. Currently unresolved-import.",
+        },
+        ...repositoryArg,
+      },
+      required: ["path", "content"],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false },
+  },
+  {
     name: "get_trace_overlay",
     title: "Overlay OpenTelemetry spans on the graph",
     description:
@@ -195,6 +254,8 @@ function architecture(snapshot: AnalysisSnapshot) {
       id: resource.id,
       defined_in: resource.definedIn,
       used_by_files: new Set(resource.uses.map((use) => use.path)).size,
+      columns: resource.columns?.slice(0, 80) ?? [],
+      column_drift: resource.columnDrift ?? [],
     })),
     most_depended_on: [...index.dependents.entries()]
       .map(([path, edges]) => ({ path, importers: new Set(edges.map((edge) => edge.path)).size }))
@@ -228,7 +289,7 @@ function architecture(snapshot: AnalysisSnapshot) {
   };
 }
 
-function expandPaths(analysis: RepoAnalysis, inputs: string[]) {
+export function expandPaths(analysis: RepoAnalysis, inputs: string[]) {
   const all = analysis.files.map((file) => file.path);
   const out = new Set<string>();
   for (const raw of inputs) {
@@ -298,6 +359,13 @@ export function runAnalysisTool(
           line: use.line,
           reason: `uses ${resource.id}`,
         })),
+        ...(resource.columnDrift ?? []).flatMap((finding) =>
+          finding.references.map((reference) => ({
+            path: reference.path,
+            line: reference.line,
+            reason: `${finding.kind}: ${resource.id}.${finding.column} via ${reference.operation}`,
+          })),
+        ),
       ]);
     } else if (serviceQuery) {
       const service = analysis.services.find(
@@ -326,9 +394,17 @@ export function runAnalysisTool(
       index.files.has(path),
     );
     const briefing = impactBriefing(analysis, history, sourcePaths, { maxItems: 40 });
+    const resources = table
+      ? analysis.resources.filter(
+          (resource) =>
+            resource.name.toLowerCase() === table || resource.id.toLowerCase() === table,
+        )
+      : [];
     return {
       ...header,
       subject,
+      columns: resources.flatMap((resource) => resource.columns ?? []),
+      column_drift: resources.flatMap((resource) => resource.columnDrift ?? []),
       uses: uses.slice(0, 150),
       impact_of_changing_it: briefing.impact,
       limitations: briefing.limitations,
@@ -349,6 +425,10 @@ export function runAnalysisTool(
         path: file.path,
         role: file.role,
         exports: file.exports.filter((name) => name.toLowerCase().includes(query)).slice(0, 10),
+        signatures: (file.symbols ?? [])
+          .filter((symbol) => symbol.name.toLowerCase().includes(query))
+          .slice(0, 8)
+          .map(summarizeSymbol),
         last_changed: historyFor(history, [file.path]).commits[0]?.date?.slice(0, 10) ?? null,
       }));
     return { ...header, results: hits };

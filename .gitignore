@@ -30,6 +30,7 @@ test-results/
 
 # Agent and tool run artifacts
 BUFFY_TASK_OUTPUT/
+.nykst/
 
 # Editor directories and files
 .vscode/*

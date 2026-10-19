@@ -48,6 +48,44 @@ export interface EndpointRef {
   protocol: "http" | "grpc";
 }
 
+export interface SymbolParameter {
+  name: string;
+  type: string;
+  optional: boolean;
+  rest: boolean;
+}
+
+export interface SymbolProperty {
+  name: string;
+  type: string;
+  optional: boolean;
+  readonly: boolean;
+}
+
+/** A machine-readable public signature, parsed from the TypeScript AST. */
+export interface ExportedSymbol {
+  name: string;
+  kind: "function" | "class" | "interface" | "type" | "const" | "enum" | "re-export";
+  line: number;
+  /** every declared parameter, in source order */
+  parameters?: SymbolParameter[];
+  /** total declared parameters */
+  arity?: number;
+  /** parameters without a default or `?` marker */
+  requiredArity?: number;
+  returnType?: string;
+  /** interface, type-literal, class-field and enum-member properties */
+  typeProperties?: SymbolProperty[];
+}
+
+/** A column name read or written through a literal Supabase/PostgREST call. */
+export interface ColumnRef {
+  table: string;
+  column: string;
+  line: number;
+  operation: string;
+}
+
 export interface AnalyzedFile {
   path: string;
   language: SourceLanguage;
@@ -65,6 +103,10 @@ export interface AnalyzedFile {
   resources: ResourceUse[];
   /** literal HTTP route or gRPC method strings, used by cross-repository federation */
   endpoints?: EndpointRef[];
+  /** exported signatures with arity and type properties */
+  symbols?: ExportedSymbol[];
+  /** literal column references, compared against SQL DDL for contract drift */
+  columnRefs?: ColumnRef[];
 }
 
 export interface ServiceEvidence {
@@ -96,6 +138,33 @@ export interface ExternalService {
   evidence: ServiceEvidence[];
 }
 
+export interface SqlColumn {
+  name: string;
+  type: string;
+  nullable: boolean;
+}
+
+/** One ordered DDL fact. Stored so incremental patches can replay only changed files. */
+export interface SqlColumnEvent {
+  table: string;
+  column: string;
+  op: "create" | "add" | "drop" | "rename" | "alter";
+  path: string;
+  line: number;
+  type?: string;
+  nullable?: boolean;
+  /** previous name for a rename */
+  from?: string;
+}
+
+export interface ColumnDrift {
+  kind: "unknown-column" | "dropped-column";
+  table: string;
+  column: string;
+  message: string;
+  references: { path: string; line: number; operation: string }[];
+}
+
 export interface DataResource {
   id: string;
   kind: "table" | "rpc" | "bucket" | "model";
@@ -105,6 +174,12 @@ export interface DataResource {
   /** migration or schema file that defines it, if found */
   definedIn: string[];
   uses: { path: string; line: number }[];
+  /** final columns after replaying DDL in migration path order */
+  columns?: SqlColumn[];
+  /** ordered DDL events, used by incremental patching and drift replay */
+  sqlEvents?: SqlColumnEvent[];
+  /** literal code references that disagree with the final DDL */
+  columnDrift?: ColumnDrift[];
 }
 
 export interface WorkspacePackage {

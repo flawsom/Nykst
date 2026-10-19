@@ -6,6 +6,9 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "bin": {
+    "nykst": "./bin/nykst.mjs"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -16,7 +19,8 @@
     "test": "bun test ./tests",
     "e2e": "playwright test",
     "screens": "node scripts/capture-screens.mjs",
-    "snapshot:self": "bun scripts/snapshot-self.ts"
+    "snapshot:self": "bun scripts/snapshot-self.ts",
+    "watch": "bun scripts/watch.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

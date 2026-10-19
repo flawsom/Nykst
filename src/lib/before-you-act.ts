@@ -21,6 +21,13 @@ export type ContextEnvelope = {
     reason: string;
     severity: "critical" | "important" | "watch";
   }[];
+  columnDrift: {
+    resource: string;
+    column: string;
+    kind: "unknown-column" | "dropped-column";
+    message: string;
+    references: { path: string; line: number; operation: string }[];
+  }[];
   evidence: EnvelopeEvidence[];
   confidence: "high" | "medium" | "limited";
 };
@@ -171,6 +178,21 @@ export function buildBeforeYouActEnvelope(
       strength: fileHistory ? "direct" : "supporting",
     });
 
+  const targetPaths = new Set(node.analysisRef?.paths ?? [nodePath]);
+  const columnDrift = (snapshot?.analysis?.resources ?? [])
+    .flatMap((resource) =>
+      (resource.columnDrift ?? []).map((finding) => ({ resource: resource.id, ...finding })),
+    )
+    .filter((finding) => finding.references.some((reference) => targetPaths.has(reference.path)))
+    .slice(0, 20);
+  if (columnDrift.length)
+    evidence.push({
+      source: "graph",
+      label: "SQL contract drift",
+      detail: `${columnDrift.length} column reference${columnDrift.length === 1 ? "" : "s"} disagree with the analyzed migration DDL.`,
+      strength: "direct",
+    });
+
   const coChanged = fileHistory?.coChange.length
     ? fileHistory.coChange.slice(0, 8).map((item) => ({
         label: item.path,
@@ -254,6 +276,15 @@ export function buildBeforeYouActEnvelope(
       reason: "The intent touches a boundary where silent behavior changes can escape local tests.",
       severity: "critical",
     });
+  if (columnDrift.length)
+    inspectBeforeActing.push({
+      title: "Reconcile SQL contract drift",
+      reason: columnDrift
+        .slice(0, 3)
+        .map((finding) => finding.message)
+        .join(" "),
+      severity: "critical",
+    });
   if (coChanged.length)
     inspectBeforeActing.push({
       title: "Review coupled changes",
@@ -287,6 +318,7 @@ export function buildBeforeYouActEnvelope(
     historicalChanges,
     coChanged,
     origin,
+    columnDrift,
     inspectBeforeActing,
     evidence,
     confidence,

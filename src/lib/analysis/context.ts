@@ -1,4 +1,5 @@
 import { chainFor, historyFor, impactOf, indexAnalysis } from "./impact";
+import { summarizeSymbol } from "./symbols";
 import type { RepoAnalysis, RepoHistory } from "./types";
 
 /**
@@ -33,16 +34,26 @@ export function impactBriefing(
       role: file.role,
       loc: file.loc,
       exports: file.exports.slice(0, 20),
+      signatures: (file.symbols ?? []).slice(0, 20).map(summarizeSymbol),
       services: file.services,
       data: file.resources.map((use) => `${use.id} (line ${use.line})`),
+      columns: (file.columnRefs ?? []).slice(0, 30),
       env: file.envVars,
     };
   });
+  const knownSet = new Set(known);
+  const columnDrift = analysis.resources
+    .flatMap((resource) =>
+      (resource.columnDrift ?? []).map((finding) => ({ resource: resource.id, ...finding })),
+    )
+    .filter((finding) => finding.references.some((reference) => knownSet.has(reference.path)))
+    .slice(0, max);
   return {
     target: { files: known.length, unknown: paths.filter((path) => !index.files.has(path)) },
     files,
     uses_internal: uses.slice(0, max),
     uses_packages: [...external].sort(),
+    column_drift: columnDrift,
     impact: {
       level: report.level,
       runtime_dependents: report.runtimeCount,

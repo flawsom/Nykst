@@ -261,6 +261,37 @@ function EnvelopeBody({
           </div>
         </EnvelopeSection>
         <EnvelopeSection
+          icon={AlertTriangle}
+          title="SQL contract drift"
+          subtitle="Literal column references that disagree with the analyzed DDL"
+        >
+          <div className="space-y-2">
+            {envelope.columnDrift.length ? (
+              envelope.columnDrift.map((finding) => (
+                <div
+                  key={`${finding.resource}-${finding.kind}-${finding.column}`}
+                  className="border-border bg-surface rounded-lg border p-3"
+                >
+                  <p className="font-mono text-xs">
+                    {finding.resource}.{finding.column}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                    {finding.message}
+                  </p>
+                  <p className="text-muted-foreground mt-1 font-mono text-[10px]">
+                    {finding.references
+                      .slice(0, 4)
+                      .map((reference) => `${reference.path}:${reference.line}`)
+                      .join(" · ")}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <Empty text="No literal table.column reference disagrees with the analyzed migrations." />
+            )}
+          </div>
+        </EnvelopeSection>
+        <EnvelopeSection
           icon={ChevronRight}
           title="What tends to move with it"
           subtitle="Repeated or inferred coupling, not a generic dependency list"

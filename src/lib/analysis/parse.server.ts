@@ -1,4 +1,5 @@
 import type TS from "typescript";
+import type { ColumnRef, ExportedSymbol, SymbolParameter, SymbolProperty } from "./types";
 
 // Loaded on first use so a problem with the compiler can only affect analysis, never the
 // server's startup (the router bundle imports this module for every request).
@@ -45,6 +46,10 @@ export interface ParsedSource {
   dataCalls: RawDataCall[];
   /** literal HTTP routes and gRPC method strings, for federation */
   endpoints: ParsedEndpoint[];
+  /** exported signatures, including arity and type properties */
+  symbols: ExportedSymbol[];
+  /** literal table.column references read or written by client calls */
+  columnRefs: ColumnRef[];
   loc: number;
 }
 
@@ -90,6 +95,205 @@ function bindingNames(name: TS.BindingName): string[] {
   );
 }
 
+const MAX_TYPE_TEXT = 160;
+
+function cleanText(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, MAX_TYPE_TEXT);
+}
+
+function typeText(sf: TS.SourceFile, node: TS.Node | undefined) {
+  return node ? cleanText(node.getText(sf)) : "unknown";
+}
+
+function parametersOf(sf: TS.SourceFile, nodes: TS.NodeArray<TS.ParameterDeclaration>) {
+  const parameters: SymbolParameter[] = nodes.map((node) => ({
+    name: cleanText(node.name.getText(sf)),
+    type: typeText(sf, node.type),
+    optional: Boolean(node.questionToken || node.initializer),
+    rest: Boolean(node.dotDotDotToken),
+  }));
+  return {
+    parameters,
+    arity: parameters.length,
+    requiredArity: parameters.filter((parameter) => !parameter.optional && !parameter.rest).length,
+  };
+}
+
+function memberName(sf: TS.SourceFile, member: TS.Node) {
+  if (!("name" in member)) return "";
+  const name = (member as { name?: TS.Node }).name;
+  if (!name) return "";
+  return cleanText(name.getText(sf)).replace(/^["']|["']$/g, "");
+}
+
+function typePropertiesOf(sf: TS.SourceFile, members: readonly TS.Node[]) {
+  const properties: SymbolProperty[] = [];
+  for (const member of members) {
+    if (ts.isPropertySignature(member) || ts.isPropertyDeclaration(member)) {
+      if (
+        hasModifier(member, ts.SyntaxKind.PrivateKeyword) ||
+        hasModifier(member, ts.SyntaxKind.ProtectedKeyword)
+      )
+        continue;
+      const name = memberName(sf, member);
+      if (!name) continue;
+      properties.push({
+        name,
+        type: typeText(sf, member.type),
+        optional: Boolean(member.questionToken),
+        readonly: hasModifier(member, ts.SyntaxKind.ReadonlyKeyword),
+      });
+      continue;
+    }
+    if (ts.isMethodSignature(member) || ts.isMethodDeclaration(member)) {
+      const name = memberName(sf, member);
+      if (!name) continue;
+      const params = parametersOf(sf, member.parameters);
+      properties.push({
+        name,
+        type: `(${params.parameters
+          .map(
+            (parameter) =>
+              `${parameter.rest ? "..." : ""}${parameter.name}${parameter.optional ? "?" : ""}${parameter.type !== "unknown" ? `: ${parameter.type}` : ""}`,
+          )
+          .join(", ")}) => ${typeText(sf, member.type)}`,
+        optional: Boolean(member.questionToken),
+        readonly: false,
+      });
+      continue;
+    }
+    if (ts.isEnumMember(member)) {
+      const name = memberName(sf, member);
+      if (name)
+        properties.push({
+          name,
+          type: member.initializer ? cleanText(member.initializer.getText(sf)) : "enum",
+          optional: false,
+          readonly: true,
+        });
+    }
+  }
+  return properties.slice(0, 40);
+}
+
+function signatureForStatement(
+  sf: TS.SourceFile,
+  statement: TS.Statement,
+  line: number,
+): ExportedSymbol | null {
+  if (ts.isFunctionDeclaration(statement)) {
+    const params = parametersOf(sf, statement.parameters);
+    return {
+      name: statement.name?.text ?? "default",
+      kind: "function",
+      line,
+      ...params,
+      returnType: typeText(sf, statement.type),
+    };
+  }
+  if (ts.isClassDeclaration(statement))
+    return {
+      name: statement.name?.text ?? "default",
+      kind: "class",
+      line,
+      typeProperties: typePropertiesOf(sf, statement.members),
+    };
+  if (ts.isInterfaceDeclaration(statement))
+    return {
+      name: statement.name.text,
+      kind: "interface",
+      line,
+      typeProperties: typePropertiesOf(sf, statement.members),
+    };
+  if (ts.isTypeAliasDeclaration(statement))
+    return {
+      name: statement.name.text,
+      kind: "type",
+      line,
+      typeProperties: ts.isTypeLiteralNode(statement.type)
+        ? typePropertiesOf(sf, statement.type.members)
+        : [],
+    };
+  if (ts.isEnumDeclaration(statement))
+    return {
+      name: statement.name.text,
+      kind: "enum",
+      line,
+      typeProperties: typePropertiesOf(sf, statement.members),
+    };
+  return null;
+}
+
+function columnNamesFromValue(value: string) {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && part !== "*" && !part.includes("(") && !part.includes(")"))
+    .map((part) => part.split(":").pop()!.trim())
+    .filter((part) => /^[a-z_][a-z0-9_$]*$/i.test(part))
+    .map((part) => part.toLowerCase());
+}
+
+function columnNamesFromExpression(sf: TS.SourceFile, node: TS.Expression | undefined) {
+  if (!node) return [];
+  if (ts.isArrayLiteralExpression(node))
+    return node.elements.flatMap((element) =>
+      ts.isStringLiteral(element) ? [element.text.toLowerCase()] : [],
+    );
+  if (ts.isObjectLiteralExpression(node))
+    return node.properties.flatMap((property) => {
+      if (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) {
+        const name = memberName(sf, property);
+        return name ? [name.toLowerCase()] : [];
+      }
+      return [];
+    });
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+    return columnNamesFromValue(node.text);
+  return [];
+}
+
+function columnRefsForCall(
+  sf: TS.SourceFile,
+  method: string,
+  args: readonly TS.Expression[],
+  chain: string,
+  line: number,
+) {
+  const table = /\.from\(\s*["']([^"']+)["']/.exec(chain)?.[1];
+  if (!table) return [];
+  const select = new Set([
+    "select",
+    "eq",
+    "neq",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "like",
+    "ilike",
+    "is",
+    "in",
+    "contains",
+    "containedBy",
+    "overlaps",
+    "textSearch",
+    "order",
+    "not",
+  ]);
+  const objectMethods = new Set(["insert", "update", "upsert"]);
+  let columns: string[] = [];
+  if (select.has(method)) columns = columnNamesFromExpression(sf, args[0]);
+  else if (objectMethods.has(method)) columns = columnNamesFromExpression(sf, args[0]);
+  else if (method === "match") columns = columnNamesFromExpression(sf, args[0]);
+  return columns.map((column) => ({
+    table: table.toLowerCase(),
+    column,
+    line,
+    operation: method,
+  }));
+}
+
 const URL_PATTERN = /^https?:\/\/([a-z0-9.-]+\.[a-z]{2,})(?=[/:?#]|$)/i;
 
 /** Extracts structural facts from one JS/TS source file using the TypeScript parser. */
@@ -105,39 +309,99 @@ export function parseSource(path: string, content: string): ParsedSource {
     urls: [],
     dataCalls: [],
     endpoints: [],
+    symbols: [],
+    columnRefs: [],
     loc: content.split("\n").filter((line) => line.trim()).length,
   };
   const exports = new Set<string>();
   const endpoints = new Set<string>();
+  const symbolNames = new Set<string>();
+  const addSymbol = (symbol: ExportedSymbol | null) => {
+    if (!symbol || symbolNames.has(symbol.name)) return;
+    symbolNames.add(symbol.name);
+    result.symbols.push(symbol);
+  };
 
   for (const statement of sf.statements) {
     const exported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
     const isDefault = hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
+    const line = lineOf(statement);
     if (ts.isFunctionDeclaration(statement)) {
       if (statement.name) result.functions.push(statement.name.text);
-      if (exported) exports.add(isDefault ? "default" : (statement.name?.text ?? "default"));
+      if (exported) {
+        const name = isDefault ? "default" : (statement.name?.text ?? "default");
+        exports.add(name);
+        addSymbol({ ...signatureForStatement(sf, statement, line)!, name });
+      }
     } else if (ts.isClassDeclaration(statement)) {
       if (statement.name) result.classes.push(statement.name.text);
-      if (exported) exports.add(isDefault ? "default" : (statement.name?.text ?? "default"));
+      if (exported) {
+        const name = isDefault ? "default" : (statement.name?.text ?? "default");
+        exports.add(name);
+        addSymbol({ ...signatureForStatement(sf, statement, line)!, name });
+      }
     } else if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
         const names = bindingNames(declaration.name);
         const init = declaration.initializer;
         if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init)))
           result.functions.push(...names);
-        if (exported) names.forEach((name) => exports.add(name));
+        if (!exported) continue;
+        for (const name of names) {
+          exports.add(name);
+          if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))) {
+            const params = parametersOf(sf, init.parameters);
+            addSymbol({
+              name,
+              kind: "function",
+              line,
+              ...params,
+              returnType: typeText(sf, init.type ?? declaration.type),
+            });
+          } else {
+            addSymbol({
+              name,
+              kind: "const",
+              line,
+              typeProperties:
+                declaration.type && ts.isTypeLiteralNode(declaration.type)
+                  ? typePropertiesOf(sf, declaration.type.members)
+                  : init && ts.isObjectLiteralExpression(init)
+                    ? init.properties.flatMap((property) => {
+                        const propertyName = memberName(sf, property);
+                        if (!propertyName) return [];
+                        return [
+                          {
+                            name: propertyName,
+                            type: "unknown",
+                            optional: false,
+                            readonly: false,
+                          },
+                        ];
+                      })
+                    : [],
+            });
+          }
+        }
       }
     } else if (
       ts.isInterfaceDeclaration(statement) ||
       ts.isTypeAliasDeclaration(statement) ||
       ts.isEnumDeclaration(statement)
     ) {
-      if (exported) exports.add(statement.name.text);
+      if (exported) {
+        exports.add(statement.name.text);
+        addSymbol(signatureForStatement(sf, statement, line));
+      }
     } else if (ts.isExportAssignment(statement)) {
       exports.add("default");
+      addSymbol({ name: "default", kind: "re-export", line });
     } else if (ts.isExportDeclaration(statement) && !statement.moduleSpecifier) {
       if (statement.exportClause && ts.isNamedExports(statement.exportClause))
-        statement.exportClause.elements.forEach((element) => exports.add(element.name.text));
+        statement.exportClause.elements.forEach((element) => {
+          exports.add(element.name.text);
+          addSymbol({ name: element.name.text, kind: "re-export", line });
+        });
     }
   }
 
@@ -171,9 +435,14 @@ export function parseSource(path: string, content: string): ParsedSource {
           typeOnly: node.isTypeOnly,
           dynamic: false,
         });
-        if (!node.exportClause) exports.add(`* from ${specifier}`);
-        else if (ts.isNamedExports(node.exportClause))
-          node.exportClause.elements.forEach((element) => exports.add(element.name.text));
+        if (!node.exportClause) {
+          exports.add(`* from ${specifier}`);
+          addSymbol({ name: `* from ${specifier}`, kind: "re-export", line: lineOf(node) });
+        } else if (ts.isNamedExports(node.exportClause))
+          node.exportClause.elements.forEach((element) => {
+            exports.add(element.name.text);
+            addSymbol({ name: element.name.text, kind: "re-export", line: lineOf(node) });
+          });
       }
       return;
     }
@@ -208,6 +477,9 @@ export function parseSource(path: string, content: string): ParsedSource {
       } else if (ts.isPropertyAccessExpression(callee)) {
         const method = callee.name.text;
         const receiver = callee.expression.getText(sf).replace(/\s+/g, "").slice(0, 120);
+        result.columnRefs.push(
+          ...columnRefsForCall(sf, method, node.arguments, receiver, lineOf(node)),
+        );
         if ((method === "from" || method === "rpc") && firstArg !== null) {
           result.dataCalls.push({
             method: method === "from" && /\.storage$/.test(receiver) ? "storage" : method,
@@ -270,8 +542,10 @@ export function parseSource(path: string, content: string): ParsedSource {
   };
   visit(sf);
 
-  result.exports = [...exports];
+  result.exports = [...exports].slice(0, 100);
   result.endpoints = result.endpoints.slice(0, 100);
+  result.symbols = result.symbols.slice(0, 100);
+  result.columnRefs = result.columnRefs.slice(0, 500);
   return result;
 }
 

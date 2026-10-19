@@ -8,6 +8,7 @@ import {
 import { loadParser, parseJsonc, parseSource, type ParsedSource } from "./parse.server";
 import { parsePolyglot, polyglotLanguageOf, polyglotRole, resolvePolyglotImport } from "./polyglot";
 import { buildContractCatalog } from "./federation";
+import { hydrateColumnContracts, parseSqlSchema, sqlResources } from "./sql";
 import { extractMemoryRecords } from "../memory/evidence";
 import {
   dirname,
@@ -26,6 +27,7 @@ import {
   type ImportRef,
   type RepoAnalysis,
   type ResourceUse,
+  type SqlColumnEvent,
 } from "./types";
 
 export const MAX_SOURCE_BYTES = 400_000;
@@ -140,19 +142,7 @@ function aliasScopes(configs: Map<string, Record<string, unknown>>): AliasScope[
   }));
 }
 
-export function sqlResources(path: string, sql: string) {
-  const found: { kind: "table" | "rpc"; name: string }[] = [];
-  const clean = sql.replace(/--.*$/gm, "");
-  for (const match of clean.matchAll(
-    /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?/gi,
-  ))
-    found.push({ kind: "table", name: match[1]!.toLowerCase() });
-  for (const match of clean.matchAll(
-    /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?/gi,
-  ))
-    found.push({ kind: "rpc", name: match[1]!.toLowerCase() });
-  return found.map((item) => ({ ...item, path }));
-}
+export { sqlResources };
 
 /** Receivers that call `.from("x")` but are never a database client. */
 const NON_DB_RECEIVER =
@@ -293,6 +283,8 @@ export function buildAnalyzedFile(
       services: [...services],
       resources: [],
       endpoints: source.endpoints.slice(0, 100),
+      symbols: source.symbols.slice(0, 100),
+      columnRefs: source.columnRefs.slice(0, 500),
     },
     external,
     unresolved,
@@ -321,6 +313,7 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
   const manifests: PackageManifest[] = [];
   const configs = new Map<string, Record<string, unknown>>();
   const sqlDefinitions: ReturnType<typeof sqlResources> = [];
+  const sqlEvents: SqlColumnEvent[] = [];
   const prismaModels: { name: string; path: string }[] = [];
   let goModule: string | undefined;
   for (const [path, text] of contents) {
@@ -344,7 +337,9 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
       if (config) configs.set(path, config);
       else limitations.push(`${path} could not be parsed; its path aliases were ignored.`);
     } else if (path.endsWith(".sql")) {
-      sqlDefinitions.push(...sqlResources(path, text));
+      const parsedSql = parseSqlSchema(path, text);
+      sqlDefinitions.push(...parsedSql.resources);
+      sqlEvents.push(...parsedSql.events);
     } else if (path.endsWith("schema.prisma")) {
       for (const match of text.matchAll(/^\s*model\s+(\w+)\s*\{/gm))
         prismaModels.push({ name: match[1]!, path });
@@ -459,6 +454,15 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
     );
     if (!entry.definedIn.includes(definition.path)) entry.definedIn.push(definition.path);
   }
+  for (const event of sqlEvents) {
+    const entry = resource(
+      "table",
+      event.table,
+      services.has("supabase") ? "supabase" : "postgres",
+    );
+    if (!entry.definedIn.includes(event.path)) entry.definedIn.push(event.path);
+    entry.sqlEvents = entry.sqlEvents ? [...entry.sqlEvents, event] : [event];
+  }
   for (const model of prismaModels) {
     const entry = resource(
       "model",
@@ -494,6 +498,8 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
     for (const use of uses) resources.get(use.id)!.uses.push({ path, line: use.line });
   }
 
+  hydrateColumnContracts([...resources.values()], files);
+
   const cycles = findCycles(files);
 
   const contractSources = [...contents.entries()]
@@ -527,6 +533,7 @@ function analyzeLoaded({ ref, paths, contents, skipped = 0 }: AnalyzeInput): Rep
       `${skipped} source file(s) were skipped because they exceed ${Math.round(MAX_SOURCE_BYTES / 1000)} KB.`,
     );
   limitations.push(
+    "Column drift is computed from literal `.from(...).select()/insert()/update()/filter()` calls and DDL `CREATE TABLE` / `ALTER TABLE ... COLUMN`; dynamic table or column names are not guessed.",
     "Python, Go and Rust sources are analyzed with lightweight static adapters; dynamic imports, build tags and macro-generated modules may remain unresolved.",
     "Imports built from runtime strings (e.g. import(variable)) and framework conventions such as file-based routing are not visible as edges.",
     "OpenAPI federation covers JSON and a documented YAML subset; unsupported YAML constructs are reported, never guessed.",

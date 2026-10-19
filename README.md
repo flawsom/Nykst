@@ -10,9 +10,9 @@
 
 **Know the blast radius before you change the code.**
 
-Nykst compiles a repository with the TypeScript compiler and static adapters for Python, Go, and Rust, links SQL migrations and external services, federates OpenAPI and gRPC contracts, overlays OpenTelemetry traces onto the static graph, and answers one question with evidence: *if I touch this file, what breaks?*
+Nykst compiles a repository with the TypeScript compiler and static adapters for Python, Go, and Rust, links SQL migrations and external services, federates OpenAPI and gRPC contracts, overlays OpenTelemetry traces onto the static graph, and answers one question with evidence: _if I touch this file, what breaks?_
 
-Push webhooks patch the graph from the changed files alone, with no second tarball download. Every number it reports is computed from real source, with file and line citations. Nothing is seeded, sampled, or guessed.
+Push webhooks and local file watchers patch the graph from the changed files alone, with no second tarball download. Exported signatures carry parameter arity and type properties, SQL columns are checked against the calls that read them, and `simulate_change` previews a write before it happens. Every number it reports is computed from real source, with file and line citations. Nothing is seeded, sampled, or guessed.
 
 <br/>
 
@@ -97,21 +97,21 @@ flawsom           src/lib           analysis           supabase          impact.
                   src/routes        integrations       github-oauth      graph.ts      importers
 ```
 
-| Dimension | Typical chat-with-code tool | Nykst |
-| :--- | :--- | :--- |
-| Indexing primitive | 500-token text chunks | **AST compilation** via `ts.createSourceFile`, plus Python, Go, and Rust adapters, with `tsconfig` aliases and workspace packages resolved |
-| Blast radius | Model guesses from naming similarity | **Exact reverse reachability** over the import graph, with importing file and line for every dependent |
-| Cycles | Usually invisible | **Iterative Tarjan SCC**, runtime cycles separated from `import type` |
-| Database lineage | SQL files treated as plain text | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites |
-| Memory | Stateless per prompt | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity |
-| Agent access | Editor fork or proprietary plugin | **Stateless Streamable HTTP MCP** at `/api/mcp`, 8 read-only tools, any MCP client |
-| Change propagation | Full re-index on every push | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files |
-| Cross-repository contracts | Invisible or manually maintained | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported |
-| Runtime evidence | Static graph only | **OTLP trace overlay** that marks which static edges were observed and which were not |
-| Data provenance | Demo workspaces and sample data | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim |
+| Dimension                  | Typical chat-with-code tool          | Nykst                                                                                                                                      |
+| :------------------------- | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| Indexing primitive         | 500-token text chunks                | **AST compilation** via `ts.createSourceFile`, plus Python, Go, and Rust adapters, with `tsconfig` aliases and workspace packages resolved |
+| Blast radius               | Model guesses from naming similarity | **Exact reverse reachability** over the import graph, with importing file and line for every dependent                                     |
+| Cycles                     | Usually invisible                    | **Iterative Tarjan SCC**, runtime cycles separated from `import type`                                                                      |
+| Database lineage           | SQL files treated as plain text      | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites                                                      |
+| Memory                     | Stateless per prompt                 | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity                                    |
+| Agent access               | Editor fork or proprietary plugin    | **Stateless Streamable HTTP MCP** at `/api/mcp`, 10 read-only tools, any MCP client                                                        |
+| Change propagation         | Full re-index on every push          | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files                                                 |
+| Cross-repository contracts | Invisible or manually maintained     | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported                                          |
+| Runtime evidence           | Static graph only                    | **OTLP trace overlay** that marks which static edges were observed and which were not                                                      |
+| Data provenance            | Demo workspaces and sample data      | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim                       |
 
 > [!IMPORTANT]
-> **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all eight MCP tools are annotated `readOnlyHint: true`. There is no training on your code.
+> **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all ten MCP tools are annotated `readOnlyHint: true`. `simulate_change` and `generate_fix_patch` work on an in-memory clone and return evidence, never a commit. There is no training on your code.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -193,6 +193,37 @@ flawsom           src/lib           analysis           supabase          impact.
 <td valign="top">
 <h3>Evidence-backed memory</h3>
 <p><sub>ADRs, Mermaid diagrams, migrations, and image references become checksummed records with line citations, searchable through MCP.</sub></p>
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="33%" valign="top">
+<h3>Exported signatures</h3>
+<p><sub>Every exported function, class, interface, type, enum, and const carries parameter arity, required arity, return type, and type properties. The dossier and <code>search_files</code> show the exact public shape, not just a bare symbol name.</sub></p>
+</td>
+<td width="33%" valign="top">
+<h3>SQL column contracts</h3>
+<p><sub><code>CREATE TABLE</code> and <code>ALTER TABLE</code> columns replay in migration order. Literal <code>.select()</code>, <code>.insert()</code>, <code>.update()</code>, and filter calls name a column; unknown or dropped columns become findings in the dossier and Before You Act.</sub></p>
+</td>
+<td width="33%" valign="top">
+<h3>Pre-flight simulation</h3>
+<p><sub><code>simulate_change</code> overlays writes and deletions on a cloned graph. New cycles, newly unresolved imports, column drift, and the changed blast radius are returned before any file is touched.</sub></p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<h3>Verified remediation</h3>
+<p><sub><code>generate_fix_patch</code> rewrites unresolved imports to exact existing targets, applies the diff to an in-memory clone, and returns it only when unresolved imports fall and cycles do not grow.</sub></p>
+</td>
+<td valign="top">
+<h3>Local graph watcher</h3>
+<p><sub><code>bun run watch</code> holds the graph in memory and patches only changed source, SQL, contract, and docs files. No webhook, tarball, or full recompile is required.</sub></p>
+</td>
+<td valign="top">
+<h3>One-command onboarding</h3>
+<p><sub><code>npx nykst init</code> writes MCP configs for Claude Code, Cursor, VS Code, Windsurf, and Codex, plus a canonical <code>.nykst/mcp.json</code> and a local usage card.</sub></p>
 </td>
 </tr>
 </table>
@@ -280,13 +311,13 @@ Real captures from the running application. No mockups.
 
 ### Live surfaces
 
-| Surface | What you can do | URL |
-| :--- | :--- | :--- |
-| **Landing and AST workbench** | Explore this repository compiled live, click a hub, read exact importer lines, inspect SQL resources | [`/`](https://nykst.unifies.codes/) |
-| **System graph** | Walk from organization to file, open a dossier, run Before You Act | [`/graph`](https://nykst.unifies.codes/graph) |
-| **System memory** | Browse change intelligence and risk, ask a grounded question | [`/intelligence`](https://nykst.unifies.codes/intelligence) |
-| **MCP hub** | Mint a token and copy a ready config for your agent | [`/mcp`](https://nykst.unifies.codes/mcp) |
-| **Health probe** | JSON readiness for Supabase and every required table | [`/api/health`](https://nykst.unifies.codes/api/health) |
+| Surface                       | What you can do                                                                                      | URL                                                         |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- |
+| **Landing and AST workbench** | Explore this repository compiled live, click a hub, read exact importer lines, inspect SQL resources | [`/`](https://nykst.unifies.codes/)                         |
+| **System graph**              | Walk from organization to file, open a dossier, run Before You Act                                   | [`/graph`](https://nykst.unifies.codes/graph)               |
+| **System memory**             | Browse change intelligence and risk, ask a grounded question                                         | [`/intelligence`](https://nykst.unifies.codes/intelligence) |
+| **MCP hub**                   | Mint a token and copy a ready config for your agent                                                  | [`/mcp`](https://nykst.unifies.codes/mcp)                   |
+| **Health probe**              | JSON readiness for Supabase and every required table                                                 | [`/api/health`](https://nykst.unifies.codes/api/health)     |
 
 <details>
 <summary><b>Embedding a GIF, MP4, or YouTube walkthrough</b></summary>
@@ -415,21 +446,26 @@ sequenceDiagram
 
 ### Layers
 
-| Layer | Responsibility | Where |
-| :--- | :--- | :--- |
-| Parse | Imports, exports, calls, env reads, SDK usage, URLs | `src/lib/analysis/parse.server.ts` |
-| Polyglot | Python, Go, and Rust imports, symbols, endpoints, env reads | `src/lib/analysis/polyglot.ts` |
-| Resolve | `tsconfig` aliases, workspace packages, path normalization | `src/lib/analysis/resolve.ts` |
-| Analyze | Tarjan SCC, SQL DDL and Prisma linking, service extraction | `src/lib/analysis/engine.server.ts` |
-| Patch | Re-parse changed files, prune deletions, recompute SCCs | `src/lib/analysis/patch.server.ts` |
-| Federate | OpenAPI operations and gRPC methods to consumer call sites | `src/lib/analysis/federation.ts` |
-| Observe | OTLP spans onto static files and edges | `src/lib/analysis/telemetry.ts` |
-| Review | Diff blast radius, risk tier, coverage gate, Markdown | `src/lib/analysis/diff.ts`, `pr-review.server.ts` |
-| Remember | Cited ADRs, diagrams, migrations, and image references | `src/lib/memory/evidence.ts` |
-| Impact | Reverse BFS, import chains, co-change history, tests | `src/lib/analysis/impact.ts` |
-| Shape | Six-level graph and dossiers | `src/lib/analysis/graph.ts` |
-| Serve | Eight read-only MCP tools | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
-| Store | Snapshots, keys, tokens, signals, subscriptions | `supabase/migrations` |
+| Layer     | Responsibility                                                                                    | Where                                                |
+| :-------- | :------------------------------------------------------------------------------------------------ | :--------------------------------------------------- |
+| Parse     | Imports, exports, signatures, parameter arity, type properties, calls, env reads, SDK usage, URLs | `src/lib/analysis/parse.server.ts`                   |
+| Polyglot  | Python, Go, and Rust imports, symbols, endpoints, env reads                                       | `src/lib/analysis/polyglot.ts`                       |
+| Resolve   | `tsconfig` aliases, workspace packages, path normalization                                        | `src/lib/analysis/resolve.ts`                        |
+| Analyze   | Tarjan SCC, SQL DDL and Prisma linking, service extraction                                        | `src/lib/analysis/engine.server.ts`                  |
+| Contracts | Replay DDL columns, compare literal column references, report drift                               | `src/lib/analysis/sql.ts`                            |
+| Patch     | Re-parse changed files, prune deletions, recompute SCCs and columns                               | `src/lib/analysis/patch.server.ts`                   |
+| Simulate  | Overlay writes and deletions on a cloned graph                                                    | `src/lib/analysis/simulate.ts`                       |
+| Remediate | Build and verify unresolved-import diffs in memory                                                | `src/lib/analysis/fix.ts`                            |
+| Watch     | Patch from local filesystem events                                                                | `scripts/watch.ts`                                   |
+| Onboard   | Write agent MCP configs                                                                           | `bin/nykst.mjs`                                      |
+| Federate  | OpenAPI operations and gRPC methods to consumer call sites                                        | `src/lib/analysis/federation.ts`                     |
+| Observe   | OTLP spans onto static files and edges                                                            | `src/lib/analysis/telemetry.ts`                      |
+| Review    | Diff blast radius, risk tier, coverage gate, Markdown                                             | `src/lib/analysis/diff.ts`, `pr-review.server.ts`    |
+| Remember  | Cited ADRs, diagrams, migrations, and image references                                            | `src/lib/memory/evidence.ts`                         |
+| Impact    | Reverse BFS, import chains, co-change history, tests                                              | `src/lib/analysis/impact.ts`                         |
+| Shape     | Six-level graph and dossiers                                                                      | `src/lib/analysis/graph.ts`                          |
+| Serve     | Ten read-only MCP tools                                                                           | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
+| Store     | Snapshots, keys, tokens, signals, subscriptions                                                   | `supabase/migrations`                                |
 
 ### Security model
 
@@ -528,12 +564,12 @@ sequenceDiagram
 
 ### Prerequisites
 
-| Tool | Version | Why |
-| :--- | :--- | :--- |
-| [Bun](https://bun.sh) | `>= 1.2` | Install, scripts, and `bun:test` |
-| Node.js | `>= 20` (22.12+ for the TanStack server) | Build and runtime |
-| Supabase project | Free tier is enough | Postgres, RLS, Realtime |
-| GitHub OAuth App | Standard | Read-only repository access |
+| Tool                  | Version                                  | Why                              |
+| :-------------------- | :--------------------------------------- | :------------------------------- |
+| [Bun](https://bun.sh) | `>= 1.2`                                 | Install, scripts, and `bun:test` |
+| Node.js               | `>= 20` (22.12+ for the TanStack server) | Build and runtime                |
+| Supabase project      | Free tier is enough                      | Postgres, RLS, Realtime          |
+| GitHub OAuth App      | Standard                                 | Read-only repository access      |
 
 ### Install and run
 
@@ -542,6 +578,17 @@ git clone https://github.com/flawsom/nykst.git
 cd nykst
 bun install
 bun run dev                  # http://localhost:8080, no credentials required for the live workbench
+```
+
+### Connect an agent in one command
+
+```bash
+# Writes .mcp.json, .cursor/mcp.json, .vscode/mcp.json, .windsurf/mcp.json,
+# .nykst/mcp.json and .nykst/codex.toml. A literal token is used when supplied.
+npx nykst init --token "$NYKST_TOKEN"
+
+# Or choose agents and keep the token in the environment
+npx nykst init --agent claude,cursor
 ```
 
 Without any Supabase credentials the landing page, the AST workbench, and `/graph` still run, because the analyzer compiles the local repository directly. Persistence, chat, MCP tokens, and billing need a database.
@@ -586,7 +633,7 @@ curl -s http://localhost:8080/api/health | jq
 
 ```bash
 bunx tsc -b --noEmit    # strict typecheck, zero errors
-bun test ./tests        # 65 tests, 348 assertions
+bun test ./tests        # 72 tests
 bun run build           # Nitro SSR production build
 ```
 
@@ -658,7 +705,11 @@ nykst/
 │   ├── lib/
 │   │   ├── analysis/
 │   │   │   ├── engine.server.ts     AST compiler, SQL linker, Tarjan SCC
-│   │   │   ├── parse.server.ts      TS imports, symbols, endpoints
+│   │   │   ├── parse.server.ts      TS imports, signatures, arity, columns
+│   │   │   ├── symbols.ts           Signature formatting
+│   │   │   ├── sql.ts               DDL replay and column drift
+│   │   │   ├── simulate.ts          In-memory change overlay
+│   │   │   ├── fix.ts               Verified remediation diffs
 │   │   │   ├── polyglot.ts          Python, Go, Rust import adapters
 │   │   │   ├── patch.server.ts      Incremental graph patching
 │   │   │   ├── federation.ts        OpenAPI and gRPC federation
@@ -670,7 +721,7 @@ nykst/
 │   │   │   ├── impact.ts            Reverse BFS and co-change
 │   │   │   ├── graph.ts             Six-level hierarchy
 │   │   │   ├── context.ts           Evidence serializer
-│   │   │   └── tools.ts             Eight MCP tools
+│   │   │   └── tools.ts             Ten MCP tools
 │   │   ├── memory/evidence.ts       ADRs, diagrams, migrations, images
 │   │   ├── integrations/github.ts   OAuth, tarball ingest, PR creation
 │   │   ├── connectors/              Slack and Jira
@@ -687,8 +738,11 @@ nykst/
 ├── supabase/
 │   ├── schema.sql                   Consolidated idempotent schema
 │   └── migrations/                  15 chronological migrations
+├── bin/
+│   └── nykst.mjs                    npx nykst init and watch commands
 ├── scripts/
 │   ├── analyze-local.ts             CLI for any local folder
+│   ├── watch.ts                     Local incremental graph watcher
 │   ├── snapshot-self.ts             Rebuilds the committed analysis snapshot
 │   └── capture-screens.mjs          Desktop and mobile README captures
 ├── tests/                           bun:test suites
@@ -704,27 +758,27 @@ nykst/
 
 ## 🔐 Environment variables
 
-| Variable | Required | Scope | Format | Description |
-| :--- | :---: | :--- | :--- | :--- |
-| `SUPABASE_URL` | Yes | Server | `https://<ref>.supabase.co` | Project URL for server-side queries. |
-| `SUPABASE_PUBLISHABLE_KEY` | Yes | Server | `sb_publishable_...` | RLS-scoped key for reads. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server | `eyJ...` | Server-only writes: snapshots, keys, tokens, billing. |
-| `VITE_SUPABASE_URL` | Yes | Client | `https://<ref>.supabase.co` | Browser client for Realtime. |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Client | `sb_publishable_...` | Browser key, guarded by RLS. |
-| `GITHUB_CLIENT_ID` | Yes | Server | OAuth or App client id | GitHub authorization. |
-| `GITHUB_CLIENT_SECRET` | Yes | Server | 40 hex chars | Token exchange and state signing. |
-| `GITHUB_WEBHOOK_SECRET` | Yes | Server | Random string | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`. |
-| `GITHUB_BOT_TOKEN` | No | Server | Fine-grained: Issues RW, Pull requests R, Metadata R | Posts and updates the PR blast-radius comment. The repository also needs a committed snapshot. Without the token the webhook stores the signal and skips the comment. |
-| `GITHUB_REDIRECT_URI` | No | Server | Absolute URL | Optional override; otherwise the host is matched automatically. |
-| `GITHUB_APP_SLUG` | No | Server | App slug | Enables GitHub App installation URLs instead of OAuth scope prompts. |
-| `NYKST_BYOK_SECRET` | Yes | Server | 32+ characters | Derives the AES-256-GCM key for stored provider keys. |
-| `NYKST_AI_API_KEY` | No | Server | `nara_...` or `sk-...` | Platform model so a first question works before BYOK. |
-| `NYKST_AI_BASE_URL` | No | Server | `https://router.bynara.id/v1` | OpenAI-compatible router, HTTPS only. |
-| `NYKST_AI_MODEL` | No | Server | `agnes-2.5-flash` | Platform model id. |
-| `GEMINI_API_KEY` | No | Server | `AIza...` | Secondary platform fallback. |
-| `SLACK_CLIENT_ID` / `_SECRET` | No | Server | Slack app credentials | Enables `/nykst` slash commands. |
-| `JIRA_CLIENT_ID` / `_SECRET` | No | Server | Atlassian OAuth | Enables issue correlation. |
-| `NYKST_ADMIN_GITHUB_ID` | No | Server | Numeric GitHub id | Grants `/admin/payments`. |
+| Variable                        | Required | Scope  | Format                                               | Description                                                                                                                                                           |
+| :------------------------------ | :------: | :----- | :--------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_URL`                  |   Yes    | Server | `https://<ref>.supabase.co`                          | Project URL for server-side queries.                                                                                                                                  |
+| `SUPABASE_PUBLISHABLE_KEY`      |   Yes    | Server | `sb_publishable_...`                                 | RLS-scoped key for reads.                                                                                                                                             |
+| `SUPABASE_SERVICE_ROLE_KEY`     |   Yes    | Server | `eyJ...`                                             | Server-only writes: snapshots, keys, tokens, billing.                                                                                                                 |
+| `VITE_SUPABASE_URL`             |   Yes    | Client | `https://<ref>.supabase.co`                          | Browser client for Realtime.                                                                                                                                          |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` |   Yes    | Client | `sb_publishable_...`                                 | Browser key, guarded by RLS.                                                                                                                                          |
+| `GITHUB_CLIENT_ID`              |   Yes    | Server | OAuth or App client id                               | GitHub authorization.                                                                                                                                                 |
+| `GITHUB_CLIENT_SECRET`          |   Yes    | Server | 40 hex chars                                         | Token exchange and state signing.                                                                                                                                     |
+| `GITHUB_WEBHOOK_SECRET`         |   Yes    | Server | Random string                                        | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`.                                                                                                             |
+| `GITHUB_BOT_TOKEN`              |    No    | Server | Fine-grained: Issues RW, Pull requests R, Metadata R | Posts and updates the PR blast-radius comment. The repository also needs a committed snapshot. Without the token the webhook stores the signal and skips the comment. |
+| `GITHUB_REDIRECT_URI`           |    No    | Server | Absolute URL                                         | Optional override; otherwise the host is matched automatically.                                                                                                       |
+| `GITHUB_APP_SLUG`               |    No    | Server | App slug                                             | Enables GitHub App installation URLs instead of OAuth scope prompts.                                                                                                  |
+| `NYKST_BYOK_SECRET`             |   Yes    | Server | 32+ characters                                       | Derives the AES-256-GCM key for stored provider keys.                                                                                                                 |
+| `NYKST_AI_API_KEY`              |    No    | Server | `nara_...` or `sk-...`                               | Platform model so a first question works before BYOK.                                                                                                                 |
+| `NYKST_AI_BASE_URL`             |    No    | Server | `https://router.bynara.id/v1`                        | OpenAI-compatible router, HTTPS only.                                                                                                                                 |
+| `NYKST_AI_MODEL`                |    No    | Server | `agnes-2.5-flash`                                    | Platform model id.                                                                                                                                                    |
+| `GEMINI_API_KEY`                |    No    | Server | `AIza...`                                            | Secondary platform fallback.                                                                                                                                          |
+| `SLACK_CLIENT_ID` / `_SECRET`   |    No    | Server | Slack app credentials                                | Enables `/nykst` slash commands.                                                                                                                                      |
+| `JIRA_CLIENT_ID` / `_SECRET`    |    No    | Server | Atlassian OAuth                                      | Enables issue correlation.                                                                                                                                            |
+| `NYKST_ADMIN_GITHUB_ID`         |    No    | Server | Numeric GitHub id                                    | Grants `/admin/payments`.                                                                                                                                             |
 
 > [!WARNING]
 > `SUPABASE_SERVICE_ROLE_KEY` and `NYKST_BYOK_SECRET` bypass or unlock protection layers. They belong in server environment variables only, never in `VITE_` variables and never in the repository.
@@ -744,25 +798,25 @@ nykst/
 - Browser and app routes: `HttpOnly; Secure; SameSite=Lax` cookie set by the OAuth callback.
 - MCP: `Authorization: Bearer nyk_<token>`, stored as a SHA-256 hash.
 
-| Method | Path | Auth | Purpose |
-| :---: | :--- | :---: | :--- |
-| `GET` | `/api/health` | Public | Supabase connectivity and required tables |
-| `GET` | `/api/analysis/self` | Public | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1` |
-| `GET` | `/api/integrations/github/start` | Public | Signed state, then redirect to GitHub |
-| `GET` | `/api/integrations/github/callback` | Public | Verify state, exchange code, set cookie |
-| `POST` | `/api/integrations/github/ingest` | Session | Tarball fetch, AST and history analysis, snapshot write |
-| `GET` | `/api/integrations/github/latest` | Session | Newest snapshot for the user |
-| `GET` | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` | Session | Repository discovery |
-| `GET` | `/api/integrations/github/file-evidence` | Session | Evidence for one path |
-| `POST` | `/api/integrations/github/coding` | Session | Grounded edit proposal with diff |
-| `POST` | `/api/ai/chat` | Public or BYOK | Architecture Q and A (`mode: navigator \| code`) |
-| `GET` `POST` `DELETE` | `/api/ai/key` | Session | Provider status, save, delete |
-| `POST` | `/api/mcp` | Bearer `nyk_` | Streamable HTTP MCP, protocol `2025-06-18` |
-| `GET` `POST` `DELETE` | `/api/mcp-tokens` | Session | Mint, list, revoke tokens |
-| `POST` | `/api/diagnosis` | Session | Root-cause candidates for a production signal |
-| `POST` | `/api/webhooks/github` | HMAC | Verified intake: incremental push patch, production signal, and PR blast-radius comment |
-| `GET` | `/api/integrations/{slack,jira,connectors}/*` | Session | Connector OAuth and command endpoints |
-| `GET` `POST` | `/api/subscription` | Session | Plan state and settlement submission |
+|        Method         | Path                                                                                           |      Auth      | Purpose                                                                                 |
+| :-------------------: | :--------------------------------------------------------------------------------------------- | :------------: | :-------------------------------------------------------------------------------------- |
+|         `GET`         | `/api/health`                                                                                  |     Public     | Supabase connectivity and required tables                                               |
+|         `GET`         | `/api/analysis/self`                                                                           |     Public     | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                 |
+|         `GET`         | `/api/integrations/github/start`                                                               |     Public     | Signed state, then redirect to GitHub                                                   |
+|         `GET`         | `/api/integrations/github/callback`                                                            |     Public     | Verify state, exchange code, set cookie                                                 |
+|        `POST`         | `/api/integrations/github/ingest`                                                              |    Session     | Tarball fetch, AST and history analysis, snapshot write                                 |
+|         `GET`         | `/api/integrations/github/latest`                                                              |    Session     | Newest snapshot for the user                                                            |
+|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |    Session     | Repository discovery                                                                    |
+|         `GET`         | `/api/integrations/github/file-evidence`                                                       |    Session     | Evidence for one path                                                                   |
+|        `POST`         | `/api/integrations/github/coding`                                                              |    Session     | Grounded edit proposal with diff                                                        |
+|        `POST`         | `/api/ai/chat`                                                                                 | Public or BYOK | Architecture Q and A (`mode: navigator \| code`)                                        |
+| `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |    Session     | Provider status, save, delete                                                           |
+|        `POST`         | `/api/mcp`                                                                                     | Bearer `nyk_`  | Streamable HTTP MCP, protocol `2025-06-18`                                              |
+| `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |    Session     | Mint, list, revoke tokens                                                               |
+|        `POST`         | `/api/diagnosis`                                                                               |    Session     | Root-cause candidates for a production signal                                           |
+|        `POST`         | `/api/webhooks/github`                                                                         |      HMAC      | Verified intake: incremental push patch, production signal, and PR blast-radius comment |
+|         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |    Session     | Connector OAuth and command endpoints                                                   |
+|     `GET` `POST`      | `/api/subscription`                                                                            |    Session     | Plan state and settlement submission                                                    |
 
 ### Example: blast radius from a source checkout
 
@@ -826,10 +880,10 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
   }' | jq
 ```
 
-MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`, `search_memory`, `get_federation`, `get_trace_overlay`.
+MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`, `search_memory`, `get_federation`, `simulate_change`, `generate_fix_patch`, `get_trace_overlay`.
 
 <details>
-<summary><b>Federation, trace overlay, and memory tool calls</b></summary>
+<summary><b>Simulation, remediation, federation, trace overlay, and memory tool calls</b></summary>
 
 <br/>
 
@@ -845,6 +899,20 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
   -H "Authorization: Bearer nyk_your_token" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_memory","arguments":{"query":"session","kind":"adr"}}}' | jq '.result.structuredContent.results'
+
+# Preview a write or deletion without persisting anything
+curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
+  -H "Authorization: Bearer nyk_your_token" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"simulate_change","arguments":{"changes":[{"path":"src/lib/analysis/engine.server.ts","content":"export const changed = true;\n"}]}}}' \
+  | jq '{overlay: .result.structuredContent.overlay, after: .result.structuredContent.after}'
+
+# Build a remediation diff only when the in-memory graph verifies it
+curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
+  -H "Authorization: Bearer nyk_your_token" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -n --arg content "$(cat src/lib/analysis/engine.server.ts)" '{jsonrpc:"2.0",id:5,method:"tools/call",params:{name:"generate_fix_patch",arguments:{path:"src/lib/analysis/engine.server.ts",content:$content}}}')" \
+  | jq '{verified: .result.structuredContent.verified, patch: .result.structuredContent.patch}'
 
 # OTLP spans onto static files and edges
 curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
@@ -884,16 +952,69 @@ claude mcp add --transport http --scope user nykst \
 }
 ```
 
+### Simulate a change before writing it
+
+```bash
+curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
+  -H "Authorization: Bearer $NYKST_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+    "params": {
+      "name": "simulate_change",
+      "arguments": {
+        "changes": [
+          { "path": "src/lib/analysis/patch.server.ts", "content": "export const patched = true;\n" },
+          { "path": "src/lib/analysis/telemetry.ts", "content": null }
+        ]
+      }
+    }
+  }' | jq '.result.structuredContent | {overlay, after, new_cycles, new_unresolved_imports, column_drift}'
+```
+
+Nothing is written. The result is computed on a cloned snapshot, so the stored analysis, the database, and the repository remain unchanged.
+
+### Generate a verified fix
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "generate_fix_patch",
+    "arguments": {
+      "path": "src/lib/analysis/engine.server.ts",
+      "content": "…the current file text…"
+    }
+  }
+}
+```
+
+The tool selects an exact existing target for each unresolved import, applies the rewritten file to an in-memory clone, and returns `verified: true` with a unified diff only when the file's unresolved imports fall and the total cycle count does not grow. If no exact target exists, it returns the candidates and refuses to guess.
+
+### Watch local edits
+
+```bash
+bun run watch                    # patches .nykst/analysis.json from local changes
+bun scripts/watch.ts --no-write  # keep the graph in memory only
+```
+
+The watcher reuses the stored graph, reparses only changed source, SQL, contract, and docs files, and prints file, edge, unresolved, and cycle counts after each debounced patch.
+
 ### Teach the agent when to use it
 
 Add this to `CLAUDE.md`, `AGENTS.md`, or `.cursorrules`:
 
 ```markdown
 ## Before editing
-1. Call get_impact with the files you plan to change and read every importer and entrypoint.
-2. If the change touches a table, service, or env var, call find_usages and update every call site.
-3. Run the covering tests returned by get_impact before you finish.
-4. Cite file:line when you explain the change. If evidence is missing, say so.
+
+1. Call simulate_change with the files you plan to write or delete and read the overlay result first.
+2. Call get_impact with the files you plan to change and read every importer and entrypoint.
+3. If the change touches a table, service, or env var, call find_usages and update every call site.
+4. If an import is unresolved, call generate_fix_patch and apply only a verified diff.
+5. Run the covering tests returned by get_impact before you finish.
+6. Cite file:line when you explain the change. If evidence is missing, say so.
 ```
 
 ### Run the analyzer locally
@@ -929,21 +1050,20 @@ bun scripts/analyze-local.ts . --changed src/lib/analysis/engine.server.ts,src/r
 
 Measured on this repository with Bun 1.4.2 on Node 22, from a production build. The committed snapshot keeps the same counts on hosts that ship without a `src/` tree. Reproduce any row with the command beside it.
 
-| Metric | Measured | Command |
-| :--- | :--- | :--- |
-| Cold AST compile, 179 files | **1,008 ms** | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs` |
-| Warm cached response | **11 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Incremental patch, 500 files | **under 15 ms** | `bun test tests/incremental-patch.test.ts` |
-| Analyzed source | **179 files, 29,990 LOC** | `jq .stats` |
-| Internal import edges | **366, zero unresolved** | `jq .stats.internalEdges, .stats.unresolvedImports` |
-| Cycles | **0** | `jq '.cycles \| length'` |
-| SQL and data resources | **12** | `jq '.resources \| length'` |
-| External services | **9** | `jq '.services \| length'` |
-| SSR landing response | **44 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/` |
-| Health probe, all tables | **450 ms** | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health` |
-| Client payload, all routes | **924 kB JS + 107 kB CSS** | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch` |
-| Test suite | **0.37 s, 65 tests, 348 assertions** | `bun test ./tests` |
-| Playwright suite | **5 routes, desktop and mobile** | `bunx playwright test` |
+| Metric                       | Measured                         | Command                                                                 |
+| :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
+| Cold AST compile, 186 files  | **~1.1 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
+| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              || Analyzed source | **186 files, 32,018 LOC** | `jq .stats` |
+| Internal import edges        | **390, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
+| SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |
+| External services            | **9**                            | `jq '.services \| length'`                                              |
+| SSR landing response         | **44 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
+| Health probe, all tables     | **450 ms**                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
+| Client payload, all routes   | **924 kB JS + 107 kB CSS**       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
+| Test suite                   | **~2 s, 72 tests**               | `bun test ./tests`                                                      |
+| Playwright suite             | **5 routes, desktop and mobile** | `bunx playwright test`                                                  |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
@@ -952,12 +1072,12 @@ npx lighthouse https://nykst.unifies.codes --preset=desktop --view
 npx lighthouse https://nykst.unifies.codes --preset=mobile --view
 ```
 
-| Lighthouse category | Target | How to check |
-| :--- | :--- | :--- |
-| Performance | 90 or higher on desktop | `npx lighthouse <url> --preset=desktop` |
-| Accessibility | 100, every image has `alt` and every control a name | same report, Accessibility tab |
-| Best practices | 100, HTTPS and no console errors | same report |
-| SEO | 100, unique title and description per route | same report |
+| Lighthouse category | Target                                              | How to check                            |
+| :------------------ | :-------------------------------------------------- | :-------------------------------------- |
+| Performance         | 90 or higher on desktop                             | `npx lighthouse <url> --preset=desktop` |
+| Accessibility       | 100, every image has `alt` and every control a name | same report, Accessibility tab          |
+| Best practices      | 100, HTTPS and no console errors                    | same report                             |
+| SEO                 | 100, unique title and description per route         | same report                             |
 
 Scores are not asserted in CI: they depend on the region, the network, and the Supabase latency of your deployment. Run the two commands above against your own URL before claiming a number.
 
@@ -970,7 +1090,7 @@ Scores are not asserted in CI: they depend on the region, the network, and the S
 ## 🧪 Testing
 
 ```bash
-bun test ./tests              # 65 tests, 348 assertions, 3 live-only skips
+bun test ./tests              # 72 tests, 3 live-only skips
 bun test --coverage ./tests   # coverage report
 bunx tsc -b --noEmit          # strict typecheck, project references
 bun run lint                  # ESLint
@@ -979,20 +1099,21 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-| Suite | What it proves |
-| :--- | :--- |
-| `tests/schema.test.ts` | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected |
-| `tests/repository-graph.test.ts` | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children |
-| `tests/connectors.test.ts` | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip |
-| `tests/self-snapshot.test.ts` | The committed analysis snapshot is well formed, reproducible, and keeps the live workbench populated on hosts that ship without a source tree |
-| `tests/incremental-patch.test.ts` | Patched graphs match cold compiles for files, edges, cycles, resources, and stats, and 500 files patch in under 15 ms |
-| `tests/polyglot.test.ts` | Python relative imports, Go package imports, Rust `crate`, `self`, and `mod` paths, env reads, endpoints, and symbols |
-| `tests/federation.test.ts` | OpenAPI JSON and YAML operations, proto streaming, exact versus template matching, and cross-repository edges |
-| `tests/telemetry.test.ts` | OTLP decoding, exact and unique-suffix file matching, p50 and p95, static versus observed-only edges |
-| `tests/pr-blast-radius.test.ts` | Risk tiers, direct and transitive dependents, resource lineage, the zero-test coverage gate, and stable Markdown |
-| `tests/memory.test.ts` | ADR status and citations, Mermaid flowcharts and sequences, migration columns, image dedupe, checksums |
-| `tests/analysis-tools.test.ts` | Every MCP tool is read-only and the memory, federation, and trace surfaces are exposed |
-| `e2e/routes.spec.ts` | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
+| Suite                              | What it proves                                                                                                                                                                                                    |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/schema.test.ts`             | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected                     |
+| `tests/repository-graph.test.ts`   | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children                                                                             |
+| `tests/connectors.test.ts`         | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip                                                                              |
+| `tests/self-snapshot.test.ts`      | The committed analysis snapshot is well formed, reproducible, and keeps the live workbench populated on hosts that ship without a source tree                                                                     |
+| `tests/incremental-patch.test.ts`  | Patched graphs match cold compiles for files, edges, cycles, resources, and stats, and 500 files patch in under 15 ms                                                                                             |
+| `tests/analysis-contracts.test.ts` | Exported function arity, parameter and property types, SQL column replay and drift, in-memory deletion simulation, and verified unresolved-import diffs                                                           |
+| `tests/polyglot.test.ts`           | Python relative imports, Go package imports, Rust `crate`, `self`, and `mod` paths, env reads, endpoints, and symbols                                                                                             |
+| `tests/federation.test.ts`         | OpenAPI JSON and YAML operations, proto streaming, exact versus template matching, and cross-repository edges                                                                                                     |
+| `tests/telemetry.test.ts`          | OTLP decoding, exact and unique-suffix file matching, p50 and p95, static versus observed-only edges                                                                                                              |
+| `tests/pr-blast-radius.test.ts`    | Risk tiers, direct and transitive dependents, resource lineage, the zero-test coverage gate, and stable Markdown                                                                                                  |
+| `tests/memory.test.ts`             | ADR status and citations, Mermaid flowcharts and sequences, migration columns, image dedupe, checksums                                                                                                            |
+| `tests/analysis-tools.test.ts`     | Every MCP tool is read-only and the memory, federation, and trace surfaces are exposed                                                                                                                            |
+| `e2e/routes.spec.ts`               | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
 
 The unit suite runs offline for the graph, connector, and snapshot tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
 
@@ -1006,11 +1127,11 @@ GitHub Actions runs the typecheck and unit suites in [`ci.yml`](.github/workflow
 
 ## 🚀 Deployment
 
-| Surface | URL | Notes |
-| :--- | :--- | :--- |
-| Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes) | Custom domain on Vercel |
-| Vercel alias | [nykst.vercel.app](https://nykst.vercel.app) | Same project and build |
-| Source | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch |
+| Surface              | URL                                                          | Notes                                          |
+| :------------------- | :----------------------------------------------------------- | :--------------------------------------------- |
+| Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes)           | Custom domain on Vercel                        |
+| Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | Same project and build                         |
+| Source               | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch |
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
 
@@ -1042,14 +1163,14 @@ The build runs `npm install` from `package-lock.json` and `vite build`. Keep Tan
 1. Add `GITHUB_WEBHOOK_SECRET` and `GITHUB_BOT_TOKEN` to the production environment, then redeploy.
 2. In the repository, open **Settings -> Webhooks -> Add webhook** and set:
 
-| Field | Value |
-| :--- | :--- |
-| Payload URL | `https://nykst.unifies.codes/api/webhooks/github` |
-| Content type | `application/json` |
-| Secret | the same value as `GITHUB_WEBHOOK_SECRET` |
-| SSL verification | Enabled |
-| Events | Pushes and Pull requests |
-| Active | Checked |
+| Field            | Value                                             |
+| :--------------- | :------------------------------------------------ |
+| Payload URL      | `https://nykst.unifies.codes/api/webhooks/github` |
+| Content type     | `application/json`                                |
+| Secret           | the same value as `GITHUB_WEBHOOK_SECRET`         |
+| SSL verification | Enabled                                           |
+| Events           | Pushes and Pull requests                          |
+| Active           | Checked                                           |
 
 3. Make sure the repository has been ingested in Nykst at least once. The reviewer reads the newest `repository_ingestions` snapshot for the repository. Without a snapshot, a pull request event is accepted and returns `skipped` with a clear reason instead of posting a comment.
 4. Open or synchronize a pull request. A healthy delivery returns `blastRadius.status: "posted"` on the first review and `"updated"` on later synchronizes. The stable marker `<!-- nykst:blast-radius -->` keeps one comment per pull request.
@@ -1166,7 +1287,7 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Live self-indexed workbench with zero mock data
 - [x] Before You Act consequence envelope
 - [x] Six-layer system memory
-- [x] Streamable HTTP MCP with read-only tools, now eight
+- [x] Streamable HTTP MCP with read-only tools, now ten
 - [x] Incremental graph patching on push webhooks, no full tarball re-download
 - [x] Python, Go, and Rust import adapters on the shared adjacency list
 - [x] Cross-repository federation over OpenAPI and gRPC contracts
@@ -1179,12 +1300,12 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] eSewa subscription flow with admin verification
 - [x] Playwright browser matrix in CI, desktop and mobile
 - [x] Committed self-analysis snapshot for source-less production builds
-- [ ] Fine-grained exported symbol signatures with parameter arity and type properties
-- [ ] Column-level SQL contract drift findings in the dossier and Before You Act
-- [ ] `simulate_change` pre-flight MCP tool with in-memory graph overlay
-- [ ] `generate_fix_patch` for deterministic, machine-verified remediation diffs
-- [ ] One-command agent onboarding through `npx nykst init`
-- [ ] Incremental graph patching from local file watchers, not only webhooks
+- [x] Fine-grained exported symbol signatures with parameter arity and type properties
+- [x] Column-level SQL contract drift findings in the dossier and Before You Act
+- [x] `simulate_change` pre-flight MCP tool with in-memory graph overlay
+- [x] `generate_fix_patch` for deterministic, machine-verified remediation diffs
+- [x] One-command agent onboarding through `npx nykst init`
+- [x] Incremental graph patching from local file watchers, not only webhooks
 
 <div align="right"><a href="#top">Back to top</a></div>
 

@@ -200,6 +200,8 @@ function pythonSource(path: string, content: string): ParsedSource {
     urls,
     dataCalls: [],
     endpoints,
+    symbols: [],
+    columnRefs: [],
     loc: lines.filter((line) => line.trim()).length,
   };
 }
@@ -266,6 +268,8 @@ function goSource(path: string, content: string): ParsedSource {
     urls,
     dataCalls: [],
     endpoints,
+    symbols: [],
+    columnRefs: [],
     loc: lines.filter((line) => line.trim()).length,
   };
 }
@@ -334,6 +338,8 @@ function rustSource(path: string, content: string): ParsedSource {
     urls,
     dataCalls: [],
     endpoints,
+    symbols: [],
+    columnRefs: [],
     loc: lines.filter((line) => line.trim()).length,
   };
 }

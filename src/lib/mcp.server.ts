@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { federateRepositories } from "@/lib/analysis/federation";
+import { generateFixPatch } from "@/lib/analysis/fix";
+import { simulateChange } from "@/lib/analysis/simulate";
 import { overlayTelemetry, parseOtlpSpans } from "@/lib/analysis/telemetry";
 import { runAnalysisTool, str, TOOLS, type AnalysisSnapshot } from "@/lib/analysis/tools";
 import type { RepoAnalysis, RepoHistory } from "@/lib/analysis/types";
@@ -166,6 +168,31 @@ async function callTool(userId: string, name: string, args: Record<string, unkno
       })),
     };
   }
+  if (name === "simulate_change") {
+    const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
+    const raw = args["changes"];
+    if (!Array.isArray(raw))
+      throw new Error("changes must be an array of { path, content } objects.");
+    const changes = raw.map((item) => {
+      const record = (item ?? {}) as Record<string, unknown>;
+      const path = str(record["path"]);
+      if (!path) throw new Error("Every simulated change needs a path.");
+      const content = record["content"];
+      if (content !== null && typeof content !== "string")
+        throw new Error(`Change for ${path} needs string content or null to delete.`);
+      return { path, content: content as string | null };
+    });
+    const paths = Array.isArray(args["paths"]) ? args["paths"].map(str).filter(Boolean) : [];
+    return simulateChange(snapshot, changes, paths);
+  }
+  if (name === "generate_fix_patch") {
+    const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
+    return generateFixPatch(snapshot, {
+      path: str(args["path"]),
+      ...(typeof args["content"] === "string" ? { content: args["content"] } : {}),
+      issue: "unresolved-import",
+    });
+  }
   if (name === "get_trace_overlay") {
     const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
     const raw = args["spans"];
@@ -211,7 +238,7 @@ async function handleMessage(userId: string, message: RpcRequest) {
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          "Nykst holds a compiler-based map of the user's repository. Before changing code, call get_impact with the files you plan to edit and check the listed dependents, entry points and tests. Use find_usages for database tables, external services and environment variables.",
+          "Nykst holds a compiler-based map of the user's repository. Before changing code, call get_impact with the files you plan to edit and check the listed dependents, entry points and tests. Use simulate_change to preview writes or deletions without persisting them, find_usages for tables/services/env vars, and generate_fix_patch for a machine-verified unresolved-import diff.",
       });
     }
     case "ping":

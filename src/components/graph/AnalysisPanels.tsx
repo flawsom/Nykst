@@ -9,6 +9,7 @@ import {
   type ImpactLevel,
 } from "@/lib/analysis/impact";
 import type { RepoAnalysis } from "@/lib/analysis/types";
+import { formatSymbolSignature } from "@/lib/analysis/symbols";
 import { cn } from "@/lib/utils";
 
 const LEVEL_TONE: Record<ImpactLevel, string> = {
@@ -42,6 +43,15 @@ function Card({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-muted-foreground text-xs">{children}</p>;
+}
+
+function seedResources(analysis: RepoAnalysis, seeds: string[]) {
+  const paths = new Set(seeds);
+  return analysis.resources.flatMap((resource) =>
+    (resource.columnDrift ?? []).filter((finding) =>
+      finding.references.some((reference) => paths.has(reference.path)),
+    ),
+  );
 }
 
 function useLinks(snapshot: RepositorySnapshot) {
@@ -430,6 +440,35 @@ export function ImpactPanel({ snapshot, node }: { snapshot: RepositorySnapshot; 
         )}
       </Card>
 
+      {(() => {
+        const drift = seedResources(analysis, seeds);
+        return drift.length > 0 ? (
+          <Card title="SQL contract drift" hint="column references that disagree with DDL">
+            {drift.map((finding) => (
+              <div
+                key={`${finding.table}-${finding.kind}-${finding.column}`}
+                className="space-y-1 text-xs"
+              >
+                <p>
+                  <span className="font-mono">
+                    {finding.table}.{finding.column}
+                  </span>{" "}
+                  <span className="text-muted-foreground">
+                    {finding.kind === "dropped-column" ? "was dropped" : "is not declared"}
+                  </span>
+                </p>
+                <p className="text-muted-foreground font-mono text-[10px]">
+                  {finding.references
+                    .slice(0, 4)
+                    .map((reference) => `${reference.path}:${reference.line}`)
+                    .join(" · ")}
+                </p>
+              </div>
+            ))}
+          </Card>
+        ) : null;
+      })()}
+
       {(cycles.length > 0 || unresolved.length > 0) && (
         <Card title="Structural warnings">
           {cycles.map((cycle, i) => (
@@ -456,11 +495,45 @@ export function ImpactPanel({ snapshot, node }: { snapshot: RepositorySnapshot; 
       )}
 
       {single && (
-        <Card title="Symbols">
-          <p className="text-xs">
-            <span className="text-muted-foreground">Exports:</span>{" "}
-            <span className="font-mono">{single.exports.join(", ") || "none"}</span>
-          </p>
+        <Card title="Symbols" hint="public signatures, arity and type properties">
+          {single.symbols?.length ? (
+            <ShowMore
+              items={single.symbols}
+              limit={14}
+              render={(symbol) => (
+                <div
+                  key={`${symbol.name}-${symbol.line}`}
+                  className="border-border/70 space-y-1 border-b pb-2 last:border-0 last:pb-0"
+                >
+                  <p className="font-mono text-[11px] break-words">
+                    {formatSymbolSignature(symbol)}
+                  </p>
+                  <p className="text-muted-foreground font-mono text-[10px]">
+                    {symbol.kind} · line {symbol.line}
+                    {symbol.arity !== undefined
+                      ? ` · arity ${symbol.arity} (${symbol.requiredArity} required)`
+                      : ""}
+                  </p>
+                  {symbol.typeProperties?.length ? (
+                    <p className="text-muted-foreground font-mono text-[10px]">
+                      {symbol.typeProperties
+                        .slice(0, 8)
+                        .map(
+                          (property) =>
+                            `${property.name}${property.optional ? "?" : ""}: ${property.type}`,
+                        )
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            />
+          ) : (
+            <p className="text-xs">
+              <span className="text-muted-foreground">Exports:</span>{" "}
+              <span className="font-mono">{single.exports.join(", ") || "none"}</span>
+            </p>
+          )}
           {single.functions.length > 0 && (
             <p className="text-xs">
               <span className="text-muted-foreground">Functions:</span>{" "}
@@ -587,16 +660,47 @@ export function ArchitecturePanel({ snapshot }: { snapshot: RepositorySnapshot }
             items={analysis.resources}
             limit={12}
             render={(resource) => (
-              <div key={resource.id} className="flex items-center justify-between gap-2 text-xs">
-                <span className="font-mono">
-                  {resource.kind} {resource.name}
-                </span>
-                <span className="text-muted-foreground text-[10px]">
-                  {resource.uses.length
-                    ? `${new Set(resource.uses.map((use) => use.path)).size} files`
-                    : "unused in code"}
-                  {resource.definedIn.length ? "" : " · no definition found"}
-                </span>
+              <div key={resource.id} className="space-y-1 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono">
+                    {resource.kind} {resource.name}
+                  </span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {resource.columns?.length ? `${resource.columns.length} columns · ` : ""}
+                    {resource.uses.length
+                      ? `${new Set(resource.uses.map((use) => use.path)).size} files`
+                      : "unused in code"}
+                    {resource.definedIn.length ? "" : " · no definition found"}
+                  </span>
+                </div>
+                {resource.columns?.length ? (
+                  <p
+                    className="text-muted-foreground truncate font-mono text-[10px]"
+                    title={resource.columns
+                      .map(
+                        (column) =>
+                          `${column.name} ${column.type}${column.nullable ? " null" : ""}`,
+                      )
+                      .join("\n")}
+                  >
+                    {resource.columns
+                      .slice(0, 10)
+                      .map((column) => `${column.name}:${column.type}`)
+                      .join(" · ")}
+                    {resource.columns.length > 10 ? " …" : ""}
+                  </p>
+                ) : null}
+                {resource.columnDrift?.map((finding) => (
+                  <p
+                    key={`${finding.kind}-${finding.column}`}
+                    className="text-[11px] text-amber-300"
+                  >
+                    {finding.kind === "dropped-column" ? "Dropped" : "Unknown"} column{" "}
+                    <span className="font-mono">{finding.column}</span> ·{" "}
+                    {finding.references.length} reference
+                    {finding.references.length === 1 ? "" : "s"}
+                  </p>
+                ))}
               </div>
             )}
           />
