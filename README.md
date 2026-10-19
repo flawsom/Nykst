@@ -558,10 +558,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 VITE_SUPABASE_URL=https://<ref>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
-# GitHub OAuth
+# GitHub OAuth and PR bot
 GITHUB_CLIENT_ID=Ov23li...
 GITHUB_CLIENT_SECRET=...
 GITHUB_WEBHOOK_SECRET=...
+GITHUB_BOT_TOKEN=github_pat_...
 
 # Vault and platform AI
 NYKST_BYOK_SECRET=<32+ random characters>
@@ -713,7 +714,7 @@ nykst/
 | `GITHUB_CLIENT_ID` | Yes | Server | OAuth or App client id | GitHub authorization. |
 | `GITHUB_CLIENT_SECRET` | Yes | Server | 40 hex chars | Token exchange and state signing. |
 | `GITHUB_WEBHOOK_SECRET` | Yes | Server | Random string | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`. |
-| `GITHUB_BOT_TOKEN` | No | Server | Fine-grained token with `issues: write` | Posts and updates the PR blast-radius comment. Without it the webhook stores the signal and skips the comment. |
+| `GITHUB_BOT_TOKEN` | No | Server | Fine-grained: Issues RW, Pull requests R, Metadata R | Posts and updates the PR blast-radius comment. The repository also needs a committed snapshot. Without the token the webhook stores the signal and skips the comment. |
 | `GITHUB_REDIRECT_URI` | No | Server | Absolute URL | Optional override; otherwise the host is matched automatically. |
 | `GITHUB_APP_SLUG` | No | Server | App slug | Enables GitHub App installation URLs instead of OAuth scope prompts. |
 | `NYKST_BYOK_SECRET` | Yes | Server | 32+ characters | Derives the AES-256-GCM key for stored provider keys. |
@@ -1022,12 +1023,38 @@ OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, 
 bunx vercel link
 bunx vercel env add SUPABASE_SERVICE_ROLE_KEY production
 bunx vercel env add GITHUB_CLIENT_SECRET production
+bunx vercel env add GITHUB_WEBHOOK_SECRET production
+bunx vercel env add GITHUB_BOT_TOKEN production
 bunx vercel env add NYKST_BYOK_SECRET production
 bunx vercel env add NYKST_AI_API_KEY production
 bunx vercel --prod
 ```
 
 The build runs `npm install` from `package-lock.json` and `vite build`. Keep TanStack packages current: Vercel blocks versions with known advisories.
+
+</details>
+
+<details open>
+<summary><b>GitHub webhook and PR bot</b></summary>
+
+<br/>
+
+1. Add `GITHUB_WEBHOOK_SECRET` and `GITHUB_BOT_TOKEN` to the production environment, then redeploy.
+2. In the repository, open **Settings -> Webhooks -> Add webhook** and set:
+
+| Field | Value |
+| :--- | :--- |
+| Payload URL | `https://nykst.unifies.codes/api/webhooks/github` |
+| Content type | `application/json` |
+| Secret | the same value as `GITHUB_WEBHOOK_SECRET` |
+| SSL verification | Enabled |
+| Events | Pushes and Pull requests |
+| Active | Checked |
+
+3. Make sure the repository has been ingested in Nykst at least once. The reviewer reads the newest `repository_ingestions` snapshot for the repository. Without a snapshot, a pull request event is accepted and returns `skipped` with a clear reason instead of posting a comment.
+4. Open or synchronize a pull request. A healthy delivery returns `blastRadius.status: "posted"` on the first review and `"updated"` on later synchronizes. The stable marker `<!-- nykst:blast-radius -->` keeps one comment per pull request.
+
+The token is used only to list pull request files and to create or update the review comment. It never writes to repository contents. Use a fine-grained token scoped to the repository with `Issues: Read and write`, `Pull requests: Read-only`, and `Metadata: Read-only`.
 
 </details>
 
