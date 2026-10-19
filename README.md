@@ -1054,7 +1054,7 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 | :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
 | Cold AST compile, 186 files  | **~1.1 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              || Analyzed source | **186 files, 32,018 LOC** | `jq .stats` |
+| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              || Analyzed source | **186 files, 32,046 LOC** | `jq .stats` |
 | Internal import edges        | **390, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
 | SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |

@@ -237,6 +237,8 @@ export const Route = createFileRoute("/api/analysis/self")({
                 definedIn: r.definedIn,
                 usageCount: r.uses.length,
                 files: [...new Set(r.uses.map((u) => u.path))],
+                columns: r.columns ?? [],
+                columnDrift: r.columnDrift ?? [],
               })),
               envVars: analysis.envVars.slice(0, 30),
               cycles: analysis.cycles,

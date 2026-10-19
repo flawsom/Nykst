@@ -62,6 +62,14 @@ export type LiveSelfAnalysis = {
     definedIn: string[];
     usageCount: number;
     files: string[];
+    columns?: { name: string; type: string; nullable: boolean }[];
+    columnDrift?: {
+      kind: "unknown-column" | "dropped-column";
+      table: string;
+      column: string;
+      message: string;
+      references: { path: string; line: number; operation: string }[];
+    }[];
   }[];
   cycles: string[][];
   topHubs: {
@@ -650,6 +658,24 @@ export function LiveGraphRagExplorer({
                         DDL: {res.definedIn.join(", ")}
                       </p>
                     )}
+                    {res.columns?.length ? (
+                      <p className="text-muted-foreground mt-1 font-mono text-[10px]">
+                        {res.columns
+                          .slice(0, 8)
+                          .map((column) => `${column.name}:${column.type}`)
+                          .join(" · ")}
+                        {res.columns.length > 8 ? ` +${res.columns.length - 8}` : ""}
+                      </p>
+                    ) : null}
+                    {res.columnDrift?.length ? (
+                      <p className="mt-1 text-[10px] text-amber-300">
+                        Contract drift:{" "}
+                        {res.columnDrift
+                          .slice(0, 4)
+                          .map((finding) => finding.column)
+                          .join(", ")}
+                      </p>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {res.files.map((f) => (
                         <button
