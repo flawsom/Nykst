@@ -10,7 +10,7 @@ import { buildRepositoryGraph, type RepositorySnapshot } from "../src/lib/reposi
 
 const PATHS = [
   "src/index.ts",
-  "src/lib/index.ts", // same basename, different area — the case that used to collide
+  "src/lib/index.ts", // same basename, different area, the case that used to collide
   "src/routes/index.tsx",
   "src/components/index.ts",
   "src/app.tsx",

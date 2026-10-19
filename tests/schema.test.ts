@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 // Keeps the provisioned database honest in two ways:
-//   1. static — supabase/schema.sql must create every table and column the generated
+//   1. static: supabase/schema.sql must create every table and column the generated
 //      Supabase types declare, with row-level security and the right grants;
-//   2. live — when Supabase credentials are present, the real project is asked for every
+//   2. live: when Supabase credentials are present, the real project is asked for every
 //      table, and the anonymous role must be refused on private data.
 // The live half skips itself when no credentials exist, so CI without secrets still runs.
 
