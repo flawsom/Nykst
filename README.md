@@ -107,7 +107,7 @@ flawsom           src/lib           analysis           supabase          impact.
 | Database lineage | SQL files treated as plain text | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites |
 | Memory | Stateless per prompt | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity |
 | Agent access | Editor fork or proprietary plugin | **Stateless Streamable HTTP MCP** at `/api/mcp`, 5 read-only tools, any MCP client |
-| Data provenance | Demo workspaces and sample data | **Zero mock data**: the app indexes its own repository live at `/api/analysis/self` |
+| Data provenance | Demo workspaces and sample data | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim |
 
 > [!IMPORTANT]
 > **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all five MCP tools are annotated `readOnlyHint: true`. There is no training on your code.
@@ -128,7 +128,7 @@ flawsom           src/lib           analysis           supabase          impact.
 </td>
 <td width="33%" valign="top">
 <h3>Live self-indexed workbench</h3>
-<p><sub>The landing page compiles this repository in front of you: 160 analyzed files, 317 import edges, 12 SQL and data resources. Click any hub to see real importers.</sub></p>
+<p><sub>The landing page runs <code>analyzeRepository</code> over a real checkout at request time. Click any hub to read its importers, entrypoints, and SQL resources with line citations.</sub></p>
 </td>
 <td width="33%" valign="top">
 <h3>Before You Act</h3>
@@ -653,7 +653,7 @@ nykst-software-intellegence/
 | `GET` | `/api/integrations/{slack,jira,connectors}/*` | Session | Connector OAuth and command endpoints |
 | `GET` `POST` | `/api/subscription` | Session | Plan state and settlement submission |
 
-### Example: blast radius from the live workspace
+### Example: blast radius from a source checkout
 
 ```bash
 curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations/github.ts&tool=get_impact" \
@@ -781,7 +781,7 @@ jq '{stats, cycles: (.cycles | length)}' /tmp/nykst-ast.json
 
 ## Performance
 
-Measured on this repository with Bun 1.4.2, on the machine that runs the preview. Reproduce any row with the command beside it.
+Measured on this repository with Bun 1.4.2, from a source checkout, because the analyzer needs the `src/` tree to resolve imports. A bundled deployment that ships without source analyzes the files it carries instead, so its counts are smaller. Reproduce any row with the command beside it.
 
 | Metric | Measured | Command |
 | :--- | :--- | :--- |
@@ -998,7 +998,7 @@ Those tools retrieve context, generate code, or review a diff. Nykst answers a n
 
 <br/>
 
-No. The landing page compiles this repository at request time through `/api/analysis/self`. Blocked database access does not fabricate numbers; it reports the failure.
+No. The workbench runs the real analyzer at request time through `/api/analysis/self` over the files present on the server, and blocked database access reports the failure instead of inventing numbers. On a source checkout that is the full repository; on a bundled host it is the source tree that was deployed.
 
 </details>
 
