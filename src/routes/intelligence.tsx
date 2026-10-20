@@ -25,6 +25,8 @@ import {
 } from "@/lib/intelligence-core";
 import type { RepositorySnapshot } from "@/lib/repository-graph";
 import { subscribeToIngestion } from "@/lib/realtime";
+import { isSelfRepository } from "@/lib/code-links";
+import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 
 export const Route = createFileRoute("/intelligence")({
@@ -212,52 +214,77 @@ function IntelligencePage() {
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [realtimeTopic, setRealtimeTopic] = useState<string | null>(null);
+  const [activeRepo, setActiveRepo] = useState<string | null>(null);
 
-  /** Loads the newest stored analysis, or falls back to the live self-indexed AST of this repository. */
-  const loadLatest = useCallback(async () => {
+  /** Loads the requested repository analysis, or falls back to the live self-indexed AST. */
+  const loadLatest = useCallback(async (repository?: string | null) => {
+    const apply = (snapshot: RepositorySnapshot, name?: string) => {
+      setRepositorySnapshot(snapshot);
+      if (name || snapshot.repository?.full_name)
+        setActiveRepo(name ?? snapshot.repository?.full_name ?? null);
+      const real = buildCoreModules(snapshot);
+      const first = real.find((mod) => mod.files.length > 0);
+      if (first) {
+        setModules(real);
+        setActiveModule(first);
+        setActiveFile(first.files[0]!);
+      }
+    };
+    const loadSelf = async () => {
+      const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
+      if (!selfRes.ok) return false;
+      const selfData = (await selfRes.json()) as {
+        repository?: string;
+        snapshotPayload?: RepositorySnapshot;
+      };
+      if (!selfData.snapshotPayload) return false;
+      apply(selfData.snapshotPayload, selfData.repository);
+      return true;
+    };
     try {
-      const response = await fetch("/api/integrations/github/latest", { cache: "no-store" });
+      if (repository && isSelfRepository(repository)) {
+        if (await loadSelf()) return;
+      }
+      const query = repository ? `?repo=${encodeURIComponent(repository)}` : "";
+      const response = await fetch(`/api/integrations/github/latest${query}`, {
+        cache: "no-store",
+      });
       if (response.ok) {
         const data = (await response.json()) as {
-          ingestion?: { payload?: RepositorySnapshot } | null;
+          ingestion?: { repository_full_name?: string; payload?: RepositorySnapshot } | null;
           realtime?: { topic?: string };
         };
         if (data.realtime?.topic) setRealtimeTopic(data.realtime.topic);
         const snapshot = data.ingestion?.payload;
         if (snapshot) {
-          setRepositorySnapshot(snapshot);
-          const real = buildCoreModules(snapshot);
-          const first = real.find((mod) => mod.files.length > 0);
-          if (first) {
-            setModules(real);
-            setActiveModule(first);
-            setActiveFile(first.files[0]!);
-          }
+          apply(snapshot, data.ingestion?.repository_full_name);
           return;
         }
       }
-      // Fall back to live self-indexed AST of this repository
-      const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
-      if (selfRes.ok) {
-        const selfData = (await selfRes.json()) as { snapshotPayload?: RepositorySnapshot };
-        if (selfData.snapshotPayload) {
-          setRepositorySnapshot(selfData.snapshotPayload);
-          const real = buildCoreModules(selfData.snapshotPayload);
-          const first = real.find((mod) => mod.files.length > 0);
-          if (first) {
-            setModules(real);
-            setActiveModule(first);
-            setActiveFile(first.files[0]!);
-          }
-        }
-      }
+      await loadSelf();
     } catch {
       // No repository evidence, no memory: the empty state stands.
     }
   }, []);
 
+  const switchRepository = useCallback(
+    (repository: string) => {
+      setActiveRepo(repository);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("repo", repository);
+        window.history.replaceState(null, "", url.toString());
+      }
+      setAiResult(null);
+      void loadLatest(repository);
+    },
+    [loadLatest],
+  );
+
   useEffect(() => {
-    void loadLatest();
+    const requested = new URLSearchParams(window.location.search).get("repo");
+    if (requested) setActiveRepo(requested);
+    void loadLatest(requested);
   }, [loadLatest]);
 
   // Real-time push: the server broadcasts the moment a new analysis is stored, so this
@@ -383,12 +410,11 @@ function IntelligencePage() {
         </div>
 
         <div className="flex min-w-0 items-center gap-2">
-          <span className="border-primary/30 bg-primary/10 text-primary inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 font-mono text-[10px] sm:px-3 sm:text-xs">
-            <span className="bg-primary size-1.5 shrink-0 rounded-full" />
-            <span className="truncate">
-              {repositorySnapshot.repository?.full_name ?? "connected repository"}
-            </span>
-          </span>
+          <RepoSwitcherBar
+            activeRepo={activeRepo ?? repositorySnapshot.repository?.full_name ?? null}
+            onSwitch={switchRepository}
+            onAnalyzed={switchRepository}
+          />
         </div>
       </header>
 

@@ -13,10 +13,19 @@ export const Route = createFileRoute("/api/integrations/github/ingest")({
       POST: async ({ request }) => {
         try {
           const token = requireGithubToken(request);
-          const body = (await request.json()) as { owner?: string; repo?: string };
+          const body = (await request.json()) as {
+            owner?: string;
+            repo?: string;
+            branch?: string;
+          };
           if (!body.owner || !body.repo)
             return json({ error: "Repository owner and name are required." }, { status: 400 });
-          const payload = await ingestGithubRepository(token, body.owner, body.repo);
+          const payload = await ingestGithubRepository(
+            token,
+            body.owner,
+            body.repo,
+            body.branch ?? null,
+          );
           const user = await (await import("@/lib/integrations/github")).githubUser(token);
           const ingestionId = await saveIngestion(user, payload);
           return json({ ingestionId, ...payload });

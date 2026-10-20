@@ -23,8 +23,17 @@ function plural(count: number, [one, many]: [string, string]) {
   return `${count} ${count === 1 ? one : many}`;
 }
 
+/**
+ * The six-level chain: organization (root) -> domain -> capability -> service ->
+ * module -> file. The level is derived from the real directory depth of the
+ * ingested tree, so `app/`, `cmd/`, `packages/*` and `src/` all read the same
+ * way without assuming a particular repository shape.
+ */
 function kindAt(depth: number): NodeKind {
-  return depth <= 1 ? "domain" : depth === 2 ? "service" : "module";
+  if (depth <= 1) return "domain";
+  if (depth === 2) return "capability";
+  if (depth === 3) return "service";
+  return "module";
 }
 
 /**
@@ -107,6 +116,7 @@ export function buildAnalysisGraph(
   const reach = new Reach(index);
   const total = analysis.files.length;
   const rootId = `repo:${repoName}|`;
+  const cycleFiles = new Set(analysis.cycles.flat());
 
   const blastFor = (paths: string[]) => {
     const result = reach.of(paths);
@@ -183,6 +193,7 @@ export function buildAnalysisGraph(
       dependencies: edges.dependencies,
       dependents: edges.dependents,
       blast: blastFor([path]),
+      ...(cycleFiles.has(path) ? { cycle: true } : {}),
       repo: repoName,
       language: file.language === "ts" || file.language === "tsx" ? "TypeScript" : "JavaScript",
       detail: {
@@ -232,6 +243,7 @@ export function buildAnalysisGraph(
       dependencies: edges.dependencies.slice(0, 200),
       dependents: edges.dependents.slice(0, 200),
       blast: blastFor(paths),
+      ...(paths.some((path) => cycleFiles.has(path)) ? { cycle: true } : {}),
       repo: repoName,
       language: "TypeScript",
       children,

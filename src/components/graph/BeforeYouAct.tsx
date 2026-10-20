@@ -16,16 +16,25 @@ import { askNykstAi, openApiSettings } from "@/lib/ai-client";
 import { buildBeforeYouActEnvelope, type ContextEnvelope } from "@/lib/before-you-act";
 import { cn } from "@/lib/utils";
 
+export interface BeforeYouActCodeTarget {
+  repository: string | null;
+  path: string;
+  line?: number | null;
+  reason?: string;
+}
+
 export function BeforeYouAct({
   node,
   snapshot,
   open,
   onClose,
+  onOpenCode,
 }: {
   node: GraphNode;
   snapshot: RepositorySnapshot | null;
   open: boolean;
   onClose: () => void;
+  onOpenCode?: (target: BeforeYouActCodeTarget) => void;
 }) {
   const [intent, setIntent] = useState("");
   const [envelope, setEnvelope] = useState<ContextEnvelope | null>(null);
@@ -128,6 +137,8 @@ export function BeforeYouAct({
               aiLoading={aiLoading}
               onAsk={ask}
               onOpenSettings={openApiSettings}
+              repository={snapshot?.repository?.full_name ?? null}
+              {...(onOpenCode ? { onOpenCode } : {})}
             />
           )}
         </div>
@@ -142,13 +153,19 @@ function EnvelopeBody({
   aiLoading,
   onAsk,
   onOpenSettings,
+  repository,
+  onOpenCode,
 }: {
   envelope: ContextEnvelope;
   aiAnswer: string | null;
   aiLoading: boolean;
   onAsk: () => void;
   onOpenSettings: () => void;
+  repository: string | null;
+  onOpenCode?: (target: BeforeYouActCodeTarget) => void;
 }) {
+  const codeRef = (path: string, line?: number, reason?: string) =>
+    onOpenCode ? { repository, path, line: line ?? null, ...(reason ? { reason } : {}) } : null;
   const confidenceClass =
     envelope.confidence === "high"
       ? "text-emerald-300 border-emerald-500/30 bg-emerald-500/10"
@@ -278,12 +295,23 @@ function EnvelopeBody({
                   <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
                     {finding.message}
                   </p>
-                  <p className="text-muted-foreground mt-1 font-mono text-[10px]">
-                    {finding.references
-                      .slice(0, 4)
-                      .map((reference) => `${reference.path}:${reference.line}`)
-                      .join(" · ")}
-                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {finding.references.slice(0, 6).map((reference) => {
+                      const target = codeRef(reference.path, reference.line, finding.message);
+                      return (
+                        <button
+                          key={`${reference.path}:${reference.line}`}
+                          type="button"
+                          disabled={!target}
+                          onClick={() => target && onOpenCode?.(target)}
+                          className="border-border bg-card hover:border-primary hover:text-primary rounded border px-1.5 py-0.5 font-mono text-[10px] transition-colors disabled:opacity-60"
+                          title={target ? "Jump to this code" : undefined}
+                        >
+                          {reference.path}:{reference.line}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ))
             ) : (
@@ -304,7 +332,20 @@ function EnvelopeBody({
                   className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3"
                 >
                   <div>
-                    <p className="text-xs font-medium">{item.label}</p>
+                    <button
+                      type="button"
+                      disabled={!onOpenCode}
+                      onClick={() =>
+                        onOpenCode?.({
+                          repository,
+                          path: item.label,
+                          reason: item.reason,
+                        })
+                      }
+                      className="text-left text-xs font-medium transition-colors hover:text-primary disabled:opacity-100"
+                    >
+                      {item.label}
+                    </button>
                     <p className="text-muted-foreground mt-1 text-[11px]">{item.reason}</p>
                   </div>
                   <span className="text-muted-foreground shrink-0 text-[10px] font-mono">

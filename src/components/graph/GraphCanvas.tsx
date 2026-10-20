@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { curvedEdgePath, radialLayout } from "@/lib/graph-layout";
 import type { GraphNode, NodeKind } from "@/lib/graph-data";
 
 const kindColor: Record<NodeKind, string> = {
@@ -11,6 +11,11 @@ const kindColor: Record<NodeKind, string> = {
   file: "var(--node-file)",
 };
 
+/** Edge colors: teal for a direct importer, red for a runtime cycle, amber for focus. */
+const EDGE_IMPORTER = "#2DD4BF";
+const EDGE_CYCLE = "#F87171";
+const EDGE_ACTIVE = "#FBBF24";
+
 interface Props {
   center: GraphNode;
   nodes: GraphNode[];
@@ -20,9 +25,6 @@ interface Props {
   selectedId?: string | undefined;
   technical?: boolean;
 }
-
-/** Above this many children the ring layout overlaps, so switch to a grid. */
-const DENSE_THRESHOLD = 11;
 
 function truncate(s: string, max: number) {
   if (s.length <= max) return s;
@@ -101,6 +103,7 @@ export function GraphCanvas({
   const children = nodes;
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  void technical;
 
   useEffect(() => {
     setMounted(false);
@@ -113,58 +116,36 @@ export function GraphCanvas({
   const cx = W / 2;
   const cy = H / 2;
 
-  const dense = children.length > DENSE_THRESHOLD;
+  // Always a circle: one orbit up to eight siblings, two staggered orbits above
+  // that. No column or grid fallback, so a real repository never collapses into
+  // a vertical lineup on /graph.
   const points = useMemo(() => {
-    if (dense && children.length <= 18) {
-      // Two flanking columns keep 11–18 children readable without the ring overlapping.
-      // The first half reads down the left side, the second half down the right side.
-      const perColumn = Math.ceil(children.length / 2);
-      const top = 56;
-      const bottom = H - 56;
-      return children.map((child, i) => {
-        const column = i < perColumn ? -1 : 1;
-        const row = i < perColumn ? i : i - perColumn;
-        const rows = i < perColumn ? perColumn : children.length - perColumn;
-        const step = rows > 1 ? (bottom - top) / (rows - 1) : 0;
-        return { node: child, x: cx + column * 430, y: top + row * step };
-      });
-    }
-    if (dense) {
-      // Grid of slots around the center, nearest first, so the most important
-      // children (they arrive sorted) sit closest to the node they belong to.
-      const slots: { x: number; y: number }[] = [];
-      for (let row = 0; row < 13; row += 1) {
-        for (let col = 0; col < 5; col += 1) {
-          const x = 110 + col * 245;
-          const y = 40 + row * 62;
-          if (Math.abs(x - cx) < 360 && y > cy - 150 && y < cy + 175) continue;
-          slots.push({ x, y });
-        }
-      }
-      slots.sort(
-        (a, b) => Math.hypot((a.x - cx) / 1.4, a.y - cy) - Math.hypot((b.x - cx) / 1.4, b.y - cy),
-      );
-      return children.slice(0, slots.length).map((child, i) => ({ node: child, ...slots[i]! }));
-    }
-    const n = Math.max(children.length, 1);
-    const radiusX = n > 8 ? 470 : 410;
-    const radiusY = n > 8 ? 330 : 285;
-
-    return children.map((child, i) => {
-      const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-      return {
-        node: child,
-        x: cx + Math.cos(angle) * radiusX,
-        y: cy + Math.sin(angle) * radiusY,
-      };
-    });
-  }, [children, cx, cy, dense]);
+    const slots = radialLayout(children.length, { width: W, height: H });
+    return children.slice(0, slots.length).map((node, index) => ({ node, ...slots[index]! }));
+  }, [children]);
   const hiddenCount = children.length - points.length;
+  const ringSizes = useMemo(() => {
+    const sizes = { 0: 0, 1: 0, 2: 0 } as Record<number, number>;
+    for (const point of points) sizes[point.ring] = (sizes[point.ring] ?? 0) + 1;
+    return sizes;
+  }, [points]);
+  // Cards shrink as an orbit fills up, so two siblings never sit on top of each other.
+  const cardWidth = (ring: number) => {
+    const count = ringSizes[ring] ?? 0;
+    if (ring === 1) return count > 10 ? 175 : count > 8 ? 190 : 240;
+    return count > 10 ? 140 : count > 8 ? 150 : 190;
+  };
 
   return (
     <div className="relative h-full w-full overflow-hidden select-none">
       <div className="pointer-events-none absolute inset-0 bg-grid" />
-      <svg viewBox={`0 0 ${W} ${H}`} className="relative h-full w-full" role="img">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="relative h-full w-full"
+        role="img"
+        aria-label={`${center.label} dependency orbit`}
+        data-graph-layout="radial"
+      >
         <defs>
           <radialGradient id="haloGrad">
             <stop offset="0%" stopColor={kindColor[center.kind]} stopOpacity="0.4" />
@@ -176,16 +157,17 @@ export function GraphCanvas({
 
         {points.map((p) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
+          const cycle = p.node.cycle === true;
           return (
-            <line
+            <path
               key={`e-${p.node.id}`}
-              x1={cx}
-              y1={cy}
-              x2={mounted ? p.x : cx}
-              y2={mounted ? p.y : cy}
-              stroke={active ? kindColor[childKind] : "var(--border)"}
-              strokeWidth={active ? 2 : 1}
-              strokeOpacity={active ? 0.9 : 0.4}
+              d={curvedEdgePath({ x: cx, y: cy }, mounted ? { x: p.x, y: p.y } : { x: cx, y: cy })}
+              fill="none"
+              stroke={active ? EDGE_ACTIVE : cycle ? EDGE_CYCLE : EDGE_IMPORTER}
+              strokeWidth={active ? 2.2 : 1.2}
+              strokeOpacity={active ? 0.95 : cycle ? 0.6 : 0.35}
+              strokeLinecap="round"
+              data-edge-kind={cycle ? "cycle" : "importer"}
               className="transition-all duration-300"
             />
           );
@@ -247,8 +229,8 @@ export function GraphCanvas({
         {/* Surrounding circular nodes */}
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const w = dense ? 200 : 260;
-          const h = dense ? 46 : 56;
+          const w = cardWidth(p.ring);
+          const h = p.ring === 1 ? 56 : 46;
           return (
             <g
               key={p.node.id}
@@ -257,6 +239,10 @@ export function GraphCanvas({
               style={{ transitionDelay: `${i * 30}ms`, opacity: mounted ? 1 : 0 }}
               onMouseEnter={() => setHovered(p.node.id)}
               onMouseLeave={() => setHovered(null)}
+              data-graph-node={p.node.id}
+              data-x={Math.round(p.x)}
+              data-y={Math.round(p.y)}
+              data-ring={p.ring}
             >
               <rect
                 x={-w / 2}
@@ -265,8 +251,9 @@ export function GraphCanvas({
                 height={h}
                 rx={12}
                 fill={active ? "var(--surface-2)" : "var(--surface)"}
-                stroke={active ? kindColor[childKind] : "var(--border)"}
-                strokeWidth={active ? 2 : 1}
+                stroke={p.node.cycle ? EDGE_CYCLE : active ? EDGE_ACTIVE : kindColor[childKind]}
+                strokeWidth={active || p.node.cycle ? 2 : 1}
+                strokeOpacity={active ? 1 : 0.55}
                 className="transition-all duration-300 shadow-lg cursor-pointer"
                 onClick={() => onSelect(p.node)}
               />
@@ -274,7 +261,7 @@ export function GraphCanvas({
                 cx={-w / 2 + 18}
                 cy={-4}
                 r={4}
-                fill={kindColor[p.node.kind]}
+                fill={p.node.cycle ? EDGE_CYCLE : kindColor[p.node.kind]}
                 className="cursor-pointer"
                 onClick={() => onSelect(p.node)}
               />
@@ -284,7 +271,7 @@ export function GraphCanvas({
                 className="fill-foreground text-[12px] font-semibold tracking-tight cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, dense ? 17 : 20)}
+                {truncate(p.node.label, p.ring === 1 ? 22 : 16)}
               </text>
               <text
                 x={-w / 2 + 32}
@@ -292,10 +279,10 @@ export function GraphCanvas({
                 className="fill-muted-foreground font-mono text-[9px] cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(techLine(p.node), dense ? 26 : 34)}
+                {truncate(techLine(p.node), p.ring === 1 ? 32 : 25)}
               </text>
 
-              {/* Original 'i' badge button on each child node */}
+              {/* 'i' badge opens the inspector for this child */}
               <g
                 transform={`translate(${w / 2 - 24}, 0)`}
                 className="cursor-pointer group/info"
@@ -325,16 +312,44 @@ export function GraphCanvas({
             </g>
           );
         })}
+
         {hiddenCount > 0 && (
           <text
             x={cx}
-            y={H - 8}
+            y={H - 40}
             textAnchor="middle"
             className="fill-muted-foreground font-mono text-[11px]"
+            data-graph-overflow={hiddenCount}
           >
-            +{hiddenCount} more, see the system tree
+            +{hiddenCount} more on this level, open them from the system tree
           </text>
         )}
+
+        {/* Edge legend */}
+        <g transform={`translate(${cx}, ${H - 18})`}>
+          <g transform="translate(-190, 0)">
+            <line x1={0} y1={0} x2={22} y2={0} stroke={EDGE_IMPORTER} strokeWidth={2} />
+            <text
+              x={30}
+              y={4}
+              className="fill-muted-foreground font-mono text-[10px]"
+              data-legend="importer"
+            >
+              imports this node
+            </text>
+          </g>
+          <g transform="translate(30, 0)">
+            <line x1={0} y1={0} x2={22} y2={0} stroke={EDGE_CYCLE} strokeWidth={2} />
+            <text
+              x={30}
+              y={4}
+              className="fill-muted-foreground font-mono text-[10px]"
+              data-legend="cycle"
+            >
+              runtime cycle
+            </text>
+          </g>
+        </g>
       </svg>
     </div>
   );

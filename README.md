@@ -228,6 +228,15 @@ flawsom           src/lib           analysis           supabase          impact.
 </tr>
 </table>
 
+### Live workspace UI
+
+The web application and the analysis engine share one graph, and the UI now behaves the same way on `/` and `/graph`:
+
+- **Radial orbit layout.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps the two readable orbits, reports the remainder, and stays reachable from the system tree. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
+- **Curved dependency edges.** Every edge is a quadratic Bezier (`M ... Q ...`) from the centre hub to the child. Importer edges are teal (`#2DD4BF`), runtime cycle edges are red (`#F87171`), and the focused edge is amber. The legend sits under the canvas.
+- **Repository switcher.** `<RepoSwitcherBar />` is mounted on `/`, `/graph` and `/intelligence`. Its first tab lists every ingested workspace (with branch, short commit, file and edge counts) plus `flawsom/nykst (Live Workspace)`; the second tab searches all accessible GitHub repositories, picks a branch, and calls the ingest endpoint with inline progress. Switching updates `?repo=` so the graph, dossier, envelope, memory page and reloads all follow the same repository.
+- **Click-to-code.** Every `file:line` row in the dossier (importers, transitive dependents, entrypoints, SQL resources, column drift, exported signatures), in Before You Act, and in the landing workbench is a button. It opens `<CodeProblemInspector />`, which fetches the real source, scrolls to the line, highlights it, explains why the line matters, and offers three actions: inspect the node in the graph, open the exact line on GitHub (`#L<line>`), or open it in VS Code / Cursor (`vscode://file/...:<line>`).
+
 <div align="right"><a href="#top">Back to top</a></div>
 
 ---
@@ -804,10 +813,10 @@ nykst/
 |         `GET`         | `/api/analysis/self`                                                                           |     Public     | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                 |
 |         `GET`         | `/api/integrations/github/start`                                                               |     Public     | Signed state, then redirect to GitHub                                                   |
 |         `GET`         | `/api/integrations/github/callback`                                                            |     Public     | Verify state, exchange code, set cookie                                                 |
-|        `POST`         | `/api/integrations/github/ingest`                                                              |    Session     | Tarball fetch, AST and history analysis, snapshot write                                 |
-|         `GET`         | `/api/integrations/github/latest`                                                              |    Session     | Newest snapshot for the user                                                            |
-|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |    Session     | Repository discovery                                                                    |
-|         `GET`         | `/api/integrations/github/file-evidence`                                                       |    Session     | Evidence for one path                                                                   |
+|        `POST`         | `/api/integrations/github/ingest`                                                              |    Session     | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`  |
+|         `GET`         | `/api/integrations/github/latest`                                                              |    Session     | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one             |
+|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |    Session     | Repository discovery; `repositories` also returns the ingested workspaces                |
+|         `GET`         | `/api/integrations/github/file-evidence`                                                       |  Session/Public | `?repo=&path=&line=` code window, `#L` and editor links, plus full history              |
 |        `POST`         | `/api/integrations/github/coding`                                                              |    Session     | Grounded edit proposal with diff                                                        |
 |        `POST`         | `/api/ai/chat`                                                                                 | Public or BYOK | Architecture Q and A (`mode: navigator \| code`)                                        |
 | `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |    Session     | Provider status, save, delete                                                           |
@@ -817,6 +826,49 @@ nykst/
 |        `POST`         | `/api/webhooks/github`                                                                         |      HMAC      | Verified intake: incremental push patch, production signal, and PR blast-radius comment |
 |         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |    Session     | Connector OAuth and command endpoints                                                   |
 |     `GET` `POST`      | `/api/subscription`                                                                            |    Session     | Plan state and settlement submission                                                    |
+
+### Multi-repository switching
+
+Every analysis endpoint accepts `?repo=owner/name`, so the dashboard, graph, dossier, Before You Act envelope and code inspector all follow one active workspace.
+
+```bash
+# The newest analysis, plus the list of workspaces this user has ingested
+curl -s https://nykst.unifies.codes/api/integrations/github/latest -H 'Cookie: ...'
+
+# One specific repository
+curl -s 'https://nykst.unifies.codes/api/integrations/github/latest?repo=acme/payments' -H 'Cookie: ...'
+```
+
+```json
+{
+  "ingestion": { "repository_full_name": "acme/payments", "payload": { "analysis": {} } },
+  "repositories": [
+    {
+      "repository": "acme/payments",
+      "created_at": "2026-10-20T09:12:00.000Z",
+      "branch": "main",
+      "commit": "9f1c2ad",
+      "sourceFiles": 412,
+      "edges": 1203
+    }
+  ],
+  "active": "acme/payments"
+}
+```
+
+`POST /api/integrations/github/ingest` accepts an optional `branch`, so the branch picker in the switcher analyzes the ref the user chose instead of always the default branch.
+
+### Example: click-to-code evidence
+
+```bash
+# Self-indexed repository: read from the workspace checkout, fall back to the public blob
+curl -s 'https://nykst.unifies.codes/api/integrations/github/file-evidence?repo=flawsom/nykst&path=src/routes/graph.tsx&line=34'
+
+# Connected repository: source at the analyzed commit, with history
+curl -s 'https://nykst.unifies.codes/api/integrations/github/file-evidence?repo=acme/payments&path=src/server/pay.ts&line=120&ref=9f1c2ad'
+```
+
+The response carries `excerpt` (+/- 20 lines around the click), `focus` (the literal line), `description` (why that line matters), `githubUrl` (`...#L120`) and `editorPath` (`vscode://file/...:120`). Private repositories need the session cookie; public ones answer without it.
 
 ### Example: blast radius from a source checkout
 
@@ -1113,7 +1165,11 @@ bun run screens               # refresh the README captures
 | `tests/pr-blast-radius.test.ts`    | Risk tiers, direct and transitive dependents, resource lineage, the zero-test coverage gate, and stable Markdown                                                                                                  |
 | `tests/memory.test.ts`             | ADR status and citations, Mermaid flowcharts and sequences, migration columns, image dedupe, checksums                                                                                                            |
 | `tests/analysis-tools.test.ts`     | Every MCP tool is read-only and the memory, federation, and trace surfaces are exposed                                                                                                                            |
+| `tests/graph-layout.test.ts`       | Radial orbit geometry: full 360-degree rings, two staggered orbits above eight siblings, unique positions, viewport bounds, and quadratic Bezier edges                                                             |
+| `tests/code-links.test.ts`         | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                                |
+| `tests/dossier.test.ts`            | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                  |
 | `e2e/routes.spec.ts`               | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
+| `e2e/graph-workspace.spec.ts`      | The live graph is radial (not a column), `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link                                                              |
 
 The unit suite runs offline for the graph, connector, and snapshot tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
 

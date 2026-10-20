@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
+import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
+import { NodeDossier } from "@/components/graph/NodeDossier";
+import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
+import { isSelfRepository } from "@/lib/code-links";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
@@ -24,6 +28,16 @@ type IngestionSnapshot = {
   created_at: string;
   payload: RepositorySnapshot;
 };
+
+/** The deepest node that stands for a real file path, so code jumps keep context. */
+function findNodeByPath(node: GraphNode, path: string): GraphNode | null {
+  if (node.analysisRef?.paths.includes(path)) return node;
+  for (const child of childrenOf(node)) {
+    const hit = findNodeByPath(child, path);
+    if (hit) return hit;
+  }
+  return null;
+}
 
 export const Route = createFileRoute("/graph")({
   head: () => ({
@@ -63,6 +77,9 @@ function GraphPage() {
   const [connectorMessage, setConnectorMessage] = useState<string | null>(null);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
+  const [activeRepo, setActiveRepo] = useState<string | null>(null);
+  const [codeTarget, setCodeTarget] = useState<CodeTarget | null>(null);
+  const repoRef = useRef<string | null>(null);
 
   const reanalyze = async () => {
     const [owner, repo] = (snapshot?.repository_full_name ?? "").split("/");
@@ -97,56 +114,102 @@ function GraphPage() {
     }
   };
 
-  /** Loads the newest stored analysis, or falls back to the live self-indexed AST of this repository. */
-  const loadLatest = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const response = await fetch("/api/integrations/github/latest", { cache: "no-store" });
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          ingestion?: IngestionSnapshot | null;
-          realtime?: { topic?: string };
-        };
-        if (payload.realtime?.topic) setRealtimeTopic(payload.realtime.topic);
-        if (payload.ingestion) {
-          setSnapshot(payload.ingestion);
-          setLoadError(null);
-          return;
-        }
-      }
-      // If unauthenticated or no user ingestion yet, load the live self-indexed AST of this repository
-      const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
-      if (selfRes.ok) {
-        const selfData = (await selfRes.json()) as {
-          repository: string;
-          generatedAt: string;
-          snapshotPayload?: RepositorySnapshot;
-        };
-        if (selfData.snapshotPayload) {
-          setSnapshot({
-            repository_full_name: selfData.repository,
-            created_at: selfData.generatedAt,
-            payload: selfData.snapshotPayload,
-          });
-          setLoadError(null);
-          return;
-        }
-      }
-      if (response.status === 401) {
-        setSnapshot(null);
-        setLoadError("unauthenticated");
-        return;
-      }
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      setSnapshot(null);
-      setLoadError(payload.error ?? `Could not load your system map (${response.status}).`);
-    } catch {
-      setLoadError("Network error while loading your system map.");
-    } finally {
-      setLastChecked(Date.now());
-      setLoading(false);
-    }
+  /** The live self-indexed AST of this repository, used when no GitHub ingestion is selected. */
+  const loadSelf = useCallback(async () => {
+    const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
+    if (!selfRes.ok) return false;
+    const selfData = (await selfRes.json()) as {
+      repository: string;
+      generatedAt: string;
+      snapshotPayload?: RepositorySnapshot;
+    };
+    if (!selfData.snapshotPayload) return false;
+    setSnapshot({
+      repository_full_name: selfData.repository,
+      created_at: selfData.generatedAt,
+      payload: selfData.snapshotPayload,
+    });
+    setActiveRepo(selfData.repository);
+    repoRef.current = selfData.repository;
+    return true;
   }, []);
+
+  /**
+   * Loads the requested repository snapshot (or the newest one), falling back to the
+   * live self-indexed AST of this repository when the visitor is not signed in.
+   */
+  const loadLatest = useCallback(
+    async (silent = false, repository?: string | null) => {
+      const target = repository === undefined ? repoRef.current : repository;
+      if (!silent) setLoading(true);
+      try {
+        if (target && isSelfRepository(target)) {
+          if (await loadSelf()) {
+            setLoadError(null);
+            setLastChecked(Date.now());
+            setLoading(false);
+            return;
+          }
+        }
+        const query = target ? `?repo=${encodeURIComponent(target)}` : "";
+        const response = await fetch(`/api/integrations/github/latest${query}`, {
+          cache: "no-store",
+        });
+        if (response.ok) {
+          const payload = (await response.json()) as {
+            ingestion?: IngestionSnapshot | null;
+            realtime?: { topic?: string };
+          };
+          if (payload.realtime?.topic) setRealtimeTopic(payload.realtime.topic);
+          if (payload.ingestion) {
+            setSnapshot(payload.ingestion);
+            setActiveRepo(payload.ingestion.repository_full_name);
+            repoRef.current = payload.ingestion.repository_full_name;
+            setLoadError(null);
+            return;
+          }
+        }
+        // No stored analysis for the request: fall back to the live self-indexed AST.
+        if (await loadSelf()) {
+          setLoadError(null);
+          return;
+        }
+        if (response.status === 401) {
+          setSnapshot(null);
+          setLoadError("unauthenticated");
+          return;
+        }
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        setSnapshot(null);
+        setLoadError(payload.error ?? `Could not load your system map (${response.status}).`);
+      } catch {
+        setLoadError("Network error while loading your system map.");
+      } finally {
+        setLastChecked(Date.now());
+        setLoading(false);
+      }
+    },
+    [loadSelf],
+  );
+
+  /** Moves the whole workspace (graph, dossier, envelope) to another repository. */
+  const switchRepository = useCallback(
+    (repository: string) => {
+      setActiveRepo(repository);
+      repoRef.current = repository;
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("repo", repository);
+        window.history.replaceState({ nykstPath: [] }, "", url.toString());
+      }
+      setPathIds([]);
+      setSelected(null);
+      setDossier(null);
+      setCodeTarget(null);
+      void loadLatest(false, repository);
+    },
+    [loadLatest],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -167,7 +230,10 @@ function GraphPage() {
   // map never shows a superseded analysis. Polling pauses while a re-analysis runs.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    void loadLatest();
+    const requested = new URLSearchParams(window.location.search).get("repo");
+    repoRef.current = requested;
+    if (requested) setActiveRepo(requested);
+    void loadLatest(false, requested ?? undefined);
     const reload = () => {
       if (polling) void loadLatest(true);
     };
@@ -412,9 +478,11 @@ function GraphPage() {
           >
             Premium
           </button>
-          <span className="text-muted-foreground hidden max-w-[240px] truncate font-mono text-xs lg:inline">
-            {snapshot.repository_full_name}
-          </span>
+          <RepoSwitcherBar
+            activeRepo={activeRepo ?? snapshot.repository_full_name}
+            onSwitch={switchRepository}
+            onAnalyzed={switchRepository}
+          />
         </div>
       </header>
 
@@ -549,6 +617,20 @@ function GraphPage() {
             </span>
             <span>Choose a node or tree item to drill deeper</span>
           </div>
+
+          <div className="mt-5">
+            <NodeDossier
+              node={inspected}
+              analysis={snapshot.payload.analysis}
+              snapshot={snapshot.payload}
+              activeRepo={activeRepo ?? snapshot.repository_full_name}
+              onInspectNode={(path) => {
+                const node = findNodeByPath(root, path);
+                if (node) jumpTo(node);
+              }}
+              onOpenCode={setCodeTarget}
+            />
+          </div>
         </section>
 
         <MentorPanel
@@ -571,6 +653,14 @@ function GraphPage() {
         onClose={() => setDossier(null)}
         {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
       />
+      <CodeProblemInspector
+        target={codeTarget}
+        onClose={() => setCodeTarget(null)}
+        onInspectNode={(path) => {
+          const node = findNodeByPath(root, path);
+          if (node) jumpTo(node);
+        }}
+      />
       <ConnectAiTools open={aiToolsOpen} onClose={() => setAiToolsOpen(false)} />
       <ConnectorsPanel
         open={connectorsOpen}
@@ -582,6 +672,7 @@ function GraphPage() {
         snapshot={snapshot?.payload ?? null}
         open={beforeYouActOpen}
         onClose={() => setBeforeYouActOpen(false)}
+        onOpenCode={setCodeTarget}
       />
       {softModal && (
         <div

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { TiltCard, ScrambleText } from "@/components/motion/VariantMotion";
 import { cn } from "@/lib/utils";
+import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
 export type LiveSelfAnalysis = {
   repository: string;
@@ -176,9 +177,11 @@ const ARCHITECTURE_LAYERS = [
 export function LiveGraphRagExplorer({
   initialData,
   onDataUpdate,
+  onOpenCode,
 }: {
   initialData: LiveSelfAnalysis | null;
   onDataUpdate?: (data: LiveSelfAnalysis) => void;
+  onOpenCode?: (target: CodeTarget) => void;
 }) {
   const [data, setData] = useState<LiveSelfAnalysis | null>(initialData);
   const [selectedPath, setSelectedPath] = useState("src/lib/integrations/github.ts");
@@ -598,7 +601,16 @@ export function LiveGraphRagExplorer({
                     {impact.direct_importers.slice(0, 10).map((d) => (
                       <button
                         key={`${d.path}:${d.line}`}
-                        onClick={() => void inspectFile(d.path)}
+                        onClick={() => {
+                          void inspectFile(d.path);
+                          onOpenCode?.({
+                            repository: data.repository,
+                            path: d.path,
+                            line: d.line,
+                            label: `imports ${selectedTarget.path}`,
+                            reason: `Direct importer of ${selectedTarget.path}; this line imports it.`,
+                          });
+                        }}
                         className="border-border bg-card hover:border-primary/40 rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors"
                       >
                         {d.path}
@@ -668,13 +680,31 @@ export function LiveGraphRagExplorer({
                       </p>
                     ) : null}
                     {res.columnDrift?.length ? (
-                      <p className="mt-1 text-[10px] text-amber-300">
-                        Contract drift:{" "}
-                        {res.columnDrift
-                          .slice(0, 4)
-                          .map((finding) => finding.column)
-                          .join(", ")}
-                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] text-amber-300">
+                        <span>Contract drift:</span>
+                        {res.columnDrift.slice(0, 4).map((finding) => {
+                          const first = finding.references[0];
+                          return (
+                            <button
+                              key={`${finding.kind}-${finding.column}`}
+                              onClick={() =>
+                                first &&
+                                onOpenCode?.({
+                                  repository: data.repository,
+                                  path: first.path,
+                                  line: first.line,
+                                  label: `${res.name}.${finding.column}`,
+                                  reason: finding.message,
+                                })
+                              }
+                              className="border-amber-500/40 bg-amber-500/10 hover:border-amber-400 rounded border px-1.5 py-0.5 font-mono transition-colors"
+                            >
+                              {finding.column}
+                              {first ? `:${first.line}` : ""}
+                            </button>
+                          );
+                        })}
+                      </div>
                     ) : null}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {res.files.map((f) => (
@@ -683,6 +713,7 @@ export function LiveGraphRagExplorer({
                           onClick={() => {
                             setActiveTab("blast");
                             void inspectFile(f);
+                            onOpenCode?.({ repository: data.repository, path: f });
                           }}
                           className="border-border bg-card hover:border-primary/40 rounded-md border px-2 py-0.5 font-mono text-[10px]"
                         >

@@ -45,6 +45,8 @@ export interface GraphNode {
   language?: string;
   /** false when this node is a terminal leaf (a file) */
   expandable: boolean;
+  /** true when this node participates in a runtime import cycle */
+  cycle?: boolean;
   /** set on nodes built from a real repository analysis */
   analysisRef?: {
     type: "repository" | "directory" | "file" | "service" | "resource" | "group";

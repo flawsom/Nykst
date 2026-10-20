@@ -32,6 +32,9 @@ import {
 import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
+import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
+import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
+import { isSelfRepository } from "@/lib/code-links";
 import {
   AnimatedCounter,
   BlurReveal,
@@ -146,6 +149,8 @@ const TRUST = [
 function Landing() {
   const [preRegister, setPreRegister] = useState(false);
   const [advantages, setAdvantages] = useState(false);
+  const [activeRepo, setActiveRepo] = useState<string | null>(null);
+  const [codeTarget, setCodeTarget] = useState<CodeTarget | null>(null);
   const [githubConnected, setGithubConnected] = useState(false);
   const [githubNotice, setGithubNotice] = useState<string | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
@@ -186,7 +191,10 @@ function Landing() {
     void fetch("/api/analysis/self")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: LiveSelfAnalysis | null) => {
-        if (active && data) setLiveSelf(data);
+        if (active && data) {
+          setLiveSelf(data);
+          setActiveRepo((current) => current ?? data.repository);
+        }
       })
       .catch(() => undefined);
 
@@ -273,6 +281,8 @@ function Landing() {
   return (
     <main className="relative min-h-screen overflow-hidden">
       <SpotlightBackdrop />
+
+      <CodeProblemInspector target={codeTarget} onClose={() => setCodeTarget(null)} />
 
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
@@ -567,7 +577,32 @@ function Landing() {
         className="border-border/70 relative z-20 mx-auto max-w-6xl border-t px-4 py-16 sm:px-6 sm:py-24"
       >
         <BlurReveal>
-          <LiveGraphRagExplorer initialData={liveSelf} onDataUpdate={setLiveSelf} />
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <RepoSwitcherBar
+              activeRepo={activeRepo ?? liveSelf?.repository ?? null}
+              onSwitch={(repository) => {
+                setActiveRepo(repository);
+                if (!isSelfRepository(repository)) {
+                  window.location.assign(`/graph?repo=${encodeURIComponent(repository)}`);
+                }
+              }}
+              onAnalyzed={(repository) => {
+                setActiveRepo(repository);
+                window.location.assign(`/graph?repo=${encodeURIComponent(repository)}`);
+              }}
+            />
+            <Link
+              to="/graph"
+              className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
+            >
+              Open the full graph <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+          <LiveGraphRagExplorer
+            initialData={liveSelf}
+            onDataUpdate={setLiveSelf}
+            onOpenCode={setCodeTarget}
+          />
         </BlurReveal>
       </section>
 

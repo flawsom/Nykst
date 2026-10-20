@@ -545,15 +545,22 @@ async function paginate<T>(token: string, path: string): Promise<T[]> {
   return result;
 }
 
-export async function ingestGithubRepository(token: string, owner: string, repo: string) {
+export async function ingestGithubRepository(
+  token: string,
+  owner: string,
+  repo: string,
+  branch?: string | null,
+) {
   const repository = await githubFetch<GithubRepo>(
     token,
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
   );
+  // Analyze the branch the user picked instead of assuming the default branch.
+  const ref = branch?.trim() || repository.default_branch;
   const [files, commits, branches, pullRequests, issues, contributors] = await Promise.all([
     githubFetch<{ tree?: GithubFile[] }>(
       token,
-      `/repos/${owner}/${repo}/git/trees/${repository.default_branch}?recursive=1`,
+      `/repos/${owner}/${repo}/git/trees/${ref}?recursive=1`,
     ).then(({ tree = [] }) =>
       tree.map((item) => ({
         path: item.path,
@@ -569,7 +576,7 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     paginate<Record<string, unknown>>(token, `/repos/${owner}/${repo}/contributors`),
   ]);
   const [source, history] = await Promise.all([
-    analyzeRepositorySource(token, owner, repo, repository.default_branch),
+    analyzeRepositorySource(token, owner, repo, ref),
     buildRepositoryHistory(token, owner, repo, commits, pullRequests),
   ]);
   const { analysis, dependency_graph } = source;
@@ -577,7 +584,7 @@ export async function ingestGithubRepository(token: string, owner: string, repo:
     token,
     owner,
     repo,
-    repository.default_branch,
+    ref,
     files,
     source.packageJson,
   );
