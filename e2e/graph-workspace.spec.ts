@@ -42,6 +42,15 @@ test("the live graph lays nodes out on a circle, not a column", async ({ page })
   expect(first).toContain("Q");
 });
 
+test("the repository switcher lists workspaces and the analyze tab", async ({ page }) => {
+  await waitForGraph(page);
+  await page.getByRole("button", { name: "Switch repository" }).first().click();
+  await expect(page.getByRole("dialog", { name: "Switch repository" })).toBeVisible();
+  await expect(page.getByText("Analyzed Workspaces")).toBeVisible();
+  await expect(page.getByText("flawsom/nykst").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Analyze another repo/ })).toBeVisible();
+});
+
 test("?repo= selects the requested workspace", async ({ page }) => {
   await page.goto("/graph?repo=flawsom/nykst", { waitUntil: "networkidle" });
   await expect(page.locator('svg[data-graph-layout="radial"]')).toBeVisible({ timeout: 20000 });
