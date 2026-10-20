@@ -39,7 +39,9 @@ export function wantsContent(path: string, size: number) {
   if (/(^|\/)package\.json$/.test(path) && !path.includes("node_modules/")) return true;
   if (/(^|\/)[jt]sconfig[^/]*\.json$/.test(path) && !path.includes("node_modules/")) return true;
   if (/(^|\/)go\.mod$/.test(path)) return true;
-  if (/(^|\/)migrations\/[^/]+\.sql$/.test(path)) return true;
+  // SQL DDL is parsed wherever a repository keeps it: migrations/, db/, sql/,
+  // supabase/, prisma/, or the repository root.
+  if (/\.sql$/i.test(path) && !path.includes("node_modules/")) return true;
   if (/(^|\/)schema\.prisma$/.test(path)) return true;
   if (/(^|\/)(openapi|swagger)[^/]*\.(json|ya?ml)$/i.test(path)) return true;
   if (path.endsWith(".proto")) return true;

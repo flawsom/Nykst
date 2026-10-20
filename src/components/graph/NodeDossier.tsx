@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { CornerDownRight, Github, Network } from "lucide-react";
 import type { GraphNode } from "@/lib/graph-data";
 import type { RepoAnalysis } from "@/lib/analysis/types";
@@ -30,8 +31,13 @@ export function NodeDossier({
 }) {
   const repository = snapshot?.repository?.full_name ?? activeRepo;
   const ref = snapshot?.repository?.default_branch ?? null;
-  const paths = node.analysisRef?.paths ?? [];
-  const sections = buildNodeDossier(analysis ?? null, paths, { limit: 40 });
+  const paths = node.analysisRef?.paths;
+  // A repository-level node spans every file, so reverse reachability is cached
+  // per node instead of being recomputed on each render.
+  const sections = useMemo(
+    () => buildNodeDossier(analysis ?? null, paths ?? [], { limit: 40 }),
+    [analysis, paths],
+  );
 
   return (
     <section
@@ -46,8 +52,8 @@ export function NodeDossier({
           <h3 className="mt-0.5 truncate text-sm font-semibold">{node.label}</h3>
         </div>
         <span className="text-muted-foreground font-mono text-[10px]">
-          {paths.length} file{paths.length === 1 ? "" : "s"} in scope · click any row to jump to
-          code
+          {paths?.length ?? 0} file{(paths?.length ?? 0) === 1 ? "" : "s"} in scope · click any row
+          to jump to code
         </span>
       </div>
 
