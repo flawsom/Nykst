@@ -900,15 +900,15 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 {
   "repository": "flawsom/nykst",
   "stats": {
-    "treeFiles": 263,
+    "treeFiles": 264,
     "sourceFiles": 208,
     "analyzedFiles": 208,
     "internalEdges": 455,
     "externalPackages": 53,
     "unresolvedImports": 0,
     "skippedFiles": 2,
-    "loc": 38068,
-    "durationMs": 1446
+    "loc": 38073,
+    "durationMs": 1224
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
@@ -1117,10 +1117,10 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric                       | Measured                         | Command                                                                 |
 | :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 208 files  | **~1.4 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Cold AST compile, 208 files  | **~1.2 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
 | Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **208 files, 38,068 LOC**        | `jq .stats`                                                             |
+| Analyzed source              | **208 files, 38,073 LOC**        | `jq .stats`                                                             |
 | Internal import edges        | **455, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
 | SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |
