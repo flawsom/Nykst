@@ -63,7 +63,7 @@ export const Route = createFileRoute("/api/integrations/github/repositories")({
                 (repository.description ?? "").toLowerCase().includes(query),
             )
             .sort((a, b) => a.full_name.localeCompare(b.full_name));
-          return Response.json({ repositories, ingested });
+          return Response.json({ repositories, ingested, ingestedRepositories: ingested });
         } catch (error) {
           return githubError(error);
         }

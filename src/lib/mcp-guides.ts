@@ -337,10 +337,10 @@ export const GUIDES: Guide[] = [
         language: "bash",
         code: ({ url, token }) =>
           `curl -s -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${token}" \\\n  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`,
-        note: "A list of five tools means the token and URL are correct.",
+        note: "A list of ten read-only tools means the token and URL are correct.",
       },
     ],
-    verify: "The curl command returns the five tools.",
+    verify: "The curl command returns the ten read-only tools.",
   },
 ];
 
@@ -367,13 +367,44 @@ export const TOOLS: Tool[] = [
   },
   {
     name: "search_files",
-    summary: "Find files by path or exported symbol name.",
+    summary:
+      "Find files by path or exported symbol name, with parameter arity and type properties.",
     example: "Find the file that exports createCheckoutSession.",
   },
   {
     name: "list_repositories",
     summary: "The repositories you have mapped in Nykst.",
     example: "Which repositories does Nykst know about?",
+  },
+  {
+    name: "search_memory",
+    summary:
+      "Search evidence-backed memory records extracted from ADRs, Mermaid diagrams, SQL migrations, and images.",
+    example: "Search memory for architectural decisions about authentication.",
+  },
+  {
+    name: "get_federation",
+    summary:
+      "Cross-repository OpenAPI and gRPC contract federation, matching consumer routes to provider operations.",
+    example: "Which repositories call our OpenAPI or gRPC endpoints?",
+  },
+  {
+    name: "get_trace_overlay",
+    summary:
+      "Overlay OpenTelemetry (OTLP) spans onto the static import graph to compare observed runtime latency and edges.",
+    example: "Overlay these OTLP spans on the repository graph.",
+  },
+  {
+    name: "simulate_change",
+    summary:
+      "Preview proposed file writes or deletions on an in-memory clone of the graph before touching disk.",
+    example: "Simulate deleting src/lib/legacy.ts and show what breaks.",
+  },
+  {
+    name: "generate_fix_patch",
+    summary:
+      "Generate a unified remediation diff for unresolved imports, verified against an in-memory graph clone.",
+    example: "Generate a verified fix patch for unresolved imports in src/routes/graph.tsx.",
   },
 ];
 

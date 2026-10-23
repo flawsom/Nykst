@@ -4,9 +4,11 @@ import {
   githubError,
   githubInstallUrl,
   githubIsApp,
+  githubUser,
   json,
   requireGithubToken,
 } from "@/lib/integrations/github";
+import { listIngestedWorkspaces } from "@/lib/integrations/ingestions.server";
 
 export const Route = createFileRoute("/api/integrations/github/all-repositories")({
   server: {
@@ -14,11 +16,14 @@ export const Route = createFileRoute("/api/integrations/github/all-repositories"
       GET: async ({ request }) => {
         try {
           const token = requireGithubToken(request);
-          const repositories = await githubAccessibleRepositories(token);
-          // perRepository: access is granted per repository through the GitHub App.
-          // manageUrl (needs the app slug) links to GitHub's repository picker.
+          const user = await githubUser(token);
+          const [repositories, ingestedRepositories] = await Promise.all([
+            githubAccessibleRepositories(token),
+            listIngestedWorkspaces(String(user.id)).catch(() => []),
+          ]);
           return json({
             repositories,
+            ingestedRepositories,
             count: repositories.length,
             perRepository: githubIsApp(),
             manageUrl: githubInstallUrl(),

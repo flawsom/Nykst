@@ -2,24 +2,20 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
-  AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   Cpu,
   Database,
-  FileCode2,
-  GitBranch,
-  Layers,
-  Network,
   RefreshCw,
-  Search,
-  Server,
-  ShieldCheck,
-  Sparkles,
   Terminal,
   Zap,
+  Sparkles,
+  Wrench,
+  Radio,
+  Globe,
+  BookOpen,
 } from "lucide-react";
 import { TiltCard, ScrambleText } from "@/components/motion/VariantMotion";
+import { FederationPanel, TraceOverlayPanel } from "@/components/mcp/ToolInsightPanel";
 import { cn } from "@/lib/utils";
 import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
@@ -81,6 +77,7 @@ export type LiveSelfAnalysis = {
     importers: number;
     runtimeImporters: number;
     services: string[];
+    rankScore?: number;
   }[];
   selectedTarget: {
     path: string;
@@ -109,77 +106,99 @@ export type LiveSelfAnalysis = {
     };
   };
   toolOutput?: unknown;
+  ingestedRepositories?: Array<{
+    repository: string;
+    branch: string | null;
+    commitSha: string | null;
+    analyzedAt: string;
+    fileCount: number;
+    edgeCount: number;
+    cycleCount: number;
+  }>;
 };
+
+type McpToolName =
+  | "list_repositories"
+  | "get_architecture"
+  | "get_impact"
+  | "find_usages"
+  | "search_files"
+  | "search_memory"
+  | "get_federation"
+  | "get_trace_overlay"
+  | "simulate_change"
+  | "generate_fix_patch";
 
 const ARCHITECTURE_LAYERS = [
   {
     step: "01",
-    name: "Deterministic TypeScript AST Compiler",
-    metric: "ts.createSourceFile · tsconfig alias & workspace resolver",
-    wrapperFail:
-      "Flat RAG wrappers split files every ~500 tokens, severing class methods from imports and hallucinating cross-file references.",
+    name: "Polyglot & TypeScript AST Compiler",
+    metric: "ts.createSourceFile + Python, Go, Rust adapters · tsconfig alias & workspace resolver",
+    naiveFail:
+      "Lexical search and chunked text indexers split files arbitrarily, severing function signatures from imports and missing cross-file path aliases.",
     nykstTruth:
-      "Nykst parses 100% of JS/TS/TSX files into an exact syntax tree, resolving path aliases, monorepo exports, runtime vs type-only imports, and line numbers.",
+      "Parses JS/TS/TSX, Python, Go, and Rust sources into a unified dependency graph, resolving tsconfig aliases, workspace packages, exported symbol arity, and exact line numbers.",
     proofFile: "src/lib/analysis/engine.server.ts",
   },
   {
     step: "02",
     name: "Tarjan SCC Cycle & Dependency Topology",
-    metric: "Iterative Tarjan strongly-connected components + 6-level trie",
-    wrapperFail:
-      "Vector similarity cannot detect circular runtime imports or distinguish a leaf UI component from a core authentication hub.",
+    metric: "Iterative Tarjan strongly-connected components + 6-level radial trie",
+    naiveFail:
+      "Text similarity cannot detect circular runtime imports or distinguish a leaf UI component from a high-fan-in authentication hub.",
     nykstTruth:
-      "Builds a 6-level navigable hierarchy (Organization → Domain → Capability → Service → Module → File) and flags circular runtime loops automatically.",
+      "Builds a 6-level radial hierarchy (Organization → Domain → Capability → Service → Module → File) and isolates circular runtime loops from type-only imports.",
     proofFile: "src/lib/analysis/graph.ts",
   },
   {
     step: "03",
     name: "Reverse BFS Blast-Radius Reachability",
     metric: "Exact line-level importer chains → API & route entrypoints",
-    wrapperFail:
-      "LLM wrappers guess what might break based on naming similarity, missing transitive callers 4 hops away.",
+    naiveFail:
+      "Heuristic impact checks guess what might break from file names, missing transitive callers several hops away.",
     nykstTruth:
       "Computes breadth-first reverse reachability from any seed file or SQL table to every affected route, API endpoint, and covering test.",
     proofFile: "src/lib/analysis/impact.ts",
   },
   {
     step: "04",
-    name: "SQL Migration & External Service Evidence",
-    metric: "DDL parser + PostgREST/Prisma call-site linker",
-    wrapperFail:
-      "Standard code indexers treat SQL migrations, environment variables, and SDK calls as opaque strings.",
+    name: "SQL Column Contracts & Service Lineage",
+    metric: "DDL migration replay + PostgREST/Prisma column drift verifier",
+    naiveFail:
+      "Standard code indexers treat SQL migrations, environment variables, and SDK calls as unlinked strings.",
     nykstTruth:
-      "Links CREATE TABLE / FUNCTION statements in supabase/migrations/*.sql directly to .from() and .rpc() call sites with exact file:line citations.",
-    proofFile: "src/lib/analysis/catalog.ts",
+      "Replays CREATE TABLE and ALTER TABLE migrations in order, linking columns directly to .from().select()/insert()/update() call sites and flagging column drift.",
+    proofFile: "src/lib/analysis/sql.ts",
   },
   {
     step: "05",
-    name: "6-Layer Outcome-Weighted Architectural Memory",
-    metric: "Outcome · Failure · Decision · Incident · Convention · Continuity",
-    wrapperFail:
-      "Stateless chat wrappers forget why a pattern was reverted last month and suggest the exact same anti-pattern again.",
+    name: "Pre-Flight Simulation & Verified Remediation",
+    metric: "simulate_change overlay + generate_fix_patch in-memory verification",
+    naiveFail:
+      "Agents edit files on disk first and discover broken imports or new cycles only after the build fails.",
     nykstTruth:
-      "Preserves temporal co-change coupling, PR outcomes, and incident playbooks tied directly to the graph nodes they govern.",
-    proofFile: "src/lib/before-you-act.ts",
+      "Overlays proposed writes or deletions on an in-memory graph clone and emits a unified remediation diff only when unresolved imports drop and cycles do not grow.",
+    proofFile: "src/lib/analysis/simulate.ts",
   },
   {
     step: "06",
-    name: "Streamable HTTP MCP Server for Coding Agents",
-    metric: "5 readOnlyHint MCP tools · SHA-256 nyk_ tokens",
-    wrapperFail:
-      "IDE agents edit blind, burning context tokens grepping hundreds of files before making a breaking change.",
+    name: "Streamable HTTP MCP Server (10 Read-Only Tools)",
+    metric: "10 readOnlyHint MCP tools · OTLP trace overlay · OpenAPI/gRPC federation",
+    naiveFail: "IDE agents burn context tokens grepping hundreds of files before making a change.",
     nykstTruth:
-      "Claude Code, Cursor, VS Code, Windsurf, and Codex call get_impact and find_usages over /api/mcp in <50ms before touching a line of code.",
+      "Claude Code, Cursor, VS Code, Windsurf, and Codex call all 10 read-only tools over /api/mcp in milliseconds before touching a line of code.",
     proofFile: "src/lib/mcp.server.ts",
   },
 ];
 
 export function LiveGraphRagExplorer({
   initialData,
+  activeRepo,
   onDataUpdate,
   onOpenCode,
 }: {
   initialData: LiveSelfAnalysis | null;
+  activeRepo?: string | null;
   onDataUpdate?: (data: LiveSelfAnalysis) => void;
   onOpenCode?: (target: CodeTarget) => void;
 }) {
@@ -187,10 +206,11 @@ export function LiveGraphRagExplorer({
   const [selectedPath, setSelectedPath] = useState("src/lib/integrations/github.ts");
   const [activeLayer, setActiveLayer] = useState(0);
   const [activeTab, setActiveTab] = useState<"blast" | "sql" | "mcp">("blast");
-  const [mcpTool, setMcpTool] = useState<
-    "get_impact" | "get_architecture" | "find_usages" | "search_files"
-  >("get_impact");
+  const [mcpTool, setMcpTool] = useState<McpToolName>("get_impact");
   const [mcpQuery, setMcpQuery] = useState("repository_ingestions");
+  const [simContent, setSimContent] = useState(
+    `// Pre-flight simulated edit\nimport { parseRepoSlug } from "./wrong-folder/code-links";\nexport const simulated = parseRepoSlug;\n`,
+  );
   const [mcpResult, setMcpResult] = useState<unknown>(null);
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [loadingMcp, setLoadingMcp] = useState(false);
@@ -202,12 +222,14 @@ export function LiveGraphRagExplorer({
     }
   }, [initialData]);
 
+  const repoParam = activeRepo ?? data?.repository ?? "flawsom/nykst";
+
   const inspectFile = async (path: string, forceRefresh = false) => {
     setSelectedPath(path);
     setLoadingTarget(true);
     try {
       const res = await fetch(
-        `/api/analysis/self?path=${encodeURIComponent(path)}${forceRefresh ? "&refresh=1" : ""}`,
+        `/api/analysis/self?repo=${encodeURIComponent(repoParam)}&path=${encodeURIComponent(path)}${forceRefresh ? "&refresh=1" : ""}`,
       );
       if (res.ok) {
         const next = (await res.json()) as LiveSelfAnalysis;
@@ -219,16 +241,32 @@ export function LiveGraphRagExplorer({
     }
   };
 
-  const runLiveMcpTool = async (
-    toolName: "get_impact" | "get_architecture" | "find_usages" | "search_files",
-    queryOverride?: string,
-  ) => {
+  const runLiveMcpTool = async (toolName: McpToolName, queryOverride?: string) => {
     setMcpTool(toolName);
     setLoadingMcp(true);
     try {
       const q = queryOverride ?? mcpQuery;
+      if (toolName === "simulate_change" || toolName === "generate_fix_patch") {
+        const res = await fetch("/api/analysis/self", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            repo: repoParam,
+            path: selectedPath,
+            tool: toolName,
+            query: q,
+            content: simContent,
+          }),
+        });
+        if (res.ok) {
+          const payload = (await res.json()) as { toolOutput?: unknown };
+          setMcpResult(payload.toolOutput);
+        }
+        return;
+      }
+
       const res = await fetch(
-        `/api/analysis/self?path=${encodeURIComponent(selectedPath)}&tool=${encodeURIComponent(toolName)}&query=${encodeURIComponent(q)}`,
+        `/api/analysis/self?repo=${encodeURIComponent(repoParam)}&path=${encodeURIComponent(selectedPath)}&tool=${encodeURIComponent(toolName)}&query=${encodeURIComponent(q)}`,
       );
       if (res.ok) {
         const next = (await res.json()) as LiveSelfAnalysis;
@@ -250,7 +288,7 @@ export function LiveGraphRagExplorer({
       <div className="border-border bg-card/70 rounded-3xl border p-8 text-center">
         <RefreshCw className="text-primary mx-auto size-6 animate-spin" />
         <p className="text-muted-foreground mt-3 font-mono text-xs uppercase tracking-widest">
-          Executing TypeScript AST compiler over live repository…
+          Executing AST compiler over live repository…
         </p>
       </div>
     );
@@ -267,24 +305,36 @@ export function LiveGraphRagExplorer({
           ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
           : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
 
+  const ALL_MCP_TOOLS: Array<{ id: McpToolName; label: string; badge?: string }> = [
+    { id: "list_repositories", label: "list_repositories()" },
+    { id: "get_architecture", label: "get_architecture()" },
+    { id: "get_impact", label: `get_impact("${selectedPath.split("/").pop()}")` },
+    { id: "find_usages", label: `find_usages("${mcpQuery}")` },
+    { id: "search_files", label: `search_files("${mcpQuery}")` },
+    { id: "search_memory", label: "search_memory()", badge: "ADR/SQL" },
+    { id: "get_federation", label: "get_federation()", badge: "OpenAPI/gRPC" },
+    { id: "get_trace_overlay", label: "get_trace_overlay()", badge: "OTLP" },
+    { id: "simulate_change", label: "simulate_change()", badge: "Overlay" },
+    { id: "generate_fix_patch", label: "generate_fix_patch()", badge: "Diff" },
+  ];
+
   return (
     <div className="space-y-16">
-      {/* PART 1: Sticky Scroll-Storytelling Architecture Pipeline & Wrapper vs Graph-RAG Matrix */}
+      {/* PART 1: Sticky Scroll-Storytelling Architecture Pipeline */}
       <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
         <div className="lg:sticky lg:top-24 space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-primary">
-            <Cpu className="size-3.5" /> Deterministic Graph-RAG Engine
+            <Cpu className="size-3.5" /> Deterministic AST & Lineage Engine
           </div>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            We are not an LLM wrapper.{" "}
-            <span className="text-gradient">We are the RAG architecture itself.</span>
+            Software is a typed dependency graph.{" "}
+            <span className="text-gradient">Know the blast radius before you edit.</span>
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed sm:text-base">
-            Every code-chat wrapper on the market chunks your files into flat 500-token vectors,
-            runs cosine similarity, and hopes an LLM can guess your architecture. Nykst compiles the
-            repository into a deterministic AST, resolves every alias and SQL table, computes Tarjan
-            strongly-connected components, and traces exact blast radius before any model is
-            invoked.
+            Nykst compiles your repository into a deterministic AST, resolves tsconfig aliases,
+            workspace packages, and polyglot imports (Python, Go, Rust), links SQL migrations to
+            client call sites, and traces exact blast radius before you or an AI agent touches a
+            file.
           </p>
 
           {/* Active Layer Spotlight Card */}
@@ -312,15 +362,15 @@ export function LiveGraphRagExplorer({
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-3">
                 <p className="font-mono text-[10px] uppercase tracking-wider text-red-300">
-                  ✗ Flat Vector Wrapper
+                  ✗ Without Structural Graph
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  {ARCHITECTURE_LAYERS[activeLayer]!.wrapperFail}
+                  {ARCHITECTURE_LAYERS[activeLayer]!.naiveFail}
                 </p>
               </div>
               <div className="border-primary/30 bg-primary/10 rounded-xl border p-3">
                 <p className="text-primary font-mono text-[10px] uppercase tracking-wider">
-                  ✓ Nykst Graph-RAG Truth
+                  ✓ Nykst Verified Evidence
                 </p>
                 <p className="text-foreground/90 mt-1 text-xs leading-relaxed">
                   {ARCHITECTURE_LAYERS[activeLayer]!.nykstTruth}
@@ -382,9 +432,22 @@ export function LiveGraphRagExplorer({
                       <p className="text-muted-foreground font-mono text-[11px]">{layer.metric}</p>
                     </div>
                   </div>
-                  <span className="border-border bg-surface text-muted-foreground hidden rounded-md border px-2 py-0.5 font-mono text-[10px] sm:inline">
-                    {layer.proofFile}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenCode?.({
+                        repository: data.repository,
+                        path: layer.proofFile,
+                        line: 1,
+                        label: layer.name,
+                        reason: layer.nykstTruth,
+                      });
+                    }}
+                    className="border-border bg-surface text-muted-foreground hover:border-primary/40 hover:text-primary hidden rounded-md border px-2 py-0.5 font-mono text-[10px] transition-colors sm:inline"
+                  >
+                    {layer.proofFile}:1
+                  </button>
                 </div>
                 <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
                   {layer.nykstTruth}
@@ -403,7 +466,7 @@ export function LiveGraphRagExplorer({
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
-              <Activity className="size-3.5" /> Live AST & Blast-Radius Workbench · Zero Mock Data
+              <Activity className="size-3.5" /> Live AST & Blast-Radius Workbench
             </div>
             <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
               Inspect{" "}
@@ -412,7 +475,9 @@ export function LiveGraphRagExplorer({
             </h3>
             <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
               Every node, import line, SQL resource, and MCP tool payload below is computed live by{" "}
-              <code className="font-mono text-foreground">analyzeRepository()</code> on this server.
+              <code className="font-mono text-foreground">analyzeRepository()</code>. Click any{" "}
+              <code className="text-primary font-mono">file:line</code> badge to inspect the exact
+              source code.
             </p>
           </div>
 
@@ -425,11 +490,12 @@ export function LiveGraphRagExplorer({
                   label: `SQL & Services (${resources.length + services.length})`,
                   icon: Database,
                 },
-                { id: "mcp", label: "Live MCP Tool Runner", icon: Terminal },
+                { id: "mcp", label: "10-Tool MCP Runner", icon: Terminal },
               ] as const
             ).map((tab) => (
               <button
                 key={tab.id}
+                data-testid={`workbench-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
@@ -451,10 +517,10 @@ export function LiveGraphRagExplorer({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
-                  Most depended-on files (click to trace)
+                  Highest-impact AST hubs (click to trace)
                 </span>
                 <span className="text-primary font-mono text-[11px]">
-                  {topHubs.length} core hubs
+                  {topHubs.length} ranked hubs
                 </span>
               </div>
               <div className="max-h-[460px] space-y-2 overflow-y-auto pr-1">
@@ -511,9 +577,26 @@ export function LiveGraphRagExplorer({
                     <span className="text-primary font-mono text-[10px] uppercase tracking-[0.2em]">
                       Selected AST Target
                     </span>
-                    <h4 className="mt-1 font-mono text-base font-bold sm:text-lg">
-                      {selectedTarget.path}
-                    </h4>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <h4 className="font-mono text-base font-bold sm:text-lg">
+                        {selectedTarget.path}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenCode?.({
+                            repository: data.repository,
+                            path: selectedTarget.path,
+                            line: 1,
+                            label: selectedTarget.path,
+                            reason: `Source file (${selectedTarget.file?.loc ?? 0} LOC · ${impact.direct_importers.length} direct importers)`,
+                          })
+                        }
+                        className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors"
+                      >
+                        Open source →
+                      </button>
+                    </div>
                     {selectedTarget.file && (
                       <p className="text-muted-foreground mt-1 font-mono text-[11px]">
                         Role: {selectedTarget.file.role} · {selectedTarget.file.loc} LOC · Exports:{" "}
@@ -566,14 +649,24 @@ export function LiveGraphRagExplorer({
                 {/* Affected Entrypoints & Import Chains */}
                 <div className="mt-5 space-y-3">
                   <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-[0.18em]">
-                    Affected Page Routes & API Endpoints (Reverse Import Chains)
+                    Affected Page Routes & API Endpoints (Click to inspect source)
                   </p>
                   {impact.entrypoints.length > 0 ? (
                     <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
                       {impact.entrypoints.slice(0, 8).map((ep) => (
-                        <div
+                        <button
                           key={ep.path}
-                          className="border-border bg-card/70 rounded-lg border px-3 py-2 font-mono text-[11px]"
+                          type="button"
+                          onClick={() =>
+                            onOpenCode?.({
+                              repository: data.repository,
+                              path: ep.path,
+                              line: 1,
+                              label: `${ep.role.toUpperCase()} entrypoint`,
+                              reason: `Entrypoint reached via: ${ep.chain.join(" → ")}`,
+                            })
+                          }
+                          className="border-border bg-card/70 hover:border-primary/40 block w-full rounded-lg border px-3 py-2 text-left font-mono text-[11px] transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-foreground font-semibold">{ep.path}</span>
@@ -582,7 +675,7 @@ export function LiveGraphRagExplorer({
                           <p className="text-muted-foreground mt-1 truncate text-[10px]">
                             Chain: {ep.chain.join(" → ")}
                           </p>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   ) : (
@@ -595,23 +688,22 @@ export function LiveGraphRagExplorer({
                 {/* Direct Importers with Line Numbers */}
                 <div className="mt-4 space-y-2">
                   <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-[0.18em]">
-                    Direct Importers (Exact File & Line Citations)
+                    Direct Importers (Click file:line to open exact import statement)
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {impact.direct_importers.slice(0, 10).map((d) => (
                       <button
                         key={`${d.path}:${d.line}`}
                         onClick={() => {
-                          void inspectFile(d.path);
                           onOpenCode?.({
                             repository: data.repository,
                             path: d.path,
                             line: d.line,
                             label: `imports ${selectedTarget.path}`,
-                            reason: `Direct importer of ${selectedTarget.path}; this line imports it.`,
+                            reason: `Direct importer of ${selectedTarget.path} at line ${d.line}.`,
                           });
                         }}
-                        className="border-border bg-card hover:border-primary/40 rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors"
+                        className="border-border bg-card hover:border-primary/50 rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors"
                       >
                         {d.path}
                         <span className="text-primary">:{d.line}</span>
@@ -648,7 +740,7 @@ export function LiveGraphRagExplorer({
                   SQL Schema & Data Resources ({resources.length})
                 </span>
                 <span className="text-muted-foreground font-mono text-[10px]">
-                  Parsed from supabase/migrations/*.sql & .from() calls
+                  Parsed from migrations/*.sql & .from() calls
                 </span>
               </div>
               <div className="max-h-[420px] space-y-2.5 overflow-y-auto pr-1">
@@ -666,9 +758,27 @@ export function LiveGraphRagExplorer({
                       </span>
                     </div>
                     {res.definedIn.length > 0 && (
-                      <p className="text-muted-foreground mt-1 font-mono text-[10px]">
-                        DDL: {res.definedIn.join(", ")}
-                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
+                        <span className="text-muted-foreground">DDL:</span>
+                        {res.definedIn.map((ddlPath) => (
+                          <button
+                            key={ddlPath}
+                            type="button"
+                            onClick={() =>
+                              onOpenCode?.({
+                                repository: data.repository,
+                                path: ddlPath,
+                                line: 1,
+                                label: `DDL for ${res.name}`,
+                                reason: `Migration defining ${res.kind} ${res.name}`,
+                              })
+                            }
+                            className="text-primary hover:underline"
+                          >
+                            {ddlPath}
+                          </button>
+                        ))}
+                      </div>
                     )}
                     {res.columns?.length ? (
                       <p className="text-muted-foreground mt-1 font-mono text-[10px]">
@@ -711,9 +821,13 @@ export function LiveGraphRagExplorer({
                         <button
                           key={f}
                           onClick={() => {
-                            setActiveTab("blast");
-                            void inspectFile(f);
-                            onOpenCode?.({ repository: data.repository, path: f });
+                            onOpenCode?.({
+                              repository: data.repository,
+                              path: f,
+                              line: 1,
+                              label: `Uses ${res.name}`,
+                              reason: `Client call site reading or writing ${res.kind} ${res.name}`,
+                            });
                           }}
                           className="border-border bg-card hover:border-primary/40 rounded-md border px-2 py-0.5 font-mono text-[10px]"
                         >
@@ -758,15 +872,26 @@ export function LiveGraphRagExplorer({
                         Env: {svc.envVars.join(", ")}
                       </p>
                     )}
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-2 flex flex-wrap gap-1.5">
                       {svc.evidence.map((ev, i) => (
-                        <div
+                        <button
                           key={`${ev.path}-${i}`}
-                          className="text-muted-foreground font-mono text-[10px]"
+                          type="button"
+                          onClick={() =>
+                            onOpenCode?.({
+                              repository: data.repository,
+                              path: ev.path,
+                              line: ev.line ?? 1,
+                              label: `${svc.name} (${ev.reason})`,
+                              reason: `${svc.name} evidence in ${ev.path}${ev.line ? `:${ev.line}` : ""}: ${ev.reason}`,
+                            })
+                          }
+                          className="border-border bg-card hover:border-primary/40 rounded-md border px-2 py-0.5 text-left font-mono text-[10px] transition-colors"
                         >
                           <span className="text-foreground">{ev.path}</span>
-                          {ev.line ? `:${ev.line}` : ""}: {ev.reason}
-                        </div>
+                          {ev.line ? <span className="text-primary">:{ev.line}</span> : ""}{" "}
+                          <span className="text-muted-foreground">({ev.reason})</span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -779,37 +904,38 @@ export function LiveGraphRagExplorer({
         {activeTab === "mcp" && (
           <div className="mt-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    { id: "get_impact", label: `get_impact("${selectedPath.split("/").pop()}")` },
-                    { id: "get_architecture", label: "get_architecture()" },
-                    { id: "find_usages", label: `find_usages(table: "${mcpQuery}")` },
-                    { id: "search_files", label: `search_files(query: "${mcpQuery}")` },
-                  ] as const
-                ).map((t) => (
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_MCP_TOOLS.map((t) => (
                   <button
                     key={t.id}
+                    data-testid={`mcp-tool-${t.id}`}
                     onClick={() => void runLiveMcpTool(t.id)}
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors",
                       mcpTool === t.id
                         ? "border-primary bg-primary/15 text-primary font-semibold"
                         : "border-border bg-surface text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {t.label}
+                    <span>{t.label}</span>
+                    {t.badge && (
+                      <span className="border-primary/30 bg-primary/10 text-primary rounded px-1 py-0.2 text-[9px] uppercase">
+                        {t.badge}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
               <div className="flex items-center gap-2">
                 <input
+                  data-testid="mcp-query-input"
                   value={mcpQuery}
                   onChange={(e) => setMcpQuery(e.target.value)}
-                  placeholder="Table or symbol name…"
+                  placeholder="Table, symbol, or ADR query…"
                   className="border-border bg-surface rounded-lg border px-3 py-1.5 font-mono text-xs outline-none focus:border-primary"
                 />
                 <button
+                  data-testid="mcp-execute-button"
                   onClick={() => void runLiveMcpTool(mcpTool, mcpQuery)}
                   disabled={loadingMcp}
                   className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 font-mono text-xs font-semibold"
@@ -819,11 +945,48 @@ export function LiveGraphRagExplorer({
               </div>
             </div>
 
+            {(mcpTool === "simulate_change" || mcpTool === "generate_fix_patch") && (
+              <div
+                data-testid="mcp-simulate-overlay-panel"
+                className="border-border bg-surface/70 rounded-xl border p-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-primary font-mono text-[10px] uppercase tracking-wider">
+                    {mcpTool === "simulate_change"
+                      ? `In-Memory Overlay Buffer for ${selectedPath} (nothing written to disk)`
+                      : `Machine-Verified Remediation Buffer for ${selectedPath} (in-memory diff generator)`}
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="mcp-run-overlay-button"
+                    onClick={() => void runLiveMcpTool(mcpTool)}
+                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
+                  >
+                    Run {mcpTool} →
+                  </button>
+                </div>
+                <textarea
+                  data-testid="mcp-simulate-textarea"
+                  value={simContent}
+                  onChange={(e) => setSimContent(e.target.value)}
+                  rows={3}
+                  className="border-border bg-card mt-2 w-full rounded-lg border p-2.5 font-mono text-[11px] outline-none focus:border-primary"
+                />
+              </div>
+            )}
+
+            {mcpTool === "get_trace_overlay" && (
+              <TraceOverlayPanel result={mcpResult} testId="mcp-trace-overlay-panel" />
+            )}
+            {mcpTool === "get_federation" && (
+              <FederationPanel result={mcpResult} testId="mcp-federation-panel" />
+            )}
+
             <div className="border-border bg-surface/90 max-h-[420px] overflow-auto rounded-2xl border p-4 font-mono text-[11px] leading-relaxed">
-              <pre className="text-foreground">
+              <pre data-testid="mcp-output-pre" className="text-foreground">
                 {mcpResult
                   ? JSON.stringify(mcpResult, null, 2)
-                  : "Select a read-only MCP tool above to inspect the live JSON-RPC payload returned to Claude Code, Cursor, or Codex."}
+                  : "Select any of the 10 read-only MCP tools above to inspect the live JSON-RPC payload returned to Claude Code, Cursor, or Codex."}
               </pre>
             </div>
           </div>

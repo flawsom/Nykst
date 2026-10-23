@@ -17,6 +17,10 @@ export interface CodeEvidence {
   path: string;
   ref: string;
   line: number | null;
+  focusLine: number;
+  startLine: number;
+  endLine: number;
+  lines: Array<{ number: number; text: string; isFocus?: boolean }>;
   content: string;
   sha: string;
   source: "workspace" | "github";
@@ -24,8 +28,34 @@ export interface CodeEvidence {
   focus: string;
   description: string;
   githubUrl: string | null;
+  githubHtmlUrl: string | null;
   editorPath: string;
+  vscodeUrl: string;
   imports: Array<{ target: string; line: number; resolved: boolean }>;
+}
+
+const blobLruCache = new Map<string, { content: string; sha: string; cachedAt: number }>();
+const MAX_CACHE_ENTRIES = 120;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+function getCachedBlob(key: string): { content: string; sha: string } | null {
+  const entry = blobLruCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
+    blobLruCache.delete(key);
+    return null;
+  }
+  blobLruCache.delete(key);
+  blobLruCache.set(key, entry);
+  return { content: entry.content, sha: entry.sha };
+}
+
+function setCachedBlob(key: string, content: string, sha: string) {
+  if (blobLruCache.size >= MAX_CACHE_ENTRIES) {
+    const oldest = blobLruCache.keys().next().value;
+    if (oldest) blobLruCache.delete(oldest);
+  }
+  blobLruCache.set(key, { content, sha, cachedAt: Date.now() });
 }
 
 function scanImports(content: string) {
@@ -59,7 +89,7 @@ function localSource(path: string): string | null {
 /**
  * Source for one clicked citation. The self-indexed repository reads the local
  * checkout when it exists, otherwise the public raw blob at the requested ref.
- * Any other repository reads the contents API with the user's OAuth token.
+ * Any other repository reads the contents API with the user's OAuth token (cached in LRU).
  */
 export async function loadCodeEvidence({
   token,
@@ -67,7 +97,7 @@ export async function loadCodeEvidence({
   path,
   ref,
   line,
-  radius = 20,
+  radius = 25,
 }: {
   token: string | null;
   repository: string;
@@ -93,15 +123,21 @@ export async function loadCodeEvidence({
   }
 
   if (content === null) {
-    if (token) {
+    const cacheKey = `${slug.slug}@${target}:${path}`;
+    const cached = getCachedBlob(cacheKey);
+    if (cached) {
+      content = cached.content;
+      sha = cached.sha;
+      source = "github";
+    } else if (token) {
       const file = await githubContent(token, slug.owner, slug.repo, path, target);
       content =
         file.encoding === "base64" && file.content
           ? Buffer.from(file.content.replace(/\n/g, ""), "base64").toString("utf8")
           : (file.content ?? "");
       sha = file.sha ?? "";
+      setCachedBlob(cacheKey, content, sha);
     } else {
-      // Public repositories can be read without OAuth; private ones still need it.
       const response = await fetch(
         `https://raw.githubusercontent.com/${slug.slug}/${encodeURIComponent(target)}/${path
           .split("/")
@@ -112,24 +148,40 @@ export async function loadCodeEvidence({
       if (!response.ok) return null;
       content = await response.text();
       source = "github";
+      setCachedBlob(cacheKey, content, "");
     }
   }
 
   if (content === null) return null;
+
+  const excerpt = buildCodeExcerpt(content, focus, radius);
+  const ghUrl = githubBlobUrl({
+    repository: slug.slug,
+    ref: resolvedRef,
+    path,
+    line: focus ?? excerpt.line,
+  });
+  const edPath = editorFileUrl(path, focus ?? excerpt.line, process.cwd()) ?? "";
 
   return {
     repository: slug.slug,
     path,
     ref: resolvedRef,
     line: focus,
+    focusLine: excerpt.line,
+    startLine: excerpt.start,
+    endLine: excerpt.end,
+    lines: excerpt.lines,
     content,
     sha,
     source,
-    excerpt: buildCodeExcerpt(content, focus, radius),
+    excerpt,
     focus: focusLine(content, focus),
     description: describeLine(content, focus),
-    githubUrl: githubBlobUrl({ repository: slug.slug, ref: resolvedRef, path, line: focus }),
-    editorPath: editorFileUrl(path, focus, process.cwd()) ?? "",
+    githubUrl: ghUrl,
+    githubHtmlUrl: ghUrl,
+    editorPath: edPath,
+    vscodeUrl: edPath,
     imports: scanImports(content),
   };
 }

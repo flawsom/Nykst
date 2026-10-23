@@ -76,6 +76,7 @@ export function editorFileUrl(path: string, line?: number | null, origin?: strin
 export interface CodeExcerptLine {
   number: number;
   text: string;
+  isFocus?: boolean;
 }
 
 export interface CodeExcerpt {
@@ -101,7 +102,7 @@ export function buildCodeExcerpt(
   const end = Math.min(total, focus + radius);
   const lines: CodeExcerptLine[] = [];
   for (let number = start; number <= end; number += 1)
-    lines.push({ number, text: all[number - 1] ?? "" });
+    lines.push({ number, text: all[number - 1] ?? "", isFocus: number === focus });
   return { start, end, line: focus, lines };
 }
 

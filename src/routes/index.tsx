@@ -34,7 +34,6 @@ import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
-import { isSelfRepository } from "@/lib/code-links";
 import {
   AnimatedCounter,
   BlurReveal,
@@ -48,20 +47,20 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst · Deterministic Graph-RAG Architecture & System Intelligence" },
+      { title: "Nykst · Deterministic AST & Blast-Radius Intelligence" },
       {
         name: "description",
         content:
-          "Nykst is not an LLM wrapper. It is a deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture. Drill from org to file in one click and compute exact blast radius before any agent writes code.",
+          "Nykst compiles your repository into a deterministic AST, dependency topology, and SQL migration graph. Drill from organization to file and compute exact blast radius before you or an AI agent edits code.",
       },
       {
         property: "og:title",
-        content: "Nykst · Deterministic Graph-RAG Architecture & System Intelligence",
+        content: "Nykst · Deterministic AST & Blast-Radius Intelligence",
       },
       {
         property: "og:description",
         content:
-          "Google Maps for your software system. Connect GitHub, let Nykst compile the AST architecture from the code itself, and drill from org to file in one click.",
+          "Know the blast radius before you change the code. Connect GitHub, compile the AST architecture from real source, and drill from org to file in one click.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -273,7 +272,7 @@ function Landing() {
     },
     {
       label: "AGENT PROTOCOL",
-      value: "Streamable HTTP MCP (/api/mcp) · 5 readOnlyHint tools",
+      value: "Streamable HTTP MCP (/api/mcp) · 10 readOnlyHint tools",
       badge: "MCP 2025-06-18",
     },
   ];
@@ -443,16 +442,15 @@ function Landing() {
               className="animate-rise text-gradient mt-4 max-w-[19ch] text-4xl leading-[1.04] font-semibold tracking-tight sm:mt-5 sm:text-5xl md:text-6xl"
               style={{ animationDelay: "60ms" }}
             >
-              Google Maps for your software system.
+              Know the blast radius before you change the code.
             </h1>
             <p
               className="animate-rise text-muted-foreground mt-5 max-w-xl text-sm leading-relaxed sm:text-base"
               style={{ animationDelay: "130ms" }}
             >
-              We are not a chat wrapper over flat vector chunks. Nykst compiles your repository into
-              a deterministic AST & dependency topology (core domains, capabilities, services, SQL
-              tables, modules, and individual files) and computes the exact line-level blast radius
-              before you or your AI agent writes a single line of code.
+              Nykst compiles your repository with the TypeScript compiler and static adapters for
+              Python, Go, and Rust, links SQL migrations and external services, and computes the
+              exact line-level blast radius before you or your AI coding agent touches a file.
             </p>
 
             <div
@@ -582,13 +580,19 @@ function Landing() {
               activeRepo={activeRepo ?? liveSelf?.repository ?? null}
               onSwitch={(repository) => {
                 setActiveRepo(repository);
-                if (!isSelfRepository(repository)) {
-                  window.location.assign(`/graph?repo=${encodeURIComponent(repository)}`);
-                }
+                void fetch(`/api/analysis/self?repo=${encodeURIComponent(repository)}`)
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((data: LiveSelfAnalysis | null) => {
+                    if (data) setLiveSelf(data);
+                  });
               }}
               onAnalyzed={(repository) => {
                 setActiveRepo(repository);
-                window.location.assign(`/graph?repo=${encodeURIComponent(repository)}`);
+                void fetch(`/api/analysis/self?repo=${encodeURIComponent(repository)}`)
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((data: LiveSelfAnalysis | null) => {
+                    if (data) setLiveSelf(data);
+                  });
               }}
             />
             <Link
@@ -600,6 +604,7 @@ function Landing() {
           </div>
           <LiveGraphRagExplorer
             initialData={liveSelf}
+            {...(activeRepo ? { activeRepo } : {})}
             onDataUpdate={setLiveSelf}
             onOpenCode={setCodeTarget}
           />

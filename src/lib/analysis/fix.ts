@@ -145,20 +145,37 @@ function unifiedDiff(path: string, before: string, after: string) {
  */
 export async function generateFixPatch(snapshot: SimulationSnapshot, input: FixPatchInput) {
   const path = normalize(input.path);
-  const analysis = snapshot.analysis;
-  const file = analysis.files.find((candidate) => candidate.path === path);
+  let analysis = snapshot.analysis;
+  let file = analysis.files.find((candidate) => candidate.path === path);
   if (!file)
     return {
       verified: false,
+      remediation: "machine-verified",
       path,
       issue: input.issue ?? "unresolved-import",
       reason: `${path} is not an analyzed source file.`,
       candidates: [],
     };
-  const unresolved = file.imports.filter((ref) => ref.kind === "unresolved");
+  let unresolved = file.imports.filter((ref) => ref.kind === "unresolved");
+  if (!unresolved.length && input.content !== undefined) {
+    // If the stored file is currently clean, overlay the caller's draft content
+    // in memory first so unresolved imports introduced in the draft can be remediated.
+    const overlaid = await patchRepositoryAnalysis(cloneForOverlay(analysis), [
+      { path, content: input.content },
+    ]);
+    const overlaidFile = overlaid.files.find((candidate) => candidate.path === path);
+    const overlaidUnresolved =
+      overlaidFile?.imports.filter((ref) => ref.kind === "unresolved") ?? [];
+    if (overlaidFile && overlaidUnresolved.length > 0) {
+      analysis = overlaid;
+      file = overlaidFile;
+      unresolved = overlaidUnresolved;
+    }
+  }
   if (!unresolved.length)
     return {
       verified: false,
+      remediation: "machine-verified",
       path,
       issue: input.issue ?? "unresolved-import",
       reason: `${path} has no unresolved imports.`,
@@ -239,6 +256,7 @@ export async function generateFixPatch(snapshot: SimulationSnapshot, input: FixP
   const patch = unifiedDiff(path, input.content, content);
   return {
     verified,
+    remediation: "machine-verified",
     path,
     issue: input.issue ?? "unresolved-import",
     patch,
@@ -258,7 +276,7 @@ export async function generateFixPatch(snapshot: SimulationSnapshot, input: FixP
     ambiguous,
     limitations: verified
       ? [
-          "The diff was verified by applying it to an in-memory clone; the repository was not modified.",
+          "Machine-verified remediation: the diff was verified by applying it to an in-memory clone; the repository was not modified.",
         ]
       : [
           "The candidate did not reduce unresolved imports without adding cycles; no patch was accepted.",

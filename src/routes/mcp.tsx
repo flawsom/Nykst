@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { CodeBlock } from "@/components/mcp/CodeBlock";
 import { TokenPanel } from "@/components/mcp/TokenPanel";
+import { FederationPanel, TraceOverlayPanel } from "@/components/mcp/ToolInsightPanel";
 import {
   AGENT_RULES,
   GUIDES,
@@ -60,6 +61,48 @@ function McpGuidePage() {
   const [origin, setOrigin] = useState(PRODUCTION_ORIGIN);
   const [token, setToken] = useState<string | null>(null);
   const [activeId, setActiveId] = useState(GUIDES[0]!.id);
+  const [activeTool, setActiveTool] = useState<string>("search_files");
+  const [toolQuery, setToolQuery] = useState<string>("graph");
+  const [targetPath, setTargetPath] = useState<string>("src/lib/integrations/github.ts");
+  const [simContent, setSimContent] = useState<string>(
+    `// Pre-flight simulated edit\nimport { parseRepoSlug } from "./wrong-folder/code-links";\nexport const simulated = parseRepoSlug;\n`,
+  );
+  const [toolOutput, setToolOutput] = useState<unknown>(null);
+  const [runningTool, setRunningTool] = useState<boolean>(false);
+
+  const executeLiveTool = async (toolName: string, queryOverride?: string) => {
+    setActiveTool(toolName);
+    setRunningTool(true);
+    try {
+      const q = queryOverride ?? toolQuery;
+      if (toolName === "simulate_change" || toolName === "generate_fix_patch") {
+        const res = await fetch("/api/analysis/self", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            path: targetPath,
+            tool: toolName,
+            query: q,
+            content: simContent,
+          }),
+        });
+        if (res.ok) {
+          const payload = (await res.json()) as { toolOutput?: unknown };
+          setToolOutput(payload.toolOutput ?? null);
+        }
+        return;
+      }
+      const res = await fetch(
+        `/api/analysis/self?path=${encodeURIComponent(targetPath)}&tool=${encodeURIComponent(toolName)}&query=${encodeURIComponent(q)}`,
+      );
+      if (res.ok) {
+        const payload = (await res.json()) as { toolOutput?: unknown };
+        setToolOutput(payload.toolOutput ?? null);
+      }
+    } finally {
+      setRunningTool(false);
+    }
+  };
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -213,26 +256,139 @@ function McpGuidePage() {
 
         <section className="mt-12 space-y-4">
           <StepHeading n={4} title="Try it">
-            Ask your agent something like this. It decides when to call Nykst, or you can name the
-            tool.
+            Click any of the 10 read-only tools below to execute it against the live AST of{" "}
+            <code className="text-primary font-mono text-xs">flawsom/nykst</code> right now, or ask
+            your coding agent in plain English.
           </StepHeading>
-          <div className="space-y-3 pl-0 sm:pl-9">
+          <div className="space-y-4 pl-0 sm:pl-9">
             <ul className="space-y-2">
-              {TOOLS.map((tool) => (
-                <li
-                  key={tool.name}
-                  className="border-border bg-surface rounded-xl border px-4 py-3"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <code className="text-primary font-mono text-[13px]">{tool.name}</code>
-                    <span className="text-muted-foreground text-[11px]">“{tool.example}”</span>
-                  </div>
-                  <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
-                    {tool.summary}
-                  </p>
-                </li>
-              ))}
+              {TOOLS.map((tool) => {
+                const isSelected = activeTool === tool.name;
+                return (
+                  <li
+                    key={tool.name}
+                    className={cn(
+                      "rounded-xl border px-4 py-3 transition-colors",
+                      isSelected ? "border-primary bg-primary/10" : "border-border bg-surface",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <code className="text-primary font-mono text-[13px] font-semibold">
+                          {tool.name}
+                        </code>
+                        <span className="text-muted-foreground text-[11px]">“{tool.example}”</span>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid={`mcp-page-tool-${tool.name}`}
+                        onClick={() => void executeLiveTool(tool.name)}
+                        className={cn(
+                          "rounded-lg border px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors",
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20",
+                        )}
+                      >
+                        Run {tool.name}
+                      </button>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                      {tool.summary}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
+
+            <div
+              data-testid="mcp-live-playground"
+              className="border-primary/30 bg-card/90 space-y-3 rounded-2xl border p-4 shadow-xl"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-primary font-mono text-[10px] tracking-[0.2em] uppercase">
+                    Live MCP Tool Sandbox · {activeTool}
+                  </span>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Executes directly against the compiled repository graph with zero mock data.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    data-testid="mcp-page-query-input"
+                    value={toolQuery}
+                    onChange={(e) => setToolQuery(e.target.value)}
+                    aria-label="MCP tool query"
+                    placeholder="Query (e.g. graph, repository_ingestions)…"
+                    className="border-border bg-surface rounded-lg border px-3 py-1.5 font-mono text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    data-testid="mcp-page-path-input"
+                    value={targetPath}
+                    onChange={(e) => setTargetPath(e.target.value)}
+                    aria-label="MCP target path"
+                    placeholder="Target path…"
+                    className="border-border bg-surface rounded-lg border px-3 py-1.5 font-mono text-xs outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    data-testid="mcp-page-execute"
+                    onClick={() => void executeLiveTool(activeTool, toolQuery)}
+                    disabled={runningTool}
+                    className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 font-mono text-xs font-semibold disabled:opacity-60"
+                  >
+                    {runningTool ? "Running…" : `Execute ${activeTool}`}
+                  </button>
+                </div>
+              </div>
+
+              {(activeTool === "simulate_change" || activeTool === "generate_fix_patch") && (
+                <div
+                  data-testid="mcp-page-simulate-overlay"
+                  className="border-border bg-surface/80 space-y-2 rounded-xl border p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-primary font-mono text-[10px] tracking-wider uppercase">
+                      {activeTool === "simulate_change"
+                        ? `In-Memory Overlay Buffer for ${targetPath} (nothing written to disk)`
+                        : `Machine-Verified Remediation Buffer for ${targetPath} (in-memory diff generator)`}
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="mcp-page-run-overlay"
+                      onClick={() => void executeLiveTool(activeTool)}
+                      className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
+                    >
+                      Run {activeTool} overlay →
+                    </button>
+                  </div>
+                  <textarea
+                    data-testid="mcp-page-simulate-textarea"
+                    aria-label="Simulated file content"
+                    value={simContent}
+                    onChange={(e) => setSimContent(e.target.value)}
+                    rows={3}
+                    className="border-border bg-card w-full rounded-lg border p-2.5 font-mono text-[11px] outline-none focus:border-primary"
+                  />
+                </div>
+              )}
+
+              {activeTool === "get_trace_overlay" && (
+                <TraceOverlayPanel result={toolOutput} testId="mcp-page-trace-overlay" />
+              )}
+              {activeTool === "get_federation" && (
+                <FederationPanel result={toolOutput} testId="mcp-page-federation" />
+              )}
+
+              <div className="border-border bg-surface/90 max-h-96 overflow-auto rounded-xl border p-3.5 font-mono text-[11px] leading-relaxed">
+                <pre data-testid="mcp-page-output" className="text-foreground">
+                  {toolOutput
+                    ? JSON.stringify(toolOutput, null, 2)
+                    : "Click any Run button above or press Execute to inspect the live MCP structured output."}
+                </pre>
+              </div>
+            </div>
           </div>
         </section>
 

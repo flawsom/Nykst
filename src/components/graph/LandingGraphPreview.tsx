@@ -2,18 +2,6 @@ import { useEffect, useState } from "react";
 import type { LiveSelfAnalysis } from "@/components/graph/LiveGraphRagExplorer";
 import { TiltCard } from "@/components/motion/VariantMotion";
 
-const FALLBACK_DOMAINS = [
-  { domain: "src/lib/analysis", files: 10, loc: 2240, edgesIn: 48, edgesOut: 19 },
-  { domain: "src/routes", files: 34, loc: 4820, edgesIn: 14, edgesOut: 92 },
-  { domain: "src/components/graph", files: 16, loc: 6410, edgesIn: 31, edgesOut: 64 },
-  { domain: "src/lib/integrations", files: 1, loc: 752, edgesIn: 42, edgesOut: 12 },
-  { domain: "src/integrations/supabase", files: 6, loc: 970, edgesIn: 36, edgesOut: 8 },
-  { domain: "src/lib/connectors", files: 3, loc: 510, edgesIn: 18, edgesOut: 14 },
-  { domain: "src/components/mcp", files: 2, loc: 310, edgesIn: 8, edgesOut: 9 },
-  { domain: "src/components/ui", files: 46, loc: 4120, edgesIn: 24, edgesOut: 41 },
-  { domain: "tests", files: 18, loc: 2150, edgesIn: 0, edgesOut: 38 },
-];
-
 const W = 780;
 const H = 640;
 const CX = W / 2;
@@ -22,8 +10,8 @@ const RADIUS_X = 286;
 const RADIUS_Y = 228;
 
 /**
- * Live interactive Graph-RAG preview rendered from the real TypeScript AST analysis
- * of flawsom/nykst (or the connected repository).
+ * Live interactive Graph-RAG preview rendered strictly from the real TypeScript AST analysis
+ * of flawsom/nykst (or the connected repository). Zero static or hardcoded fallback arrays.
  */
 export function LandingGraphPreview({
   className,
@@ -42,13 +30,10 @@ export function LandingGraphPreview({
     return () => window.clearTimeout(timer);
   }, []);
 
-  const rawDomains =
-    liveData?.domains && liveData.domains.length >= 6
-      ? liveData.domains.slice(0, 10)
-      : FALLBACK_DOMAINS;
+  const rawDomains = liveData?.domains?.slice(0, 10) ?? [];
 
   const satellites = rawDomains.map((d, i) => {
-    const angle = (i / rawDomains.length) * Math.PI * 2 - Math.PI / 2;
+    const angle = (i / Math.max(rawDomains.length, 1)) * Math.PI * 2 - Math.PI / 2;
     return {
       ...d,
       x: CX + Math.cos(angle) * RADIUS_X,
@@ -56,12 +41,7 @@ export function LandingGraphPreview({
     };
   });
 
-  const stats = liveData?.stats ?? {
-    analyzedFiles: 156,
-    internalEdges: 297,
-    loc: 22797,
-    durationMs: 1370,
-  };
+  const stats = liveData?.stats;
 
   return (
     <TiltCard maxTilt={4} className={className}>
@@ -75,12 +55,12 @@ export function LandingGraphPreview({
             <span className="size-2 rounded-full bg-amber-400/80" />
             <span className="size-2 rounded-full bg-emerald-400/80" />
             <span className="text-muted-foreground ml-2 truncate font-mono text-[10px] tracking-wide">
-              nykst://ast/{liveData?.repository ?? "flawsom/nykst"}
+              nykst://ast/{liveData?.repository ?? "compiling..."}
             </span>
           </div>
           <span className="border-primary/40 bg-primary/15 text-primary flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase">
             <span className="bg-primary size-1.5 rounded-full animate-pulse" />
-            live AST · {stats.analyzedFiles} files
+            {stats ? `live AST · ${stats.analyzedFiles} files` : "compiling live AST…"}
           </span>
         </div>
 
@@ -125,15 +105,23 @@ export function LandingGraphPreview({
 
             {satellites.map((node, i) => {
               const isHovered = hoveredIdx === i;
+              const mx = (CX + node.x) / 2;
+              const my = (CY + node.y) / 2;
+              const dx = node.x - CX;
+              const dy = node.y - CY;
+              const len = Math.hypot(dx, dy) || 1;
+              const qx = mx + (-dy / len) * len * 0.14;
+              const qy = my + (dx / len) * len * 0.14;
+              const pathD = mounted
+                ? `M ${CX} ${CY} Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${node.x.toFixed(1)} ${node.y.toFixed(1)}`
+                : `M ${CX} ${CY} Q ${CX} ${CY} ${CX} ${CY}`;
               return (
                 <g key={node.domain}>
-                  <line
-                    x1={CX}
-                    y1={CY}
-                    x2={mounted ? node.x : CX}
-                    y2={mounted ? node.y : CY}
+                  <path
+                    d={pathD}
+                    fill="none"
                     stroke={isHovered ? "var(--primary)" : "url(#landing-edge)"}
-                    strokeWidth={isHovered ? 2.2 : 1.2}
+                    strokeWidth={isHovered ? 2.2 : 1.3}
                     className="edge-flow transition-all duration-700"
                     style={{ transitionDelay: `${i * 35}ms` }}
                   />
@@ -146,9 +134,9 @@ export function LandingGraphPreview({
               const height = 42;
               const isHovered = hoveredIdx === i;
               const sampleFile =
-                "sampleFiles" in node && Array.isArray(node.sampleFiles) && node.sampleFiles[0]
+                Array.isArray(node.sampleFiles) && node.sampleFiles[0]
                   ? node.sampleFiles[0]
-                  : "src/lib/integrations/github.ts";
+                  : "src/lib/analysis/engine.server.ts";
               return (
                 <g
                   key={node.domain}
@@ -158,6 +146,7 @@ export function LandingGraphPreview({
                   onMouseEnter={() => setHoveredIdx(i)}
                   onMouseLeave={() => setHoveredIdx(null)}
                   onClick={() => onSelectDomain?.(sampleFile)}
+                  data-preview-domain={node.domain}
                 >
                   <rect
                     x={-width / 2}
@@ -218,7 +207,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-foreground text-[19px] font-bold tracking-tight"
               >
-                nykst-core
+                {liveData?.repository ? liveData.repository.split("/").pop() : "nykst"}
               </text>
               <text
                 x={CX}
@@ -234,7 +223,9 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-muted-foreground font-mono text-[8.5px]"
               >
-                {stats.internalEdges} edges · {stats.loc.toLocaleString()} LOC
+                {stats
+                  ? `${stats.internalEdges} edges · ${stats.loc.toLocaleString()} LOC`
+                  : "loading live topology…"}
               </text>
             </g>
 
@@ -265,8 +256,9 @@ export function LandingGraphPreview({
               textAnchor="middle"
               className="fill-muted-foreground font-mono text-[9px]"
             >
-              Real-time TypeScript AST telemetry · parsed in {stats.durationMs}ms · 0 simulated
-              nodes
+              {stats
+                ? `Real-time TypeScript AST telemetry · parsed in ${stats.durationMs}ms · 0 simulated nodes`
+                : "Real-time TypeScript AST telemetry · 0 simulated nodes"}
             </text>
           </svg>
         </div>

@@ -1,0 +1,159 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nykst HTTP API",
+    "version": "1.0.0",
+    "description": "The endpoints the Nykst app and AI coding agents call. Kept in the repository so the analyzer can federate consumer call sites with the operations they hit."
+  },
+  "servers": [{ "url": "https://nykst.unifies.codes" }],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Report whether Supabase is configured and the expected tables exist.",
+        "tags": ["observability"],
+        "responses": {
+          "200": {
+            "description": "Measured readiness report.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthReport" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp": {
+      "post": {
+        "operationId": "callMcpTool",
+        "summary": "Stateless Model Context Protocol endpoint exposing the 10 read-only repository tools.",
+        "tags": ["mcp"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JsonRpcRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response with text and structured tool content.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JsonRpcResponse" }
+              }
+            }
+          },
+          "401": { "description": "Missing, placeholder or revoked Nykst access token." }
+        }
+      }
+    },
+    "/api/analysis/self": {
+      "get": {
+        "operationId": "getSelfAnalysis",
+        "summary": "Analyze the live workspace, or one ingested repository, and optionally run a tool.",
+        "tags": ["analysis"],
+        "parameters": [
+          { "name": "path", "in": "query", "schema": { "type": "string" } },
+          { "name": "tool", "in": "query", "schema": { "type": "string" } },
+          { "name": "query", "in": "query", "schema": { "type": "string" } },
+          { "name": "repo", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository analysis plus the selected tool output.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalysisResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "runWorkbenchTool",
+        "summary": "Run an in-memory tool such as simulate_change or generate_fix_patch.",
+        "tags": ["analysis"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WorkbenchRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool output for the resolved repository and target path.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WorkbenchResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthReport": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "environment": { "type": "object" },
+          "tables": { "type": "object" }
+        }
+      },
+      "JsonRpcRequest": {
+        "type": "object",
+        "required": ["jsonrpc", "method"],
+        "properties": {
+          "jsonrpc": { "type": "string" },
+          "id": { "type": ["string", "number", "null"] },
+          "method": { "type": "string" },
+          "params": { "type": "object" }
+        }
+      },
+      "JsonRpcResponse": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": { "type": "string" },
+          "id": { "type": ["string", "number", "null"] },
+          "result": { "type": "object" },
+          "error": { "type": "object" }
+        }
+      },
+      "AnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "repository": { "type": "string" },
+          "stats": { "type": "object" },
+          "selectedTarget": { "type": "object" },
+          "toolOutput": { "type": ["object", "null"] }
+        }
+      },
+      "WorkbenchRequest": {
+        "type": "object",
+        "properties": {
+          "repo": { "type": "string" },
+          "path": { "type": "string" },
+          "tool": { "type": "string" },
+          "query": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "WorkbenchResponse": {
+        "type": "object",
+        "properties": {
+          "repository": { "type": "string" },
+          "path": { "type": "string" },
+          "tool": { "type": "string" },
+          "toolOutput": { "type": "object" }
+        }
+      }
+    }
+  }
+}

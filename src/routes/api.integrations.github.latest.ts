@@ -6,8 +6,8 @@ import { ingestionTopic } from "@/lib/realtime";
 
 /**
  * The workspace endpoint. Without `?repo=` it returns the newest analysis, which
- * is what the page shows on first load. With `?repo=owner/name` it returns that
- * repository's newest snapshot, so the switcher can move the whole dashboard.
+ * is what the page shows on first load. With `?repo=owner/name` (or `?snapshotId=<uuid>`)
+ * it returns that repository's newest snapshot, so the switcher can move the whole dashboard.
  */
 export const Route = createFileRoute("/api/integrations/github/latest")({
   server: {
@@ -18,15 +18,16 @@ export const Route = createFileRoute("/api/integrations/github/latest")({
           const user = await githubUser(token);
           const url = new URL(request.url);
           const requested = parseRepoSlug(url.searchParams.get("repo"))?.slug ?? null;
+          const snapshotId = url.searchParams.get("snapshotId")?.trim() || null;
           const [ingestion, repositories] = await Promise.all([
-            latestIngestion(String(user.id), requested),
+            latestIngestion(String(user.id), requested, snapshotId),
             listIngestedWorkspaces(String(user.id)),
           ]);
           const active = ingestion?.repository_full_name ?? requested ?? null;
-          // The topic this session should listen on for new analyses.
           return json({
             ingestion,
             repositories,
+            ingestedRepositories: repositories,
             active,
             realtime: { topic: ingestionTopic(user.id) },
           });

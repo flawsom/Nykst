@@ -9,12 +9,18 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export interface IngestedWorkspace {
   repository: string;
   created_at: string;
+  analyzedAt: string;
   status: string;
   branch: string | null;
   commit: string | null;
+  commitSha: string | null;
   files: number;
+  fileCount: number;
   sourceFiles: number;
   edges: number;
+  edgeCount: number;
+  cycles: number;
+  cycleCount: number;
   ingestionId: string;
 }
 
@@ -42,16 +48,29 @@ export function toWorkspace(row: IngestionRow): IngestedWorkspace {
   const analysis = read(row.payload, "analysis");
   const repository = read(row.payload, "repository");
   const summary = read(row.payload, "summary");
+  const branch = text(read(repository, "default_branch"));
+  const commit = text(read(analysis, "ref"));
+  const files = count(read(summary, "file_count"));
+  const sourceFiles = count(read(read(analysis, "stats"), "analyzedFiles"));
+  const edges = count(read(read(analysis, "stats"), "internalEdges"));
+  const rawCycles = read(analysis, "cycles");
+  const cycles = Array.isArray(rawCycles) ? rawCycles.length : 0;
   return {
     ingestionId: row.id,
     repository: row.repository_full_name,
     created_at: row.created_at,
+    analyzedAt: row.created_at,
     status: row.status,
-    branch: text(read(repository, "default_branch")),
-    commit: text(read(analysis, "ref")),
-    files: count(read(summary, "file_count")),
-    sourceFiles: count(read(read(analysis, "stats"), "analyzedFiles")),
-    edges: count(read(read(analysis, "stats"), "internalEdges")),
+    branch,
+    commit,
+    commitSha: commit,
+    files,
+    fileCount: sourceFiles || files,
+    sourceFiles,
+    edges,
+    edgeCount: edges,
+    cycles,
+    cycleCount: cycles,
   };
 }
 
@@ -75,14 +94,19 @@ export async function listIngestedWorkspaces(userId: string): Promise<IngestedWo
   return workspaces;
 }
 
-/** The newest snapshot for one repository, or the newest of all when no repo is given. */
-export async function latestIngestion(userId: string, repository?: string | null) {
+/** The newest snapshot for one repository (or specific snapshotId), or the newest of all when no repo is given. */
+export async function latestIngestion(
+  userId: string,
+  repository?: string | null,
+  snapshotId?: string | null,
+) {
   let query = supabaseAdmin
     .from("repository_ingestions")
     .select("id, provider, provider_username, repository_full_name, status, payload, created_at")
     .eq("provider", "github")
     .eq("provider_user_id", String(userId));
-  if (repository) query = query.eq("repository_full_name", repository);
+  if (snapshotId) query = query.eq("id", snapshotId);
+  else if (repository) query = query.eq("repository_full_name", repository);
   const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(1)
