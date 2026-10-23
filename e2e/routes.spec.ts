@@ -49,8 +49,12 @@ for (const route of routes) {
     expect(result.pageErrors, "no uncaught page errors").toEqual([]);
 
     // Signed-out probes of /api/ai/key and /api/integrations/github/organizations
-    // answer 401 by design, so only those console errors are tolerated.
-    const unexpected = result.consoleErrors.filter((line) => !line.includes("401"));
+    // answer 401 by design, and the readiness probe answers 503 when Supabase is
+    // not provisioned (CI): those are expected, not page errors.
+    const expectedFailureCodes = ["401", "503"];
+    const unexpected = result.consoleErrors.filter(
+      (line) => !expectedFailureCodes.some((code) => line.includes(code)),
+    );
     expect(unexpected, "no unexpected console errors").toEqual([]);
 
     await expect(page).toHaveTitle(/.+/);
@@ -77,11 +81,20 @@ for (const route of routes) {
 
 test("health endpoint answers with JSON", async ({ request }) => {
   const response = await request.get("/api/health");
-  expect(response.status()).toBe(200);
+  // A provisioned environment answers 200; an unprovisioned one (CI) answers
+  // 503 with the same measured report. Both are the documented readiness contract.
+  expect([200, 503]).toContain(response.status());
+  expect(response.headers()["content-type"]).toContain("application/json");
 
   const body = await response.json();
   expect(body).toBeTruthy();
   expect(typeof body).toBe("object");
+  expect(typeof body.status).toBe("string");
+  expect(typeof body.configured).toBe("boolean");
+  expect(typeof body.reachable).toBe("boolean");
+  expect(Array.isArray(body.missing)).toBe(true);
+  // The status code and the reported readiness must agree.
+  expect(body.status === "ok").toBe(response.status() === 200);
 });
 
 test("hosted self-analysis reports the public repository", async ({ request }) => {
