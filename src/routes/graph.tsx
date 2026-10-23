@@ -667,6 +667,14 @@ function GraphPage() {
             inspected.expandable ? childrenOf(inspected).filter((n) => canView(role, n)) : []
           }
           onOpen={drill}
+          onOpenCode={(path) =>
+            setCodeTarget({
+              repository: activeRepo ?? snapshot?.repository_full_name ?? null,
+              path,
+              line: 1,
+              label: "Mentor evidence source",
+            })
+          }
           {...(snapshot ? { repositoryProblems: problems } : {})}
           {...(snapshot ? { repositorySnapshot: snapshot.payload } : {})}
         />

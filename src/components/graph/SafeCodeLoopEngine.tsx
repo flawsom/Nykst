@@ -18,6 +18,7 @@ import {
   DEFAULT_LOOP_SCENARIO,
   LOOP_SCENARIOS,
   LOOP_STAGES,
+  extractGeneratedCode,
   formatDuration,
   type LoopRun,
   type LoopScenarioId,
@@ -54,6 +55,10 @@ export function SafeCodeLoopEngine({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState<{ code: string | null; answer: string } | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const requestRef = useRef(0);
   const verdictRef = useRef(onVerdict);
   verdictRef.current = onVerdict;
@@ -124,6 +129,41 @@ export function SafeCodeLoopEngine({
     void run({ path: initialPath });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPath]);
+
+  const generate = async () => {
+    if (!prompt.trim() || !result) return;
+    setGenerating(true);
+    setGenerateError(null);
+    setGenerated(null);
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompt: `${prompt.trim()}\n\nReturn the complete replacement contents of ${path} in one fenced code block.`,
+          mode: "code",
+          // Stage 1 is the whole point of the loop: the model sees the bounded
+          // evidence envelope, not a blind repository scan.
+          context: JSON.stringify({
+            repository: result.repository,
+            path,
+            stage1: result.stage1,
+          }),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        answer?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.answer)
+        throw new Error(payload.error ?? `Generation failed (${response.status}).`);
+      setGenerated({ code: extractGeneratedCode(payload.answer), answer: payload.answer });
+    } catch (cause) {
+      setGenerateError(cause instanceof Error ? cause.message : "Generation failed.");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const applyHeal = () => {
     const healed = result?.stage4.heal?.healedContent;
@@ -382,7 +422,80 @@ export function SafeCodeLoopEngine({
             icon={FileCode2}
             aside={`${result.stage2.content.split("\n").length} lines · edit in place`}
           >
-            <div className="flex flex-wrap gap-1.5">
+            <div className="border-border bg-surface/50 rounded-xl border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  data-testid="loop-generate-prompt"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void generate();
+                  }}
+                  placeholder={`Describe the change to generate for ${path}…`}
+                  aria-label="Grounded generation prompt"
+                  className="border-border bg-card focus:border-primary min-w-0 flex-1 rounded-lg border px-2.5 py-1.5 text-[11px] outline-none"
+                />
+                <button
+                  type="button"
+                  data-testid="loop-generate-btn"
+                  onClick={() => void generate()}
+                  disabled={!prompt.trim() || generating}
+                  className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold disabled:opacity-50"
+                >
+                  {generating ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  Generate grounded code
+                </button>
+              </div>
+              <p className="text-muted-foreground mt-1.5 font-mono text-[10px]">
+                Mode A · /api/ai/chat in code mode, seeded with the Stage 1 envelope (not the raw
+                repository). Requires a provider key; the provider error is shown verbatim.
+              </p>
+              {generateError && (
+                <p
+                  data-testid="loop-generate-error"
+                  role="alert"
+                  className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200"
+                >
+                  {generateError}
+                </p>
+              )}
+              {generated?.code && (
+                <div
+                  data-testid="loop-generated-proposal"
+                  className="border-primary/25 bg-primary/5 mt-2 rounded-lg border p-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] font-semibold">Grounded proposal</p>
+                    <button
+                      type="button"
+                      data-testid="loop-apply-generated"
+                      onClick={() => {
+                        setDraft(generated.code!);
+                        void run({ content: generated.code! });
+                      }}
+                      className="border-primary/40 bg-primary/15 text-primary rounded border px-2 py-1 text-[10px] font-semibold"
+                    >
+                      Use generated code → verify
+                    </button>
+                  </div>
+                  <pre className="mt-2 max-h-40 overflow-auto font-mono text-[10px] whitespace-pre">
+                    {generated.code}
+                  </pre>
+                </div>
+              )}
+              {generated && !generated.code && (
+                <p className="text-muted-foreground mt-2 whitespace-pre-line rounded-lg border border-dashed border-border p-2.5 text-[11px]">
+                  {generated.answer.slice(0, 700)}
+                  {"\n\nNo fenced file was returned, so nothing was written to the buffer."}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {LOOP_SCENARIOS.map((option) => (
                 <button
                   key={option.id}

@@ -31,6 +31,23 @@ test("stage 1 grounds the loop in real signatures, importers and token savings",
   await expect(page.locator('[data-testid="loop-stage-4"]')).toBeVisible();
 });
 
+test("Stage 2 Mode A is wired to grounded generation and surfaces provider limits", async ({
+  page,
+}) => {
+  const engine = await openLoop(page);
+  await page
+    .locator('[data-testid="loop-generate-prompt"]')
+    .fill("Add a one-line comment above the first exported function.");
+  await expect(page.locator('[data-testid="loop-generate-btn"]')).toBeEnabled();
+  await page.locator('[data-testid="loop-generate-btn"]').click();
+  // A configured provider returns a fenced proposal; an unconfigured or slow one
+  // returns its real error. Either way the surface must answer, never hang silently.
+  await expect(
+    page.locator('[data-testid="loop-generated-proposal"], [data-testid="loop-generate-error"]'),
+  ).toBeVisible({ timeout: 40000 });
+  await expect(engine.locator('[data-testid="loop-code-buffer"]')).toBeVisible();
+});
+
 test("a real unresolved import is blocked, then auto-heals to verified safe", async ({ page }) => {
   const engine = await openLoop(page);
 

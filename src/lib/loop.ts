@@ -325,6 +325,19 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
   };
 }
 
+/**
+ * Extracts the proposed file from a grounded AI answer. Only a fenced code block
+ * or the explicit BEGIN_FILE markers are accepted; prose is never applied to the
+ * buffer, so an explanation can never overwrite real source.
+ */
+export function extractGeneratedCode(answer: string): string | null {
+  const marked = /BEGIN_FILE\s*\n([\s\S]*?)\nEND_FILE/.exec(answer);
+  if (marked?.[1]?.trim()) return marked[1].trim();
+  const fenced = /```(?:[a-zA-Z0-9+#._-]+)?\s*\n([\s\S]*?)```/.exec(answer);
+  if (fenced?.[1]?.trim()) return fenced[1].trim();
+  return null;
+}
+
 /** The exact test command that covers a change. */
 export function coveringTestCommand(tests: string[]): string {
   const unique = [...new Set(tests)].filter(Boolean);

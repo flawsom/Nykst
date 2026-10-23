@@ -5,6 +5,7 @@ import {
   computeFinOps,
   coveringTestCommand,
   estimateTokens,
+  extractGeneratedCode,
   relativeSpecifier,
   scenarioContent,
   summarizeVerdict,
@@ -182,6 +183,25 @@ describe("summarizeVerdict", () => {
     });
     expect(verdict.verdict).toBe("breaking");
     expect(verdict.driftDelta).toBe(1);
+  });
+});
+
+describe("extractGeneratedCode", () => {
+  test("extracts a fenced TypeScript block and ignores surrounding prose", () => {
+    const answer =
+      "Here is the change.\n```ts\nexport const value = 1;\n```\nThis keeps the contract.";
+    expect(extractGeneratedCode(answer)).toBe("export const value = 1;");
+  });
+
+  test("accepts the BEGIN_FILE markers used by the coding route", () => {
+    expect(extractGeneratedCode("BEGIN_FILE\nexport const a = 2;\nEND_FILE")).toBe(
+      "export const a = 2;",
+    );
+  });
+
+  test("returns null for prose so an answer cannot overwrite source", () => {
+    expect(extractGeneratedCode("You should rename the function and run the tests.")).toBeNull();
+    expect(extractGeneratedCode("")).toBeNull();
   });
 });
 

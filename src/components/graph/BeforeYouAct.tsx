@@ -302,6 +302,9 @@ function EnvelopeBody({
                         <button
                           key={`${reference.path}:${reference.line}`}
                           type="button"
+                          data-testid="impact-teleport-row"
+                          data-path={reference.path}
+                          data-line={reference.line}
                           disabled={!target}
                           onClick={() => target && onOpenCode?.(target)}
                           className="border-border bg-card hover:border-primary hover:text-primary rounded border px-1.5 py-0.5 font-mono text-[10px] transition-colors disabled:opacity-60"
@@ -334,6 +337,8 @@ function EnvelopeBody({
                   <div>
                     <button
                       type="button"
+                      data-testid="impact-teleport-row"
+                      data-path={item.label}
                       disabled={!onOpenCode}
                       onClick={() =>
                         onOpenCode?.({

@@ -440,7 +440,15 @@ function repositoryContext(
 
 /* ---------------- evidence strip ---------------- */
 
-function EvidenceStrip({ items, onOpen }: { items: Evidence[]; onOpen: (n: GraphNode) => void }) {
+function EvidenceStrip({
+  items,
+  onOpen,
+  onOpenCode,
+}: {
+  items: Evidence[];
+  onOpen: (n: GraphNode) => void;
+  onOpenCode?: (path: string) => void;
+}) {
   if (items.length === 0) return null;
   return (
     <div className="mt-2.5">
@@ -467,6 +475,17 @@ function EvidenceStrip({ items, onOpen }: { items: Evidence[]; onOpen: (n: Graph
             >
               {inner}
             </button>
+          ) : e.kind === "file" && onOpenCode ? (
+            <button
+              key={`${e.label}-${i}`}
+              data-testid="impact-teleport-row"
+              data-path={e.label}
+              onClick={() => onOpenCode(e.label)}
+              title={`${e.kind} · jump to the exact file:line`}
+              className="border-border bg-surface-2 hover:bg-secondary flex max-w-[150px] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors"
+            >
+              {inner}
+            </button>
           ) : (
             <span
               key={`${e.label}-${i}`}
@@ -489,6 +508,7 @@ export function MentorPanel({
   role,
   related,
   onOpen,
+  onOpenCode,
   repositoryProblems,
   repositorySnapshot,
 }: {
@@ -496,6 +516,7 @@ export function MentorPanel({
   role: RoleDef;
   related: GraphNode[];
   onOpen: (n: GraphNode) => void;
+  onOpenCode?: (path: string) => void;
   repositoryProblems?: ProblemTrace[];
   repositorySnapshot?: RepositorySnapshot;
 }) {
@@ -664,7 +685,11 @@ export function MentorPanel({
                           <li className="text-muted-foreground text-[11px]">Nothing tracked.</li>
                         )}
                       </ul>
-                      <EvidenceStrip items={t.evidence} onOpen={onOpen} />
+                      <EvidenceStrip
+                        items={t.evidence}
+                        onOpen={onOpen}
+                        {...(onOpenCode ? { onOpenCode } : {})}
+                      />
                     </div>
                   )}
                 </div>
@@ -733,7 +758,11 @@ export function MentorPanel({
                         )}
 
                         <div className="ml-3.5">
-                          <EvidenceStrip items={evidence} onOpen={onOpen} />
+                          <EvidenceStrip
+                            items={evidence}
+                            onOpen={onOpen}
+                            {...(onOpenCode ? { onOpenCode } : {})}
+                          />
                         </div>
 
                         <div className="mt-2 ml-3.5">
@@ -899,8 +928,12 @@ export function MentorPanel({
                 <div className="bg-secondary text-foreground ml-6 rounded-lg px-3 py-2 text-[13px]">
                   {t.q}
                 </div>
-                <div className="text-sm leading-relaxed">{t.a}</div>
-                <EvidenceStrip items={t.evidence} onOpen={onOpen} />
+                <div className="text-sm leading-relaxed">{t.a}</div>{" "}
+                <EvidenceStrip
+                  items={t.evidence}
+                  onOpen={onOpen}
+                  {...(onOpenCode ? { onOpenCode } : {})}
+                />
               </div>
             ))}
           </div>
