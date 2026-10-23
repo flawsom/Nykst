@@ -173,25 +173,30 @@ export function buildNodeDossier(
   };
 
   return [
-    section("importers", "Direct importers", "Files that import this node today", [
+    section("importers", "Direct Importers (file:line)", "Files that import this node today", [
       ...direct.values(),
     ]),
     section(
       "dependents",
-      "Transitive dependents",
+      "Transitive Call Chain",
       "Everything that breaks if this node changes",
       transitive,
     ),
     section(
       "entrypoints",
-      "Entrypoints reached",
+      "Affected API Routes & Pages",
       "Page routes and API handlers downstream",
       entrypoints,
     ),
-    section("resources", "SQL resources", "Tables, functions and buckets touched here", resources),
+    section(
+      "resources",
+      "SQL Tables & Column Contracts",
+      "Tables, functions and buckets touched here",
+      resources,
+    ),
     section(
       "drift",
-      "Column drift findings",
+      "SQL Column Contract Drift",
       "Literal column references that disagree with the DDL",
       drift,
     ),
