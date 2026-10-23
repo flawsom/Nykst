@@ -43,11 +43,14 @@ export async function buildLoopRun(
   const file = index.files.get(input.path);
   if (!file) throw new Error(`${input.path} is not an analyzed source file.`);
 
-  const realContent = input.content ?? (await readContent(snapshot, input.path, input.token));
-  if (realContent === null)
+  const loaded = input.content
+    ? { content: input.content, source: "client" as const }
+    : await readContent(snapshot, input.path, input.token);
+  if (!loaded)
     throw new Error(
       `Could not read ${input.path}. Connect GitHub for private repositories and retry.`,
     );
+  const realContent = loaded.content;
 
   const importer = (index.dependents.get(input.path) ?? [])
     .slice()
@@ -329,7 +332,7 @@ export async function buildLoopRun(
     repository: snapshot.repository_full_name,
     path: input.path,
     ref: analysis.ref,
-    source: isSelfRepository(snapshot.repository_full_name) ? "workspace" : "github",
+    source: loaded.source === "client" ? "github" : loaded.source,
     suggestedPaths: [input.path, ...suggestedPaths],
     stage1,
     stage2: {
@@ -348,12 +351,12 @@ async function readContent(
   snapshot: AnalysisSnapshot,
   path: string,
   token: string | null | undefined,
-): Promise<string | null> {
+): Promise<{ content: string; source: "workspace" | "github" } | null> {
   if (isSelfRepository(snapshot.repository_full_name) && !path.includes("..")) {
     const absolute = join(process.cwd(), path);
     if (existsSync(absolute)) {
       try {
-        return readFileSync(absolute, "utf8");
+        return { content: readFileSync(absolute, "utf8"), source: "workspace" };
       } catch {
         // Fall through to the evidence loader.
       }
@@ -368,5 +371,6 @@ async function readContent(
     // real git ref. A source-less host must read the public blob from main.
     ref: self ? "main" : snapshot.analysis.ref,
   });
-  return evidence?.content ?? null;
+  if (!evidence) return null;
+  return { content: evidence.content, source: evidence.source };
 }
