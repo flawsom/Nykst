@@ -359,11 +359,14 @@ async function readContent(
       }
     }
   }
+  const self = isSelfRepository(snapshot.repository_full_name);
   const evidence = await loadCodeEvidence({
     token: token ?? null,
     repository: snapshot.repository_full_name,
     path,
-    ref: snapshot.analysis.ref,
+    // The committed self-snapshot is built at "self-snapshot", which is not a
+    // real git ref. A source-less host must read the public blob from main.
+    ref: self ? "main" : snapshot.analysis.ref,
   });
   return evidence?.content ?? null;
 }
