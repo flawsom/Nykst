@@ -36,6 +36,10 @@ Release audited: this release, on top of `e42b097` (grounded Stage 2 generation,
 - `bun run lint`: 0 errors (9 pre-existing shadcn fast-refresh warnings).
 - `bun run build`: success.
 - Local Playwright desktop: all **22** journeys green across `safe-loop`, `graph-navigation`, `graph-workspace`, `routes` and `mcp-tools` (run per spec file).
+- Live Playwright desktop on this release: **22/22** — `safe-loop` 6, `routes` 8 (including the new Memory Q&A evidence check), `mcp-tools` 2, `graph-navigation` 2, `graph-workspace` 4.
+- Live Playwright mobile on this release: **14/14** — `routes` 8 and `safe-loop` 6, including a real Stage 2 Mode A generation on a 390×844 viewport.
+- Production provider latency: a navigator call answered in **43 s** and a code-mode file generation in **41 s**, both HTTP 200, so the 75 s budget fits the deployed function and Mode A works against the live origin.
+- Deployment: GitHub commit status `Vercel` = `success` on this release; `https://nykst.unifies.codes/api/analysis/self` reports the new snapshot (210 files, 38,771 LOC, 458 edges).
 - Frame timing: `/graph`, `/intelligence`, `/mcp` 60 fps; `/` 60 fps after compositor warm-up; profile shows 87–96 % idle main thread.
 
 ## Where we still fall short
