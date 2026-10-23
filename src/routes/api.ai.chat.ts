@@ -47,6 +47,9 @@ export const Route = createFileRoute("/api/ai/chat")({
             key,
             mode === "code" ? CODE_SYSTEM : SYSTEM,
             context ? `Graph context:\n${context}\n\nQuestion: ${prompt}` : prompt,
+            // A grounded code proposal is a whole function or file, so the code
+            // mode needs room to finish it instead of being cut off mid-block.
+            mode === "code" ? { maxTokens: 2400 } : undefined,
           );
           return Response.json({
             answer,

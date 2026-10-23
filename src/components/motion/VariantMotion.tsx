@@ -415,7 +415,9 @@ export function InfiniteMarquee({
   return (
     <div
       className={cn(
-        "border-border/80 bg-surface/50 relative overflow-hidden border-y py-2.5 backdrop-blur-sm",
+        // No backdrop filter here: this strip is always on screen while it scrolls,
+        // and a full-width blur re-glyphs the whole band every frame.
+        "border-border/80 bg-surface/90 relative overflow-hidden border-y py-2.5",
         className,
       )}
     >

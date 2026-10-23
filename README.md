@@ -900,15 +900,15 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 {
   "repository": "flawsom/nykst",
   "stats": {
-    "treeFiles": 265,
-    "sourceFiles": 209,
-    "analyzedFiles": 209,
-    "internalEdges": 455,
+    "treeFiles": 266,
+    "sourceFiles": 210,
+    "analyzedFiles": 210,
+    "internalEdges": 458,
     "externalPackages": 53,
     "unresolvedImports": 0,
     "skippedFiles": 2,
-    "loc": 38332,
-    "durationMs": 1311
+    "loc": 38771,
+    "durationMs": 1424
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
@@ -1117,18 +1117,18 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric                       | Measured                         | Command                                                                 |
 | :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 209 files  | **~1.3 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Cold AST compile, 210 files  | **~1.4 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
 | Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **209 files, 38,332 LOC**        | `jq .stats`                                                             |
-| Internal import edges        | **455, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Analyzed source              | **210 files, 38,771 LOC**        | `jq .stats`                                                             |
+| Internal import edges        | **458, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
 | SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |
 | External services            | **9**                            | `jq '.services \| length'`                                              |
 | SSR landing response         | **44 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
 | Health probe, all tables     | **450 ms**                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
 | Client payload, all routes   | **924 kB JS + 107 kB CSS**       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
-| Test suite                   | **~1.9 s, 116 tests**            | `bun test ./tests`                                                      |
+| Test suite                   | **~1.5 s, 120 tests**            | `bun test ./tests`                                                      |
 | Playwright suite             | **5 routes + loop journeys, desktop and mobile** | `bunx playwright test`                                   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:

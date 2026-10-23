@@ -275,12 +275,19 @@ function openAiBase(key: { provider: AiProvider; apiBaseUrl: string | null }): s
   );
 }
 
-const PROVIDER_TIMEOUT_MS = 25_000;
+/**
+ * Slow reasoning routers routinely take 30s+ for a full answer, and a grounded
+ * code generation is longer still. A tight ceiling here turns a working provider
+ * into a fake outage, so the budget is generous and the message names it.
+ */
+const PROVIDER_TIMEOUT_MS = 75_000;
+const PROVIDER_TIMEOUT_SECONDS = Math.round(PROVIDER_TIMEOUT_MS / 1000);
 
 async function providerRequest(
   key: { provider: AiProvider; apiKey: string; apiBaseUrl: string | null; model: string },
   system: string,
   prompt: string,
+  maxTokens = 900,
 ) {
   const signal = AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
   if (key.provider === "anthropic") {
@@ -294,7 +301,7 @@ async function providerRequest(
       },
       body: JSON.stringify({
         model: key.model,
-        max_tokens: 900,
+        max_tokens: maxTokens,
         system,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -329,7 +336,7 @@ async function providerRequest(
     },
     body: JSON.stringify({
       model: key.model,
-      max_tokens: 900,
+      max_tokens: maxTokens,
       messages: [
         { role: "system", content: system },
         { role: "user", content: prompt },
@@ -394,14 +401,15 @@ export async function chatWithUserKey(
   key: StoredKey,
   system: string,
   prompt: string,
+  options?: { maxTokens?: number },
 ): Promise<string> {
   let response: Response;
   try {
-    response = await providerRequest(key, system, prompt);
+    response = await providerRequest(key, system, prompt, options?.maxTokens);
   } catch (error) {
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
       throw new AiKeyError(
-        "The AI provider did not answer within 25 seconds. Retry, or add your own provider key in API Settings.",
+        `The AI provider did not answer within ${PROVIDER_TIMEOUT_SECONDS} seconds. Retry, or add your own provider key in API Settings.`,
         504,
       );
     throw new AiKeyError("Could not reach your AI provider. Please try again.", 502);

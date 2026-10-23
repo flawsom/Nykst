@@ -46,7 +46,7 @@ export function LandingGraphPreview({
   return (
     <TiltCard maxTilt={4} className={className}>
       <div
-        className="border-border bg-card/85 relative overflow-hidden rounded-2xl border backdrop-blur"
+        className="border-border bg-card/95 relative overflow-hidden rounded-2xl border"
         style={{ boxShadow: "var(--shadow-panel)" }}
       >
         <div className="border-border/80 flex items-center justify-between border-b px-4 py-2.5">

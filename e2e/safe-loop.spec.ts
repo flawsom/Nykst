@@ -31,20 +31,57 @@ test("stage 1 grounds the loop in real signatures, importers and token savings",
   await expect(page.locator('[data-testid="loop-stage-4"]')).toBeVisible();
 });
 
-test("Stage 2 Mode A is wired to grounded generation and surfaces provider limits", async ({
+test("Stage 2 Mode A returns a real grounded proposal or the verbatim provider error", async ({
   page,
 }) => {
+  // A real generation on a slow router can take ~50s, well past the suite default.
+  test.setTimeout(180_000);
   const engine = await openLoop(page);
+  const keyStatus = (await page.evaluate(async () => {
+    const res = await fetch("/api/ai/key");
+    return (await res.json()) as { configured?: boolean };
+  })) as { configured?: boolean };
+
+  // A complete-file generation needs a file that fits the provider budget; the
+  // default target is the 900-line GitHub client, so point the loop at a small,
+  // real module first.
+  const pathInput = page.getByLabel("Target file path");
+  await pathInput.fill("src/lib/code-links.ts");
+  await pathInput.press("Enter");
+  await expect(engine.locator('[data-testid="loop-code-buffer"]')).toHaveValue(/parseRepoSlug/, {
+    timeout: 30000,
+  });
+
   await page
     .locator('[data-testid="loop-generate-prompt"]')
     .fill("Add a one-line comment above the first exported function.");
   await expect(page.locator('[data-testid="loop-generate-btn"]')).toBeEnabled();
   await page.locator('[data-testid="loop-generate-btn"]').click();
-  // A configured provider returns a fenced proposal; an unconfigured or slow one
-  // returns its real error. Either way the surface must answer, never hang silently.
-  await expect(
-    page.locator('[data-testid="loop-generated-proposal"], [data-testid="loop-generate-error"]'),
-  ).toBeVisible({ timeout: 40000 });
+
+  if (keyStatus.configured) {
+    // A configured provider must produce an actual file proposal, not prose and not a hang.
+    const proposal = page.locator('[data-testid="loop-generated-proposal"]');
+    await expect(proposal).toBeVisible({ timeout: 120000 });
+    const code = await proposal.locator("pre").innerText();
+    expect(code.trim().length).toBeGreaterThan(20);
+    // The proposal is grounded in the real file, not in a generic skeleton.
+    expect(code).toMatch(/parseRepoSlug|RepoSlug/);
+    const apply = proposal.locator('[data-testid="loop-apply-generated"]');
+    await expect(apply).toBeEnabled();
+    // Applying it re-runs the memory overlay and must produce a real verdict.
+    await apply.click();
+    await expect(page.locator('[data-testid="loop-verdict"]')).toHaveAttribute(
+      "data-verdict",
+      /safe|breaking/,
+      { timeout: 60000 },
+    );
+  } else {
+    // Without a key the surface must say so instead of failing silently.
+    await expect(page.locator('[data-testid="loop-generate-error"]')).toBeVisible({
+      timeout: 40000,
+    });
+    await expect(page.locator('[data-testid="loop-generate-error"]')).toContainText(/key/i);
+  }
   await expect(engine.locator('[data-testid="loop-code-buffer"]')).toBeVisible();
 });
 

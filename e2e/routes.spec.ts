@@ -97,6 +97,24 @@ test("health endpoint answers with JSON", async ({ request }) => {
   expect(body.status === "ok").toBe(response.status() === 200);
 });
 
+test("memory Q&A answers from real repository evidence", async ({ page }) => {
+  // A grounded answer on a slow router takes ~50s; the evidence fallback is instant.
+  test.setTimeout(180_000);
+  await page.goto("/intelligence", { waitUntil: "networkidle" });
+  const input = page.locator('[data-testid="memory-ask-input"]');
+  await expect(input).toBeVisible({ timeout: 30000 });
+  await input.fill("Which files implement the safe-coding loop, and what do they import?");
+  await page.locator('[data-testid="memory-ask-btn"]').click();
+
+  const result = page.locator('[data-testid="memory-ask-result"]');
+  await expect(result).toBeVisible({ timeout: 150000 });
+  const text = await result.innerText();
+  expect(text.length, "the answer carries a real payload").toBeGreaterThan(200);
+  // Either a provider answer or the verbatim fallback, but always real paths from the snapshot.
+  expect(text).toMatch(/src\/|supabase\/|e2e\//);
+  expect(text.toLowerCase()).not.toContain("grounded in the latest repository snapshot");
+});
+
 test("hosted self-analysis reports the public repository", async ({ request }) => {
   const response = await request.get("/api/analysis/self");
   expect(response.status()).toBe(200);

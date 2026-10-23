@@ -464,7 +464,7 @@ export function LiveGraphRagExplorer({
       {/* PART 2: Live Interactive AST & Blast-Radius Workbench */}
       <div
         id="live-workbench"
-        className="border-primary/30 bg-card/85 relative overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur sm:p-8"
+        className="border-primary/30 bg-card/95 relative overflow-hidden rounded-3xl border p-5 shadow-2xl sm:p-8"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>

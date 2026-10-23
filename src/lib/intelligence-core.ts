@@ -242,12 +242,204 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
   ];
 }
 
+/**
+ * Evidence envelope for Memory Q&A.
+ *
+ * The model is given real file paths, resolved imports, importers, exported
+ * symbols with line numbers, SQL/column usage and commit history from the
+ * snapshot. Nothing here is templated prose about "the connected repository":
+ * if the snapshot does not contain a fact, the brief says so instead.
+ */
+export const GROUNDED_BRIEF_MAX_CHARS = 7_000;
+
+function queryTokens(query: string) {
+  return [
+    ...new Set(
+      query
+        .toLowerCase()
+        .split(/[^a-z0-9_./@]+/)
+        .filter((token) => token.length > 2),
+    ),
+  ];
+}
+
+/** Crude but symmetric stemming so "coding" and "code" compare equal. */
+function stem(token: string) {
+  return token.replace(/(ing|ed|es|s)$/, "").replace(/e$/, "");
+}
+
+function relevance(tokens: string[], path: string, symbols: string[]) {
+  const lowerPath = path.toLowerCase();
+  const lowerSymbols = symbols.join(" ").toLowerCase();
+  let score = 0;
+  for (const token of tokens) {
+    const needle = stem(token);
+    if (needle.length < 3) continue;
+    if (lowerPath.includes(needle)) score += 3;
+    else if (lowerSymbols.includes(needle)) score += 2;
+  }
+  return score;
+}
+
 export function buildGroundedAiBrief(snapshot: RepositorySnapshot, query: string, file: CoreFile) {
-  const files = snapshot.files?.length ?? 0;
-  const issues = snapshot.issues?.length ?? 0;
-  const prs = snapshot.pull_requests?.length ?? 0;
-  const commits = snapshot.commits?.length ?? 0;
-  return `[Nykst AI Architect: grounded repository analysis]\n\nQuestion: ${query}\nArtifact: ${file.name}\nRepository: ${snapshot.repository?.full_name ?? "connected repository"}\n\nSystem evidence\n• ${files} files indexed into the system map\n• ${commits} commits and ${prs} pull requests available for change context\n• ${issues} issues available for problem and risk tracing\n\nInterpretation\n${file.summary} The safest next step is to inspect this artifact’s path in the graph, compare its recent changes, and review related open problems before modifying it. This answer is grounded in the latest repository snapshot of the connected repository.`;
+  const repo = snapshot.repository?.full_name ?? "connected repository";
+  const branch = snapshot.repository?.default_branch ?? "main";
+  const analysis = snapshot.analysis;
+  const history = snapshot.history;
+  const analyzed = analysis?.files ?? [];
+  const lines: string[] = [];
+  const push = (line: string) => {
+    if (lines.join("\n").length + line.length > GROUNDED_BRIEF_MAX_CHARS) return;
+    lines.push(line);
+  };
+
+  push(`[Nykst grounded repository evidence]`);
+  push(`Repository: ${repo} (default branch ${branch})`);
+  if (analysis) {
+    push(
+      `Analysis: ${analysis.method} at ${analysis.generatedAt}; ${analysis.stats.analyzedFiles} analyzed source files, ${analysis.stats.loc} LOC, ${analysis.stats.internalEdges} internal import edges, ${analysis.stats.unresolvedImports} unresolved imports, ${analysis.stats.skippedFiles} skipped`,
+    );
+  } else {
+    push(
+      `Analysis: no AST analysis is stored for this snapshot; only the ${snapshot.files?.length ?? 0}-entry file tree is available.`,
+    );
+  }
+  push(`Question: ${query}`);
+  push("");
+
+  const focus = analyzed.find((entry) => entry.path === file.path);
+  push(`Focus artifact: ${file.path}`);
+  if (focus) {
+    push(
+      `  ${focus.language}, ${focus.loc} LOC, role ${focus.role}${focus.packageDir ? `, package ${focus.packageDir}` : ""}`,
+    );
+    if (focus.exports.length) push(`  Exports: ${focus.exports.join(", ")}`);
+    if (focus.symbols?.length)
+      push(
+        `  Symbols: ${focus.symbols
+          .slice(0, 14)
+          .map((symbol) => `${symbol.name} (${symbol.kind}, line ${symbol.line})`)
+          .join("; ")}`,
+      );
+    const internalImports = focus.imports.filter((item) => item.target);
+    if (internalImports.length)
+      push(
+        `  Imports: ${internalImports
+          .slice(0, 14)
+          .map((item) => `${item.specifier} -> ${item.target} (line ${item.line})`)
+          .join("; ")}`,
+      );
+    const externalImports = focus.imports.filter((item) => !item.target);
+    if (externalImports.length)
+      push(
+        `  External packages: ${[...new Set(externalImports.map((item) => item.specifier))].slice(0, 12).join(", ")}`,
+      );
+    if (focus.resources.length)
+      push(`  SQL/resources: ${[...new Set(focus.resources.map((item) => item.id))].join(", ")}`);
+    if (focus.columnRefs?.length)
+      push(
+        `  Columns: ${[...new Set(focus.columnRefs.map((item) => `${item.table}.${item.column}`))].join(", ")}`,
+      );
+    if (focus.endpoints?.length)
+      push(`  Endpoints: ${[...new Set(focus.endpoints.map((item) => item.path))].join(", ")}`);
+    const importers = analyzed.filter((entry) =>
+      entry.imports.some((item) => item.target === focus.path),
+    );
+    push(
+      importers.length
+        ? `  Importers (${importers.length}): ${importers
+            .slice(0, 12)
+            .map((entry) => entry.path)
+            .join(", ")}`
+        : "  Importers: none in this snapshot",
+    );
+  } else {
+    push(`  ${file.summary}`);
+    push(
+      "  This artifact is not a single analyzed source file, so per-symbol evidence is not applicable.",
+    );
+  }
+
+  const tokens = queryTokens(`${query} ${file.path}`);
+  const related = analyzed
+    .filter((entry) => entry.path !== file.path)
+    .map((entry) => ({ entry, score: relevance(tokens, entry.path, entry.exports) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || a.entry.path.localeCompare(b.entry.path))
+    .slice(0, 10);
+  if (related.length) {
+    push("");
+    push("Files that match the question (real paths from the analysis):");
+    for (const { entry } of related) {
+      const imports = entry.imports
+        .map((item) => item.target ?? item.specifier)
+        .filter(Boolean)
+        .slice(0, 8);
+      push(
+        `- ${entry.path} (${entry.loc} LOC${entry.exports.length ? `; exports ${entry.exports.slice(0, 6).join(", ")}` : ""}${imports.length ? `; imports ${imports.join(", ")}` : ""})`,
+      );
+    }
+  }
+
+  if (analysis?.services.length) {
+    push("");
+    push(
+      `External services: ${analysis.services
+        .slice(0, 8)
+        .map((service) => `${service.id} (${service.files.length} file(s))`)
+        .join(", ")}`,
+    );
+  }
+  if (analysis?.cycles.length) {
+    push(
+      `Import cycles: ${analysis.cycles
+        .slice(0, 3)
+        .map((cycle) => cycle.slice(0, 4).join(" -> "))
+        .join(" | ")}`,
+    );
+  }
+
+  const commits = history?.commits ?? [];
+  const touching = commits.filter((commit) => commit.files.includes(file.path)).slice(0, 4);
+  const recent = (touching.length ? touching : commits.slice(0, 4)) || [];
+  if (recent.length) {
+    push("");
+    push(touching.length ? "Commits touching this file:" : "Most recent commits in the snapshot:");
+    for (const commit of recent)
+      push(
+        `- ${commit.sha.slice(0, 7)} ${commit.date.slice(0, 10)} ${commit.author}: ${commit.message.split("\n")[0]}`,
+      );
+  }
+  const pulls = (history?.pullRequests ?? []).slice(0, 4);
+  if (pulls.length) {
+    push("");
+    push("Recent pull requests:");
+    for (const pull of pulls) push(`- #${pull.number} [${pull.state}] ${pull.title}`);
+  }
+  if (!commits.length && !pulls.length)
+    push(
+      "\nCommit and pull-request history: not present in this snapshot (the self-index is AST-only).",
+    );
+
+  const openIssues = (snapshot.issues ?? []).filter(
+    (issue) => text(issue["state"]).toLowerCase() !== "closed" && text(issue["title"]),
+  );
+  if (openIssues.length) {
+    push("");
+    push("Open issues:");
+    for (const issue of openIssues.slice(0, 5)) push(`- ${text(issue["title"])}`);
+  }
+
+  if (analysis?.limitations.length) {
+    push("");
+    push(`Known analysis limitations: ${analysis.limitations.join(" ")}`);
+  }
+
+  push("");
+  push(
+    "Answer only from the evidence above. Cite exact paths and line numbers. If a fact is missing, say what is missing instead of guessing.",
+  );
+  return lines.join("\n");
 }
 
 export { Cpu };

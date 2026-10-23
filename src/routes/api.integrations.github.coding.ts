@@ -93,6 +93,8 @@ export const Route = createFileRoute("/api/integrations/github/coding")({
               key,
               SYSTEM,
               `Repository: ${owner}/${repo}\nBase branch: ${base}\nFile: ${path}\n\nRequested change:\n${prompt}\n\nCurrent file:\n${before}\n\nReturn exactly:\nBEGIN_FILE\n<complete replacement file>\nEND_FILE`,
+              // A whole-file replacement cannot fit in the navigator budget.
+              { maxTokens: 4000 },
             );
             const after = parseReplacement(answer);
             if (after.length > 220_000)

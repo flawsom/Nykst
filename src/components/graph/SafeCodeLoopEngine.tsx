@@ -27,6 +27,13 @@ import { cn } from "@/lib/utils";
 import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
 /**
+ * Mode A returns one complete replacement file, so the source must fit both the
+ * provider's input and its output budget. Above this the loop refuses instead of
+ * publishing a silently truncated file.
+ */
+const GENERATION_SOURCE_LIMIT = 20_000;
+
+/**
  * The four-stage closed-loop safe-coding engine.
  *
  * Stage 1 is assembled from the live AST (signatures, importers, SQL lineage,
@@ -132,6 +139,13 @@ export function SafeCodeLoopEngine({
 
   const generate = async () => {
     if (!prompt.trim() || !result) return;
+    if (draft.length > GENERATION_SOURCE_LIMIT) {
+      setGenerated(null);
+      setGenerateError(
+        `${path} is ${draft.split("\n").length} lines. A grounded generation returns one complete replacement file, so it accepts up to ${GENERATION_SOURCE_LIMIT.toLocaleString("en-US")} characters of source. Point the loop at a smaller file, or make the change by hand in the buffer below.`,
+      );
+      return;
+    }
     setGenerating(true);
     setGenerateError(null);
     setGenerated(null);
@@ -140,7 +154,9 @@ export function SafeCodeLoopEngine({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          prompt: `${prompt.trim()}\n\nReturn the complete replacement contents of ${path} in one fenced code block.`,
+          // The model is given the real current source, so it can return a real
+          // replacement instead of prose about a file it never saw.
+          prompt: `${prompt.trim()}\n\nFile: ${path}\n\nCurrent contents:\n${draft}\n\nReturn the complete replacement contents of ${path} in one fenced code block.`,
           mode: "code",
           // Stage 1 is the whole point of the loop: the model sees the bounded
           // evidence envelope, not a blind repository scan.
@@ -488,7 +504,10 @@ export function SafeCodeLoopEngine({
                 </div>
               )}
               {generated && !generated.code && (
-                <p className="text-muted-foreground mt-2 whitespace-pre-line rounded-lg border border-dashed border-border p-2.5 text-[11px]">
+                <p
+                  data-testid="loop-generated-unparsed"
+                  className="text-muted-foreground mt-2 whitespace-pre-line rounded-lg border border-dashed border-border p-2.5 text-[11px]"
+                >
                   {generated.answer.slice(0, 700)}
                   {"\n\nNo fenced file was returned, so nothing was written to the buffer."}
                 </p>

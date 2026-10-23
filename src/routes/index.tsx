@@ -759,7 +759,7 @@ function Landing() {
           </div>
 
           <div
-            className="border-border bg-card/85 rounded-2xl border p-4 backdrop-blur sm:p-6"
+            className="border-border bg-card/95 rounded-2xl border p-4 sm:p-6"
             style={{ boxShadow: "var(--shadow-panel)" }}
           >
             <div className="border-primary/30 bg-secondary/40 rounded-xl border px-4 py-3">
