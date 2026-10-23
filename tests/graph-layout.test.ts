@@ -82,6 +82,22 @@ describe("radialLayout", () => {
   });
 });
 
+describe("radial coordinate invariant", () => {
+  const stdDev = (values: number[]) => {
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    return Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length);
+  };
+
+  test("every sibling count spreads past 80px on both axes", () => {
+    for (const count of [3, 6, 8, 13, 24]) {
+      const points = radialLayout(count, { width: W, height: H });
+      expect(points.length).toBeGreaterThan(0);
+      expect(stdDev(points.map((point) => point.x))).toBeGreaterThan(80);
+      expect(stdDev(points.map((point) => point.y))).toBeGreaterThan(80);
+    }
+  });
+});
+
 describe("curvedEdgePath", () => {
   test("emits a quadratic bezier from the hub to the node", () => {
     const path = curvedEdgePath({ x: 600, y: 410 }, { x: 600, y: 70 });

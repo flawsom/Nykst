@@ -6,6 +6,8 @@ import { impactBriefing } from "@/lib/analysis/context";
 import { federateRepositories } from "@/lib/analysis/federation";
 import { generateFixPatch } from "@/lib/analysis/fix";
 import { indexAnalysis } from "@/lib/analysis/impact";
+import { buildLoopRun } from "@/lib/analysis/loop.server";
+import type { LoopScenarioId } from "@/lib/loop";
 import { selfSnapshot } from "@/lib/analysis/self-snapshot.server";
 import { simulateChange } from "@/lib/analysis/simulate";
 import { overlayTelemetry, parseOtlpSpans } from "@/lib/analysis/telemetry";
@@ -29,7 +31,13 @@ const IGNORED_DIRS = new Set([
   ".tanstack",
   ".vercel",
   ".wrangler",
+  ".nitro",
   "coverage",
+  // Browser-test artifacts contain minified bundles with unresolvable relative
+  // imports. They are not repository source and must never enter the live graph.
+  "playwright-report",
+  "test-results",
+  "BUFFY_TASK_OUTPUT",
 ]);
 
 function walkWorkspace(root: string, rel = "", out: string[] = []): string[] {
@@ -520,6 +528,7 @@ export const Route = createFileRoute("/api/analysis/self")({
             query?: string;
             changes?: Array<{ path: string; content: string | null }>;
             content?: string;
+            scenario?: LoopScenarioId;
           };
           const requestedRepo = body.repo?.trim() || null;
           const target = body.path?.trim() || "src/lib/integrations/github.ts";
@@ -542,15 +551,23 @@ export const Route = createFileRoute("/api/analysis/self")({
             history: snapshotPayload.history,
           };
 
-          const toolOutput = await executeWorkbenchTool(
-            snapshot,
-            tool,
-            validTarget,
-            query,
-            ingestedRepositories,
-            body.changes,
-            body.content,
-          );
+          const toolOutput =
+            tool === "run_loop"
+              ? await buildLoopRun(snapshot, {
+                  path: validTarget,
+                  ...(body.scenario ? { scenario: body.scenario } : {}),
+                  ...(body.content !== undefined ? { content: body.content } : {}),
+                  token: githubToken(request) ?? null,
+                })
+              : await executeWorkbenchTool(
+                  snapshot,
+                  tool,
+                  validTarget,
+                  query,
+                  ingestedRepositories,
+                  body.changes,
+                  body.content,
+                );
 
           return json(
             {

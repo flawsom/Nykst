@@ -243,7 +243,12 @@ export function RepoSwitcherBar({
   };
 
   return (
-    <div ref={containerRef} className={cn("relative min-w-0 max-w-full", className)}>
+    <div
+      ref={containerRef}
+      data-testid="workspace-repo-switcher"
+      data-active-repo={active}
+      className={cn("relative min-w-0 max-w-full shrink-0", className)}
+    >
       <div className="border-border bg-surface/80 flex max-w-full items-center gap-2 rounded-xl border px-2.5 py-1.5">
         <Layers className="text-primary size-3.5 shrink-0" />
         <div className="min-w-0">

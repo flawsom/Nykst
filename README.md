@@ -87,9 +87,9 @@ Push webhooks and local file watchers patch the graph from the changed files alo
 
 ## 🧠 Why Nykst
 
-Most "AI for code" tools chunk files into token windows, embed them into a vector store, and let a model guess which chunks are related. That works for prose. Software is not prose: it is a typed dependency graph that changes over time.
+AI writes code fast. Hidden dependencies in real codebases are what break production: a caller three hops away, an exported signature that changed arity, a SQL column a migration dropped, or a runtime import cycle nobody saw.
 
-Nykst indexes the graph itself.
+Nykst checks architecture and history first, then verifies every proposed change in memory against the compiled AST, SQL columns and API routes, and jumps straight to the exact `file:line` before anything ships.
 
 ```text
 Organization  ->  Domain        ->  Capability     ->  Service      ->  Module     ->  File
@@ -97,18 +97,31 @@ flawsom           src/lib           analysis           supabase          impact.
                   src/routes        integrations       github-oauth      graph.ts      importers
 ```
 
-| Dimension                  | Typical chat-with-code tool          | Nykst                                                                                                                                      |
-| :------------------------- | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| Indexing primitive         | 500-token text chunks                | **AST compilation** via `ts.createSourceFile`, plus Python, Go, and Rust adapters, with `tsconfig` aliases and workspace packages resolved |
-| Blast radius               | Model guesses from naming similarity | **Exact reverse reachability** over the import graph, with importing file and line for every dependent                                     |
-| Cycles                     | Usually invisible                    | **Iterative Tarjan SCC**, runtime cycles separated from `import type`                                                                      |
-| Database lineage           | SQL files treated as plain text      | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites                                                      |
-| Memory                     | Stateless per prompt                 | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity                                    |
-| Agent access               | Editor fork or proprietary plugin    | **Stateless Streamable HTTP MCP** at `/api/mcp`, 10 read-only tools, any MCP client                                                        |
-| Change propagation         | Full re-index on every push          | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files                                                 |
-| Cross-repository contracts | Invisible or manually maintained     | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported                                          |
-| Runtime evidence           | Static graph only                    | **OTLP trace overlay** that marks which static edges were observed and which were not                                                      |
-| Data provenance            | Demo workspaces and sample data      | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim                       |
+### Architectural Verification Matrix: Blind Code Generation vs. Nykst Closed-Loop Engine
+
+| Dimension                  | Unverified editing                                   | Nykst deterministic loop                                                                                                                     |
+| :------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grounding                  | Model starts from a prompt and guesses relevant files | **Stage 1**: bounded AST envelope with signature arity, direct importers, SQL lineage and six memory layers, assembled before the edit       |
+| Blast radius               | Model guesses from naming similarity                 | **Exact reverse reachability** over the import graph, with importing file and line for every dependent                                       |
+| Cycles                     | Usually invisible                                    | **Iterative Tarjan SCC**, runtime cycles separated from `import type`                                                                        |
+| Database lineage           | SQL files treated as plain text                      | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites                                                        |
+| Memory                     | Stateless per prompt                                 | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity                                      |
+| Change verification        | Edit on disk, then wait for the build to fail        | **Stage 3**: `simulate_change` overlays the proposal on an in-memory graph clone and reports new cycles, unresolved imports and column drift  |
+| Remediation                | Retry loop until the compiler is quiet               | **Stage 4**: `generate_fix_patch` returns a machine-verified diff only when unresolved imports fall and cycles do not grow (`verified: true`) |
+| Agent access               | Editor fork or proprietary plugin                    | **Stateless Streamable HTTP MCP** at `/api/mcp`, 10 read-only tools, any MCP client                                                          |
+| Change propagation         | Full re-index on every push                          | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files                                                   |
+| Cross-repository contracts | Invisible or manually maintained                     | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported                                            |
+| Runtime evidence           | Static graph only                                    | **OTLP trace overlay** that marks which static edges were observed and which were not                                                        |
+| Data provenance            | Demo workspaces and sample data                      | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim                         |
+
+### The 4-Stage Closed-Loop Safe-Coding Engine
+
+| Stage                   | What it proves                                                                                                                              | Where it lives                                          |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------ |
+| 1. Check Architecture   | Exported signatures (`minArity..maxArity`), direct importers (`file:line`), transitive call chain, SQL tables and column contracts, six memory layers, bounded evidence size vs a blind full-repo scan | `SafeCodeLoopEngine.tsx` · `src/lib/analysis/context.ts` |
+| 2. Write or Generate    | A real edit of the real file, or a deterministic failure scenario: removed export, unresolved import, dropped column, runtime cycle, clean enhancement | `SafeCodeLoopEngine.tsx` · `/api/analysis/self`          |
+| 3. Verify in Memory     | `<25ms` overlay: new Tarjan cycles, new unresolved imports, SQL column drift, removed exports, blast-radius delta — nothing written         | `src/lib/analysis/simulate.ts`                          |
+| 4. Verdict & Auto-Heal  | Either `VERIFIED SAFE TO DEPLOY` with covering tests, or the exact `file:line` teleporter plus a `verified: true` remediation patch          | `src/lib/analysis/fix.ts` · `CodeTeleportDrawer`         |
 
 > [!IMPORTANT]
 > **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all ten MCP tools are annotated `readOnlyHint: true`. `simulate_change` and `generate_fix_patch` work on an in-memory clone and return evidence, never a commit. There is no training on your code.
@@ -887,19 +900,19 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 {
   "repository": "flawsom/nykst",
   "stats": {
-    "treeFiles": 230,
-    "sourceFiles": 179,
-    "analyzedFiles": 179,
-    "internalEdges": 366,
+    "treeFiles": 263,
+    "sourceFiles": 208,
+    "analyzedFiles": 208,
+    "internalEdges": 455,
     "externalPackages": 53,
     "unresolvedImports": 0,
-    "skippedFiles": 0,
-    "loc": 29990,
-    "durationMs": 1008
+    "skippedFiles": 2,
+    "loc": 38061,
+    "durationMs": 1398
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
-  "directImporters": 20
+  "directImporters": 24
 }
 ```
 
@@ -1104,18 +1117,19 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric                       | Measured                         | Command                                                                 |
 | :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 186 files  | **~1.1 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Cold AST compile, 208 files  | **~1.4 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              || Analyzed source | **186 files, 32,046 LOC** | `jq .stats` |
-| Internal import edges        | **390, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              |
+| Analyzed source              | **208 files, 38,061 LOC**        | `jq .stats`                                                             |
+| Internal import edges        | **455, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
 | SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |
 | External services            | **9**                            | `jq '.services \| length'`                                              |
 | SSR landing response         | **44 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
 | Health probe, all tables     | **450 ms**                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
 | Client payload, all routes   | **924 kB JS + 107 kB CSS**       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
-| Test suite                   | **~2 s, 72 tests**               | `bun test ./tests`                                                      |
-| Playwright suite             | **5 routes, desktop and mobile** | `bunx playwright test`                                                  |
+| Test suite                   | **~1.9 s, 113 tests**            | `bun test ./tests`                                                      |
+| Playwright suite             | **5 routes + loop journeys, desktop and mobile** | `bunx playwright test`                                   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 

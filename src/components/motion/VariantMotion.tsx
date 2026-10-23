@@ -16,7 +16,13 @@ export { WebGLFieldCanvas };
  * Renders the WebGL2 fluid & neural field backdrop alongside a cursor-following
  * radial spotlight and animated film grain texture.
  */
-export function SpotlightBackdrop({ withWebGL = true }: { withWebGL?: boolean }) {
+export function SpotlightBackdrop({
+  withWebGL = true,
+  accentState = "teal",
+}: {
+  withWebGL?: boolean;
+  accentState?: "teal" | "cyan" | "amber";
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -32,7 +38,7 @@ export function SpotlightBackdrop({ withWebGL = true }: { withWebGL?: boolean })
 
   return (
     <>
-      {withWebGL && <WebGLFieldCanvas />}
+      {withWebGL && <WebGLFieldCanvas accentState={accentState} />}
       <div
         ref={ref}
         aria-hidden="true"

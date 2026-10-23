@@ -150,6 +150,7 @@ function Landing() {
   const [advantages, setAdvantages] = useState(false);
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [codeTarget, setCodeTarget] = useState<CodeTarget | null>(null);
+  const [loopAccent, setLoopAccent] = useState<"teal" | "cyan" | "amber">("teal");
   const [githubConnected, setGithubConnected] = useState(false);
   const [githubNotice, setGithubNotice] = useState<string | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
@@ -279,9 +280,20 @@ function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      <SpotlightBackdrop />
+      <SpotlightBackdrop accentState={loopAccent} />
 
-      <CodeProblemInspector target={codeTarget} onClose={() => setCodeTarget(null)} />
+      <CodeProblemInspector
+        target={codeTarget}
+        onClose={() => setCodeTarget(null)}
+        onRunLoop={() => {
+          setCodeTarget(null);
+          window.setTimeout(() => {
+            document
+              .querySelector('[data-testid="safe-code-loop-engine"]')
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 60);
+        }}
+      />
 
       {preRegister && <PreRegisterForm onClose={() => setPreRegister(false)} />}
       {advantages && <AdvantagesForm onClose={() => setAdvantages(false)} />}
@@ -448,9 +460,10 @@ function Landing() {
               className="animate-rise text-muted-foreground mt-5 max-w-xl text-sm leading-relaxed sm:text-base"
               style={{ animationDelay: "130ms" }}
             >
-              Nykst compiles your repository with the TypeScript compiler and static adapters for
-              Python, Go, and Rust, links SQL migrations and external services, and computes the
-              exact line-level blast radius before you or your AI coding agent touches a file.
+              AI writes code fast, but hidden dependencies in real codebases break production. Nykst
+              checks architecture and history first, verifies every change in memory against your
+              AST, SQL columns, and API routes, and jumps straight to the exact{" "}
+              <code className="text-primary">file:line</code> before anything breaks.
             </p>
 
             <div
@@ -607,6 +620,11 @@ function Landing() {
             {...(activeRepo ? { activeRepo } : {})}
             onDataUpdate={setLiveSelf}
             onOpenCode={setCodeTarget}
+            onLoopVerdict={(verdict) =>
+              setLoopAccent(
+                verdict === "breaking" ? "amber" : verdict === "simulating" ? "cyan" : "teal",
+              )
+            }
           />
         </BlurReveal>
       </section>

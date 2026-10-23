@@ -7,7 +7,7 @@ import { buildNodeDossier } from "@/lib/dossier";
 import { githubBlobUrl } from "@/lib/code-links";
 import type { CodeTarget } from "./CodeProblemInspector";
 
-const TESTID = "dossier-row";
+const TESTID = "impact-teleport-row";
 
 /**
  * Deterministic evidence for one graph node: direct importers, transitive
@@ -86,6 +86,7 @@ export function NodeDossier({
                       <button
                         type="button"
                         data-testid={TESTID}
+                        data-dossier-row="true"
                         data-path={row.path}
                         data-line={line ?? ""}
                         onClick={() =>

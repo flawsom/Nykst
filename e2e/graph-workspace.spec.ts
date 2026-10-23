@@ -65,7 +65,9 @@ test("clicking a file:line impact row opens the code and the exact GitHub line",
 
   const dossier = page.locator('[data-testid="node-dossier"]');
   await dossier.scrollIntoViewIfNeeded();
-  const row = dossier.locator('[data-testid="dossier-row"][data-line]:not([data-line=""])').first();
+  const row = dossier
+    .locator('[data-testid="impact-teleport-row"][data-line]:not([data-line=""])')
+    .first();
   await expect(row).toBeVisible();
   const path = await row.getAttribute("data-path");
   const line = await row.getAttribute("data-line");
@@ -74,11 +76,11 @@ test("clicking a file:line impact row opens the code and the exact GitHub line",
 
   await row.click();
 
-  const inspector = page.locator('[data-testid="code-problem-inspector"]');
+  const inspector = page.locator('[data-testid="code-teleport-drawer"]');
   await expect(inspector).toBeVisible({ timeout: 20000 });
   await expect(page.locator('[data-testid="focused-code-line"]')).toBeVisible({ timeout: 20000 });
 
-  const github = page.locator('[data-testid="github-line-link"]');
+  const github = page.locator('[data-testid="teleport-open-github"]');
   await expect(github).toBeVisible();
   const href = await github.getAttribute("href");
   expect(href).toContain(`/blob/`);

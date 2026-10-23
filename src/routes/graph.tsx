@@ -8,6 +8,8 @@ import { isSelfRepository } from "@/lib/code-links";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
+import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
+import { WebGLFieldCanvas } from "@/components/motion/WebGLFieldCanvas";
 import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
 import { ConnectorsPanel } from "@/components/graph/ConnectorsPanel";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
@@ -79,7 +81,18 @@ function GraphPage() {
   const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [codeTarget, setCodeTarget] = useState<CodeTarget | null>(null);
+  const [loopPath, setLoopPath] = useState("src/lib/integrations/github.ts");
+  const [loopVerdict, setLoopVerdict] = useState<"safe" | "breaking" | "simulating">("safe");
   const repoRef = useRef<string | null>(null);
+
+  const focusLoop = (path: string) => {
+    setLoopPath(path);
+    window.setTimeout(() => {
+      document
+        .querySelector('[data-testid="safe-code-loop-engine"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
 
   const reanalyze = async () => {
     const [owner, repo] = (snapshot?.repository_full_name ?? "").split("/");
@@ -410,8 +423,13 @@ function GraphPage() {
   const inspected = selected ?? center;
 
   return (
-    <main className="bg-background flex min-h-screen flex-col overflow-hidden lg:h-screen">
-      <header className="border-border flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
+    <main className="bg-background relative flex min-h-screen flex-col overflow-hidden lg:h-screen">
+      <WebGLFieldCanvas
+        fixed={false}
+        accentState={loopVerdict === "breaking" ? "amber" : "teal"}
+        className="absolute inset-0 z-0 opacity-40"
+      />
+      <header className="border-border relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
         <div className="flex items-center gap-2.5">
           <Link
             to="/"
@@ -486,7 +504,7 @@ function GraphPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
         <TreePanel
           root={root}
           openIds={openIds}
@@ -631,6 +649,15 @@ function GraphPage() {
               onOpenCode={setCodeTarget}
             />
           </div>
+
+          <div className="mt-5">
+            <SafeCodeLoopEngine
+              repository={activeRepo ?? snapshot.repository_full_name}
+              path={loopPath}
+              onOpenCode={setCodeTarget}
+              onVerdict={setLoopVerdict}
+            />
+          </div>
         </section>
 
         <MentorPanel
@@ -659,6 +686,10 @@ function GraphPage() {
         onInspectNode={(path) => {
           const node = findNodeByPath(root, path);
           if (node) jumpTo(node);
+        }}
+        onRunLoop={(target) => {
+          setCodeTarget(null);
+          focusLoop(target.path);
         }}
       />
       <ConnectAiTools open={aiToolsOpen} onClose={() => setAiToolsOpen(false)} />

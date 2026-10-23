@@ -57,11 +57,13 @@ export function CodeProblemInspector({
   target,
   onClose,
   onInspectNode,
+  onRunLoop,
   editorOrigin,
 }: {
   target: CodeTarget | null;
   onClose: () => void;
   onInspectNode?: (path: string) => void;
+  onRunLoop?: (target: CodeTarget) => void;
   editorOrigin?: string;
 }) {
   const [evidence, setEvidence] = useState<Evidence | null>(null);
@@ -135,7 +137,7 @@ export function CodeProblemInspector({
         role="dialog"
         aria-modal="true"
         aria-label="Code inspector"
-        data-testid="code-problem-inspector"
+        data-testid="code-teleport-drawer"
         className="border-border bg-background relative ml-auto flex h-full w-full flex-col border-l shadow-2xl sm:max-w-2xl"
       >
         <header className="border-border flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3">
@@ -179,19 +181,37 @@ export function CodeProblemInspector({
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <button
               onClick={() => onInspectNode?.(evidence?.path ?? target.path)}
-              className="border-border bg-surface hover:border-primary/50 hover:bg-surface-2 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
+              disabled={!onInspectNode}
+              data-testid="teleport-center-graph"
+              className="border-border bg-surface hover:border-primary/50 hover:bg-surface-2 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50"
             >
-              <Network className="size-3.5" /> Inspect node in graph
+              <Network className="size-3.5" /> Center graph on this file
             </button>
+            {onRunLoop && (
+              <button
+                onClick={() =>
+                  onRunLoop({
+                    repository: evidence?.repository ?? target.repository ?? null,
+                    path: evidence?.path ?? target.path,
+                    line,
+                    ...(target.reason ? { reason: target.reason } : {}),
+                  })
+                }
+                data-testid="teleport-run-loop"
+                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
+              >
+                <Code2 className="size-3.5" /> Open in Safe-Code Loop
+              </button>
+            )}
             {githubUrl && (
               <a
                 href={githubUrl}
                 target="_blank"
                 rel="noreferrer"
-                data-testid="github-line-link"
+                data-testid="teleport-open-github"
                 className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
               >
-                <Github className="size-3.5" /> Open exact line on GitHub
+                <Github className="size-3.5" /> Open Exact Line on GitHub (#L{line ?? ""})
               </a>
             )}
             {editorHref && (

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { TiltCard, ScrambleText } from "@/components/motion/VariantMotion";
 import { FederationPanel, TraceOverlayPanel } from "@/components/mcp/ToolInsightPanel";
+import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
 import { cn } from "@/lib/utils";
 import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
@@ -196,11 +197,13 @@ export function LiveGraphRagExplorer({
   activeRepo,
   onDataUpdate,
   onOpenCode,
+  onLoopVerdict,
 }: {
   initialData: LiveSelfAnalysis | null;
   activeRepo?: string | null;
   onDataUpdate?: (data: LiveSelfAnalysis) => void;
   onOpenCode?: (target: CodeTarget) => void;
+  onLoopVerdict?: (verdict: "safe" | "breaking" | "simulating") => void;
 }) {
   const [data, setData] = useState<LiveSelfAnalysis | null>(initialData);
   const [selectedPath, setSelectedPath] = useState("src/lib/integrations/github.ts");
@@ -694,6 +697,9 @@ export function LiveGraphRagExplorer({
                     {impact.direct_importers.slice(0, 10).map((d) => (
                       <button
                         key={`${d.path}:${d.line}`}
+                        data-testid="impact-teleport-row"
+                        data-path={d.path}
+                        data-line={d.line}
                         onClick={() => {
                           onOpenCode?.({
                             repository: data.repository,
@@ -992,6 +998,13 @@ export function LiveGraphRagExplorer({
           </div>
         )}
       </div>
+
+      <SafeCodeLoopEngine
+        repository={repoParam}
+        path={selectedPath}
+        {...(onOpenCode ? { onOpenCode } : {})}
+        {...(onLoopVerdict ? { onVerdict: onLoopVerdict } : {})}
+      />
     </div>
   );
 }

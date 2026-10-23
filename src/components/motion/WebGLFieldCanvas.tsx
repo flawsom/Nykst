@@ -35,6 +35,8 @@ uniform vec2 u_velocity;
 uniform float u_time;
 uniform float u_scroll;
 uniform float u_intensity;
+// 0 = verified safe (teal), 0.45 = simulating (cyan), 1 = breaking (amber/coral)
+uniform float u_accentState;
 
 // Simplex-inspired 2D hash & gradient noise
 vec2 hash2(vec2 p) {
@@ -106,6 +108,8 @@ void main() {
   vec3 fluidGlow = mix(teal, electric, clamp(flow.y * 0.5 + 0.5 + u_scroll * 0.3, 0.0, 1.0));
 
   vec3 color = base;
+  vec3 accent = mix(mix(teal, mint, 0.55), vec3(0.984, 0.451, 0.086), clamp(u_accentState, 0.0, 1.0));
+  color += accent * wake * 0.22 * u_intensity;
   color += fluidGlow * (ribbon * 0.12 + wake * 0.22) * u_intensity;
   color += mix(teal, mint, 0.5) * (hexOuter + hexInner) * prismMask * 0.16 * u_intensity;
 
@@ -137,13 +141,25 @@ export function WebGLFieldCanvas({
   className,
   intensity = 1,
   fixed = true,
+  accentState = "teal",
 }: {
   className?: string;
   intensity?: number;
   fixed?: boolean;
+  accentState?: "teal" | "cyan" | "amber" | number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fallback, setFallback] = useState(false);
+  const accentValue =
+    typeof accentState === "number"
+      ? Math.min(1, Math.max(0, accentState))
+      : accentState === "amber"
+        ? 1
+        : accentState === "cyan"
+          ? 0.45
+          : 0;
+  const accentRef = useRef(accentValue);
+  accentRef.current = accentValue;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -204,6 +220,7 @@ export function WebGLFieldCanvas({
     const uTime = gl.getUniformLocation(program, "u_time");
     const uScroll = gl.getUniformLocation(program, "u_scroll");
     const uIntensity = gl.getUniformLocation(program, "u_intensity");
+    const uAccent = gl.getUniformLocation(program, "u_accentState");
 
     let mouseX = 0.5;
     let mouseY = 0.65;
@@ -263,6 +280,7 @@ export function WebGLFieldCanvas({
       gl.uniform1f(uTime, reducedMotion ? 0 : (now - startTime) * 0.001);
       gl.uniform1f(uScroll, scrollNorm);
       gl.uniform1f(uIntensity, intensity);
+      gl.uniform1f(uAccent, accentRef.current);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -339,6 +357,7 @@ export function WebGLFieldCanvas({
         ref={canvasRef}
         data-testid="webgl-field-canvas"
         data-webgl-ready={fallback ? "fallback" : "webgl2"}
+        data-accent-state={accentValue}
         className="block h-full w-full opacity-75"
         style={
           fallback
