@@ -42,6 +42,36 @@ test("the live graph lays nodes out on a circle, not a column", async ({ page })
   expect(first).toContain("Q");
 });
 
+test("the list view exposes every child, filters them and opens the dossier", async ({ page }) => {
+  await waitForGraph(page);
+
+  const total = Number(
+    await page.locator('[data-testid="graph-node-total"]').getAttribute("data-total"),
+  );
+  expect(total, "the focused level has real children").toBeGreaterThan(0);
+
+  await page.locator('[data-testid="graph-view-list"]').click();
+  const list = page.locator('[data-testid="graph-node-list"]');
+  await expect(list).toBeVisible();
+  const rows = list.locator('[data-testid="graph-node-row"]');
+  await expect(rows.first()).toBeVisible();
+  await expect(rows).toHaveCount(total);
+  expect(await rows.first().evaluate((element) => element.tagName)).toBe("BUTTON");
+
+  // The filter runs over the real labels and paths at this level.
+  const label = (await rows.first().locator("[data-node-label]").innerText()).trim();
+  const token = label.slice(0, Math.max(2, Math.ceil(label.length / 2)));
+  await page.locator('[data-testid="graph-node-search"]').fill(token);
+  await expect(rows.first()).toBeVisible();
+  expect(await rows.count()).toBeLessThanOrEqual(total);
+  await page.locator('[data-testid="graph-node-search"]').fill("");
+  await expect(rows).toHaveCount(total);
+
+  // A row is a native button and opens the real evidence dossier.
+  await list.locator('[data-testid="graph-node-details"]').first().click();
+  await expect(page.locator('[data-testid="node-dossier"]')).toBeVisible({ timeout: 20000 });
+});
+
 test("the repository switcher lists workspaces and the analyze tab", async ({ page }) => {
   await waitForGraph(page);
   await page.getByRole("button", { name: "Switch repository" }).first().click();

@@ -29,6 +29,7 @@ import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiAnalysisSelfRouteImport } from './routes/api.analysis.self'
 import { Route as ApiIntegrationsConnectorsRouteImport } from './routes/api.integrations.connectors'
+import { Route as ApiMcpSchemaRouteImport } from './routes/api.mcp.schema'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
@@ -150,6 +151,11 @@ const ApiIntegrationsConnectorsRoute =
     path: '/api/integrations/connectors',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiMcpSchemaRoute = ApiMcpSchemaRouteImport.update({
+  id: '/schema',
+  path: '/schema',
+  getParentRoute: () => ApiMcpRoute,
+} as any)
 const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -275,7 +281,7 @@ export interface FileRoutesByFullPath {
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
-  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
+  '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -316,7 +323,7 @@ export interface FileRoutesByTo {
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
-  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
+  '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -358,7 +366,7 @@ export interface FileRoutesById {
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
-  '/api/mcp': typeof ApiMcpRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
@@ -367,6 +375,7 @@ export interface FileRoutesById {
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
+  '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/api/ai/test'
     | '/api/analysis/self'
     | '/api/integrations/connectors'
+    | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
     | '/api/ai/test'
     | '/api/analysis/self'
     | '/api/integrations/connectors'
+    | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/api/ai/test'
     | '/api/analysis/self'
     | '/api/integrations/connectors'
+    | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/integrations/github/all-repositories'
@@ -525,7 +537,7 @@ export interface RootRouteChildren {
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiLoopRoute: typeof ApiLoopRoute
-  ApiMcpRoute: typeof ApiMcpRoute
+  ApiMcpRoute: typeof ApiMcpRouteWithChildren
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
@@ -696,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsConnectorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mcp/schema': {
+      id: '/api/mcp/schema'
+      path: '/schema'
+      fullPath: '/api/mcp/schema'
+      preLoaderRoute: typeof ApiMcpSchemaRouteImport
+      parentRoute: typeof ApiMcpRoute
+    }
     '/api/subscription/admin': {
       id: '/api/subscription/admin'
       path: '/admin'
@@ -832,6 +851,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApiMcpRouteChildren {
+  ApiMcpSchemaRoute: typeof ApiMcpSchemaRoute
+}
+
+const ApiMcpRouteChildren: ApiMcpRouteChildren = {
+  ApiMcpSchemaRoute: ApiMcpSchemaRoute,
+}
+
+const ApiMcpRouteWithChildren =
+  ApiMcpRoute._addFileChildren(ApiMcpRouteChildren)
+
 interface ApiSubscriptionRouteChildren {
   ApiSubscriptionAdminRoute: typeof ApiSubscriptionAdminRoute
 }
@@ -856,7 +886,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDiagnosisRoute: ApiDiagnosisRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiLoopRoute: ApiLoopRoute,
-  ApiMcpRoute: ApiMcpRoute,
+  ApiMcpRoute: ApiMcpRouteWithChildren,
   ApiMcpTokensRoute: ApiMcpTokensRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,

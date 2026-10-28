@@ -117,6 +117,23 @@ describe("scope-aware resolver", () => {
 });
 
 describe("four-strategy auto-healer", () => {
+  test("rewrites a real sibling reached through a missing folder", async () => {
+    const before = await snapshot({
+      "src/lib/utils.ts": 'export const label = "ok";\n',
+      "src/lib/consumer.ts": "export const value = 1;\n",
+    });
+    const draft = 'import "./__nykst_missing__/utils";\nexport const value = 1;\n';
+    const result = await generateFixPatch(before, { path: "src/lib/consumer.ts", content: draft });
+    expect(result.verified).toBe(true);
+    expect(result.strategiesApplied).toContain("unresolved_import_rewrite");
+    expect(result.healedContent).toContain('import "./utils";');
+    expect(result.verification).toMatchObject({
+      unresolved_before: 1,
+      unresolved_after: 0,
+      persisted: false,
+    });
+  });
+
   test("makes a newly required trailing parameter optional", async () => {
     const before = await snapshot({
       "src/lib/util.ts": "export function pad(value: string) { return value; }\n",

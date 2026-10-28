@@ -44,7 +44,7 @@ describe("loop scenarios", () => {
       path: "src/lib/integrations/github.ts",
     });
     const added = result.content.split("\n")[0]!;
-    expect(added).toContain('from "./__nykst_missing__/code-links"');
+    expect(added).toBe('import "./__nykst_missing__/utils";');
     expect(result.line).toBe(1);
     expect(result.content.split("\n").length).toBe(SOURCE.split("\n").length + 1);
     expect(result.content.endsWith(SOURCE)).toBe(true);

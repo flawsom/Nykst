@@ -154,8 +154,11 @@ export async function simulateChange(
       )
       .map((ref) => ({ path: file.path, line: ref.line, specifier: ref.specifier })),
   );
-  // Compare only observed direct named/default bindings. Namespace, re-export,
-  // shadowing, overloads and dynamic usage require a type-aware compiler.
+  // Compare observed symbol usage: direct named and default bindings, namespace
+  // member calls, and re-export origins, with lexically shadowed bindings
+  // filtered by the parser. Dynamically dispatched calls, computed members and
+  // full TypeScript assignability still require a type-aware pass, which is why
+  // the loop reports them as limitations instead of guessing.
   const removedExportCallers: {
     targetPath: string;
     symbolName: string;

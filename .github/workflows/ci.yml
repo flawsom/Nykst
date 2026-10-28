@@ -20,3 +20,5 @@ jobs:
         run: bunx tsc -b --noEmit
       - name: Test
         run: bun test ./tests
+      - name: Public claims
+        run: bun run check:claims

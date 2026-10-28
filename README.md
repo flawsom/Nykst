@@ -265,7 +265,7 @@ Call-site checks follow lexical scope bindings, merge overload signatures into o
 
 The web application and the analysis engine share one graph, and the UI now behaves the same way on `/` and `/graph`:
 
-- **Radial orbit layout.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps two readable orbits and offers a sector selector to reach every child in the canvas. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
+- **Radial orbit layout with an accessible list view.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps two readable orbits and offers a sector selector to reach every child in the canvas. A List toggle replaces the canvas with every child as a native, keyboard-focusable button, with full labels, a text filter over names and paths, the same drill and details actions, and no 24-child cap. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
 - **Curved dependency edges.** Every edge is a quadratic Bezier (`M ... Q ...`) from the centre hub to the child. Importer edges are teal (`#2DD4BF`), runtime cycle edges are red (`#F87171`), and the focused edge is amber. The legend sits under the canvas.
 - **Repository switcher.** `<RepoSwitcherBar />` is mounted on `/`, `/graph` and `/intelligence`. Its first tab lists every ingested workspace (with branch, short commit, file and edge counts) plus `flawsom/nykst (Live Workspace)`; the second tab searches all accessible GitHub repositories, picks a branch, and calls the ingest endpoint with inline progress. Switching updates `?repo=` so the graph, dossier, envelope, memory page and reloads all follow the same repository.
 - **Click-to-code.** Every `file:line` row in the dossier (importers, transitive dependents, entrypoints, SQL resources, column drift, exported signatures), in Before You Act, and in the landing workbench is a button. It opens `<CodeProblemInspector />`, which fetches the real source, scrolls to the line, highlights it, explains why the line matters, and offers three actions: inspect the node in the graph, open the exact line on GitHub (`#L<line>`), or open it in VS Code / Cursor (`vscode://file/...:<line>`).
@@ -735,7 +735,8 @@ nykst/
 ├── src/
 │   ├── components/
 │   │   ├── brand/                   Logo and wordmark components
-│   │   ├── motion/                  Spotlight, tilt, scramble, counters, WebGL2 field
+│   │   ├── motion/
+│   │   │   └── WebGLFieldCanvas.tsx   Loop-reactive WebGL2 shader and CSS fallback
 │   │   ├── graph/
 │   │   │   ├── LiveGraphRagExplorer.tsx   AST workbench and MCP runner
 │   │   │   ├── GraphCanvas.tsx            Six-level topology and Bezier pulses
@@ -792,9 +793,21 @@ nykst/
 │   ├── analyze-local.ts             CLI for any local folder
 │   ├── watch.ts                     Local incremental graph watcher
 │   ├── snapshot-self.ts             Rebuilds the committed analysis snapshot
+│   ├── export-mcp-schema.ts         Writes docs/mcp-tools.json from the real catalog
+│   ├── check-claims.ts              Fails when README numbers or tool counts drift
 │   └── capture-screens.mjs          Desktop and mobile README captures
-├── tests/                           bun:test suites including compiler-resolution.test.ts
-├── e2e/                             Playwright browser checks including safe-loop.spec.ts
+├── tests/
+│   ├── graph-layout.test.ts         Radial orbit geometry invariants
+│   ├── code-links.test.ts           GitHub #L links and source excerpts
+│   ├── dossier.test.ts              File evidence dossier assembly
+│   ├── compiler-resolution.test.ts  Scopes, overloads, re-exports and auto-heal
+│   ├── mcp-contract.test.ts         Published schema matches the 11 real tools
+│   └── ...                          23 bun:test suites in total
+├── e2e/
+│   ├── safe-loop.spec.ts            Four-stage loop, heal and WebGL feedback
+│   ├── graph-workspace.spec.ts      Radial graph, switcher and teleport
+│   ├── mcp-tools.spec.ts            Eleven read-only MCP tools on real data
+│   └── ...                          Playwright journeys for every public route
 └── playwright.config.ts             Local build or deployed-origin runner
 ```
 
@@ -927,15 +940,15 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 {
   "repository": "flawsom/nykst",
   "stats": {
-    "treeFiles": 266,
-    "sourceFiles": 216,
-    "analyzedFiles": 216,
-    "internalEdges": 458,
+    "treeFiles": 278,
+    "sourceFiles": 220,
+    "analyzedFiles": 220,
+    "internalEdges": 485,
     "externalPackages": 53,
     "unresolvedImports": 0,
     "skippedFiles": 2,
-    "loc": 38771,
-    "durationMs": 1424
+    "loc": 41211,
+    "durationMs": 1428
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High",
@@ -973,6 +986,8 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
 ```
 
 MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`, `search_memory`, `get_federation`, `simulate_change`, `generate_fix_patch`, `run_safe_code_loop`, `get_trace_overlay`.
+
+The same catalog is published without a token at `GET /api/mcp/schema` and committed as `docs/mcp-tools.json`, with the transport, response and error contract in [`docs/mcp-contract.md`](docs/mcp-contract.md). Every tool carries its JSON input schema and `readOnlyHint: true`. Run `bun run check:claims` after changing a public number or tool count; it fails when README, the snapshot and the catalog disagree.
 
 <details>
 <summary><b>Simulation, remediation, federation, trace overlay, and memory tool calls</b></summary>
@@ -1157,11 +1172,11 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric                       | Measured                                         | Command                                                                 |
 | :--------------------------- | :----------------------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 216 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Cold AST compile, 220 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
 | Incremental patch, 500 files | **under 15 ms**                                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **216 files, 40,751 LOC**                        | `jq .stats`                                                             |
-| Internal import edges        | **479, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Analyzed source              | **220 files, 41,216 LOC**                        | `jq .stats`                                                             |
+| Internal import edges        | **485, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                                            | `jq '.cycles \| length'`                                                |
 | SQL and data resources       | **12**                                           | `jq '.resources \| length'`                                             |
 | External services            | **9**                                            | `jq '.services \| length'`                                              |
@@ -1224,7 +1239,7 @@ bun run screens               # refresh the README captures
 | `tests/code-links.test.ts`          | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                              |
 | `tests/dossier.test.ts`             | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                 |
 | `e2e/routes.spec.ts`                | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
-| `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link                                                           |
+| `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), the list view exposes every child with a real filter, `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link     |
 | `e2e/safe-loop.spec.ts`             | Real Stage 1 evidence, Stage 2 generation, a breaking overlay, verified auto-heal, teleport, repo switching, and the WebGL canvas                                                                                 |
 | `e2e/mcp-tools.spec.ts`             | All eleven MCP tools, real `search_files` output, `simulate_change` overlays, `generate_fix_patch`, trace overlays, and federation data                                                                           |
 

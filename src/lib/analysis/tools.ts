@@ -14,7 +14,20 @@ const repositoryArg = {
   },
 };
 
-export const TOOLS = [
+/** The published shape of one read-only MCP tool, mirrored in docs/mcp-tools.json. */
+export interface McpTool {
+  name: string;
+  title: string;
+  description: string;
+  inputSchema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+  annotations: { readOnlyHint: boolean; destructiveHint?: boolean };
+}
+
+export const TOOLS: McpTool[] = [
   {
     name: "list_repositories",
     title: "List analyzed repositories",

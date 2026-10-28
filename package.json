@@ -27,6 +27,8 @@
     "e2e": "playwright test",
     "screens": "node scripts/capture-screens.mjs",
     "snapshot:self": "bun scripts/snapshot-self.ts",
+    "mcp:schema": "bun scripts/export-mcp-schema.ts",
+    "check:claims": "bun scripts/check-claims.ts",
     "watch": "bun scripts/watch.ts"
   },
   "dependencies": {

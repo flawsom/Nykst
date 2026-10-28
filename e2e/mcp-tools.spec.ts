@@ -6,6 +6,23 @@ import { expect, test } from "@playwright/test";
  * remediation diff, exercised both on `/mcp` and on the live workbench (`/`).
  */
 
+test("the published MCP schema lists all eleven tools as read-only", async ({ request }) => {
+  const response = await request.get("/api/mcp/schema");
+  expect(response.ok()).toBe(true);
+  const body = (await response.json()) as {
+    toolCount: number;
+    tools: Array<{ name: string; annotations: { readOnlyHint: boolean }; inputSchema: unknown }>;
+  };
+  expect(body.toolCount).toBe(11);
+  expect(body.tools).toHaveLength(11);
+  expect(new Set(body.tools.map((tool) => tool.name)).size).toBe(11);
+  expect(body.tools.every((tool) => tool.annotations.readOnlyHint)).toBe(true);
+  expect(body.tools.every((tool) => Boolean(tool.inputSchema))).toBe(true);
+  expect(body.tools.map((tool) => tool.name)).toContain("get_trace_overlay");
+  expect(body.tools.map((tool) => tool.name)).toContain("get_federation");
+  expect(body.tools.map((tool) => tool.name)).toContain("run_safe_code_loop");
+});
+
 test("MCP tools page lists all 11 tools, runs search_files with real data, executes simulate_change overlay, and verifies generate_fix_patch remediation", async ({
   page,
 }) => {
@@ -13,6 +30,7 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
 
   // Verify the page header and all 11 MCP tool triggers exist
   await expect(page.locator("h1")).toContainText("Use Nykst inside your AI coding agent");
+  await expect(page.getByTestId("mcp-schema-link")).toHaveAttribute("href", "/api/mcp/schema");
 
   const toolNames = [
     "get_impact",

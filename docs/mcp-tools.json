@@ -1,0 +1,292 @@
+{
+  "server": {
+    "name": "nykst",
+    "transport": "streamable-http",
+    "endpoint": "/api/mcp",
+    "readOnly": true
+  },
+  "generatedFrom": "src/lib/analysis/tools.ts",
+  "toolCount": 11,
+  "tools": [
+    {
+      "name": "list_repositories",
+      "title": "List analyzed repositories",
+      "description": "Repositories this user has analyzed in Nykst, with the time of the latest analysis.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_architecture",
+      "title": "Get architecture overview",
+      "description": "Overview of a repository's structure from its import graph: top-level areas, external services (with evidence), database tables/functions/models, most depended-on files, circular imports and known blind spots. Call this first when you need orientation in an unfamiliar codebase.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_impact",
+      "title": "What breaks if I change this?",
+      "description": "Before editing, pass the file paths (or a directory) you plan to change. Returns every file that imports them directly or transitively with the exact import lines, affected page/API entry points with their import chains, tests that cover them, files that historically change together with them, and recent commits/PRs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Repository-relative file paths or directory prefixes, e.g. [\"src/lib/auth.ts\"] or [\"src/lib/billing/\"]."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["paths"]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "find_usages",
+      "title": "Find usages of a table, service or env var",
+      "description": "Every file and line that touches a database table/RPC/model, an external service (e.g. supabase, stripe, github) or an environment variable, plus the combined impact of changing it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string",
+            "description": "Table, RPC function or ORM model name, e.g. \"users\"."
+          },
+          "service": {
+            "type": "string",
+            "description": "Service id or name, e.g. \"supabase\" or \"Stripe\"."
+          },
+          "env": {
+            "type": "string",
+            "description": "Environment variable name, e.g. \"STRIPE_SECRET_KEY\"."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "search_files",
+      "title": "Search files and exports",
+      "description": "Find analyzed files whose path or exported symbol names contain the query.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["query"]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "search_memory",
+      "title": "Search evidence memory",
+      "description": "Search cited memory extracted from ADRs, Mermaid diagrams, SQL migrations and image references. Every result carries a file citation and a checksum; nothing is model-generated.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Case-insensitive text to find."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["adr", "diagram", "migration", "contract", "image"],
+            "description": "Optional memory kind filter."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["query"]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_federation",
+      "title": "Federate OpenAPI and gRPC contracts",
+      "description": "Match provider OpenAPI operations and gRPC methods across every analyzed repository against literal consumer routes in the graph. Returns cross-repository edges, unmatched endpoints and honest contract limitations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "simulate_change",
+      "title": "Simulate a change before writing it",
+      "description": "Apply file writes or deletions to an in-memory graph overlay and return the blast radius, new cycles, newly unresolved imports and SQL column drift. Nothing is persisted; the stored snapshot is never modified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Repository-relative path."
+                },
+                "content": {
+                  "type": ["string", "null"],
+                  "description": "New file content, or null to simulate deletion."
+                }
+              },
+              "required": ["path"]
+            },
+            "description": "At most 50 file writes or deletions to overlay."
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional paths to measure; defaults to the changed paths."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["changes"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "generate_fix_patch",
+      "title": "Generate a verified fix diff",
+      "description": "Deterministically remediate four breakage classes on an in-memory clone: unresolved import rewrites, arity and restored-export compatibility shims, runtime cycle conversion to `import type`, and SQL column drift renames. A unified diff is returned only when the verified breaking score falls without adding cycles. Pass the current file content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Repository-relative source file to repair."
+          },
+          "content": {
+            "type": "string",
+            "description": "Current file content, used to build and verify the exact diff."
+          },
+          "issue": {
+            "type": "string",
+            "enum": ["auto", "unresolved-import", "arity-shim", "cycle", "column-drift"],
+            "description": "Optional remediation class. `auto` (default) evaluates all four deterministic strategies."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["path", "content"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "run_safe_code_loop",
+      "title": "Check a proposed file with the safe coding loop",
+      "description": "Run the four-stage in-memory loop over a complete proposed file: bounded architecture and six-layer memory, AST call-site verification (scope, overloads, namespace calls, barrel re-exports), a deterministic verdict, Trinity root-cause cards with causal chains, and a verified four-strategy auto-heal. Nothing is written; a clean overlay is not a substitute for a full typecheck and test run.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Repository-relative analyzed source file."
+          },
+          "content": {
+            "type": "string",
+            "description": "Complete proposed replacement content."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["path", "content"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "get_trace_overlay",
+      "title": "Overlay OpenTelemetry spans on the graph",
+      "description": "Attach OTLP JSON spans to analyzed files by code.filepath, then mark observed caller-callee edges that also exist in the static import graph. Unmatched spans are reported, never guessed. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "spans": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "array"
+              }
+            ],
+            "description": "OTLP JSON export ({ resourceSpans: [...] }) or a flat span array."
+          },
+          "repository": {
+            "type": "string",
+            "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
+          }
+        },
+        "required": ["spans"]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    }
+  ]
+}

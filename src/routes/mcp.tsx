@@ -260,10 +260,21 @@ function McpGuidePage() {
 
         <section className="mt-12 space-y-4">
           <StepHeading n={4} title="Try it">
-            Click any of the 10 read-only tools below to execute it against the live AST of{" "}
-            <code className="text-primary font-mono text-xs">flawsom/nykst</code> right now, or ask
-            your coding agent in plain English.
+            Click any of the {TOOLS.length} read-only tools below to execute it against the live AST
+            of <code className="text-primary font-mono text-xs">flawsom/nykst</code> right now, or
+            ask your coding agent in plain English.
           </StepHeading>
+          <p className="text-muted-foreground pl-0 text-xs sm:pl-9">
+            Every tool, input schema and read-only annotation is published at{" "}
+            <a
+              href="/api/mcp/schema"
+              data-testid="mcp-schema-link"
+              className="text-primary font-mono underline underline-offset-2"
+            >
+              /api/mcp/schema
+            </a>{" "}
+            and committed as <code className="font-mono">docs/mcp-tools.json</code>.
+          </p>
           <div className="space-y-4 pl-0 sm:pl-9">
             <ul className="space-y-2">
               {TOOLS.map((tool) => {

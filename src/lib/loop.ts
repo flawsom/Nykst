@@ -161,13 +161,13 @@ export function scenarioContent(
   const newline = content.includes("\r\n") ? "\r\n" : "\n";
   switch (scenario) {
     case "unresolved-import": {
-      // A real basename in the wrong directory: an agent typo that a blind grep
-      // would miss but the in-memory resolver catches.
-      const line = `import { parseRepoSlug } from "./__nykst_missing__/code-links";`;
+      // A real sibling module reached through a folder that does not exist: an
+      // agent typo that a blind grep misses but the in-memory resolver repairs.
+      const line = `import "./__nykst_missing__/utils";`;
       return {
         content: `${line}${newline}${content}`,
         summary:
-          "Prepended one import whose specifier points at a folder that does not exist in this repository.",
+          "Prepended one side-effect import whose real sibling module sits behind a folder that does not exist in this repository.",
         line: 1,
       };
     }

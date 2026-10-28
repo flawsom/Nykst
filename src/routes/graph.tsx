@@ -23,7 +23,7 @@ import {
 } from "@/lib/repository-graph";
 import { subscribeToIngestion } from "@/lib/realtime";
 import { NykstBrand } from "@/components/brand/NykstLogo";
-import { X } from "lucide-react";
+import { List, Orbit, Search, X } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -81,6 +81,8 @@ function GraphPage() {
   const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [codeTarget, setCodeTarget] = useState<CodeTarget | null>(null);
+  const [graphView, setGraphView] = useState<"orbit" | "list">("orbit");
+  const [listQuery, setListQuery] = useState("");
   const [loopPath, setLoopPath] = useState("src/lib/integrations/github.ts");
   const [loopVerdict, setLoopVerdict] = useState<"safe" | "breaking" | "simulating">("safe");
   const repoRef = useRef<string | null>(null);
@@ -323,6 +325,22 @@ function GraphPage() {
     [allChildren, role],
   );
   const openIds = useMemo(() => new Set(path.map((n) => n.id)), [path]);
+  const filteredChildren = useMemo(() => {
+    const query = listQuery.trim().toLowerCase();
+    if (!query) return centerChildren;
+    return centerChildren.filter((node) =>
+      [node.label, node.kind, node.detail?.path ?? "", ...(node.analysisRef?.paths ?? [])]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [centerChildren, listQuery]);
+
+  // A new centre is a new list; keeping the old filter would hide its children.
+  useEffect(() => {
+    setListQuery("");
+  }, [center?.id]);
+
   const checkedSecondsAgo = lastChecked
     ? Math.max(0, Math.round((Date.now() - lastChecked) / 1000))
     : null;
@@ -446,7 +464,11 @@ function GraphPage() {
           </Link>
         </div>
 
-        <nav className="order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5 text-sm sm:order-none sm:w-auto sm:flex-1 sm:gap-2.5">
+        <nav
+          data-testid="graph-breadcrumb"
+          aria-label="Graph depth"
+          className="order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5 text-sm sm:order-none sm:w-auto sm:flex-1 sm:gap-2.5"
+        >
           {path.map((node, i) => (
             <span key={node.id} className="flex shrink-0 items-center gap-1.5">
               {i > 0 && <span className="text-muted-foreground/60 px-1 text-xs">/</span>}
@@ -617,18 +639,146 @@ function GraphPage() {
             </div>
           )}
 
-          <div className="relative mt-5 min-h-[390px] flex-1 sm:min-h-[520px]">
-            <GraphCanvas
-              key={`${center.id}-${role.id}`}
-              center={center}
-              nodes={centerChildren}
-              childKind={childKind}
-              onSelect={drill}
-              onInspect={setDossier}
-              selectedId={selected?.id}
-              technical={true}
-            />
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+            <div
+              role="group"
+              aria-label="Graph view"
+              className="border-border bg-surface flex items-center gap-1 rounded-lg border p-1"
+            >
+              <button
+                type="button"
+                data-testid="graph-view-orbit"
+                aria-pressed={graphView === "orbit"}
+                onClick={() => setGraphView("orbit")}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  graphView === "orbit"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Orbit className="size-3" /> Orbit
+              </button>
+              <button
+                type="button"
+                data-testid="graph-view-list"
+                aria-pressed={graphView === "list"}
+                onClick={() => setGraphView("list")}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  graphView === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <List className="size-3" /> List
+              </button>
+            </div>
+            <p
+              className="text-muted-foreground font-mono text-[10px]"
+              data-testid="graph-node-total"
+              data-total={centerChildren.length}
+            >
+              {centerChildren.length} {childKindLabel[center.kind].toLowerCase()}
+              {centerChildren.length === 1 ? "" : "s"} at this level
+            </p>
           </div>
+
+          {graphView === "orbit" ? (
+            <div className="relative mt-3 min-h-[390px] flex-1 sm:min-h-[520px]">
+              <GraphCanvas
+                key={`${center.id}-${role.id}`}
+                center={center}
+                nodes={centerChildren}
+                childKind={childKind}
+                onSelect={drill}
+                onInspect={setDossier}
+                selectedId={selected?.id}
+                technical={true}
+              />
+            </div>
+          ) : (
+            <section
+              data-testid="graph-node-list"
+              data-selected-id={selected?.id ?? ""}
+              aria-label={`${center.label} children`}
+              className="border-border bg-card/80 mt-3 flex min-h-[390px] flex-1 flex-col overflow-hidden rounded-xl border sm:min-h-[520px]"
+            >
+              <div className="border-border flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+                <label className="border-border bg-surface flex min-w-0 flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+                  <Search className="text-muted-foreground size-3.5 shrink-0" />
+                  <span className="sr-only">Search this graph level</span>
+                  <input
+                    data-testid="graph-node-search"
+                    value={listQuery}
+                    onChange={(event) => setListQuery(event.target.value)}
+                    placeholder="Search files, signatures or paths at this level"
+                    className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-xs outline-none"
+                  />
+                </label>
+                <span className="text-muted-foreground font-mono text-[10px]" aria-live="polite">
+                  {filteredChildren.length} of {centerChildren.length} shown
+                </span>
+              </div>
+              <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto">
+                {filteredChildren.map((node) => {
+                  const metric =
+                    node.analysisRef?.type === "file"
+                      ? `${node.detail?.loc ?? 0} LOC · ${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`
+                      : node.analysisRef
+                        ? `${node.analysisRef.paths.length} file${node.analysisRef.paths.length === 1 ? "" : "s"} · ${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`
+                        : (node.metrics ?? [])
+                            .slice(0, 3)
+                            .map((item) => `${item.value} ${item.label}`)
+                            .join(" · ");
+                  return (
+                    <li key={node.id} className="flex items-stretch gap-1 px-2 py-1">
+                      <button
+                        type="button"
+                        data-testid="graph-node-row"
+                        data-node-id={node.id}
+                        data-expandable={node.expandable ? "true" : "false"}
+                        onClick={() => drill(node)}
+                        className="hover:bg-surface-2 focus-visible:ring-primary/60 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        <span className="min-w-0">
+                          <span
+                            data-node-label
+                            className="block truncate text-[12px] font-semibold"
+                          >
+                            {node.label}
+                          </span>
+                          <span className="text-muted-foreground mt-0.5 block truncate font-mono text-[10px]">
+                            {metric}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground flex shrink-0 items-center gap-2 font-mono text-[10px]">
+                          <span className="border-border bg-surface rounded-full border px-2 py-0.5">
+                            {kindLabel[node.kind]}
+                          </span>
+                          <span className="text-primary">
+                            {node.expandable ? "Drill in" : "Inspect"}
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="graph-node-details"
+                        aria-label={`Show details for ${node.label}`}
+                        onClick={() => setDossier(node)}
+                        className="border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2 shrink-0 self-center rounded-lg border px-2 py-1 text-[10px] font-semibold transition-colors"
+                      >
+                        Details
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {!filteredChildren.length && (
+                <p className="text-muted-foreground p-6 text-center text-[11px]">
+                  No child of {center.label} matches that search.
+                </p>
+              )}
+            </section>
+          )}
 
           <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
             <span>

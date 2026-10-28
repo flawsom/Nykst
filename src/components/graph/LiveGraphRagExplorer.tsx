@@ -17,6 +17,7 @@ import {
 import { TiltCard, ScrambleText } from "@/components/motion/VariantMotion";
 import { FederationPanel, TraceOverlayPanel } from "@/components/mcp/ToolInsightPanel";
 import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
+import { TOOLS as MCP_TOOLS } from "@/lib/mcp-guides";
 import { cn } from "@/lib/utils";
 import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
@@ -184,11 +185,10 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "06",
-    name: "Streamable HTTP MCP Server (10 Read-Only Tools)",
-    metric: "10 readOnlyHint MCP tools · OTLP trace overlay · OpenAPI/gRPC federation",
+    name: `Streamable HTTP MCP Server (${MCP_TOOLS.length} Read-Only Tools)`,
+    metric: `${MCP_TOOLS.length} readOnlyHint MCP tools · OTLP trace overlay · OpenAPI/gRPC federation`,
     naiveFail: "IDE agents burn context tokens grepping hundreds of files before making a change.",
-    nykstTruth:
-      "Claude Code, Cursor, VS Code, Windsurf, and Codex call all 10 read-only tools over /api/mcp in milliseconds before touching a line of code.",
+    nykstTruth: `Claude Code, Cursor, VS Code, Windsurf, and Codex call all ${MCP_TOOLS.length} read-only tools over /api/mcp in milliseconds before touching a line of code.`,
     proofFile: "src/lib/mcp.server.ts",
   },
 ];
@@ -1002,7 +1002,7 @@ export function LiveGraphRagExplorer({
               <pre data-testid="mcp-output-pre" className="text-foreground">
                 {mcpResult
                   ? JSON.stringify(mcpResult, null, 2)
-                  : "Select any of the 10 read-only MCP tools above to inspect the live JSON-RPC payload returned to Claude Code, Cursor, or Codex."}
+                  : `Select any of the ${MCP_TOOLS.length} read-only MCP tools above to inspect the live JSON-RPC payload returned to Claude Code, Cursor, or Codex.`}
               </pre>
             </div>
           </div>
