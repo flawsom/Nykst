@@ -35,6 +35,28 @@ export interface ImportRef {
   dynamic: boolean;
 }
 
+export interface ImportedSymbolUsage {
+  specifier: string;
+  importedName: string;
+  localName: string;
+  importLine: number;
+  isTypeOnly: boolean;
+  /** `member` is present for namespace calls such as `ns.fn(...)`. */
+  callSites: { line: number; argCount: number; hasSpreadArg: boolean; member?: string }[];
+  propertyAccesses: { property: string; line: number }[];
+}
+
+/** One `export ... from` declaration, used to follow barrel files to the real symbol. */
+export interface ReExportRef {
+  specifier: string;
+  line: number;
+  /** exported name, or "*" for `export * from` */
+  exportedName: string;
+  /** local name in the target module, or "*" for a wildcard */
+  importedName: string;
+  typeOnly: boolean;
+}
+
 export interface ResourceUse {
   /** e.g. "table:repository_ingestions", "rpc:get_user", "bucket:avatars" */
   id: string;
@@ -76,6 +98,8 @@ export interface ExportedSymbol {
   returnType?: string;
   /** interface, type-literal, class-field and enum-member properties */
   typeProperties?: SymbolProperty[];
+  /** number of declared overload signatures merged into this symbol */
+  overloadCount?: number;
 }
 
 /** A column name read or written through a literal Supabase/PostgREST call. */
@@ -105,6 +129,10 @@ export interface AnalyzedFile {
   endpoints?: EndpointRef[];
   /** exported signatures with arity and type properties */
   symbols?: ExportedSymbol[];
+  /** Syntactically observed imported symbol usage; absent on older snapshots. */
+  importedSymbolUsages?: ImportedSymbolUsage[];
+  /** barrel re-exports (`export *`, `export { a as b }`) followed by call-site checks */
+  reExports?: ReExportRef[];
   /** literal column references, compared against SQL DDL for contract drift */
   columnRefs?: ColumnRef[];
 }

@@ -120,6 +120,16 @@ export function LandingGraphPreview({
                   <path
                     d={pathD}
                     fill="none"
+                    stroke={isHovered ? "var(--primary)" : "var(--primary)"}
+                    strokeWidth={isHovered ? 2.4 : 1.4}
+                    strokeOpacity={isHovered ? 1 : 0.55}
+                    strokeDasharray="4 26"
+                    className="animate-edge-pulse pointer-events-none"
+                    style={{ animationDelay: `${(i % 8) * 0.42}s` }}
+                  />
+                  <path
+                    d={pathD}
+                    fill="none"
                     stroke={isHovered ? "var(--primary)" : "url(#landing-edge)"}
                     strokeWidth={isHovered ? 2.2 : 1.3}
                     className="edge-flow transition-all duration-700"

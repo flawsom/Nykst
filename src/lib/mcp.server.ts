@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { federateRepositories } from "@/lib/analysis/federation";
 import { generateFixPatch } from "@/lib/analysis/fix";
+import { buildLoopRun } from "@/lib/analysis/loop.server";
 import { simulateChange } from "@/lib/analysis/simulate";
 import { overlayTelemetry, parseOtlpSpans } from "@/lib/analysis/telemetry";
 import { runAnalysisTool, str, TOOLS, type AnalysisSnapshot } from "@/lib/analysis/tools";
@@ -184,6 +185,13 @@ async function callTool(userId: string, name: string, args: Record<string, unkno
     });
     const paths = Array.isArray(args["paths"]) ? args["paths"].map(str).filter(Boolean) : [];
     return simulateChange(snapshot, changes, paths);
+  }
+  if (name === "run_safe_code_loop") {
+    const path = str(args["path"]);
+    if (!path || typeof args["content"] !== "string")
+      throw new Error("Pass a repository-relative path and complete proposed content.");
+    const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);
+    return buildLoopRun(snapshot, { path, content: args["content"] });
   }
   if (name === "generate_fix_patch") {
     const snapshot = await loadSnapshot(userId, str(args["repository"]) || undefined);

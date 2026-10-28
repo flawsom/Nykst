@@ -99,32 +99,52 @@ flawsom           src/lib           analysis           supabase          impact.
 
 ### Architectural Verification Matrix: Blind Code Generation vs. Nykst Closed-Loop Engine
 
-| Dimension                  | Unverified editing                                   | Nykst deterministic loop                                                                                                                     |
-| :------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| Grounding                  | Model starts from a prompt and guesses relevant files | **Stage 1**: bounded AST envelope with signature arity, direct importers, SQL lineage and six memory layers, assembled before the edit       |
-| Blast radius               | Model guesses from naming similarity                 | **Exact reverse reachability** over the import graph, with importing file and line for every dependent                                       |
-| Cycles                     | Usually invisible                                    | **Iterative Tarjan SCC**, runtime cycles separated from `import type`                                                                        |
-| Database lineage           | SQL files treated as plain text                      | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites                                                        |
-| Memory                     | Stateless per prompt                                 | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity                                      |
-| Change verification        | Edit on disk, then wait for the build to fail        | **Stage 3**: `simulate_change` overlays the proposal on an in-memory graph clone and reports new cycles, unresolved imports and column drift  |
-| Remediation                | Retry loop until the compiler is quiet               | **Stage 4**: `generate_fix_patch` returns a machine-verified diff only when unresolved imports fall and cycles do not grow (`verified: true`) |
-| Agent access               | Editor fork or proprietary plugin                    | **Stateless Streamable HTTP MCP** at `/api/mcp`, 10 read-only tools, any MCP client                                                          |
-| Change propagation         | Full re-index on every push                          | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files                                                   |
-| Cross-repository contracts | Invisible or manually maintained                     | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported                                            |
-| Runtime evidence           | Static graph only                                    | **OTLP trace overlay** that marks which static edges were observed and which were not                                                        |
-| Data provenance            | Demo workspaces and sample data                      | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim                         |
+| Dimension                  | Unverified editing                                    | Nykst deterministic loop                                                                                                                                                         |
+| :------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grounding                  | Model starts from a prompt and guesses relevant files | **Stage 1**: bounded AST envelope with signature arity, direct importers, SQL lineage and six memory layers, assembled before the edit                                           |
+| Blast radius               | Model guesses from naming similarity                  | **Exact reverse reachability** over the import graph, with importing file and line for every dependent                                                                           |
+| Cycles                     | Usually invisible                                     | **Iterative Tarjan SCC**, runtime cycles separated from `import type`                                                                                                            |
+| Database lineage           | SQL files treated as plain text                       | **DDL linker**: `CREATE TABLE` / `FUNCTION` mapped to `.from()` / `.rpc()` call sites                                                                                            |
+| Memory                     | Stateless per prompt                                  | **Six layers** of repository memory: co-change, decisions, incidents, conventions, failures, continuity                                                                          |
+| Change verification        | Edit on disk, then wait for the build to fail         | **Stage 3**: `simulate_change` overlays the proposal on an in-memory graph clone and reports new cycles, unresolved imports and column drift                                     |
+| Remediation                | Retry loop until the compiler is quiet                | **Stage 4**: `generate_fix_patch` applies four deterministic strategies and returns a diff only when the verified breaking score falls without adding a cycle (`verified: true`) |
+| Agent access               | Editor fork or proprietary plugin                     | **Stateless Streamable HTTP MCP** at `/api/mcp`, 11 read-only tools, any MCP client                                                                                              |
+| Change propagation         | Full re-index on every push                           | **Incremental graph patching** from changed files only, measured under 15 ms for 500 files                                                                                       |
+| Cross-repository contracts | Invisible or manually maintained                      | **OpenAPI and gRPC federation** matched to literal consumer routes, with unmatched calls reported                                                                                |
+| Runtime evidence           | Static graph only                                     | **OTLP trace overlay** that marks which static edges were observed and which were not                                                                                            |
+| Data provenance            | Demo workspaces and sample data                       | **Zero mock data**: the workbench compiles a real repository at request time and cites file and line for every claim                                                             |
+
+### Ecosystem benchmark: what each tool covers, and what Nykst adds
+
+This table reflects each project's publicly documented scope. It is a capability map, not a quality score: every tool below is useful for the job it was built for.
+
+| Tool              | Local-first |       MCP tools        |    In-memory pre-flight    |   SQL and contract lineage    |  Verified AST auto-heal  | License     |
+| :---------------- | :---------: | :--------------------: | :------------------------: | :---------------------------: | :----------------------: | :---------- |
+| Harmony MCP       |     No      |    Memory retrieval    |             No             |              No               |            No            | Proprietary |
+| CodeGraph         |     Yes     |      Graph query       |             No             |              No               |            No            | MIT         |
+| GitNexus          |     Yes     |      Graph query       |             No             |              No               |            No            | PolyForm NC |
+| Repomix           |     Yes     |           No           |             No             |              No               |            No            | MIT         |
+| Serena            |     Yes     |  Yes, symbol and LSP   |             No             |              No               |            No            | MIT         |
+| Greptile          |     No      |           No           |             No             |              No               |            No            | Proprietary |
+| Sourcegraph Cody  |   Partial   |           No           |             No             |              No               |            No            | Proprietary |
+| Augment CE        |     No      |           No           |             No             |              No               |            No            | Proprietary |
+| grepai            |     Yes     |           No           |             No             |              No               |            No            | MIT         |
+| code-review-graph |     Yes     |        Partial         |             No             |              No               |            No            | MIT         |
+| **Nykst**         |   **Yes**   | **11 read-only tools** | **Yes, `simulate_change`** | **Yes, DDL replay and drift** | **Yes, four strategies** | **MIT**     |
 
 ### The 4-Stage Closed-Loop Safe-Coding Engine
 
-| Stage                   | What it proves                                                                                                                              | Where it lives                                          |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------ |
-| 1. Check Architecture   | Exported signatures (`minArity..maxArity`), direct importers (`file:line`), transitive call chain, SQL tables and column contracts, six memory layers, bounded evidence size vs a blind full-repo scan | `SafeCodeLoopEngine.tsx` · `src/lib/analysis/context.ts` |
-| 2. Write or Generate    | A real edit of the real file, or a deterministic failure scenario: removed export, unresolved import, dropped column, runtime cycle, clean enhancement | `SafeCodeLoopEngine.tsx` · `/api/analysis/self`          |
-| 3. Verify in Memory     | `<25ms` overlay: new Tarjan cycles, new unresolved imports, SQL column drift, removed exports, blast-radius delta — nothing written         | `src/lib/analysis/simulate.ts`                          |
-| 4. Verdict & Auto-Heal  | Either `VERIFIED SAFE TO DEPLOY` with covering tests, or the exact `file:line` teleporter plus a `verified: true` remediation patch          | `src/lib/analysis/fix.ts` · `CodeTeleportDrawer`         |
+| Stage                  | What it proves                                                                                                                                                                                                                                                                                 | Where it lives                                           |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| 1. Check Architecture  | Exported signatures with merged overload envelopes (`minArity..maxArity`), direct importers (`file:line`), transitive call chains, SQL tables and column contracts, six memory layers, and a one-click bounded agent context pack with measured token reduction against a blind full-repo scan | `SafeCodeLoopEngine.tsx` · `src/lib/analysis/context.ts` |
+| 2. Write or Generate   | A real edit of the real file, a grounded provider generation seeded with the Stage 1 envelope, or a deterministic failure scenario: removed export, unresolved import, dropped column, runtime cycle, clean enhancement                                                                        | `SafeCodeLoopEngine.tsx` · `POST /api/loop`              |
+| 3. Verify in Memory    | Overlay checks for new cycles, unresolved imports, SQL drift, removed exports and observed caller arity, now resolved through lexical scopes, function overload envelopes, namespace calls (`ns.fn()`) and transitive barrel re-exports (`export *`, `export { a as b }`); nothing is written  | `src/lib/analysis/simulate.ts` · `reexports.ts`          |
+| 4. Verdict & Auto-Heal | Trinity cards state WHAT broke, WHY it broke and the ARCHITECTURAL reason, with a clickable multi-hop causal chain. The four-strategy AST healer repairs imports, arity and removed exports, runtime cycles and SQL column drift, then re-verifies the result in memory                        | `src/lib/analysis/fix.ts` · `CodeProblemInspector.tsx`   |
+
+Call-site checks follow lexical scope bindings, merge overload signatures into one arity envelope, record namespace calls such as `ns.fn(...)`, and resolve transitive `export *` and `export { a as b }` chains back to the declaring file. `generate_fix_patch` runs four deterministic remediation strategies on an in-memory clone: `unresolved_import_rewrite`, `arity_and_export_compatibility_shim`, `runtime_cycle_to_import_type` and `sql_column_drift_rename`. A patch is returned only when the verified breaking score falls without adding a cycle. The overlay is still a static check rather than a full TypeScript assignability proof or a test run, so run the relevant typecheck and tests before deploying.
 
 > [!IMPORTANT]
-> **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all ten MCP tools are annotated `readOnlyHint: true`. `simulate_change` and `generate_fix_patch` work on an in-memory clone and return evidence, never a commit. There is no training on your code.
+> **Read-only by construction.** Nykst never writes to your repository. GitHub access is read-only, every answer is computed from source, and all eleven MCP tools are annotated `readOnlyHint: true`. `simulate_change` and `generate_fix_patch` work on an in-memory clone and return evidence, never a commit. There is no training on your code.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -160,7 +180,7 @@ flawsom           src/lib           analysis           supabase          impact.
 </td>
 <td valign="top">
 <h3>Platform AI plus BYOK</h3>
-<p><sub>Works immediately on <code>agnes-2.5-flash</code> through Nara Router. Add your own OpenAI, Anthropic, Gemini, DeepSeek, or OpenRouter key; it is sealed with AES-256-GCM.</sub></p>
+<p><sub>Connect an available platform model or add your own Cloudflare Workers AI, Gemini, OpenAI, Anthropic, DeepSeek, or OpenAI-compatible key. Personal keys are sealed with AES-256-GCM.</sub></p>
 </td>
 </tr>
 <tr>
@@ -228,7 +248,7 @@ flawsom           src/lib           analysis           supabase          impact.
 <tr>
 <td valign="top">
 <h3>Verified remediation</h3>
-<p><sub><code>generate_fix_patch</code> rewrites unresolved imports to exact existing targets, applies the diff to an in-memory clone, and returns it only when unresolved imports fall and cycles do not grow.</sub></p>
+<p><sub><code>generate_fix_patch</code> rewrites imports, shims arity and restored exports, converts runtime cycles to type-only edges, and renames drifted SQL columns, then returns the diff only after the in-memory overlay confirms the breakage score fell.</sub></p>
 </td>
 <td valign="top">
 <h3>Local graph watcher</h3>
@@ -245,7 +265,7 @@ flawsom           src/lib           analysis           supabase          impact.
 
 The web application and the analysis engine share one graph, and the UI now behaves the same way on `/` and `/graph`:
 
-- **Radial orbit layout.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps the two readable orbits, reports the remainder, and stays reachable from the system tree. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
+- **Radial orbit layout.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps two readable orbits and offers a sector selector to reach every child in the canvas. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
 - **Curved dependency edges.** Every edge is a quadratic Bezier (`M ... Q ...`) from the centre hub to the child. Importer edges are teal (`#2DD4BF`), runtime cycle edges are red (`#F87171`), and the focused edge is amber. The legend sits under the canvas.
 - **Repository switcher.** `<RepoSwitcherBar />` is mounted on `/`, `/graph` and `/intelligence`. Its first tab lists every ingested workspace (with branch, short commit, file and edge counts) plus `flawsom/nykst (Live Workspace)`; the second tab searches all accessible GitHub repositories, picks a branch, and calls the ingest endpoint with inline progress. Switching updates `?repo=` so the graph, dossier, envelope, memory page and reloads all follow the same repository.
 - **Click-to-code.** Every `file:line` row in the dossier (importers, transitive dependents, entrypoints, SQL resources, column drift, exported signatures), in Before You Act, and in the landing workbench is a button. It opens `<CodeProblemInspector />`, which fetches the real source, scrolls to the line, highlights it, explains why the line matters, and offers three actions: inspect the node in the graph, open the exact line on GitHub (`#L<line>`), or open it in VS Code / Cursor (`vscode://file/...:<line>`).
@@ -468,26 +488,27 @@ sequenceDiagram
 
 ### Layers
 
-| Layer     | Responsibility                                                                                    | Where                                                |
-| :-------- | :------------------------------------------------------------------------------------------------ | :--------------------------------------------------- |
-| Parse     | Imports, exports, signatures, parameter arity, type properties, calls, env reads, SDK usage, URLs | `src/lib/analysis/parse.server.ts`                   |
-| Polyglot  | Python, Go, and Rust imports, symbols, endpoints, env reads                                       | `src/lib/analysis/polyglot.ts`                       |
-| Resolve   | `tsconfig` aliases, workspace packages, path normalization                                        | `src/lib/analysis/resolve.ts`                        |
-| Analyze   | Tarjan SCC, SQL DDL and Prisma linking, service extraction                                        | `src/lib/analysis/engine.server.ts`                  |
-| Contracts | Replay DDL columns, compare literal column references, report drift                               | `src/lib/analysis/sql.ts`                            |
-| Patch     | Re-parse changed files, prune deletions, recompute SCCs and columns                               | `src/lib/analysis/patch.server.ts`                   |
-| Simulate  | Overlay writes and deletions on a cloned graph                                                    | `src/lib/analysis/simulate.ts`                       |
-| Remediate | Build and verify unresolved-import diffs in memory                                                | `src/lib/analysis/fix.ts`                            |
-| Watch     | Patch from local filesystem events                                                                | `scripts/watch.ts`                                   |
-| Onboard   | Write agent MCP configs                                                                           | `bin/nykst.mjs`                                      |
-| Federate  | OpenAPI operations and gRPC methods to consumer call sites                                        | `src/lib/analysis/federation.ts`                     |
-| Observe   | OTLP spans onto static files and edges                                                            | `src/lib/analysis/telemetry.ts`                      |
-| Review    | Diff blast radius, risk tier, coverage gate, Markdown                                             | `src/lib/analysis/diff.ts`, `pr-review.server.ts`    |
-| Remember  | Cited ADRs, diagrams, migrations, and image references                                            | `src/lib/memory/evidence.ts`                         |
-| Impact    | Reverse BFS, import chains, co-change history, tests                                              | `src/lib/analysis/impact.ts`                         |
-| Shape     | Six-level graph and dossiers                                                                      | `src/lib/analysis/graph.ts`                          |
-| Serve     | Ten read-only MCP tools                                                                           | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
-| Store     | Snapshots, keys, tokens, signals, subscriptions                                                   | `supabase/migrations`                                |
+| Layer     | Responsibility                                                                                                        | Where                                                |
+| :-------- | :-------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| Parse     | Imports, exports, overload envelopes, scoped calls, namespace members, type properties, SQL literals, env reads, URLs | `src/lib/analysis/parse.server.ts`                   |
+| Polyglot  | Python, Go, and Rust imports, symbols, endpoints, env reads                                                           | `src/lib/analysis/polyglot.ts`                       |
+| Resolve   | `tsconfig` aliases, workspace packages, path normalization                                                            | `src/lib/analysis/resolve.ts`                        |
+| Analyze   | Tarjan SCC, SQL DDL and Prisma linking, service extraction                                                            | `src/lib/analysis/engine.server.ts`                  |
+| Contracts | Replay DDL columns, compare literal column references, report drift                                                   | `src/lib/analysis/sql.ts`                            |
+| Patch     | Re-parse changed files, prune deletions, recompute SCCs and columns                                                   | `src/lib/analysis/patch.server.ts`                   |
+| Simulate  | Overlay writes and deletions on a cloned graph                                                                        | `src/lib/analysis/simulate.ts`                       |
+| Remediate | Four-strategy AST repair, verified on an in-memory clone                                                              | `src/lib/analysis/fix.ts`                            |
+| Re-export | Transitive barrel resolution to the declaring symbol                                                                  | `src/lib/analysis/reexports.ts`                      |
+| Watch     | Patch from local filesystem events                                                                                    | `scripts/watch.ts`                                   |
+| Onboard   | Write agent MCP configs                                                                                               | `bin/nykst.mjs`                                      |
+| Federate  | OpenAPI operations and gRPC methods to consumer call sites                                                            | `src/lib/analysis/federation.ts`                     |
+| Observe   | OTLP spans onto static files and edges                                                                                | `src/lib/analysis/telemetry.ts`                      |
+| Review    | Diff blast radius, risk tier, coverage gate, Markdown                                                                 | `src/lib/analysis/diff.ts`, `pr-review.server.ts`    |
+| Remember  | Cited ADRs, diagrams, migrations, and image references                                                                | `src/lib/memory/evidence.ts`                         |
+| Impact    | Reverse BFS, import chains, co-change history, tests                                                                  | `src/lib/analysis/impact.ts`                         |
+| Shape     | Six-level graph and dossiers                                                                                          | `src/lib/analysis/graph.ts`                          |
+| Serve     | Eleven read-only MCP tools                                                                                            | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
+| Store     | Snapshots, keys, tokens, signals, subscriptions                                                                       | `supabase/migrations`                                |
 
 ### Security model
 
@@ -655,7 +676,7 @@ curl -s http://localhost:8080/api/health | jq
 
 ```bash
 bunx tsc -b --noEmit    # strict typecheck, zero errors
-bun test ./tests        # 72 tests
+bun test ./tests        # unit test suite
 bun run build           # Nitro SSR production build
 ```
 
@@ -714,10 +735,13 @@ nykst/
 ├── src/
 │   ├── components/
 │   │   ├── brand/                   Logo and wordmark components
-│   │   ├── motion/                  Spotlight, tilt, scramble, counters
+│   │   ├── motion/                  Spotlight, tilt, scramble, counters, WebGL2 field
 │   │   ├── graph/
 │   │   │   ├── LiveGraphRagExplorer.tsx   AST workbench and MCP runner
-│   │   │   ├── GraphCanvas.tsx            Six-level topology
+│   │   │   ├── GraphCanvas.tsx            Six-level topology and Bezier pulses
+│   │   │   ├── SafeCodeLoopEngine.tsx     Four-stage loop with Trinity cards
+│   │   │   ├── CodeProblemInspector.tsx   Real file:line teleport drawer
+│   │   │   ├── RepoSwitcherBar.tsx        Workspace switcher
 │   │   │   ├── NodeDossier.tsx            File and service evidence
 │   │   │   ├── BeforeYouAct.tsx           Consequence envelope
 │   │   │   ├── MentorPanel.tsx            Grounded Q and A
@@ -727,11 +751,13 @@ nykst/
 │   ├── lib/
 │   │   ├── analysis/
 │   │   │   ├── engine.server.ts     AST compiler, SQL linker, Tarjan SCC
-│   │   │   ├── parse.server.ts      TS imports, signatures, arity, columns
+│   │   │   ├── parse.server.ts      TS imports, scopes, overloads, namespace calls
+│   │   │   ├── reexports.ts         Transitive barrel re-export origins
 │   │   │   ├── symbols.ts           Signature formatting
+│   │   │   ├── loop.server.ts       Four-stage loop orchestration
 │   │   │   ├── sql.ts               DDL replay and column drift
 │   │   │   ├── simulate.ts          In-memory change overlay
-│   │   │   ├── fix.ts               Verified remediation diffs
+│   │   │   ├── fix.ts               Four-strategy verified remediation
 │   │   │   ├── polyglot.ts          Python, Go, Rust import adapters
 │   │   │   ├── patch.server.ts      Incremental graph patching
 │   │   │   ├── federation.ts        OpenAPI and gRPC federation
@@ -743,7 +769,7 @@ nykst/
 │   │   │   ├── impact.ts            Reverse BFS and co-change
 │   │   │   ├── graph.ts             Six-level hierarchy
 │   │   │   ├── context.ts           Evidence serializer
-│   │   │   └── tools.ts             Ten MCP tools
+│   │   │   └── tools.ts             Eleven MCP tools
 │   │   ├── memory/evidence.ts       ADRs, diagrams, migrations, images
 │   │   ├── integrations/github.ts   OAuth, tarball ingest, PR creation
 │   │   ├── connectors/              Slack and Jira
@@ -767,8 +793,8 @@ nykst/
 │   ├── watch.ts                     Local incremental graph watcher
 │   ├── snapshot-self.ts             Rebuilds the committed analysis snapshot
 │   └── capture-screens.mjs          Desktop and mobile README captures
-├── tests/                           bun:test suites
-├── e2e/                             Playwright browser checks
+├── tests/                           bun:test suites including compiler-resolution.test.ts
+├── e2e/                             Playwright browser checks including safe-loop.spec.ts
 └── playwright.config.ts             Local build or deployed-origin runner
 ```
 
@@ -820,25 +846,26 @@ nykst/
 - Browser and app routes: `HttpOnly; Secure; SameSite=Lax` cookie set by the OAuth callback.
 - MCP: `Authorization: Bearer nyk_<token>`, stored as a SHA-256 hash.
 
-|        Method         | Path                                                                                           |      Auth      | Purpose                                                                                 |
-| :-------------------: | :--------------------------------------------------------------------------------------------- | :------------: | :-------------------------------------------------------------------------------------- |
-|         `GET`         | `/api/health`                                                                                  |     Public     | Supabase connectivity and required tables                                               |
-|         `GET`         | `/api/analysis/self`                                                                           |     Public     | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                 |
-|         `GET`         | `/api/integrations/github/start`                                                               |     Public     | Signed state, then redirect to GitHub                                                   |
-|         `GET`         | `/api/integrations/github/callback`                                                            |     Public     | Verify state, exchange code, set cookie                                                 |
-|        `POST`         | `/api/integrations/github/ingest`                                                              |    Session     | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`  |
-|         `GET`         | `/api/integrations/github/latest`                                                              |    Session     | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one             |
-|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |    Session     | Repository discovery; `repositories` also returns the ingested workspaces                |
-|         `GET`         | `/api/integrations/github/file-evidence`                                                       |  Session/Public | `?repo=&path=&line=` code window, `#L` and editor links, plus full history              |
-|        `POST`         | `/api/integrations/github/coding`                                                              |    Session     | Grounded edit proposal with diff                                                        |
-|        `POST`         | `/api/ai/chat`                                                                                 | Public or BYOK | Architecture Q and A (`mode: navigator \| code`)                                        |
-| `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |    Session     | Provider status, save, delete                                                           |
-|        `POST`         | `/api/mcp`                                                                                     | Bearer `nyk_`  | Streamable HTTP MCP, protocol `2025-06-18`                                              |
-| `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |    Session     | Mint, list, revoke tokens                                                               |
-|        `POST`         | `/api/diagnosis`                                                                               |    Session     | Root-cause candidates for a production signal                                           |
-|        `POST`         | `/api/webhooks/github`                                                                         |      HMAC      | Verified intake: incremental push patch, production signal, and PR blast-radius comment |
-|         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |    Session     | Connector OAuth and command endpoints                                                   |
-|     `GET` `POST`      | `/api/subscription`                                                                            |    Session     | Plan state and settlement submission                                                    |
+|        Method         | Path                                                                                           |       Auth        | Purpose                                                                                 |
+| :-------------------: | :--------------------------------------------------------------------------------------------- | :---------------: | :-------------------------------------------------------------------------------------- |
+|         `GET`         | `/api/health`                                                                                  |      Public       | Supabase connectivity and required tables                                               |
+|         `GET`         | `/api/analysis/self`                                                                           |      Public       | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                 |
+|         `GET`         | `/api/integrations/github/start`                                                               |      Public       | Signed state, then redirect to GitHub                                                   |
+|         `GET`         | `/api/integrations/github/callback`                                                            |      Public       | Verify state, exchange code, set cookie                                                 |
+|        `POST`         | `/api/integrations/github/ingest`                                                              |      Session      | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`  |
+|         `GET`         | `/api/integrations/github/latest`                                                              |      Session      | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one             |
+|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |      Session      | Repository discovery; `repositories` also returns the ingested workspaces               |
+|         `GET`         | `/api/integrations/github/file-evidence`                                                       |  Session/Public   | `?repo=&path=&line=` code window, `#L` and editor links, plus full history              |
+|        `POST`         | `/api/integrations/github/coding`                                                              |      Session      | Grounded edit proposal with diff                                                        |
+|        `POST`         | `/api/loop`                                                                                    | Public or Session | Four-stage safe loop: envelope, overlay, Trinity cards, verified auto-heal              |
+|        `POST`         | `/api/ai/chat`                                                                                 |  Public or BYOK   | Architecture Q and A (`mode: navigator \| code`)                                        |
+| `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |      Session      | Provider status, save, delete                                                           |
+|        `POST`         | `/api/mcp`                                                                                     |   Bearer `nyk_`   | Streamable HTTP MCP, protocol `2025-06-18`                                              |
+| `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |      Session      | Mint, list, revoke tokens                                                               |
+|        `POST`         | `/api/diagnosis`                                                                               |      Session      | Root-cause candidates for a production signal                                           |
+|        `POST`         | `/api/webhooks/github`                                                                         |       HMAC        | Verified intake: incremental push patch, production signal, and PR blast-radius comment |
+|         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |      Session      | Connector OAuth and command endpoints                                                   |
+|     `GET` `POST`      | `/api/subscription`                                                                            |      Session      | Plan state and settlement submission                                                    |
 
 ### Multi-repository switching
 
@@ -901,8 +928,8 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
   "repository": "flawsom/nykst",
   "stats": {
     "treeFiles": 266,
-    "sourceFiles": 210,
-    "analyzedFiles": 210,
+    "sourceFiles": 216,
+    "analyzedFiles": 216,
     "internalEdges": 458,
     "externalPackages": 53,
     "unresolvedImports": 0,
@@ -945,7 +972,7 @@ curl -s -X POST "https://nykst.unifies.codes/api/mcp" \
   }' | jq
 ```
 
-MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`, `search_memory`, `get_federation`, `simulate_change`, `generate_fix_patch`, `get_trace_overlay`.
+MCP tools: `list_repositories`, `get_architecture`, `get_impact`, `find_usages`, `search_files`, `search_memory`, `get_federation`, `simulate_change`, `generate_fix_patch`, `run_safe_code_loop`, `get_trace_overlay`.
 
 <details>
 <summary><b>Simulation, remediation, federation, trace overlay, and memory tool calls</b></summary>
@@ -1056,7 +1083,20 @@ Nothing is written. The result is computed on a cloned snapshot, so the stored a
 }
 ```
 
-The tool selects an exact existing target for each unresolved import, applies the rewritten file to an in-memory clone, and returns `verified: true` with a unified diff only when the file's unresolved imports fall and the total cycle count does not grow. If no exact target exists, it returns the candidates and refuses to guess.
+The healer evaluates four strategies in order: `unresolved_import_rewrite`, `arity_and_export_compatibility_shim`, `runtime_cycle_to_import_type` and `sql_column_drift_rename`. It applies the result to an in-memory clone and returns `verified: true` with the unified diff, the applied strategy names and the before/after breaking score only when that score falls without adding a cycle. If no exact target exists, it returns the candidates and refuses to guess.
+
+### Run the four-stage loop over HTTP
+
+```bash
+curl -s -X POST "https://nykst.unifies.codes/api/loop" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "src/lib/analysis/fix.ts",
+    "scenario": "remove-export"
+  }' | jq '{stage1: .stage1.finops, findings: .stage3.findings, verdict: .stage4.verdict, heal: .stage4.heal.strategies}'
+```
+
+The response is the complete loop: the bounded Stage 1 envelope, the real proposal, Trinity findings with causal chains, the deterministic verdict and the verified remediation. Every field is computed from the analyzed source, and nothing is written.
 
 ### Watch local edits
 
@@ -1115,21 +1155,21 @@ bun scripts/analyze-local.ts . --changed src/lib/analysis/engine.server.ts,src/r
 
 Measured on this repository with Bun 1.4.2 on Node 22, from a production build. The committed snapshot keeps the same counts on hosts that ship without a `src/` tree. Reproduce any row with the command beside it.
 
-| Metric                       | Measured                         | Command                                                                 |
-| :--------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 210 files  | **~1.4 s**                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
-| Warm cached response         | **11 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Incremental patch, 500 files | **under 15 ms**                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **210 files, 38,771 LOC**        | `jq .stats`                                                             |
-| Internal import edges        | **458, zero unresolved**         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
-| Cycles                       | **0**                            | `jq '.cycles \| length'`                                                |
-| SQL and data resources       | **12**                           | `jq '.resources \| length'`                                             |
-| External services            | **9**                            | `jq '.services \| length'`                                              |
-| SSR landing response         | **44 ms**                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
-| Health probe, all tables     | **450 ms**                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
-| Client payload, all routes   | **924 kB JS + 107 kB CSS**       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
-| Test suite                   | **~1.5 s, 120 tests**            | `bun test ./tests`                                                      |
-| Playwright suite             | **5 routes + loop journeys, desktop and mobile** | `bunx playwright test`                                   |
+| Metric                       | Measured                                         | Command                                                                 |
+| :--------------------------- | :----------------------------------------------- | :---------------------------------------------------------------------- |
+| Cold AST compile, 216 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Warm cached response         | **11 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
+| Incremental patch, 500 files | **under 15 ms**                                  | `bun test tests/incremental-patch.test.ts`                              |
+| Analyzed source              | **216 files, 40,729 LOC**                        | `jq .stats`                                                             |
+| Internal import edges        | **479, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Cycles                       | **0**                                            | `jq '.cycles \| length'`                                                |
+| SQL and data resources       | **12**                                           | `jq '.resources \| length'`                                             |
+| External services            | **9**                                            | `jq '.services \| length'`                                              |
+| SSR landing response         | **44 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
+| Health probe, all tables     | **450 ms**                                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
+| Client payload, all routes   | **924 kB JS + 107 kB CSS**                       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
+| Test suite                   | Run locally for current results                  | `bun test ./tests`                                                      |
+| Playwright suite             | **5 routes + loop journeys, desktop and mobile** | `bunx playwright test`                                                  |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
@@ -1156,7 +1196,7 @@ Scores are not asserted in CI: they depend on the region, the network, and the S
 ## 🧪 Testing
 
 ```bash
-bun test ./tests              # 72 tests, 3 live-only skips
+bun test ./tests              # unit test suite (live-only tests may skip)
 bun test --coverage ./tests   # coverage report
 bunx tsc -b --noEmit          # strict typecheck, project references
 bun run lint                  # ESLint
@@ -1165,25 +1205,28 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-| Suite                              | What it proves                                                                                                                                                                                                    |
-| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/schema.test.ts`             | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected                     |
-| `tests/repository-graph.test.ts`   | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children                                                                             |
-| `tests/connectors.test.ts`         | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip                                                                              |
-| `tests/self-snapshot.test.ts`      | The committed analysis snapshot is well formed, reproducible, and keeps the live workbench populated on hosts that ship without a source tree                                                                     |
-| `tests/incremental-patch.test.ts`  | Patched graphs match cold compiles for files, edges, cycles, resources, and stats, and 500 files patch in under 15 ms                                                                                             |
-| `tests/analysis-contracts.test.ts` | Exported function arity, parameter and property types, SQL column replay and drift, in-memory deletion simulation, and verified unresolved-import diffs                                                           |
-| `tests/polyglot.test.ts`           | Python relative imports, Go package imports, Rust `crate`, `self`, and `mod` paths, env reads, endpoints, and symbols                                                                                             |
-| `tests/federation.test.ts`         | OpenAPI JSON and YAML operations, proto streaming, exact versus template matching, and cross-repository edges                                                                                                     |
-| `tests/telemetry.test.ts`          | OTLP decoding, exact and unique-suffix file matching, p50 and p95, static versus observed-only edges                                                                                                              |
-| `tests/pr-blast-radius.test.ts`    | Risk tiers, direct and transitive dependents, resource lineage, the zero-test coverage gate, and stable Markdown                                                                                                  |
-| `tests/memory.test.ts`             | ADR status and citations, Mermaid flowcharts and sequences, migration columns, image dedupe, checksums                                                                                                            |
-| `tests/analysis-tools.test.ts`     | Every MCP tool is read-only and the memory, federation, and trace surfaces are exposed                                                                                                                            |
-| `tests/graph-layout.test.ts`       | Radial orbit geometry: full 360-degree rings, two staggered orbits above eight siblings, unique positions, viewport bounds, and quadratic Bezier edges                                                             |
-| `tests/code-links.test.ts`         | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                                |
-| `tests/dossier.test.ts`            | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                  |
-| `e2e/routes.spec.ts`               | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
-| `e2e/graph-workspace.spec.ts`      | The live graph is radial (not a column), `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link                                                              |
+| Suite                               | What it proves                                                                                                                                                                                                    |
+| :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/schema.test.ts`              | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected                     |
+| `tests/repository-graph.test.ts`    | Node ids are unique, file leaves carry exactly one real path, sibling labels never collide, and `childrenOf()` never invents children                                                                             |
+| `tests/connectors.test.ts`          | Slack `v0` signature and replay rejection, ticket text to file resolution, `/nykst impact` formatting, Atlassian document round trip                                                                              |
+| `tests/self-snapshot.test.ts`       | The committed analysis snapshot is well formed, reproducible, and keeps the live workbench populated on hosts that ship without a source tree                                                                     |
+| `tests/incremental-patch.test.ts`   | Patched graphs match cold compiles for files, edges, cycles, resources, and stats, and 500 files patch in under 15 ms                                                                                             |
+| `tests/analysis-contracts.test.ts`  | Exported function arity, parameter and property types, SQL column replay and drift, in-memory deletion simulation, and verified unresolved-import diffs                                                           |
+| `tests/compiler-resolution.test.ts` | Overload envelopes, namespace call arity, barrel re-export chains, lexical shadowing, all four heuristics, and Trinity diagnostics                                                                                |
+| `tests/polyglot.test.ts`            | Python relative imports, Go package imports, Rust `crate`, `self`, and `mod` paths, env reads, endpoints, and symbols                                                                                             |
+| `tests/federation.test.ts`          | OpenAPI JSON and YAML operations, proto streaming, exact versus template matching, and cross-repository edges                                                                                                     |
+| `tests/telemetry.test.ts`           | OTLP decoding, exact and unique-suffix file matching, p50 and p95, static versus observed-only edges                                                                                                              |
+| `tests/pr-blast-radius.test.ts`     | Risk tiers, direct and transitive dependents, resource lineage, the zero-test coverage gate, and stable Markdown                                                                                                  |
+| `tests/memory.test.ts`              | ADR status and citations, Mermaid flowcharts and sequences, migration columns, image dedupe, checksums                                                                                                            |
+| `tests/analysis-tools.test.ts`      | Every MCP tool is read-only and the memory, federation, and trace surfaces are exposed                                                                                                                            |
+| `tests/graph-layout.test.ts`        | Radial orbit geometry: full 360-degree rings, two staggered orbits above eight siblings, unique positions, viewport bounds, and quadratic Bezier edges                                                            |
+| `tests/code-links.test.ts`          | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                              |
+| `tests/dossier.test.ts`             | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                 |
+| `e2e/routes.spec.ts`                | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
+| `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link                                                           |
+| `e2e/safe-loop.spec.ts`             | Real Stage 1 evidence, Stage 2 generation, a breaking overlay, verified auto-heal, teleport, repo switching, and the WebGL canvas                                                                                 |
+| `e2e/mcp-tools.spec.ts`             | All eleven MCP tools, real `search_files` output, `simulate_change` overlays, `generate_fix_patch`, trace overlays, and federation data                                                                           |
 
 The unit suite runs offline for the graph, connector, and snapshot tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
 
@@ -1357,7 +1400,12 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Live self-indexed workbench with zero mock data
 - [x] Before You Act consequence envelope
 - [x] Six-layer system memory
-- [x] Streamable HTTP MCP with read-only tools, now ten
+- [x] Streamable HTTP MCP with read-only tools, now eleven
+- [x] Four-stage closed-loop safe-coding engine with grounded Stage 2 generation
+- [x] Scope-aware call-site checks for overloads, namespace calls and barrel re-exports
+- [x] Four-strategy AST auto-healer, verified on an in-memory clone
+- [x] Trinity root-cause cards with clickable multi-hop causal chains
+- [x] Loop-reactive WebGL2 field canvas and animated Bezier dependency pulses
 - [x] Incremental graph patching on push webhooks, no full tarball re-download
 - [x] Python, Go, and Rust import adapters on the shared adjacency list
 - [x] Cross-repository federation over OpenAPI and gRPC contracts
@@ -1408,7 +1456,11 @@ No. The workbench runs the real analyzer at request time through `/api/analysis/
 
 <br/>
 
-`agnes-2.5-flash` through Nara Router, with a Gemini fallback when configured. Reasoning is grounded on a bounded evidence envelope, never on a raw dump of your repository. Add your own provider key at any time; it is encrypted at rest and never returned to the browser.
+The configured platform model is used unless a personal provider key is connected. Model availability and quota depend on the provider and account. Reasoning uses a bounded evidence envelope; code generation also sends the selected file. Personal keys are encrypted at rest and never returned to the browser.
+
+For an ongoing no-cost allowance, Cloudflare Workers AI offers 10,000 shared Neurons per day on the Workers Free plan. In **Connect API**, choose Cloudflare Workers AI and provide an account ID and Workers AI API token. The default `@cf/qwen/qwen3.8-27b` supports text and image input, although Nykst currently sends text only. Standard Workers AI inference is not used to train models; logging, caching and stateful features have different retention rules. The allowance and model availability can change, and exceeding it on a paid account can incur charges. See [Cloudflare pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) and [data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/).
+
+Google's `gemini-3.8-flash` is another free-tier code and vision model, but Google may use unpaid API inputs and outputs to improve its products and advises against sending confidential information. Regional terms apply. See [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing) and [terms](https://ai.google.dev/gemini-api/terms). Cloudflare also offers FLUX.1 Schnell image generation within its shared allowance; Nykst does not currently generate images. No provider promises that a model or quota will remain free forever.
 
 </details>
 

@@ -128,7 +128,8 @@ type McpToolName =
   | "get_federation"
   | "get_trace_overlay"
   | "simulate_change"
-  | "generate_fix_patch";
+  | "generate_fix_patch"
+  | "run_safe_code_loop";
 
 const ARCHITECTURE_LAYERS = [
   {
@@ -249,7 +250,11 @@ export function LiveGraphRagExplorer({
     setLoadingMcp(true);
     try {
       const q = queryOverride ?? mcpQuery;
-      if (toolName === "simulate_change" || toolName === "generate_fix_patch") {
+      if (
+        toolName === "simulate_change" ||
+        toolName === "generate_fix_patch" ||
+        toolName === "run_safe_code_loop"
+      ) {
         const res = await fetch("/api/analysis/self", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -319,6 +324,7 @@ export function LiveGraphRagExplorer({
     { id: "get_trace_overlay", label: "get_trace_overlay()", badge: "OTLP" },
     { id: "simulate_change", label: "simulate_change()", badge: "Overlay" },
     { id: "generate_fix_patch", label: "generate_fix_patch()", badge: "Diff" },
+    { id: "run_safe_code_loop", label: "run_safe_code_loop()", badge: "Loop" },
   ];
 
   return (
@@ -493,7 +499,7 @@ export function LiveGraphRagExplorer({
                   label: `SQL & Services (${resources.length + services.length})`,
                   icon: Database,
                 },
-                { id: "mcp", label: "10-Tool MCP Runner", icon: Terminal },
+                { id: "mcp", label: "11-Tool MCP Runner", icon: Terminal },
               ] as const
             ).map((tab) => (
               <button
@@ -951,7 +957,9 @@ export function LiveGraphRagExplorer({
               </div>
             </div>
 
-            {(mcpTool === "simulate_change" || mcpTool === "generate_fix_patch") && (
+            {(mcpTool === "simulate_change" ||
+              mcpTool === "generate_fix_patch" ||
+              mcpTool === "run_safe_code_loop") && (
               <div
                 data-testid="mcp-simulate-overlay-panel"
                 className="border-border bg-surface/70 rounded-xl border p-3"
@@ -960,7 +968,9 @@ export function LiveGraphRagExplorer({
                   <span className="text-primary font-mono text-[10px] uppercase tracking-wider">
                     {mcpTool === "simulate_change"
                       ? `In-Memory Overlay Buffer for ${selectedPath} (nothing written to disk)`
-                      : `Machine-Verified Remediation Buffer for ${selectedPath} (in-memory diff generator)`}
+                      : mcpTool === "run_safe_code_loop"
+                        ? `Safe-code loop buffer for ${selectedPath} (nothing written to disk)`
+                        : `Machine-Verified Remediation Buffer for ${selectedPath} (in-memory diff generator)`}
                   </span>
                   <button
                     type="button"

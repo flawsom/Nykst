@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { githubToken, githubUser } from "@/lib/integrations/github";
 
-export type AiProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "custom";
+export type AiProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "cloudflare" | "custom";
 
 type ProviderDefinition = {
   id: AiProvider;
@@ -24,7 +24,7 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: "gemini",
     label: "Google Gemini",
     hint: "AIza...",
-    model: "gemini-3.5-flash-lite",
+    model: "gemini-3.8-flash",
     baseUrl: "https://generativelanguage.googleapis.com",
   },
   {
@@ -33,6 +33,12 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     hint: "sk-...",
     model: "deepseek-flash",
     baseUrl: "https://api.deepseek.com/v1",
+  },
+  {
+    id: "cloudflare",
+    label: "Cloudflare Workers AI",
+    hint: "Workers AI API token",
+    model: "@cf/qwen/qwen3.8-27b",
   },
   {
     id: "custom",
@@ -94,7 +100,7 @@ export function platformGeminiKey(): StoredKey | null {
     last4: apiKey.slice(-4),
     apiKey,
     apiBaseUrl: "https://generativelanguage.googleapis.com",
-    model: "gemini-3.5-flash-lite",
+    model: "gemini-3.8-flash",
   };
 }
 
@@ -133,10 +139,25 @@ function providerDefinition(provider: AiProvider) {
 function safeBaseUrl(value: unknown, provider: AiProvider): string | null {
   const raw = typeof value === "string" ? value.trim().replace(/\/$/, "") : "";
   const defaultUrl = providerDefinition(provider).baseUrl ?? "";
-  if (!raw) return defaultUrl || null;
+  if (!raw) {
+    if (provider === "cloudflare")
+      throw new AiKeyError("Enter your Cloudflare Workers AI account endpoint.", 400);
+    return defaultUrl || null;
+  }
   try {
     const url = new URL(raw);
     if (url.protocol !== "https:") throw new Error("HTTPS required");
+    if (
+      provider === "cloudflare" &&
+      (url.hostname !== "api.cloudflare.com" ||
+        url.username ||
+        url.password ||
+        url.port ||
+        url.search ||
+        url.hash ||
+        !/^\/client\/v4\/accounts\/[a-zA-Z0-9]+\/ai\/v1\/?$/.test(url.pathname))
+    )
+      throw new Error("Invalid Cloudflare Workers AI endpoint");
     return url.toString().replace(/\/$/, "");
   } catch {
     throw new AiKeyError("Enter a valid HTTPS provider endpoint.", 400);
@@ -337,6 +358,9 @@ async function providerRequest(
     body: JSON.stringify({
       model: key.model,
       max_tokens: maxTokens,
+      ...(new URL(baseUrl).hostname === "api.cloudflare.com" && key.model === "@cf/qwen/qwen3.8-27b"
+        ? { reasoning_effort: "low" }
+        : {}),
       messages: [
         { role: "system", content: system },
         { role: "user", content: prompt },
@@ -380,6 +404,13 @@ export async function testProviderKey(
           messages: [{ role: "user", content: "ping" }],
         }),
       });
+    } else if (provider === "cloudflare") {
+      response = await providerRequest(
+        { provider, apiKey, apiBaseUrl: baseUrl, model: modelName },
+        "Reply briefly.",
+        "Reply with OK.",
+        512,
+      );
     } else {
       const base = baseUrl || "https://api.openai.com/v1";
       response = await fetch(`${base}/models`, {
@@ -395,6 +426,11 @@ export async function testProviderKey(
       friendly(response.status, await providerErrorMessage(response)),
       response.status,
     );
+  if (provider === "cloudflare") {
+    const data = (await response.json()) as Record<string, unknown>;
+    if (!textFromCompatibleResponse(data))
+      throw new AiKeyError("The provider returned no text. Check the model and try again.", 502);
+  }
 }
 
 export async function chatWithUserKey(

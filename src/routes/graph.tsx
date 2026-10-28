@@ -426,7 +426,9 @@ function GraphPage() {
     <main className="bg-background relative flex min-h-screen flex-col overflow-hidden lg:h-screen">
       <WebGLFieldCanvas
         fixed={false}
-        accentState={loopVerdict === "breaking" ? "amber" : "teal"}
+        accentState={
+          loopVerdict === "breaking" ? "amber" : loopVerdict === "simulating" ? "cyan" : "emerald"
+        }
         className="absolute inset-0 z-0 opacity-40"
       />
       <header className="border-border relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">

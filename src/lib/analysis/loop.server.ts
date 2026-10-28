@@ -4,7 +4,7 @@ import { loadCodeEvidence } from "@/lib/integrations/evidence.server";
 import { isSelfRepository } from "@/lib/code-links";
 import { impactBriefing } from "./context";
 import { generateFixPatch } from "./fix";
-import { indexAnalysis } from "./impact";
+import { impactOf, indexAnalysis } from "./impact";
 import { simulateChange } from "./simulate";
 import { columnDriftFindings } from "./sql";
 import { formatSymbolSignature } from "./symbols";
@@ -15,6 +15,7 @@ import {
   scenarioContent,
   summarizeVerdict,
   type LoopCaller,
+  type LoopFinding,
   type LoopHeal,
   type LoopRun,
   type LoopScenarioId,
@@ -43,9 +44,10 @@ export async function buildLoopRun(
   const file = index.files.get(input.path);
   if (!file) throw new Error(`${input.path} is not an analyzed source file.`);
 
-  const loaded = input.content
-    ? { content: input.content, source: "client" as const }
-    : await readContent(snapshot, input.path, input.token);
+  const loaded =
+    input.content !== undefined
+      ? { content: input.content, source: "client" as const }
+      : await readContent(snapshot, input.path, input.token);
   if (!loaded)
     throw new Error(
       `Could not read ${input.path}. Connect GitHub for private repositories and retry.`,
@@ -71,17 +73,18 @@ export async function buildLoopRun(
     : null;
 
   const scenario: LoopScenarioId = input.scenario ?? "clean-enhancement";
-  const transform = input.content
-    ? {
-        content: input.content,
-        summary: "Caller-supplied buffer, verified unchanged against the live graph.",
-        line: null,
-      }
-    : scenarioContent(realContent, scenario, {
-        path: input.path,
-        directImporter: importer?.path ?? null,
-        table: tableContext,
-      });
+  const transform =
+    input.content !== undefined
+      ? {
+          content: input.content,
+          summary: "Caller-supplied buffer, verified unchanged against the live graph.",
+          line: null,
+        }
+      : scenarioContent(realContent, scenario, {
+          path: input.path,
+          directImporter: importer?.path ?? null,
+          table: tableContext,
+        });
 
   const before = {
     cycles: analysis.cycles.length,
@@ -97,10 +100,11 @@ export async function buildLoopRun(
   );
   const durationMs = Date.now() - startedAt;
 
-  const removedExports =
-    scenario === "remove-export" && !input.content
-      ? [file.exports[0] ?? file.symbols?.[0]?.name ?? "exported symbol"]
-      : [];
+  // Older ingestions have no usage index. Report them rather than inferring
+  // caller breakage from an import edge alone.
+  const removedExports = simulation.removed_exports
+    .filter((item) => item.path === input.path)
+    .map((item) => item.name);
 
   const briefing = impactBriefing(analysis, snapshot.history, [input.path], { maxItems: 40 });
   const directImporters: LoopCaller[] = briefing.impact.direct_importers.map((item) => ({
@@ -109,10 +113,141 @@ export async function buildLoopRun(
     imports: item.imports,
     typeOnly: item.type_only,
   }));
-  const brokenCallers = removedExports.length ? directImporters : [];
+  const brokenCallers: LoopCaller[] = [
+    ...simulation.removed_export_callers.map((item) => ({
+      path: item.importerPath,
+      line: item.importerLine,
+      imports: item.symbolName,
+      typeOnly: false,
+    })),
+    ...simulation.signature_arity_breaks.map((item) => ({
+      path: item.importerPath,
+      line: item.callLine,
+      imports: item.symbolName,
+      typeOnly: false,
+    })),
+    ...simulation.property_contract_breaks.map((item) => ({
+      path: item.importerPath,
+      line: item.accessLine,
+      imports: `${item.symbolName}.${item.property}`,
+      typeOnly: false,
+    })),
+  ];
   const driftedResources = analysis.resources.filter((resource) =>
     resource.uses.some((use) => use.path === input.path),
   );
+
+  // Chains are recomputed from the live index so a warm module cache can never
+  // serve a stale report without causal hops.
+  const directImpact = impactOf(index, [input.path]);
+  const chainByImporter = new Map(
+    directImpact.direct.map((item) => [item.path, item.causalChain] as const),
+  );
+  const entrypointNames = briefing.impact.entrypoints
+    .slice(0, 3)
+    .map((item) => item.path)
+    .join(", ");
+  const areaNames = briefing.impact.areas
+    .slice(0, 3)
+    .map((area) => `${area.area} (${area.files})`)
+    .join(", ");
+  const architecturalReason = [
+    `Impact level ${briefing.impact.level} with ${briefing.impact.runtime_dependents} runtime dependents and ${briefing.impact.direct_importers.length} direct importers.`,
+    entrypointNames
+      ? `Reached entrypoints: ${entrypointNames}.`
+      : "No page or API entrypoint imports this file, so the blast radius stays inside the library layer.",
+    areaNames ? `Areas in scope: ${areaNames}.` : "No area grouping was available.",
+    briefing.history.usually_changed_together.length
+      ? `Co-change memory: ${briefing.history.usually_changed_together
+          .slice(0, 2)
+          .map((item) => `${item.path} (${item.count}x)`)
+          .join(", ")}.`
+      : "No repeated co-change history was recorded for this file.",
+  ].join(" ");
+
+  const findings: LoopFinding[] = [];
+  const addFinding = (finding: LoopFinding) => {
+    if (findings.length < 12) findings.push(finding);
+  };
+  for (const symbolName of removedExports) {
+    const callers = simulation.removed_export_callers.filter(
+      (item) => item.symbolName === symbolName,
+    );
+    const primary = callers[0];
+    const symbolLine = file.symbols?.find((symbol) => symbol.name === symbolName)?.line ?? 1;
+    addFinding({
+      id: `export:${symbolName}`,
+      kind: "removed_export",
+      whatBroke: `Export removed: ${symbolName}`,
+      why: primary
+        ? `${primary.importerPath}:${primary.importerLine} still imports ${symbolName}, but the proposed content no longer exports it.`
+        : `${input.path} no longer exports ${symbolName}; no observed importer uses it.`,
+      architecturalReason,
+      causalChain: primary ? (chainByImporter.get(primary.importerPath) ?? []) : [],
+      target: { path: input.path, line: symbolLine },
+    });
+  }
+  for (const breakage of simulation.signature_arity_breaks) {
+    addFinding({
+      id: `arity:${breakage.symbolName}:${breakage.importerPath}:${breakage.callLine}`,
+      kind: "arity_break",
+      whatBroke: `Caller arity mismatch in ${breakage.importerPath}:${breakage.callLine}`,
+      why: `${breakage.symbolName} now requires ${breakage.expectedArity} arguments, but this call passes ${breakage.passedArgs}.`,
+      architecturalReason,
+      causalChain: chainByImporter.get(breakage.importerPath) ?? [],
+      target: { path: breakage.importerPath, line: breakage.callLine },
+    });
+  }
+  for (const breakage of simulation.property_contract_breaks) {
+    addFinding({
+      id: `property:${breakage.symbolName}:${breakage.property}:${breakage.importerPath}:${breakage.accessLine}`,
+      kind: "property_break",
+      whatBroke: `Property contract break: ${breakage.symbolName}.${breakage.property}`,
+      why: `${breakage.importerPath}:${breakage.accessLine} reads ${breakage.property}, which the proposed ${breakage.symbolName} no longer declares.`,
+      architecturalReason,
+      causalChain: chainByImporter.get(breakage.importerPath) ?? [],
+      target: { path: breakage.importerPath, line: breakage.accessLine },
+    });
+  }
+  for (const cycle of simulation.new_cycles)
+    addFinding({
+      id: `cycle:${cycle.join(">")}`,
+      kind: "cycle",
+      whatBroke: `Runtime import cycle: ${cycle.join(" -> ")} -> ${cycle[0]}`,
+      why: `Tarjan SCC found a new ${cycle.length}-file runtime cycle that did not exist in the stored graph.`,
+      architecturalReason,
+      causalChain: cycle.slice(0, -1).map((fromPath, index) => ({
+        fromPath,
+        toPath: cycle[index + 1] ?? cycle[0]!,
+        importLine:
+          analysis.files
+            .find((candidate) => candidate.path === fromPath)
+            ?.imports.find((ref) => ref.target === (cycle[index + 1] ?? cycle[0]))?.line ?? 1,
+        importedSymbols: [],
+      })),
+      target: { path: input.path, line: 1 },
+    });
+  for (const item of simulation.new_unresolved_imports)
+    addFinding({
+      id: `unresolved:${item.path}:${item.line}:${item.specifier}`,
+      kind: "unresolved_import",
+      whatBroke: `Unresolved import at ${item.path}:${item.line}`,
+      why: `"${item.specifier}" does not resolve to any file in the analyzed repository.`,
+      architecturalReason,
+      causalChain: [],
+      target: { path: item.path, line: item.line },
+    });
+  for (const finding of simulation.new_column_drift)
+    for (const reference of finding.references)
+      addFinding({
+        id: `column:${finding.table}:${finding.column}:${reference.path}:${reference.line}`,
+        kind: "column_drift",
+        whatBroke: `SQL column drift: ${finding.table}.${finding.column}`,
+        why: `${reference.path}:${reference.line} ${finding.message}`,
+        architecturalReason,
+        causalChain: chainByImporter.get(reference.path) ?? [],
+        target: { path: reference.path, line: reference.line },
+      });
 
   const stage1: LoopRun["stage1"] = {
     file: { role: file.role, loc: file.loc, exports: file.exports.slice(0, 20) },
@@ -219,7 +354,7 @@ export async function buildLoopRun(
     },
     newCycles: simulation.new_cycles,
     newUnresolved: simulation.new_unresolved_imports,
-    columnDrift: simulation.column_drift.map((finding) => ({
+    columnDrift: simulation.new_column_drift.map((finding) => ({
       table: finding.table,
       column: finding.column,
       message: finding.message,
@@ -227,6 +362,7 @@ export async function buildLoopRun(
     })),
     removedExports,
     brokenCallers,
+    findings,
     blastDelta:
       (simulation.impact?.runtime_dependents ?? briefing.impact.runtime_dependents) -
       briefing.impact.runtime_dependents,
@@ -239,31 +375,39 @@ export async function buildLoopRun(
     newUnresolved: stage3.newUnresolved,
     removedExports,
     brokenCallers,
+    newColumnDriftCount: simulation.new_column_drift.length,
+    missingSymbolUsageFiles: simulation.missing_symbol_usage_files,
   });
 
+  const breakingTotal = (candidate: typeof simulation) =>
+    candidate.new_unresolved_imports.length +
+    candidate.new_cycles.length +
+    candidate.removed_export_callers.length +
+    candidate.signature_arity_breaks.length +
+    candidate.property_contract_breaks.length +
+    candidate.new_column_drift.length;
+
   let heal: LoopHeal | null = null;
-  if (stage3.newUnresolved.length) {
+  if (breakingTotal(simulation) > 0) {
     try {
       const fix = await generateFixPatch(snapshot, {
         path: input.path,
         content: transform.content,
-        issue: "unresolved-import",
+        issue: "auto",
       });
       const patch = "patch" in fix ? fix.patch : "";
-      const changes = "changes" in fix ? fix.changes : [];
+      const candidate = "healedContent" in fix ? fix.healedContent : null;
       let healedContent: string | null = null;
-      if (fix.verified && changes.length) {
-        const lines = transform.content.split("\n");
-        for (const change of changes) {
-          if (lines[change.line - 1] === change.before) lines[change.line - 1] = change.after;
-        }
-        const candidate = lines.join("\n");
+      if (fix.verified && candidate) {
         const verified = await simulateChange(
           snapshot,
           [{ path: input.path, content: candidate }],
           [input.path],
         );
-        if (verified.new_unresolved_imports.length === 0 && verified.new_cycles.length === 0) {
+        if (
+          breakingTotal(verified) < breakingTotal(simulation) &&
+          verified.new_cycles.length <= simulation.new_cycles.length
+        ) {
           healedContent = candidate;
         }
       }
@@ -281,20 +425,21 @@ export async function buildLoopRun(
               cyclesBefore: stage3.before.cycles,
               cyclesAfter: stage3.after.cycles,
             };
+      const strategies = "strategiesApplied" in fix ? (fix.strategiesApplied as string[]) : [];
       heal = {
         available: true,
         verified: Boolean(fix.verified && healedContent),
         patch: patch || "",
-        reason:
-          ("reason" in fix && fix.reason) ||
-          (fix.verified
-            ? "The rewrite lowered unresolved imports without adding a cycle."
-            : "No exact existing target was found; Nykst will not guess a file."),
+        reason: healedContent
+          ? `Verified ${strategies.length} AST remed${strategies.length === 1 ? "y" : "ies"}: ${strategies.join(", ")}.`
+          : ("reason" in fix && fix.reason) ||
+            "No strategy reduced the verified breaking findings without adding a cycle.",
         healedContent,
         unresolvedBefore: verification.before,
         unresolvedAfter: verification.after,
         cyclesBefore: verification.cyclesBefore,
         cyclesAfter: verification.cyclesAfter,
+        strategies,
       };
     } catch {
       heal = null;
@@ -313,7 +458,7 @@ export async function buildLoopRun(
             "0 new runtime cycles (Tarjan SCC)",
             "0 new unresolved imports",
             "0 new SQL column contract violations",
-            "All downstream callers intact",
+            "No observed direct symbol contract breaks; run the full typecheck and tests",
           ]
         : [],
   };
@@ -332,11 +477,11 @@ export async function buildLoopRun(
     repository: snapshot.repository_full_name,
     path: input.path,
     ref: analysis.ref,
-    source: loaded.source === "client" ? "github" : loaded.source,
+    source: loaded.source,
     suggestedPaths: [input.path, ...suggestedPaths],
     stage1,
     stage2: {
-      scenario: input.content ? "clean-enhancement" : scenario,
+      scenario: input.content !== undefined ? "clean-enhancement" : scenario,
       summary: transform.summary,
       changedLine: transform.line,
       content: transform.content,

@@ -1,5 +1,6 @@
 import { impactBriefing } from "./context";
 import { patchRepositoryAnalysis, type ChangedFile } from "./patch.server";
+import { resolveExportOrigin } from "./reexports";
 import { columnDriftFindings } from "./sql";
 import type { RepoAnalysis, RepoHistory } from "./types";
 
@@ -24,6 +25,7 @@ export function cloneForOverlay(analysis: RepoAnalysis): RepoAnalysis {
       resources: file.resources.map((use) => ({ ...use })),
       ...(file.endpoints ? { endpoints: file.endpoints.map((endpoint) => ({ ...endpoint })) } : {}),
       ...(file.symbols ? { symbols: file.symbols.map((symbol) => ({ ...symbol })) } : {}),
+      ...(file.reExports ? { reExports: file.reExports.map((reExport) => ({ ...reExport })) } : {}),
       ...(file.columnRefs ? { columnRefs: file.columnRefs.map((ref) => ({ ...ref })) } : {}),
     })),
     resources: analysis.resources.map((resource) => ({
@@ -127,6 +129,22 @@ export async function simulateChange(
         .map((ref) => `${file.path}\u0000${ref.specifier}`),
     ),
   );
+  const oldDrift = new Set(
+    columnDriftFindings(before).flatMap((finding) =>
+      finding.references.map(
+        (ref) => `${finding.table}\u0000${finding.column}\u0000${ref.path}\u0000${ref.operation}`,
+      ),
+    ),
+  );
+  const newColumnDrift = columnDriftFindings(after).flatMap((finding) => {
+    const references = finding.references.filter(
+      (ref) =>
+        !oldDrift.has(
+          `${finding.table}\u0000${finding.column}\u0000${ref.path}\u0000${ref.operation}`,
+        ),
+    );
+    return references.length ? [{ ...finding, references }] : [];
+  });
   const newUnresolved = after.files.flatMap((file) =>
     file.imports
       .filter(
@@ -136,6 +154,152 @@ export async function simulateChange(
       )
       .map((ref) => ({ path: file.path, line: ref.line, specifier: ref.specifier })),
   );
+  // Compare only observed direct named/default bindings. Namespace, re-export,
+  // shadowing, overloads and dynamic usage require a type-aware compiler.
+  const removedExportCallers: {
+    targetPath: string;
+    symbolName: string;
+    importerPath: string;
+    importerLine: number;
+  }[] = [];
+  const signatureArityBreaks: {
+    targetPath: string;
+    symbolName: string;
+    importerPath: string;
+    callLine: number;
+    passedArgs: number;
+    expectedArity: string;
+  }[] = [];
+  const propertyContractBreaks: {
+    targetPath: string;
+    symbolName: string;
+    property: string;
+    importerPath: string;
+    accessLine: number;
+  }[] = [];
+  const beforeByPath = new Map(before.files.map((file) => [file.path, file]));
+  const afterByPath = new Map(after.files.map((file) => [file.path, file]));
+  const changedSet = new Set(changedPaths);
+  const changedTargets = new Set([...changedPaths, ...deletedPaths]);
+  const missingUsageFiles = before.files
+    .filter(
+      (file) =>
+        !changedSet.has(file.path) &&
+        !deletedPaths.includes(file.path) &&
+        !file.importedSymbolUsages &&
+        file.imports.some((ref) => ref.target && changedTargets.has(ref.target)),
+    )
+    .map((file) => file.path);
+  for (const targetPath of new Set([...changedPaths, ...deletedPaths])) {
+    const original = beforeByPath.get(targetPath);
+    const updated = afterByPath.get(targetPath);
+    if (!original) continue;
+    for (const importer of after.files) {
+      const importerBefore = beforeByPath.get(importer.path) ?? importer;
+      for (const usage of importer.importedSymbolUsages ?? []) {
+        const directTarget = importerBefore.imports.find(
+          (ref) => ref.specifier === usage.specifier && ref.target,
+        )?.target;
+        if (!directTarget) continue;
+        const isNamespace = usage.importedName === "*";
+
+        // A changed barrel can remove an export even though the declaring file
+        // never changed. Compare the `export ... from` declarations directly.
+        if (directTarget === targetPath) {
+          const removedReExport = (original.reExports ?? []).find(
+            (reExport) =>
+              (reExport.exportedName === usage.importedName ||
+                (isNamespace && reExport.exportedName === "*")) &&
+              !(updated?.reExports ?? []).some(
+                (next) =>
+                  next.specifier === reExport.specifier &&
+                  next.exportedName === reExport.exportedName &&
+                  next.importedName === reExport.importedName,
+              ),
+          );
+          if (removedReExport) {
+            const members = isNamespace
+              ? [...new Set(usage.callSites.flatMap((call) => (call.member ? [call.member] : [])))]
+              : [usage.importedName];
+            for (const member of members)
+              removedExportCallers.push({
+                targetPath,
+                symbolName: member,
+                importerPath: importer.path,
+                importerLine: usage.importLine,
+              });
+            continue;
+          }
+        }
+
+        const members = isNamespace
+          ? [...new Set(usage.callSites.flatMap((call) => (call.member ? [call.member] : [])))]
+          : [usage.importedName];
+        for (const member of members) {
+          // Follow `export *` and `export { a as b }` chains to the declaring file.
+          const origin = resolveExportOrigin(before, directTarget, member);
+          if (!origin || origin.path !== targetPath) continue;
+          const symbolName = origin.name;
+          if (original.exports.includes(symbolName) && !updated?.exports.includes(symbolName)) {
+            removedExportCallers.push({
+              targetPath,
+              symbolName,
+              importerPath: importer.path,
+              importerLine: usage.importLine,
+            });
+            continue;
+          }
+          const oldSymbol = original.symbols?.find((symbol) => symbol.name === symbolName);
+          const newSymbol = updated?.symbols?.find((symbol) => symbol.name === symbolName);
+          if (!oldSymbol || !newSymbol) continue;
+          if (
+            oldSymbol.kind === "function" &&
+            newSymbol.kind === "function" &&
+            (newSymbol.requiredArity ?? 0) > (oldSymbol.requiredArity ?? 0)
+          ) {
+            const calls = usage.callSites.filter((call) =>
+              isNamespace ? call.member === symbolName : !call.member,
+            );
+            for (const call of calls)
+              if (!call.hasSpreadArg && call.argCount < (newSymbol.requiredArity ?? 0))
+                signatureArityBreaks.push({
+                  targetPath,
+                  symbolName,
+                  importerPath: importer.path,
+                  callLine: call.line,
+                  passedArgs: call.argCount,
+                  expectedArity: `${newSymbol.requiredArity ?? 0}+`,
+                });
+          }
+          if (isNamespace) continue;
+          const removed = new Set(
+            (oldSymbol.typeProperties ?? [])
+              .map((property) => property.name)
+              .filter(
+                (name) =>
+                  !(newSymbol.typeProperties ?? []).some((property) => property.name === name),
+              ),
+          );
+          for (const access of usage.propertyAccesses)
+            if (removed.has(access.property))
+              propertyContractBreaks.push({
+                targetPath,
+                symbolName,
+                property: access.property,
+                importerPath: importer.path,
+                accessLine: access.line,
+              });
+        }
+      }
+    }
+  }
+  const removedExports = [...new Set([...changedPaths, ...deletedPaths])].flatMap((path) => {
+    const original = beforeByPath.get(path);
+    const updated = afterByPath.get(path);
+    return (original?.exports ?? [])
+      .filter((name) => !updated?.exports.includes(name))
+      .map((name) => ({ path, name }));
+  });
   const changedFiles = after.files
     .filter((file) => changedPaths.includes(file.path))
     .map((file) => ({
@@ -175,7 +339,14 @@ export async function simulateChange(
     new_cycles: newCycles,
     new_unresolved_imports: newUnresolved,
     column_drift: columnDriftFindings(after),
+    new_column_drift: newColumnDrift,
+    removed_exports: removedExports,
+    removed_export_callers: removedExportCallers,
+    signature_arity_breaks: signatureArityBreaks,
+    property_contract_breaks: propertyContractBreaks,
+    missing_symbol_usage_files: missingUsageFiles,
     limitations: [
+      "Symbol usage checks are syntactic, not a typecheck. Lexical shadowing, barrel re-exports, namespace calls and overload arity envelopes are resolved from the AST; dynamically dispatched calls, computed members and full TypeScript assignability are not verified. Older snapshots require re-analysis.",
       ...after.limitations,
       "simulate_change is an in-memory overlay: no repository, snapshot or database row is written.",
     ],

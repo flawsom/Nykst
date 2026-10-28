@@ -31,16 +31,12 @@ test("stage 1 grounds the loop in real signatures, importers and token savings",
   await expect(page.locator('[data-testid="loop-stage-4"]')).toBeVisible();
 });
 
-test("Stage 2 Mode A returns a real grounded proposal or the verbatim provider error", async ({
+test("Stage 2 Mode A returns a real grounded proposal or a labeled deterministic fallback", async ({
   page,
 }) => {
   // A real generation on a slow router can take ~50s, well past the suite default.
   test.setTimeout(180_000);
   const engine = await openLoop(page);
-  const keyStatus = (await page.evaluate(async () => {
-    const res = await fetch("/api/ai/key");
-    return (await res.json()) as { configured?: boolean };
-  })) as { configured?: boolean };
 
   // A complete-file generation needs a file that fits the provider budget; the
   // default target is the 900-line GitHub client, so point the loop at a small,
@@ -58,30 +54,31 @@ test("Stage 2 Mode A returns a real grounded proposal or the verbatim provider e
   await expect(page.locator('[data-testid="loop-generate-btn"]')).toBeEnabled();
   await page.locator('[data-testid="loop-generate-btn"]').click();
 
-  if (keyStatus.configured) {
-    // A configured provider must produce an actual file proposal, not prose and not a hang.
-    const proposal = page.locator('[data-testid="loop-generated-proposal"]');
-    await expect(proposal).toBeVisible({ timeout: 120000 });
-    const code = await proposal.locator("pre").innerText();
-    expect(code.trim().length).toBeGreaterThan(20);
-    // The proposal is grounded in the real file, not in a generic skeleton.
-    expect(code).toMatch(/parseRepoSlug|RepoSlug/);
-    const apply = proposal.locator('[data-testid="loop-apply-generated"]');
-    await expect(apply).toBeEnabled();
-    // Applying it re-runs the memory overlay and must produce a real verdict.
-    await apply.click();
-    await expect(page.locator('[data-testid="loop-verdict"]')).toHaveAttribute(
-      "data-verdict",
-      /safe|breaking/,
-      { timeout: 60000 },
-    );
-  } else {
-    // Without a key the surface must say so instead of failing silently.
-    await expect(page.locator('[data-testid="loop-generate-error"]')).toBeVisible({
-      timeout: 40000,
-    });
-    await expect(page.locator('[data-testid="loop-generate-error"]')).toContainText(/key/i);
+  // Whether a provider key exists or not, Stage 2 must produce a complete file
+  // proposal. The deterministic path is labeled so it is never mistaken for AI.
+  const proposal = page.locator('[data-testid="loop-generated-proposal"]');
+  const error = page.locator('[data-testid="loop-generate-error"]');
+  await expect(proposal.or(error)).toBeVisible({ timeout: 120000 });
+  if (await error.isVisible()) throw new Error(`Stage 2 failed: ${await error.innerText()}`);
+  await expect(proposal).toBeVisible();
+  const code = await proposal.locator("pre").innerText();
+  expect(code.trim().length).toBeGreaterThan(20);
+  // The proposal is grounded in the real file, not in a generic skeleton.
+  expect(code).toMatch(/parseRepoSlug|RepoSlug/);
+  const fallbackBadge = proposal.locator('[data-testid="loop-fallback-badge"]');
+  if (await fallbackBadge.isVisible()) {
+    await expect(fallbackBadge).toContainText(/deterministic fallback/i);
+    await expect(proposal.locator('[data-testid="loop-fallback-note"]')).not.toBeEmpty();
   }
+  const apply = proposal.locator('[data-testid="loop-apply-generated"]');
+  await expect(apply).toBeEnabled();
+  // Applying it re-runs the memory overlay and must produce a real verdict.
+  await apply.click();
+  await expect(page.locator('[data-testid="loop-verdict"]')).toHaveAttribute(
+    "data-verdict",
+    /safe|breaking/,
+    { timeout: 60000 },
+  );
   await expect(engine.locator('[data-testid="loop-code-buffer"]')).toBeVisible();
 });
 
@@ -98,7 +95,7 @@ test("a real unresolved import is blocked, then auto-heals to verified safe", as
   await heal.click();
 
   await expect(verdict).toHaveAttribute("data-verdict", "safe", { timeout: 30000 });
-  await expect(verdict).toContainText("VERIFIED SAFE TO DEPLOY");
+  await expect(verdict).toContainText("NO ISSUES FOUND IN ANALYZED CHECKS");
 });
 
 test("the teleport drawer opens real source at the exact line with all three actions", async ({
@@ -106,8 +103,25 @@ test("the teleport drawer opens real source at the exact line with all three act
 }) => {
   const engine = await openLoop(page);
 
-  // Break the file so Stage 4 renders a clickable downstream caller row.
+  // Use a real module whose first exported declaration has named importers.
+  const pathInput = page.getByLabel("Target file path");
+  await pathInput.fill("src/lib/code-links.ts");
+  await pathInput.press("Enter");
+  await expect(engine.locator('[data-testid="loop-code-buffer"]')).toHaveValue(/parseRepoSlug/, {
+    timeout: 30000,
+  });
   await engine.locator('[data-testid="loop-scenario-remove-export"]').click();
+
+  // Stage 3 must explain the break as WHAT / WHY / ARCHITECTURAL REASON, with
+  // a real multi-hop causal chain instead of a bare list of checks.
+  const card = page.locator('[data-testid="trinity-diagnostic-card"]').first();
+  await expect(card).toBeVisible({ timeout: 30000 });
+  await expect(card).toContainText(/what broke/i);
+  await expect(card).toContainText(/why it broke/i);
+  await expect(card).toContainText(/architectural & historical reason/i);
+  await expect(card.locator('[data-testid="causal-chain"]')).toBeVisible();
+  await expect(page.locator('[data-testid="copy-context-pack-btn"]')).toBeVisible();
+
   const row = page.locator('[data-testid="loop-teleport-row"]').first();
   await expect(row).toBeVisible({ timeout: 30000 });
   await row.click();

@@ -19,6 +19,7 @@ import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
+import { Route as ApiLoopRouteImport } from './routes/api.loop'
 import { Route as ApiMcpRouteImport } from './routes/api.mcp'
 import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
@@ -96,6 +97,11 @@ const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLoopRoute = ApiLoopRouteImport.update({
+  id: '/api/loop',
+  path: '/api/loop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -349,6 +357,7 @@ export interface FileRoutesById {
   '/admin/payments': typeof AdminPaymentsRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRoute
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/health'
+    | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/health'
+    | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -471,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/api/diagnosis'
     | '/api/health'
+    | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
     | '/api/pre-registration'
@@ -512,6 +524,7 @@ export interface RootRouteChildren {
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiLoopRoute: typeof ApiLoopRoute
   ApiMcpRoute: typeof ApiMcpRoute
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/loop': {
+      id: '/api/loop'
+      path: '/api/loop'
+      fullPath: '/api/loop'
+      preLoaderRoute: typeof ApiLoopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mcp': {
@@ -835,6 +855,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPaymentsRoute: AdminPaymentsRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiLoopRoute: ApiLoopRoute,
   ApiMcpRoute: ApiMcpRoute,
   ApiMcpTokensRoute: ApiMcpTokensRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,

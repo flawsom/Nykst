@@ -3,7 +3,7 @@
  *
  * Stage 1 grounds the agent in real architecture, Stage 2 produces a proposal,
  * Stage 3 overlays it on an in-memory clone of the graph, and Stage 4 either
- * certifies the change or points at the exact file:line that broke. Nothing in
+ * reports the checks or points at an observed file:line issue. Nothing in
  * this file touches the network, the disk or a clock, so the transforms and the
  * token maths are testable in isolation.
  */
@@ -31,7 +31,7 @@ export const LOOP_STAGES = [
     id: 4,
     testId: "loop-stage-4",
     title: "Verdict: Exact file:line Impact & Auto-Fix",
-    subtitle: "Certify safe to deploy, or teleport to the line that broke.",
+    subtitle: "Review the checks, or teleport to a line with a detected issue.",
   },
 ] as const;
 
@@ -76,7 +76,7 @@ export const LOOP_SCENARIOS: LoopScenario[] = [
   },
   {
     id: "clean-enhancement",
-    label: "Ship a clean, non-breaking enhancement",
+    label: "Try a simple enhancement",
     description: "Adds a new exported constant without touching any existing contract.",
     expectation: "safe",
   },
@@ -257,6 +257,8 @@ export interface LoopVerdictInput {
   newUnresolved: { path: string; line: number; specifier: string }[];
   removedExports: string[];
   brokenCallers: LoopCaller[];
+  newColumnDriftCount?: number;
+  missingSymbolUsageFiles?: string[];
 }
 
 export interface LoopVerdict {
@@ -273,7 +275,8 @@ export interface LoopVerdict {
 
 /** Deterministic verdict. Any new structural fact is a breaking change. */
 export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
-  const driftDelta = Math.max(0, input.after.columnDrift - input.before.columnDrift);
+  const driftDelta =
+    input.newColumnDriftCount ?? Math.max(0, input.after.columnDrift - input.before.columnDrift);
   const newCycleCount = input.newCycles.length;
   const newUnresolvedCount = input.newUnresolved.length;
   const removedExportCount = input.removedExports.length;
@@ -282,7 +285,8 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
     newUnresolvedCount > 0 ||
     driftDelta > 0 ||
     removedExportCount > 0 ||
-    input.brokenCallers.length > 0;
+    input.brokenCallers.length > 0 ||
+    (input.missingSymbolUsageFiles?.length ?? 0) > 0;
 
   const whatBroke: string[] = [];
   if (newCycleCount)
@@ -301,22 +305,27 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
     whatBroke.push(`${driftDelta} new SQL column contract violation(s) against the DDL`);
   if (removedExportCount)
     whatBroke.push(
-      `${removedExportCount} public export${removedExportCount === 1 ? "" : "s"} removed while downstream importers remain`,
+      `${removedExportCount} public export${removedExportCount === 1 ? "" : "s"} removed from the analyzed file`,
     );
   if (input.brokenCallers.length)
     whatBroke.push(
-      `${input.brokenCallers.length} downstream call site${input.brokenCallers.length === 1 ? "" : "s"} still compile against the old contract`,
+      `${input.brokenCallers.length} observed downstream usage${input.brokenCallers.length === 1 ? "" : "s"} may no longer match the contract`,
+    );
+
+  if (input.missingSymbolUsageFiles?.length)
+    whatBroke.push(
+      `Symbol usage evidence is missing for ${input.missingSymbolUsageFiles.length} importer(s); re-analyze the repository before relying on these checks.`,
     );
 
   return {
     verdict: breaking ? "breaking" : "safe",
     headline: breaking
-      ? "This change breaks hidden dependencies. Do not ship it."
-      : "VERIFIED SAFE TO DEPLOY",
+      ? "Issues or missing evidence detected. Do not ship without review."
+      : "NO ISSUES FOUND IN ANALYZED CHECKS",
     whatBroke,
     why: breaking
       ? "The in-memory overlay found structural facts that the current graph does not satisfy. Every item below is a real path and line from this repository, not a guess."
-      : "The overlay introduced 0 cycles, 0 unresolved imports, 0 column-drift findings and removed no exported contract. All downstream callers stay intact.",
+      : "The overlay found no new issues in its supported checks. This is not a full typecheck, test run, or guarantee of deployment safety.",
     newCycleCount,
     newUnresolvedCount,
     driftDelta,
@@ -380,13 +389,36 @@ export interface LoopHeal {
   unresolvedAfter: number;
   cyclesBefore: number;
   cyclesAfter: number;
+  strategies: string[];
+}
+
+/** One structured WHAT / WHY / ARCHITECTURAL REASON diagnostic card. */
+export interface LoopFinding {
+  id: string;
+  kind:
+    | "removed_export"
+    | "arity_break"
+    | "property_break"
+    | "cycle"
+    | "unresolved_import"
+    | "column_drift";
+  whatBroke: string;
+  why: string;
+  architecturalReason: string;
+  causalChain: {
+    fromPath: string;
+    toPath: string;
+    importLine: number;
+    importedSymbols: string[];
+  }[];
+  target: { path: string; line: number };
 }
 
 export interface LoopRun {
   repository: string;
   path: string;
   ref: string;
-  source: "workspace" | "github";
+  source: "workspace" | "github" | "client";
   suggestedPaths: string[];
   stage1: {
     file: { role: string; loc: number; exports: string[] };
@@ -424,6 +456,7 @@ export interface LoopRun {
     }[];
     removedExports: string[];
     brokenCallers: LoopCaller[];
+    findings: LoopFinding[];
     blastDelta: number;
   };
   stage4: LoopVerdict & {

@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * End-to-end verification of the 10 read-only MCP tools, the in-memory
+ * End-to-end verification of the 11 read-only MCP tools, the in-memory
  * `simulate_change` overlay, and the `generate_fix_patch` machine-verified
  * remediation diff, exercised both on `/mcp` and on the live workbench (`/`).
  */
 
-test("MCP tools page lists all 10 tools, runs search_files with real data, executes simulate_change overlay, and verifies generate_fix_patch remediation", async ({
+test("MCP tools page lists all 11 tools, runs search_files with real data, executes simulate_change overlay, and verifies generate_fix_patch remediation", async ({
   page,
 }) => {
   await page.goto("/mcp", { waitUntil: "networkidle" });
 
-  // Verify the page header and all 10 MCP tool triggers exist
+  // Verify the page header and all 11 MCP tool triggers exist
   await expect(page.locator("h1")).toContainText("Use Nykst inside your AI coding agent");
 
   const toolNames = [
@@ -25,6 +25,7 @@ test("MCP tools page lists all 10 tools, runs search_files with real data, execu
     "get_trace_overlay",
     "simulate_change",
     "generate_fix_patch",
+    "run_safe_code_loop",
   ];
   for (const name of toolNames) {
     await expect(page.getByTestId(`mcp-page-tool-${name}`)).toBeVisible();
@@ -205,7 +206,7 @@ test("MCP tools page lists all 10 tools, runs search_files with real data, execu
   expect(federationJson.limitations.join(" ")).not.toContain("No OpenAPI or gRPC contracts");
 });
 
-test("Landing 10-Tool MCP Runner executes search_files, simulate_change overlay, and generate_fix_patch with real AST data", async ({
+test("Landing 11-Tool MCP Runner executes search_files, simulate_change overlay, and generate_fix_patch with real AST data", async ({
   page,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
@@ -214,10 +215,11 @@ test("Landing 10-Tool MCP Runner executes search_files, simulate_change overlay,
   await mcpTab.scrollIntoViewIfNeeded();
   await mcpTab.click();
 
-  // Confirm all 10 tool buttons are rendered in the workbench
+  // Confirm tool buttons are rendered in the workbench
   await expect(page.getByTestId("mcp-tool-search_files")).toBeVisible();
   await expect(page.getByTestId("mcp-tool-simulate_change")).toBeVisible();
   await expect(page.getByTestId("mcp-tool-generate_fix_patch")).toBeVisible();
+  await expect(page.getByTestId("mcp-tool-run_safe_code_loop")).toBeVisible();
 
   // Run `search_files` with a real symbol query
   const queryInput = page.getByTestId("mcp-query-input");

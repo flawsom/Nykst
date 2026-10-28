@@ -552,7 +552,7 @@ export const Route = createFileRoute("/api/analysis/self")({
           };
 
           const toolOutput =
-            tool === "run_loop"
+            tool === "run_loop" || tool === "run_safe_code_loop"
               ? await buildLoopRun(snapshot, {
                   path: validTarget,
                   ...(body.scenario ? { scenario: body.scenario } : {}),

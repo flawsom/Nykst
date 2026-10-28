@@ -103,6 +103,9 @@ export function GraphCanvas({
   const children = nodes;
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [sector, setSector] = useState({ centerId: center.id, page: 0 });
+  const pageCount = Math.max(1, Math.ceil(children.length / 24));
+  const page = sector.centerId === center.id ? Math.min(sector.page, pageCount - 1) : 0;
   void technical;
 
   useEffect(() => {
@@ -120,10 +123,10 @@ export function GraphCanvas({
   // that. No column or grid fallback, so a real repository never collapses into
   // a vertical lineup on /graph.
   const points = useMemo(() => {
-    const slots = radialLayout(children.length, { width: W, height: H });
-    return children.slice(0, slots.length).map((node, index) => ({ node, ...slots[index]! }));
-  }, [children]);
-  const hiddenCount = children.length - points.length;
+    const visible = children.slice(page * 24, (page + 1) * 24);
+    const slots = radialLayout(visible.length, { width: W, height: H });
+    return visible.map((node, index) => ({ node, ...slots[index]! }));
+  }, [children, page]);
   const ringSizes = useMemo(() => {
     const sizes = { 0: 0, 1: 0, 2: 0 } as Record<number, number>;
     for (const point of points) sizes[point.ring] = (sizes[point.ring] ?? 0) + 1;
@@ -139,6 +142,29 @@ export function GraphCanvas({
   return (
     <div className="relative h-full w-full overflow-hidden select-none">
       <div className="pointer-events-none absolute inset-0 bg-grid" />
+      {pageCount > 1 && (
+        <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-2 text-xs shadow-lg">
+          <label className="flex items-center gap-2">
+            <span>Orbit sector</span>
+            <select
+              aria-label="Orbit sector"
+              data-testid="orbit-sector-switcher"
+              className="max-w-44 bg-transparent text-foreground"
+              value={page}
+              onChange={(event) =>
+                setSector({ centerId: center.id, page: Number(event.target.value) })
+              }
+            >
+              {Array.from({ length: pageCount }, (_, index) => (
+                <option key={index} value={index}>
+                  Sector {index + 1} ({index * 24 + 1}-{Math.min((index + 1) * 24, children.length)}
+                  )
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="relative h-full w-full"
@@ -155,21 +181,38 @@ export function GraphCanvas({
 
         <circle cx={cx} cy={cy} r={210} fill="url(#haloGrad)" className="animate-halo" />
 
-        {points.map((p) => {
+        {points.map((p, index) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
           const cycle = p.node.cycle === true;
+          const edge = curvedEdgePath(
+            { x: cx, y: cy },
+            mounted ? { x: p.x, y: p.y } : { x: cx, y: cy },
+          );
           return (
-            <path
-              key={`e-${p.node.id}`}
-              d={curvedEdgePath({ x: cx, y: cy }, mounted ? { x: p.x, y: p.y } : { x: cx, y: cy })}
-              fill="none"
-              stroke={active ? EDGE_ACTIVE : cycle ? EDGE_CYCLE : EDGE_IMPORTER}
-              strokeWidth={active ? 2.2 : 1.2}
-              strokeOpacity={active ? 0.95 : cycle ? 0.6 : 0.35}
-              strokeLinecap="round"
-              data-edge-kind={cycle ? "cycle" : "importer"}
-              className="transition-all duration-300"
-            />
+            <g key={`e-${p.node.id}`}>
+              <path
+                d={edge}
+                fill="none"
+                stroke={active ? EDGE_ACTIVE : cycle ? EDGE_CYCLE : EDGE_IMPORTER}
+                strokeWidth={active ? 2.2 : 1.2}
+                strokeOpacity={active ? 0.95 : cycle ? 0.6 : 0.35}
+                strokeLinecap="round"
+                data-edge-kind={cycle ? "cycle" : "importer"}
+                className="transition-all duration-300"
+              />
+              <path
+                d={edge}
+                fill="none"
+                stroke={active ? EDGE_ACTIVE : "var(--primary)"}
+                strokeWidth={active ? 2 : 1.4}
+                strokeOpacity={active ? 0.95 : 0.5}
+                strokeLinecap="round"
+                strokeDasharray="4 26"
+                className="animate-edge-pulse pointer-events-none"
+                style={{ animationDelay: `${(index % 8) * 0.42}s` }}
+                data-edge-pulse={cycle ? "cycle" : "importer"}
+              />
+            </g>
           );
         })}
 
@@ -312,18 +355,6 @@ export function GraphCanvas({
             </g>
           );
         })}
-
-        {hiddenCount > 0 && (
-          <text
-            x={cx}
-            y={H - 40}
-            textAnchor="middle"
-            className="fill-muted-foreground font-mono text-[11px]"
-            data-graph-overflow={hiddenCount}
-          >
-            +{hiddenCount} more on this level, open them from the system tree
-          </text>
-        )}
 
         {/* Edge legend */}
         <g transform={`translate(${cx}, ${H - 18})`}>

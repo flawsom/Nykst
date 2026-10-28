@@ -94,6 +94,7 @@ describe("analysis tools", () => {
     expect(names).toContain("get_trace_overlay");
     expect(names).toContain("simulate_change");
     expect(names).toContain("generate_fix_patch");
+    expect(names).toContain("run_safe_code_loop");
     for (const tool of TOOLS) expect(tool.annotations.readOnlyHint).toBe(true);
   });
 

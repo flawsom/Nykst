@@ -78,7 +78,8 @@ export function patchLoaded(existing: RepoAnalysis, changedFiles: ChangedFile[])
     else written.set(path, content);
   }
 
-  const pathSet = new Set(existing.files.map((file) => file.path));
+  const existingPaths = new Set(existing.files.map((file) => file.path));
+  const pathSet = new Set(existingPaths);
   for (const [path, content] of written) {
     if (isSourcePath(path)) pathSet.add(path);
   }
@@ -119,43 +120,47 @@ export function patchLoaded(existing: RepoAnalysis, changedFiles: ChangedFile[])
     }
   }
 
-  // A deleted or added path can change how an unchanged file resolves. Re-resolve
-  // stored specifiers against the new path set; no file content is read again.
-  for (const file of files.values()) {
-    if (parsed.has(file.path)) continue;
-    if (polyglotLanguageOf(file.path)) {
-      const raw = new Map<string, RawImport>();
-      for (const ref of file.imports)
-        raw.set(`${ref.specifier}\u0000${ref.line}`, {
-          specifier: ref.specifier,
-          line: ref.line,
-          typeOnly: ref.typeOnly,
-          dynamic: ref.dynamic,
-        });
-      file.imports = [...raw.values()].flatMap((entry) =>
-        resolvePolyglotImport(file.path, entry.specifier, pathSet, context.goModule).map(
-          (resolved) => ({
-            specifier: entry.specifier,
-            line: entry.line,
-            kind: resolved.kind,
-            ...(resolved.target ? { target: resolved.target } : {}),
-            typeOnly: entry.typeOnly,
-            dynamic: entry.dynamic,
-          }),
-        ),
-      );
-      continue;
+  // Only additions and deletions can change unchanged import resolution. Ordinary
+  // content edits keep the same path set, so retain their stored resolved edges.
+  const pathsChanged =
+    [...pathSet].some((path) => !existingPaths.has(path)) ||
+    [...existingPaths].some((path) => !pathSet.has(path));
+  if (pathsChanged)
+    for (const file of files.values()) {
+      if (parsed.has(file.path)) continue;
+      if (polyglotLanguageOf(file.path)) {
+        const raw = new Map<string, RawImport>();
+        for (const ref of file.imports)
+          raw.set(`${ref.specifier}\u0000${ref.line}`, {
+            specifier: ref.specifier,
+            line: ref.line,
+            typeOnly: ref.typeOnly,
+            dynamic: ref.dynamic,
+          });
+        file.imports = [...raw.values()].flatMap((entry) =>
+          resolvePolyglotImport(file.path, entry.specifier, pathSet, context.goModule).map(
+            (resolved) => ({
+              specifier: entry.specifier,
+              line: entry.line,
+              kind: resolved.kind,
+              ...(resolved.target ? { target: resolved.target } : {}),
+              typeOnly: entry.typeOnly,
+              dynamic: entry.dynamic,
+            }),
+          ),
+        );
+        continue;
+      }
+      file.imports = file.imports.map((ref) => {
+        const resolved = resolver.resolve(file.path, ref.specifier);
+        const { target: _previous, ...rest } = ref;
+        return {
+          ...rest,
+          kind: resolved.kind,
+          ...(resolved.target ? { target: resolved.target } : {}),
+        };
+      });
     }
-    file.imports = file.imports.map((ref) => {
-      const resolved = resolver.resolve(file.path, ref.specifier);
-      const { target: _previous, ...rest } = ref;
-      return {
-        ...rest,
-        kind: resolved.kind,
-        ...(resolved.target ? { target: resolved.target } : {}),
-      };
-    });
-  }
 
   const orderedFiles = [...files.values()].sort((a, b) => a.path.localeCompare(b.path));
 
@@ -348,11 +353,9 @@ export function patchLoaded(existing: RepoAnalysis, changedFiles: ChangedFile[])
     }
   }
   const addedSources = [...written.keys()].filter(
-    (path) => isSourcePath(path) && !existing.files.some((file) => file.path === path),
+    (path) => isSourcePath(path) && !existingPaths.has(path),
   ).length;
-  const removedSources = [...removed].filter((path) =>
-    existing.files.some((file) => file.path === path),
-  ).length;
+  const removedSources = [...removed].filter((path) => existingPaths.has(path)).length;
 
   limitations.push(
     `Incremental patch reused ${existing.files.length} stored files and re-parsed ${parsed.size}; unchanged evidence is retained verbatim.`,

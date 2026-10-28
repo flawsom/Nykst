@@ -12,7 +12,13 @@ const PROVIDERS = [
   },
   { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
   { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
-  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.5-flash-lite" },
+  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.8-flash" },
+  {
+    id: "cloudflare",
+    label: "Cloudflare Workers AI",
+    hint: "Workers AI API token",
+    model: "@cf/qwen/qwen3.8-27b",
+  },
   { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-flash" },
 ] as const;
 
@@ -70,6 +76,7 @@ function ApiSettingsDialog({
   const [provider, setProvider] = useState<ProviderId>((status.provider as ProviderId) ?? "openai");
   const [apiKey, setApiKey] = useState("");
   const [apiBaseUrl, setApiBaseUrl] = useState("");
+  const [cloudflareAccountId, setCloudflareAccountId] = useState("");
   const [model, setModel] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [reveal, setReveal] = useState(false);
@@ -93,7 +100,15 @@ function ApiSettingsDialog({
       const res = await fetch(kind === "test" ? "/api/ai/test" : "/api/ai/key", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider, apiKey, apiBaseUrl, model }),
+        body: JSON.stringify({
+          provider,
+          apiKey,
+          apiBaseUrl:
+            provider === "cloudflare"
+              ? `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId.trim()}/ai/v1`
+              : apiBaseUrl,
+          model,
+        }),
       });
       const data = (await res.json()) as { error?: string; last4?: string };
       if (!res.ok)
@@ -157,7 +172,7 @@ function ApiSettingsDialog({
             <span className="flex items-center gap-2 text-xs">
               <ShieldCheck className="text-primary size-4" />{" "}
               {status.platformDefault
-                ? `Nara Router (${status.model ?? "agnes-2.5-flash"}) active · platform key · ends in ${status.last4}`
+                ? `${connectedLabel} (${status.model ?? "configured model"}) active · platform key · ends in ${status.last4}`
                 : `${connectedLabel} connected · ends in ${status.last4}`}
             </span>
             {!status.platformDefault && (
@@ -197,6 +212,32 @@ function ApiSettingsDialog({
           </div>
         </div>
 
+        {provider === "gemini" && (
+          <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+            Gemini offers a limited free tier. Google may use unpaid API input and output to improve
+            its products; do not submit confidential code to it. Review regional and API terms
+            before use.
+          </p>
+        )}
+        {provider === "cloudflare" && (
+          <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
+            <p className="text-xs font-medium">Cloudflare Workers AI</p>
+            <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+              A shared 10,000 Neurons per day are included on the Workers Free plan. Limits and
+              model availability can change. Standard inference is not used to train models; review
+              Cloudflare's data terms and model licenses before sending code.
+            </p>
+            <label className="text-muted-foreground mt-3 block text-[11px] uppercase tracking-wide">
+              Cloudflare account ID
+              <input
+                value={cloudflareAccountId}
+                onChange={(event) => setCloudflareAccountId(event.target.value)}
+                placeholder="Account ID"
+                className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+              />
+            </label>
+          </div>
+        )}
         {provider === "custom" && (
           <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
             <p className="text-xs font-medium">Nara Router & OpenAI-compatible endpoints</p>
@@ -240,7 +281,7 @@ function ApiSettingsDialog({
 
         <div className="mt-4">
           <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
-            {provider === "custom" ? "OpenRouter API key" : "API key"}
+            {provider === "cloudflare" ? "Workers AI API token" : "API key"}
           </p>
           <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3">
             <input
@@ -275,14 +316,18 @@ function ApiSettingsDialog({
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={() => run("test")}
-            disabled={!apiKey || busy !== null}
+            disabled={
+              !apiKey || busy !== null || (provider === "cloudflare" && !cloudflareAccountId.trim())
+            }
             className="border-border hover:border-primary/40 flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-40"
           >
             {busy === "test" && <Loader2 className="size-3.5 animate-spin" />} Test connection
           </button>
           <button
             onClick={() => run("save")}
-            disabled={!apiKey || busy !== null}
+            disabled={
+              !apiKey || busy !== null || (provider === "cloudflare" && !cloudflareAccountId.trim())
+            }
             className="bg-primary text-primary-foreground flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-40"
           >
             {busy === "save" && <Loader2 className="size-3.5 animate-spin" />} Connect and save

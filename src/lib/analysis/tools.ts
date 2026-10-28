@@ -153,7 +153,7 @@ export const TOOLS = [
     name: "generate_fix_patch",
     title: "Generate a verified fix diff",
     description:
-      "For a file with unresolved imports, select exact existing targets, rewrite the import specifiers, apply the result to an in-memory graph, and return the unified diff only when the unresolved count falls without adding cycles. Pass the current file content.",
+      "Deterministically remediate four breakage classes on an in-memory clone: unresolved import rewrites, arity and restored-export compatibility shims, runtime cycle conversion to `import type`, and SQL column drift renames. A unified diff is returned only when the verified breaking score falls without adding cycles. Pass the current file content.",
     inputSchema: {
       type: "object",
       properties: {
@@ -164,9 +164,26 @@ export const TOOLS = [
         },
         issue: {
           type: "string",
-          enum: ["unresolved-import"],
-          description: "Remediation class. Currently unresolved-import.",
+          enum: ["auto", "unresolved-import", "arity-shim", "cycle", "column-drift"],
+          description:
+            "Optional remediation class. `auto` (default) evaluates all four deterministic strategies.",
         },
+        ...repositoryArg,
+      },
+      required: ["path", "content"],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false },
+  },
+  {
+    name: "run_safe_code_loop",
+    title: "Check a proposed file with the safe coding loop",
+    description:
+      "Run the four-stage in-memory loop over a complete proposed file: bounded architecture and six-layer memory, AST call-site verification (scope, overloads, namespace calls, barrel re-exports), a deterministic verdict, Trinity root-cause cards with causal chains, and a verified four-strategy auto-heal. Nothing is written; a clean overlay is not a substitute for a full typecheck and test run.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Repository-relative analyzed source file." },
+        content: { type: "string", description: "Complete proposed replacement content." },
         ...repositoryArg,
       },
       required: ["path", "content"],

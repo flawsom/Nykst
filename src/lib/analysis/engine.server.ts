@@ -286,6 +286,8 @@ export function buildAnalyzedFile(
       resources: [],
       endpoints: source.endpoints.slice(0, 100),
       symbols: source.symbols.slice(0, 100),
+      ...(source.importedSymbolUsages ? { importedSymbolUsages: source.importedSymbolUsages } : {}),
+      ...(source.reExports.length ? { reExports: source.reExports } : {}),
       columnRefs: source.columnRefs.slice(0, 500),
     },
     external,

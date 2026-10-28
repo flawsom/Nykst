@@ -54,6 +54,13 @@ export function indexAnalysis(analysis: RepoAnalysis): AnalysisIndex {
   return index;
 }
 
+export interface CausalChainHop {
+  fromPath: string;
+  toPath: string;
+  importLine: number;
+  importedSymbols: string[];
+}
+
 export interface ImpactedFile {
   path: string;
   depth: number;
@@ -63,6 +70,8 @@ export interface ImpactedFile {
   /** true when every path to this file goes through a type-only import */
   typeOnly: boolean;
   role: AnalyzedFile["role"] | "unknown";
+  /** shortest hop-by-hop chain from the changed file to this file */
+  causalChain: CausalChainHop[];
 }
 
 export type ImpactLevel = "Low" | "Moderate" | "High" | "Critical";
@@ -103,19 +112,42 @@ export function levelFor(
 export function impactOf(index: AnalysisIndex, seeds: string[], maxDepth = 12): ImpactReport {
   const seedSet = new Set(seeds);
   const reached = new Map<string, ImpactedFile>();
-  let frontier = seeds.map((path) => ({ path, typeOnly: false }));
+  let frontier = seeds.map((path) => ({
+    path,
+    typeOnly: false,
+    causalChain: [] as CausalChainHop[],
+  }));
   for (let depth = 1; depth <= maxDepth && frontier.length; depth += 1) {
-    const next: { path: string; typeOnly: boolean }[] = [];
+    const next: { path: string; typeOnly: boolean; causalChain: CausalChainHop[] }[] = [];
     for (const current of frontier) {
       for (const edge of index.dependents.get(current.path) ?? []) {
         if (seedSet.has(edge.path)) continue;
         const typeOnly = current.typeOnly || edge.typeOnly;
+        const importer = index.files.get(edge.path);
+        const importedSymbols = (importer?.importedSymbolUsages ?? [])
+          .filter((usage) => usage.importLine === edge.line)
+          .map((usage) => (usage.importedName === "*" ? usage.localName : usage.importedName));
+        const hop: CausalChainHop = {
+          fromPath: current.path,
+          toPath: edge.path,
+          importLine: edge.line,
+          importedSymbols: importedSymbols.length
+            ? [...new Set(importedSymbols)].slice(0, 6)
+            : [
+                edge.path
+                  .split("/")
+                  .pop()
+                  ?.replace(/\.[^.]+$/, "") ?? edge.path,
+              ],
+        };
+        const causalChain = [...current.causalChain, hop].slice(-20);
         const existing = reached.get(edge.path);
         if (existing) {
           // A runtime path beats a type-only one found at the same or later depth.
           if (existing.typeOnly && !typeOnly) {
             existing.typeOnly = false;
-            next.push({ path: edge.path, typeOnly: false });
+            existing.causalChain = causalChain;
+            next.push({ path: edge.path, typeOnly: false, causalChain });
           }
           continue;
         }
@@ -125,9 +157,10 @@ export function impactOf(index: AnalysisIndex, seeds: string[], maxDepth = 12): 
           via: current.path,
           line: edge.line,
           typeOnly,
-          role: index.files.get(edge.path)?.role ?? "unknown",
+          role: importer?.role ?? "unknown",
+          causalChain,
         });
-        next.push({ path: edge.path, typeOnly });
+        next.push({ path: edge.path, typeOnly, causalChain });
       }
     }
     frontier = next;

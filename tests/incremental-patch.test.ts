@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { analyzeRepository } from "../src/lib/analysis/engine.server";
 import { loadParser } from "../src/lib/analysis/parse.server";
 import { patchLoaded } from "../src/lib/analysis/patch.server";
+import { simulateChange } from "../src/lib/analysis/simulate";
 import type { AnalyzedFile, RepoAnalysis } from "../src/lib/analysis/types";
 
 const BASE: Record<string, string> = {
@@ -37,6 +38,58 @@ async function compile(sources: Record<string, string>, ref = "test") {
     contents: new Map(Object.entries(sources)),
   });
 }
+
+describe("in-memory symbol checks", () => {
+  test("detects removed imports and too-few arguments at actual call lines", async () => {
+    const sources = {
+      "src/a.ts": "export function charge(user: string) { return user; }\nexport const keep = 1;\n",
+      "src/b.ts": 'import { charge as pay, keep } from "./a";\npay("user");\nconsole.log(keep);\n',
+    };
+    const before = await compile(sources);
+    const snapshot = {
+      repository_full_name: "owner/repo",
+      created_at: "now",
+      analysis: before,
+      history: undefined,
+    };
+    const arity = await simulateChange(snapshot, [
+      {
+        path: "src/a.ts",
+        content:
+          "export function charge(user: string, amount: number) { return user; }\nexport const keep = 1;\n",
+      },
+    ]);
+    expect(arity.signature_arity_breaks).toEqual([
+      {
+        targetPath: "src/a.ts",
+        symbolName: "charge",
+        importerPath: "src/b.ts",
+        callLine: 2,
+        passedArgs: 1,
+        expectedArity: "2+",
+      },
+    ]);
+    const removed = await simulateChange(snapshot, [
+      { path: "src/a.ts", content: "export const keep = 1;\n" },
+    ]);
+    expect(removed.removed_export_callers).toEqual([
+      { targetPath: "src/a.ts", symbolName: "charge", importerPath: "src/b.ts", importerLine: 1 },
+    ]);
+    expect(before.files.find((file) => file.path === "src/a.ts")?.exports).toContain("charge");
+    const stale = {
+      ...before,
+      files: before.files.map((file) => {
+        if (file.path !== "src/b.ts") return file;
+        const { importedSymbolUsages: _oldEvidence, ...legacyFile } = file;
+        return legacyFile;
+      }),
+    };
+    const incomplete = await simulateChange({ ...snapshot, analysis: stale }, [
+      { path: "src/a.ts", content: sources["src/a.ts"] },
+    ]);
+    expect(incomplete.missing_symbol_usage_files).toEqual(["src/b.ts"]);
+  });
+});
 
 describe("incremental graph patching", () => {
   test("a patch matches a cold compile for files, edges, cycles, resources and stats", async () => {

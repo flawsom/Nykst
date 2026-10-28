@@ -144,8 +144,14 @@ describe("summarizeVerdict", () => {
   test("certifies a clean overlay", () => {
     const verdict = summarizeVerdict(base);
     expect(verdict.verdict).toBe("safe");
-    expect(verdict.headline).toBe("VERIFIED SAFE TO DEPLOY");
+    expect(verdict.headline).toBe("NO ISSUES FOUND IN ANALYZED CHECKS");
     expect(verdict.whatBroke).toEqual([]);
+  });
+
+  test("does not treat an older snapshot with missing caller evidence as a clean check", () => {
+    const verdict = summarizeVerdict({ ...base, missingSymbolUsageFiles: ["src/old.ts"] });
+    expect(verdict.verdict).toBe("breaking");
+    expect(verdict.whatBroke.join(" ")).toContain("re-analyze");
   });
 
   test("blocks a new cycle and cites the cycle path", () => {

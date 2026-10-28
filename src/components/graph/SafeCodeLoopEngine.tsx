@@ -62,9 +62,16 @@ export function SafeCodeLoopEngine({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedPack, setCopiedPack] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [generated, setGenerated] = useState<{ code: string | null; answer: string } | null>(null);
+  const [generated, setGenerated] = useState<{
+    code: string | null;
+    answer: string;
+    fallback?: boolean;
+    fallbackSummary?: string;
+    providerError?: string;
+  } | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const requestRef = useRef(0);
   const verdictRef = useRef(onVerdict);
@@ -165,15 +172,27 @@ export function SafeCodeLoopEngine({
             path,
             stage1: result.stage1,
           }),
+          // The server can return a deterministic, contract-preserving proposal
+          // when the provider is unavailable, so Stage 2 still verifies offline.
+          fallback: { path, content: draft },
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
         answer?: string;
         error?: string;
+        fallback?: boolean;
+        fallbackSummary?: string;
+        providerError?: string;
       };
       if (!response.ok || !payload.answer)
         throw new Error(payload.error ?? `Generation failed (${response.status}).`);
-      setGenerated({ code: extractGeneratedCode(payload.answer), answer: payload.answer });
+      setGenerated({
+        code: extractGeneratedCode(payload.answer),
+        answer: payload.answer,
+        ...(payload.fallback ? { fallback: true } : {}),
+        ...(payload.fallbackSummary ? { fallbackSummary: payload.fallbackSummary } : {}),
+        ...(payload.providerError ? { providerError: payload.providerError } : {}),
+      });
     } catch (cause) {
       setGenerateError(cause instanceof Error ? cause.message : "Generation failed.");
     } finally {
@@ -196,6 +215,55 @@ export function SafeCodeLoopEngine({
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
       setCopied(false);
+    }
+  };
+
+  /** The exact Stage 1 evidence envelope, formatted for any external agent. */
+  const boundedContextPack = () => {
+    if (!result) return "";
+    const evidence = result.stage1;
+    return [
+      "# Nykst bounded agent context pack",
+      `Repository: ${result.repository}@${result.ref}`,
+      `Target: ${result.path}`,
+      "",
+      "## Exported signatures",
+      ...evidence.symbols.map(
+        (symbol) =>
+          `- ${symbol.signature} (${symbol.minArity ?? 0}..${symbol.maxArity ?? "n"} args)`,
+      ),
+      "",
+      "## Direct importers",
+      ...evidence.directImporters.map(
+        (caller) =>
+          `- ${caller.path}:${caller.line} imports ${caller.imports}${caller.typeOnly ? " (type-only)" : ""}`,
+      ),
+      "",
+      "## SQL tables and columns",
+      ...evidence.contracts.map(
+        (contract) =>
+          `- ${contract.id} at ${contract.line}: ${contract.columns.join(", ") || "no literal columns"}`,
+      ),
+      "",
+      "## Six memory layers",
+      ...evidence.memory.map((layer) => `- ${layer.label}: ${layer.count} (${layer.detail})`),
+      "",
+      "## FinOps measurement",
+      `- Bounded envelope: ${evidence.finops.boundedTokens} tokens (${evidence.finops.boundedBytes} bytes)`,
+      `- Blind full-repository baseline: ${evidence.finops.blindTokens} tokens`,
+      `- Reduction: ${evidence.finops.reductionPct}%`,
+      `- Basis: ${evidence.finops.basis}`,
+    ].join("\n");
+  };
+
+  const copyContextPack = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(boundedContextPack());
+      setCopiedPack(true);
+      window.setTimeout(() => setCopiedPack(false), 1600);
+    } catch {
+      setCopiedPack(false);
     }
   };
 
@@ -399,6 +467,20 @@ export function SafeCodeLoopEngine({
               </div>
             </div>
 
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-muted-foreground font-mono text-[10px]">
+                Stage 1 envelope · signatures, importers, SQL lineage and memory in one payload
+              </p>
+              <button
+                type="button"
+                data-testid="copy-context-pack-btn"
+                onClick={() => void copyContextPack()}
+                className="border-primary/35 bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
+              >
+                <Copy className="size-3.5" />
+                {copiedPack ? "Copied context pack" : "Copy bounded agent context pack"}
+              </button>
+            </div>
             <div
               data-testid="loop-finops-meter"
               className="border-primary/25 bg-primary/5 mt-4 rounded-xl border p-3.5"
@@ -468,7 +550,8 @@ export function SafeCodeLoopEngine({
               </div>
               <p className="text-muted-foreground mt-1.5 font-mono text-[10px]">
                 Mode A · /api/ai/chat in code mode, seeded with the Stage 1 envelope (not the raw
-                repository). Requires a provider key; the provider error is shown verbatim.
+                repository). A provider key is used when available; otherwise the server returns a
+                deterministic, contract-preserving proposal and labels it.
               </p>
               {generateError && (
                 <p
@@ -485,7 +568,17 @@ export function SafeCodeLoopEngine({
                   className="border-primary/25 bg-primary/5 mt-2 rounded-lg border p-2.5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold">Grounded proposal</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="text-[11px] font-semibold">Grounded proposal</p>
+                      {generated.fallback && (
+                        <span
+                          data-testid="loop-fallback-badge"
+                          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[9px] tracking-wide text-amber-200 uppercase"
+                        >
+                          Deterministic fallback
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       data-testid="loop-apply-generated"
@@ -498,6 +591,17 @@ export function SafeCodeLoopEngine({
                       Use generated code → verify
                     </button>
                   </div>
+                  {generated.fallback && (
+                    <p
+                      data-testid="loop-fallback-note"
+                      className="mt-1.5 font-mono text-[10px] leading-relaxed text-amber-200/90"
+                    >
+                      {generated.fallbackSummary}
+                      {generated.providerError
+                        ? ` Provider was unavailable: ${generated.providerError}`
+                        : ""}
+                    </p>
+                  )}
                   <pre className="mt-2 max-h-40 overflow-auto font-mono text-[10px] whitespace-pre">
                     {generated.code}
                   </pre>
@@ -601,7 +705,7 @@ export function SafeCodeLoopEngine({
                 label="SQL column drift"
                 before={result.stage3.before.columnDrift}
                 after={result.stage3.after.columnDrift}
-                bad={result.stage3.after.columnDrift > result.stage3.before.columnDrift}
+                bad={result.stage3.columnDrift.length > 0}
               />
               <Delta
                 label="Blast radius delta"
@@ -690,22 +794,107 @@ export function SafeCodeLoopEngine({
                     </button>
                   );
                 })}
-              {!result.stage3.newCycles.length &&
+              {result.stage4.verdict === "safe" &&
+                !result.stage3.newCycles.length &&
                 !result.stage3.newUnresolved.length &&
                 result.stage3.removedExports.length === 0 &&
-                result.stage3.after.columnDrift <= result.stage3.before.columnDrift && (
+                result.stage3.brokenCallers.length === 0 &&
+                result.stage3.columnDrift.length === 0 && (
                   <p className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-200">
                     <CheckCircle2 className="size-3.5" /> The overlay introduced no new structural
                     facts.
                   </p>
                 )}
             </div>
+
+            {result.stage3.findings.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
+                  Root-cause diagnostics · what / why / architectural reason
+                </p>
+                {result.stage3.findings.map((finding) => (
+                  <article
+                    key={finding.id}
+                    data-testid="trinity-diagnostic-card"
+                    className="border-border bg-surface/60 rounded-xl border p-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <p className="text-[10px] font-semibold tracking-[0.16em] text-red-300 uppercase">
+                        What broke
+                      </p>
+                      <button
+                        type="button"
+                        data-testid="impact-teleport-row"
+                        onClick={() =>
+                          open(
+                            finding.target.path,
+                            finding.target.line,
+                            `${finding.whatBroke} ${finding.why}`,
+                          )
+                        }
+                        className="hover:text-primary font-mono text-[10px] text-red-200/90"
+                      >
+                        Jump to code {finding.target.path}:{finding.target.line} (#L
+                        {finding.target.line})
+                      </button>
+                    </div>
+                    <h5 className="mt-1 text-[12px] font-semibold">{finding.whatBroke}</h5>
+                    <p className="text-muted-foreground mt-2 text-[11px] leading-relaxed">
+                      <span className="text-[10px] font-semibold tracking-[0.14em] text-amber-300 uppercase">
+                        Why it broke{" "}
+                      </span>
+                      {finding.why}
+                    </p>
+                    <p className="text-muted-foreground mt-1.5 text-[11px] leading-relaxed">
+                      <span className="text-primary text-[10px] font-semibold tracking-[0.14em] uppercase">
+                        Architectural & historical reason{" "}
+                      </span>
+                      {finding.architecturalReason}
+                    </p>
+                    {finding.causalChain.length > 0 && (
+                      <div
+                        data-testid="causal-chain"
+                        className="mt-2 flex flex-wrap items-center gap-1 font-mono text-[10px]"
+                      >
+                        {finding.causalChain.map((hop, index) => (
+                          <span
+                            key={`${hop.fromPath}-${hop.toPath}-${index}`}
+                            className="inline-flex items-center gap-1"
+                          >
+                            <span className="text-muted-foreground">
+                              {hop.fromPath}
+                              {hop.importedSymbols.length
+                                ? ` (${hop.importedSymbols.join(", ")})`
+                                : ""}
+                            </span>
+                            <span className="text-primary/70">-&gt;</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                open(
+                                  hop.toPath,
+                                  hop.importLine,
+                                  `Causal hop from ${hop.fromPath} into ${hop.toPath} at line ${hop.importLine}.`,
+                                )
+                              }
+                              className="hover:text-primary text-red-200 underline decoration-dotted underline-offset-2"
+                            >
+                              {hop.toPath}:L{hop.importLine}
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
           </Stage>
 
           <Stage
             stage={4}
             icon={result.stage4.verdict === "safe" ? CheckCircle2 : AlertTriangle}
-            aside={result.stage4.verdict === "safe" ? "certified" : "blocked"}
+            aside={result.stage4.verdict === "safe" ? "checks passed" : "blocked"}
           >
             <div
               data-testid="loop-verdict"
@@ -726,7 +915,7 @@ export function SafeCodeLoopEngine({
                     )}
                   >
                     {result.stage4.verdict === "safe"
-                      ? "Verified safe to deploy"
+                      ? "Analyzed checks passed"
                       : "Breaking hidden dependency"}
                   </p>
                   <h4 className="mt-1 text-base font-semibold">{result.stage4.headline}</h4>
@@ -794,7 +983,7 @@ export function SafeCodeLoopEngine({
                             open(
                               caller.path,
                               caller.line,
-                              `Downstream caller at line ${caller.line}: still imports the removed contract from ${result.path}.`,
+                              `Observed usage of ${caller.imports} at line ${caller.line} may be incompatible with the proposed change in ${result.path}.`,
                             )
                           }
                           className="flex w-full items-center justify-between gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-left font-mono text-[10px] text-red-200"
@@ -816,13 +1005,13 @@ export function SafeCodeLoopEngine({
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-400/15 px-3 py-2 text-[11px] font-semibold text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Wrench className="size-3.5" />
-                      Auto-Heal with Verified Fix Patch
+                      Auto-Heal All Breaks & Verify
                     </button>
                     <span className="text-muted-foreground font-mono text-[10px]">
                       {result.stage4.heal?.verified
-                        ? `unresolved ${result.stage4.heal.unresolvedBefore} → ${result.stage4.heal.unresolvedAfter} · cycles ${result.stage4.heal.cyclesBefore} → ${result.stage4.heal.cyclesAfter}`
+                        ? `${result.stage4.heal.strategies.join(", ") || "deterministic rewrite"} · unresolved ${result.stage4.heal.unresolvedBefore} → ${result.stage4.heal.unresolvedAfter} · cycles ${result.stage4.heal.cyclesBefore} → ${result.stage4.heal.cyclesAfter}`
                         : (result.stage4.heal?.reason ??
-                          "Auto-heal is scoped to unresolved imports; remove the cycle manually.")}
+                          "No verified strategy reduced these findings; the patch was refused.")}
                     </span>
                   </div>
                   {result.stage4.heal?.patch ? (

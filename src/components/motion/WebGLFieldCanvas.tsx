@@ -108,7 +108,15 @@ void main() {
   vec3 fluidGlow = mix(teal, electric, clamp(flow.y * 0.5 + 0.5 + u_scroll * 0.3, 0.0, 1.0));
 
   vec3 color = base;
-  vec3 accent = mix(mix(teal, mint, 0.55), vec3(0.984, 0.451, 0.086), clamp(u_accentState, 0.0, 1.0));
+  // Three-state ramp: emerald when verified safe, mint cyan while simulating,
+  // coral amber when Stage 4 catches a breaking hidden dependency.
+  vec3 safeGlow = vec3(0.063, 0.725, 0.506);   // #10B981
+  vec3 simulateGlow = mint;                     // #5EEAD4
+  vec3 breakGlow = vec3(0.988, 0.451, 0.239);   // #F87171 / #FBBF24
+  float state = clamp(u_accentState, 0.0, 1.0);
+  vec3 accent = state < 0.45
+    ? mix(safeGlow, simulateGlow, state / 0.45)
+    : mix(simulateGlow, breakGlow, (state - 0.45) / 0.55);
   color += accent * wake * 0.22 * u_intensity;
   color += fluidGlow * (ribbon * 0.12 + wake * 0.22) * u_intensity;
   color += mix(teal, mint, 0.5) * (hexOuter + hexInner) * prismMask * 0.16 * u_intensity;
@@ -146,7 +154,7 @@ export function WebGLFieldCanvas({
   className?: string;
   intensity?: number;
   fixed?: boolean;
-  accentState?: "teal" | "cyan" | "amber" | number;
+  accentState?: "teal" | "emerald" | "cyan" | "amber" | number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fallback, setFallback] = useState(false);
@@ -157,7 +165,7 @@ export function WebGLFieldCanvas({
         ? 1
         : accentState === "cyan"
           ? 0.45
-          : 0;
+          : 0.05;
   const accentRef = useRef(accentValue);
   accentRef.current = accentValue;
 

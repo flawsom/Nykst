@@ -268,8 +268,8 @@ function Landing() {
     },
     {
       label: "AI ENGINE",
-      value: "Nara Router · agnes-2.5-flash + BYOK AES-256-GCM",
-      badge: "ZERO HALLUCINATION",
+      value: "Configurable AI providers · BYOK AES-256-GCM",
+      badge: "EVIDENCE-LED",
     },
     {
       label: "AGENT PROTOCOL",

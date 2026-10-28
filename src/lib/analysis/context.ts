@@ -63,6 +63,7 @@ export function impactBriefing(
         line: item.line,
         imports: item.via,
         type_only: item.typeOnly,
+        causal_chain: item.causalChain,
       })),
       entrypoints: report.entrypoints.slice(0, max).map((item) => ({
         path: item.path,

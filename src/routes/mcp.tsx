@@ -75,7 +75,11 @@ function McpGuidePage() {
     setRunningTool(true);
     try {
       const q = queryOverride ?? toolQuery;
-      if (toolName === "simulate_change" || toolName === "generate_fix_patch") {
+      if (
+        toolName === "simulate_change" ||
+        toolName === "generate_fix_patch" ||
+        toolName === "run_safe_code_loop"
+      ) {
         const res = await fetch("/api/analysis/self", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -343,7 +347,9 @@ function McpGuidePage() {
                 </div>
               </div>
 
-              {(activeTool === "simulate_change" || activeTool === "generate_fix_patch") && (
+              {(activeTool === "simulate_change" ||
+                activeTool === "generate_fix_patch" ||
+                activeTool === "run_safe_code_loop") && (
                 <div
                   data-testid="mcp-page-simulate-overlay"
                   className="border-border bg-surface/80 space-y-2 rounded-xl border p-3"
@@ -352,7 +358,9 @@ function McpGuidePage() {
                     <span className="text-primary font-mono text-[10px] tracking-wider uppercase">
                       {activeTool === "simulate_change"
                         ? `In-Memory Overlay Buffer for ${targetPath} (nothing written to disk)`
-                        : `Machine-Verified Remediation Buffer for ${targetPath} (in-memory diff generator)`}
+                        : activeTool === "run_safe_code_loop"
+                          ? `Safe-code loop buffer for ${targetPath} (nothing written to disk)`
+                          : `Machine-Verified Remediation Buffer for ${targetPath} (in-memory diff generator)`}
                     </span>
                     <button
                       type="button"

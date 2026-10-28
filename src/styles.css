@@ -172,6 +172,24 @@
   }
 }
 
+@utility animate-edge-pulse {
+  animation: nykst-edge-pulse 2.8s linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+@keyframes nykst-edge-pulse {
+  to {
+    stroke-dashoffset: -90;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-edge-pulse {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 @keyframes nykst-in {
   from {
     opacity: 0;

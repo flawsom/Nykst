@@ -1,5 +1,12 @@
 import type TS from "typescript";
-import type { ColumnRef, ExportedSymbol, SymbolParameter, SymbolProperty } from "./types";
+import type {
+  ColumnRef,
+  ExportedSymbol,
+  ImportedSymbolUsage,
+  ReExportRef,
+  SymbolParameter,
+  SymbolProperty,
+} from "./types";
 
 // Loaded on first use so a problem with the compiler can only affect analysis, never the
 // server's startup (the router bundle imports this module for every request).
@@ -50,6 +57,8 @@ export interface ParsedSource {
   symbols: ExportedSymbol[];
   /** literal table.column references read or written by client calls */
   columnRefs: ColumnRef[];
+  importedSymbolUsages?: ImportedSymbolUsage[];
+  reExports: ReExportRef[];
   loc: number;
 }
 
@@ -174,6 +183,25 @@ function typePropertiesOf(sf: TS.SourceFile, members: readonly TS.Node[]) {
     }
   }
   return properties.slice(0, 40);
+}
+
+function mergeOverloads(sf: TS.SourceFile, declarations: TS.FunctionDeclaration[]) {
+  // Overload signatures (no body) define the public contract. The implementation
+  // signature is intentionally excluded when explicit overloads exist.
+  const signatures = declarations.filter((declaration) => !declaration.body);
+  const contract = signatures.length ? signatures : declarations;
+  const widest = [...contract].sort((a, b) => b.parameters.length - a.parameters.length)[0]!;
+  const parameterSets = contract.map((declaration) => parametersOf(sf, declaration.parameters));
+  const hasRest = parameterSets.some((set) => set.parameters.some((parameter) => parameter.rest));
+  return {
+    ...parametersOf(sf, widest.parameters),
+    requiredArity: Math.min(...parameterSets.map((set) => set.requiredArity)),
+    arity: hasRest
+      ? parameterSets.reduce((max, set) => Math.max(max, set.arity), 0)
+      : Math.max(...parameterSets.map((set) => set.arity)),
+    overloadCount: signatures.length || undefined,
+    returnType: typeText(sf, contract.find((declaration) => declaration.type)?.type ?? widest.type),
+  };
 }
 
 function signatureForStatement(
@@ -311,6 +339,8 @@ export function parseSource(path: string, content: string): ParsedSource {
     endpoints: [],
     symbols: [],
     columnRefs: [],
+    importedSymbolUsages: [],
+    reExports: [],
     loc: content.split("\n").filter((line) => line.trim()).length,
   };
   const exports = new Set<string>();
@@ -321,6 +351,14 @@ export function parseSource(path: string, content: string): ParsedSource {
     symbolNames.add(symbol.name);
     result.symbols.push(symbol);
   };
+  const exportedFunctions = new Map<string, TS.FunctionDeclaration[]>();
+  for (const statement of sf.statements) {
+    if (!ts.isFunctionDeclaration(statement) || !statement.name) continue;
+    if (!hasModifier(statement, ts.SyntaxKind.ExportKeyword)) continue;
+    const list = exportedFunctions.get(statement.name.text) ?? [];
+    list.push(statement);
+    exportedFunctions.set(statement.name.text, list);
+  }
 
   for (const statement of sf.statements) {
     const exported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
@@ -331,7 +369,15 @@ export function parseSource(path: string, content: string): ParsedSource {
       if (exported) {
         const name = isDefault ? "default" : (statement.name?.text ?? "default");
         exports.add(name);
-        addSymbol({ ...signatureForStatement(sf, statement, line)!, name });
+        const overloads = statement.name ? (exportedFunctions.get(statement.name.text) ?? []) : [];
+        addSymbol({
+          ...(overloads.length > 1
+            ? mergeOverloads(sf, overloads)
+            : (signatureForStatement(sf, statement, line) ?? {})),
+          name,
+          kind: "function",
+          line,
+        } as ExportedSymbol);
       }
     } else if (ts.isClassDeclaration(statement)) {
       if (statement.name) result.classes.push(statement.name.text);
@@ -405,7 +451,110 @@ export function parseSource(path: string, content: string): ParsedSource {
     }
   }
 
+  // Record syntax-level bindings. This does not perform type resolution or scope analysis.
+  const bindings = new Map<string, ImportedSymbolUsage>();
+  for (const statement of sf.statements) {
+    if (!ts.isImportDeclaration(statement) || !statement.importClause) continue;
+    const specifier = literalText(statement.moduleSpecifier);
+    if (specifier === null) continue;
+    const clause = statement.importClause;
+    const add = (importedName: string, localName: string, isTypeOnly: boolean) => {
+      const usage: ImportedSymbolUsage = {
+        specifier,
+        importedName,
+        localName,
+        importLine: lineOf(statement),
+        isTypeOnly,
+        callSites: [],
+        propertyAccesses: [],
+      };
+      bindings.set(localName, usage);
+      result.importedSymbolUsages!.push(usage);
+    };
+    if (clause.name) add("default", clause.name.text, clause.isTypeOnly);
+    if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings))
+      add("*", clause.namedBindings.name.text, clause.isTypeOnly);
+    if (clause.namedBindings && ts.isNamedImports(clause.namedBindings))
+      for (const element of clause.namedBindings.elements)
+        add(
+          element.propertyName?.text ?? element.name.text,
+          element.name.text,
+          clause.isTypeOnly || element.isTypeOnly,
+        );
+  }
+
+  // Lexical shadowing: an inner declaration of the same name is a different value,
+  // so it must not be attributed to a top-level import binding.
+  const scopeStack: Set<string>[] = [];
+  const isShadowed = (name: string) => scopeStack.some((scope) => scope.has(name));
+
+  function declarationNamesInScope(node: TS.Node): string[] {
+    const names: string[] = [];
+    const addStatement = (statement: TS.Statement) => {
+      if (ts.isVariableStatement(statement)) {
+        for (const declaration of statement.declarationList.declarations)
+          names.push(...bindingNames(declaration.name));
+      } else if (
+        (ts.isFunctionDeclaration(statement) ||
+          ts.isClassDeclaration(statement) ||
+          ts.isEnumDeclaration(statement)) &&
+        statement.name
+      ) {
+        names.push(statement.name.text);
+      }
+    };
+    if (ts.isFunctionLike(node)) {
+      for (const parameter of node.parameters ?? []) names.push(...bindingNames(parameter.name));
+      const body = (node as { body?: TS.ConciseBody }).body;
+      if (body && ts.isBlock(body))
+        for (const statement of body.statements) addStatement(statement);
+    } else if (ts.isBlock(node) || ts.isModuleBlock(node)) {
+      for (const statement of node.statements) addStatement(statement);
+    } else if (ts.isCatchClause(node) && node.variableDeclaration) {
+      names.push(...bindingNames(node.variableDeclaration.name));
+    }
+    return names;
+  }
+
   const visit = (node: TS.Node) => {
+    const opensScope = ts.isFunctionLike(node) || ts.isBlock(node) || ts.isModuleBlock(node);
+    if (opensScope) {
+      const names = declarationNamesInScope(node);
+      if (names.length) scopeStack.push(new Set(names));
+    }
+    if (ts.isCallExpression(node)) {
+      if (ts.isIdentifier(node.expression) && !isShadowed(node.expression.text)) {
+        const usage = bindings.get(node.expression.text);
+        if (usage)
+          usage.callSites.push({
+            line: lineOf(node),
+            argCount: node.arguments.length,
+            hasSpreadArg: node.arguments.some(ts.isSpreadElement),
+          });
+      } else if (ts.isPropertyAccessExpression(node.expression)) {
+        const namespace = node.expression.expression;
+        if (ts.isIdentifier(namespace) && !isShadowed(namespace.text)) {
+          const usage = bindings.get(namespace.text);
+          if (usage && usage.importedName === "*") {
+            const member = node.expression.name.text;
+            usage.callSites.push({
+              line: lineOf(node),
+              argCount: node.arguments.length,
+              hasSpreadArg: node.arguments.some(ts.isSpreadElement),
+              member,
+            });
+          }
+        }
+      }
+    }
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      !isShadowed(node.expression.text)
+    ) {
+      const usage = bindings.get(node.expression.text);
+      if (usage) usage.propertyAccesses.push({ property: node.name.text, line: lineOf(node) });
+    }
     if (ts.isImportDeclaration(node)) {
       const specifier = literalText(node.moduleSpecifier);
       if (specifier !== null) {
@@ -437,10 +586,25 @@ export function parseSource(path: string, content: string): ParsedSource {
         });
         if (!node.exportClause) {
           exports.add(`* from ${specifier}`);
+          result.reExports.push({
+            specifier,
+            line: lineOf(node),
+            exportedName: "*",
+            importedName: "*",
+            typeOnly: node.isTypeOnly,
+          });
           addSymbol({ name: `* from ${specifier}`, kind: "re-export", line: lineOf(node) });
         } else if (ts.isNamedExports(node.exportClause))
           node.exportClause.elements.forEach((element) => {
+            const importedName = element.propertyName?.text ?? element.name.text;
             exports.add(element.name.text);
+            result.reExports.push({
+              specifier,
+              line: lineOf(node),
+              exportedName: element.name.text,
+              importedName,
+              typeOnly: node.isTypeOnly || element.isTypeOnly,
+            });
             addSymbol({ name: element.name.text, kind: "re-export", line: lineOf(node) });
           });
       }
@@ -539,10 +703,12 @@ export function parseSource(path: string, content: string): ParsedSource {
       }
     }
     ts.forEachChild(node, visit);
+    if (opensScope && declarationNamesInScope(node).length) scopeStack.pop();
   };
   visit(sf);
 
   result.exports = [...exports].slice(0, 100);
+  result.reExports = result.reExports.slice(0, 100);
   result.endpoints = result.endpoints.slice(0, 100);
   result.symbols = result.symbols.slice(0, 100);
   result.columnRefs = result.columnRefs.slice(0, 500);

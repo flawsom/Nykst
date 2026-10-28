@@ -337,10 +337,10 @@ export const GUIDES: Guide[] = [
         language: "bash",
         code: ({ url, token }) =>
           `curl -s -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${token}" \\\n  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`,
-        note: "A list of ten read-only tools means the token and URL are correct.",
+        note: "A list of eleven read-only tools means the token and URL are correct.",
       },
     ],
-    verify: "The curl command returns the ten read-only tools.",
+    verify: "The curl command returns the eleven read-only tools.",
   },
 ];
 
@@ -387,6 +387,12 @@ export const TOOLS: Tool[] = [
     summary:
       "Cross-repository OpenAPI and gRPC contract federation, matching consumer routes to provider operations.",
     example: "Which repositories call our OpenAPI or gRPC endpoints?",
+  },
+  {
+    name: "run_safe_code_loop",
+    summary:
+      "Check a proposed complete file against architecture and supported in-memory checks, without writing to the repository.",
+    example: "Check my proposed replacement for src/lib/auth.ts.",
   },
   {
     name: "get_trace_overlay",
