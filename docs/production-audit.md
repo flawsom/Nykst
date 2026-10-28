@@ -2,7 +2,7 @@
 
 Origin: `https://nykst.unifies.codes`
 Repository: `flawsom/nykst`
-Release audited: `2b57b4f`, plus the loop-feedback patch in this pass.
+Release audited: `b088b42`, on top of the scope-aware loop release `2b57b4f`.
 Method: headless Chromium against the canonical origin at desktop `1440x900` and mobile `390x844`, with the real self-analysis snapshot and no injected fixtures.
 
 ## Live audit, 15 checks
@@ -33,7 +33,7 @@ Method: headless Chromium against the canonical origin at desktop `1440x900` and
 - `bun run build`: success (Vite plus Nitro).
 - Local Playwright: **44/44** across desktop and mobile.
 - Live Playwright on the canonical origin: **44/44** across desktop and mobile, including all five spec files.
-- CI: `CI` run `40637854269` succeeded; `E2E` run `40637854222` succeeded.
+- CI: `CI` run `40639046973` succeeded; `E2E` run `40639046974` succeeded on the audited commit.
 - Vercel commit status on the pushed commit: `success`.
 - Snapshot: **216 files, 40,751 LOC, 479 internal edges, 0 unresolved imports, 0 cycles**.
 - Live loop: Stage 1 FinOps reduction is computed from the current snapshot, and the four-stage verdict plus verified heal complete in under a second over the real graph.
