@@ -90,12 +90,29 @@ test("a real unresolved import is blocked, then auto-heals to verified safe", as
   await expect(verdict).toHaveAttribute("data-verdict", "breaking", { timeout: 30000 });
   await expect(verdict).toContainText("breaking");
 
+  // The field canvas is the loop's visual feedback channel. A breaking verdict
+  // must shift it to the coral state, including on the CSS fallback path.
+  const canvas = page.locator('[data-testid="webgl-field-canvas"]');
+  await expect(canvas).toHaveAttribute("data-accent-state", "1", { timeout: 30000 });
+  const webglMode = await canvas.getAttribute("data-webgl-ready");
+  const breakingBackground =
+    webglMode === "fallback"
+      ? await canvas.evaluate((element) => getComputedStyle(element).backgroundImage)
+      : null;
+
   const heal = page.locator('[data-testid="loop-auto-heal-btn"]');
   await expect(heal).toBeEnabled({ timeout: 30000 });
   await heal.click();
 
   await expect(verdict).toHaveAttribute("data-verdict", "safe", { timeout: 30000 });
   await expect(verdict).toContainText("NO ISSUES FOUND IN ANALYZED CHECKS");
+  await expect(canvas).toHaveAttribute("data-accent-state", "0.05");
+  if (breakingBackground !== null) {
+    const safeBackground = await canvas.evaluate(
+      (element) => getComputedStyle(element).backgroundImage,
+    );
+    expect(safeBackground).not.toBe(breakingBackground);
+  }
 });
 
 test("the teleport drawer opens real source at the exact line with all three actions", async ({

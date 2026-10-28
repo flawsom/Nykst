@@ -370,8 +370,14 @@ export function WebGLFieldCanvas({
         style={
           fallback
             ? {
+                // The fallback must still reflect the loop verdict, otherwise a
+                // machine without WebGL2 loses the visual stage feedback.
                 background:
-                  "radial-gradient(circle at 50% 22%, rgba(45, 212, 191, 0.16), rgba(6, 17, 15, 0.94) 68%)",
+                  accentValue >= 0.75
+                    ? "radial-gradient(circle at 50% 22%, rgba(248, 113, 113, 0.24), rgba(251, 191, 36, 0.08), rgba(6, 17, 15, 0.96) 70%)"
+                    : accentValue >= 0.3
+                      ? "radial-gradient(circle at 50% 22%, rgba(94, 234, 212, 0.2), rgba(96, 165, 250, 0.08), rgba(6, 17, 15, 0.95) 70%)"
+                      : "radial-gradient(circle at 50% 22%, rgba(16, 185, 129, 0.2), rgba(45, 212, 191, 0.08), rgba(6, 17, 15, 0.95) 70%)",
               }
             : undefined
         }
