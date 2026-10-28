@@ -32,8 +32,8 @@ Method: headless Chromium against the canonical origin at desktop `1440x900` and
 - `bun test ./tests`: **142 passed** across 23 files, 802 assertions. The patch-time suite passed on repeated runs, including the two new scope and auto-heal cases.
 - `bun run lint`: 0 errors, 9 pre-existing shadcn fast-refresh warnings.
 - `bun run build`: success (Vite plus Nitro).
-- Local Playwright against the managed preview: **44/44** across desktop and mobile.
-- Live Playwright on the canonical origin: **44/44** across desktop and mobile, all four spec files.
+- Local Playwright against the managed preview: **48/48** across desktop and mobile.
+- Live Playwright on the canonical origin: **48/48** across desktop and mobile, all five spec files.
 - CI: `CI` run `40700573794` succeeded on `fbfb357`.
 - E2E: `E2E` run `40700573798` succeeded on `fbfb357`.
 - Vercel commit status: `success`. `/api/mcp/schema` answers `200` and `/api/analysis/self` serves the new snapshot, which proves the canonical origin is the new build.
