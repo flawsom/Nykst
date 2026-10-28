@@ -41,6 +41,17 @@ function findNodeByPath(node: GraphNode, path: string): GraphNode | null {
   return null;
 }
 
+/** The full drill chain to the node that stands for a file path, file included. */
+function chainToPath(node: GraphNode, path: string, trail: string[] = []): string[] | null {
+  const next = [...trail, node.id];
+  if (node.analysisRef?.paths.includes(path)) return next;
+  for (const child of childrenOf(node)) {
+    const hit = chainToPath(child, path, next);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
@@ -86,6 +97,26 @@ function GraphPage() {
   const [loopPath, setLoopPath] = useState("src/lib/integrations/github.ts");
   const [loopVerdict, setLoopVerdict] = useState<"safe" | "breaking" | "simulating">("safe");
   const repoRef = useRef<string | null>(null);
+
+  const selectFile = useCallback((node: GraphNode) => {
+    setSelected(node);
+    const path = node.detail?.path ?? node.analysisRef?.paths[0];
+    if (!path) return;
+    setLoopPath(path);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("file", path);
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, []);
+
+  const clearSelectedFile = useCallback(() => {
+    setSelected(null);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("file")) return;
+    url.searchParams.delete("file");
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, []);
 
   const focusLoop = (path: string) => {
     setLoopPath(path);
@@ -221,6 +252,11 @@ function GraphPage() {
       setSelected(null);
       setDossier(null);
       setCodeTarget(null);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("file");
+        window.history.replaceState({ nykstPath: [] }, "", url.toString());
+      }
       void loadLatest(false, repository);
     },
     [loadLatest],
@@ -289,12 +325,12 @@ function GraphPage() {
     const onPopState = () => {
       const next = window.history.state as { nykstPath?: string[] } | null;
       setPathIds(Array.isArray(next?.nykstPath) ? next.nykstPath : []);
-      setSelected(null);
+      clearSelectedFile();
       setDossier(null);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [clearSelectedFile]);
 
   const root = useMemo(
     () => (snapshot ? buildRepositoryGraph(snapshot.payload) : null),
@@ -319,6 +355,20 @@ function GraphPage() {
 
   const role = useRole();
   const center = path[path.length - 1] ?? null;
+
+  // Restore the file from the URL after a reload, so the same file is selected
+  // in every panel instead of falling back to the parent folder.
+  useEffect(() => {
+    if (!root || typeof window === "undefined") return;
+    const requested = new URLSearchParams(window.location.search).get("file");
+    if (!requested) return;
+    const node = findNodeByPath(root, requested);
+    const chain = chainToPath(root, requested);
+    if (!node || !chain) return;
+    setPathIds(chain.slice(0, -1));
+    setSelected(node);
+    setLoopPath(requested);
+  }, [root]);
   const allChildren = useMemo(() => (center ? childrenOf(center) : []), [center]);
   const centerChildren = useMemo(
     () => allChildren.filter((n) => canView(role, n)),
@@ -408,11 +458,11 @@ function GraphPage() {
   const drill = (node: GraphNode) => {
     if (node.expandable) {
       const nextPath = [...pathIds, node.id];
+      clearSelectedFile();
       window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
       setPathIds(nextPath);
-      setSelected(null);
     } else {
-      setSelected(node);
+      selectFile(node);
     }
   };
 
@@ -426,19 +476,23 @@ function GraphPage() {
       cursor = next;
     }
     if (node.expandable) {
+      clearSelectedFile();
       window.history.pushState({ nykstPath: chain }, "", window.location.href);
       setPathIds(chain);
-      setSelected(null);
     } else {
       const nextPath = chain.slice(0, -1);
       window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
       setPathIds(nextPath);
-      setSelected(node);
+      selectFile(node);
     }
   };
 
   const childKind = (centerChildren[0]?.kind ?? "file") as GraphNode["kind"];
-  const inspected = selected ?? center;
+  // One selected file state for the whole workspace: the header, breadcrumb,
+  // orbit highlight, dossier, mentor and Safe Code Loop all read this value.
+  const focus: GraphNode = selected ?? center;
+  const inspected = focus;
+  const selectedFile = selected?.detail?.path ?? selected?.analysisRef?.paths[0] ?? null;
 
   return (
     <main className="bg-background relative flex min-h-screen flex-col overflow-hidden lg:h-screen">
@@ -475,12 +529,12 @@ function GraphPage() {
               <button
                 onClick={() => {
                   const nextPath = pathIds.slice(0, i);
+                  clearSelectedFile();
                   window.history.pushState({ nykstPath: nextPath }, "", window.location.href);
                   setPathIds(nextPath);
-                  setSelected(null);
                 }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  i === path.length - 1
+                  !selected && i === path.length - 1
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -489,6 +543,18 @@ function GraphPage() {
               </button>
             </span>
           ))}
+          {selected && (
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="text-muted-foreground/60 px-1 text-xs">/</span>
+              <span
+                data-testid="graph-selected-file"
+                title={selected.detail?.path ?? selected.label}
+                className="bg-secondary text-foreground max-w-56 truncate rounded-lg px-3 py-1.5 font-mono text-[11px] font-semibold"
+              >
+                {selected.label}
+              </span>
+            </span>
+          )}
         </nav>
 
         <div className="order-2 flex w-full items-center gap-2 overflow-x-auto sm:order-none sm:w-auto sm:gap-3">
@@ -541,21 +607,32 @@ function GraphPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
-                {kindLabel[center.kind]}
+                {kindLabel[focus.kind]}
+                {selected ? " · selected file" : ""}
               </span>
-              <h1 className="text-2xl font-bold tracking-tight mt-0.5">{center.label}</h1>
+              <h1 className="text-2xl font-bold tracking-tight mt-0.5">{focus.label}</h1>
+              {selectedFile && (
+                <p
+                  data-testid="graph-selected-path"
+                  className="text-muted-foreground mt-1 font-mono text-[11px] break-all"
+                >
+                  {selectedFile} · {focus.detail?.loc ?? 0} lines · {focus.dependents.length}{" "}
+                  importer
+                  {focus.dependents.length === 1 ? "" : "s"}
+                </p>
+              )}
             </div>
           </div>
 
-          {center.summary && (
+          {focus.summary && (
             <p className="text-muted-foreground mt-1.5 max-w-2xl text-[12px] leading-relaxed">
-              {center.summary}
+              {focus.summary}
             </p>
           )}
 
-          {center.metrics && (
+          {focus.metrics && (
             <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
-              {center.metrics.map((m) => (
+              {focus.metrics.map((m) => (
                 <div key={m.label} className="flex items-baseline gap-1.5">
                   <span className="text-sm font-semibold">{m.value}</span>
                   <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
@@ -685,8 +762,8 @@ function GraphPage() {
           {graphView === "orbit" ? (
             <div className="relative mt-3 min-h-[390px] flex-1 sm:min-h-[520px]">
               <GraphCanvas
-                key={`${center.id}-${role.id}`}
-                center={center}
+                key={`${focus.id}-${role.id}`}
+                center={focus}
                 nodes={centerChildren}
                 childKind={childKind}
                 onSelect={drill}
@@ -694,6 +771,11 @@ function GraphPage() {
                 selectedId={selected?.id}
                 technical={true}
               />
+              {selected && (
+                <p className="text-muted-foreground mt-2 font-mono text-[10px]">
+                  Orbit centre is the selected file; the ring highlights its siblings at this level.
+                </p>
+              )}
             </div>
           ) : (
             <section
@@ -736,8 +818,10 @@ function GraphPage() {
                         data-testid="graph-node-row"
                         data-node-id={node.id}
                         data-expandable={node.expandable ? "true" : "false"}
+                        data-selected={selected?.id === node.id ? "true" : "false"}
+                        aria-current={selected?.id === node.id ? "true" : undefined}
                         onClick={() => drill(node)}
-                        className="hover:bg-surface-2 focus-visible:ring-primary/60 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className={`focus-visible:ring-primary/60 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none ${selected?.id === node.id ? "bg-primary/10 ring-primary/40 ring-1" : "hover:bg-surface-2"}`}
                       >
                         <span className="min-w-0">
                           <span
@@ -763,7 +847,10 @@ function GraphPage() {
                         type="button"
                         data-testid="graph-node-details"
                         aria-label={`Show details for ${node.label}`}
-                        onClick={() => setDossier(node)}
+                        onClick={() => {
+                          if (!node.expandable) selectFile(node);
+                          setDossier(node);
+                        }}
                         className="border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-2 shrink-0 self-center rounded-lg border px-2 py-1 text-[10px] font-semibold transition-colors"
                       >
                         Details

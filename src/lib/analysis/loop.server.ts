@@ -5,6 +5,7 @@ import { isSelfRepository } from "@/lib/code-links";
 import { impactBriefing } from "./context";
 import { generateFixPatch } from "./fix";
 import { impactOf, indexAnalysis } from "./impact";
+import { resolveExportOrigin } from "./reexports";
 import { simulateChange } from "./simulate";
 import { columnDriftFindings } from "./sql";
 import { formatSymbolSignature } from "./symbols";
@@ -72,6 +73,37 @@ export async function buildLoopRun(
     ? { name: table.name, column: "nykst_simulated_dropped_column" }
     : null;
 
+  // A real imported function with a known required arity, used by the
+  // wrong-arity control. Without one the scenario refuses instead of inventing
+  // a symbol that does not exist in this repository.
+  const callable = (() => {
+    for (const usage of file.importedSymbolUsages ?? []) {
+      if (usage.importedName === "*" || usage.isTypeOnly) continue;
+      const target = file.imports.find((ref) => ref.specifier === usage.specifier)?.target;
+      if (!target) continue;
+      const origin = resolveExportOrigin(analysis, target, usage.importedName);
+      if (!origin) continue;
+      const symbol = analysis.files
+        .find((candidate) => candidate.path === origin.path)
+        ?.symbols?.find((candidate) => candidate.name === origin.name);
+      if (
+        symbol?.kind === "function" &&
+        symbol.arity !== undefined &&
+        (symbol.requiredArity ?? 0) > 0
+      )
+        return {
+          name: usage.localName,
+          minArity: symbol.requiredArity ?? 0,
+          maxArity: symbol.arity,
+        };
+    }
+    return null;
+  })();
+  const routeFile =
+    file.role === "route" &&
+    (file.exports.includes("Route") ||
+      (file.symbols ?? []).some((symbol) => symbol.name === "Route"));
+
   const scenario: LoopScenarioId = input.scenario ?? "clean-enhancement";
   const transform =
     input.content !== undefined
@@ -84,6 +116,8 @@ export async function buildLoopRun(
           path: input.path,
           directImporter: importer?.path ?? null,
           table: tableContext,
+          callable,
+          route: routeFile,
         });
 
   const before = {
@@ -114,24 +148,42 @@ export async function buildLoopRun(
     typeOnly: item.type_only,
   }));
   const brokenCallers: LoopCaller[] = [
-    ...simulation.removed_export_callers.map((item) => ({
-      path: item.importerPath,
-      line: item.importerLine,
-      imports: item.symbolName,
-      typeOnly: false,
-    })),
-    ...simulation.signature_arity_breaks.map((item) => ({
-      path: item.importerPath,
-      line: item.callLine,
-      imports: item.symbolName,
-      typeOnly: false,
-    })),
-    ...simulation.property_contract_breaks.map((item) => ({
-      path: item.importerPath,
-      line: item.accessLine,
-      imports: `${item.symbolName}.${item.property}`,
-      typeOnly: false,
-    })),
+    ...new Map(
+      [
+        ...simulation.removed_export_callers.map((item) => ({
+          path: item.importerPath,
+          line: item.importerLine,
+          imports: item.symbolName,
+          typeOnly: false,
+        })),
+        ...simulation.signature_arity_breaks.map((item) => ({
+          path: item.importerPath,
+          line: item.callLine,
+          imports: item.symbolName,
+          typeOnly: false,
+        })),
+        ...simulation.arity_violations.map((item) => ({
+          path: item.path,
+          line: item.line,
+          imports: item.symbolName,
+          typeOnly: false,
+        })),
+        ...simulation.removed_routes.flatMap((route) =>
+          route.callers.map((caller) => ({
+            path: caller.path,
+            line: caller.line,
+            imports: `Route from ${route.path}`,
+            typeOnly: false,
+          })),
+        ),
+        ...simulation.property_contract_breaks.map((item) => ({
+          path: item.importerPath,
+          line: item.accessLine,
+          imports: `${item.symbolName}.${item.property}`,
+          typeOnly: false,
+        })),
+      ].map((item) => [`${item.path}:${item.line}:${item.imports}`, item] as const),
+    ).values(),
   ];
   const driftedResources = analysis.resources.filter((resource) =>
     resource.uses.some((use) => use.path === input.path),
@@ -198,6 +250,36 @@ export async function buildLoopRun(
       target: { path: breakage.importerPath, line: breakage.callLine },
     });
   }
+  for (const violation of simulation.arity_violations)
+    addFinding({
+      id: `arity-envelope:${violation.symbolName}:${violation.path}:${violation.line}`,
+      kind: "arity_break",
+      whatBroke: `Call outside the arity envelope: ${violation.symbolName}`,
+      why: `${violation.path}:${violation.line} passes ${violation.passedArgs} arguments, while ${violation.symbolName} accepts ${violation.minArity}..${violation.maxArity}.`,
+      architecturalReason,
+      causalChain: chainByImporter.get(violation.path) ?? [],
+      target: { path: violation.path, line: violation.line },
+    });
+  for (const route of simulation.removed_routes)
+    addFinding({
+      id: `route:${route.path}`,
+      kind: "removed_route",
+      whatBroke: `Route or service dependency removed: ${route.path}`,
+      why: route.callers.length
+        ? `${route.callers
+            .slice(0, 3)
+            .map((caller) => `${caller.path}:${caller.line}`)
+            .join(
+              ", ",
+            )} still import${route.callers.length === 1 ? "s" : ""} this route module, but the proposed content no longer exports Route.`
+        : "The route export was removed; no analyzed file still imports this route module.",
+      architecturalReason,
+      causalChain: route.callers[0] ? (chainByImporter.get(route.callers[0].path) ?? []) : [],
+      target: {
+        path: route.path,
+        line: file.symbols?.find((symbol) => symbol.name === "Route")?.line ?? 1,
+      },
+    });
   for (const breakage of simulation.property_contract_breaks) {
     addFinding({
       id: `property:${breakage.symbolName}:${breakage.property}:${breakage.importerPath}:${breakage.accessLine}`,
@@ -362,6 +444,14 @@ export async function buildLoopRun(
     })),
     removedExports,
     brokenCallers,
+    arityViolations: simulation.arity_violations.map((item) => ({
+      path: item.path,
+      line: item.line,
+      symbolName: item.symbolName,
+      passedArgs: item.passedArgs,
+      expectedArity: `${item.minArity}..${item.maxArity}`,
+    })),
+    removedRoutes: simulation.removed_routes,
     findings,
     blastDelta:
       (simulation.impact?.runtime_dependents ?? briefing.impact.runtime_dependents) -
@@ -377,6 +467,12 @@ export async function buildLoopRun(
     brokenCallers,
     newColumnDriftCount: simulation.new_column_drift.length,
     missingSymbolUsageFiles: simulation.missing_symbol_usage_files,
+    arityViolations: simulation.arity_violations.map((item) => ({
+      path: item.path,
+      line: item.line,
+      symbolName: item.symbolName,
+    })),
+    removedRoutes: simulation.removed_routes,
   });
 
   const breakingTotal = (candidate: typeof simulation) =>
@@ -384,6 +480,8 @@ export async function buildLoopRun(
     candidate.new_cycles.length +
     candidate.removed_export_callers.length +
     candidate.signature_arity_breaks.length +
+    candidate.arity_violations.length +
+    candidate.removed_routes.length +
     candidate.property_contract_breaks.length +
     candidate.new_column_drift.length;
 
@@ -458,6 +556,8 @@ export async function buildLoopRun(
             "0 new runtime cycles (Tarjan SCC)",
             "0 new unresolved imports",
             "0 new SQL column contract violations",
+            "0 calls outside a declared arity envelope",
+            "0 removed route exports still imported by the route tree",
             "No observed direct symbol contract breaks; run the full typecheck and tests",
           ]
         : [],

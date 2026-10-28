@@ -20,12 +20,17 @@ export interface DossierRow {
 }
 
 export interface DossierSection {
-  id: "importers" | "dependents" | "entrypoints" | "resources" | "drift" | "symbols";
+  id: "importers" | "dependents" | "entrypoints" | "tests" | "resources" | "drift" | "symbols";
   title: string;
   subtitle: string;
   rows: DossierRow[];
   /** total rows before the display cap */
   total: number;
+  /** what a row actually counts, so call-site rows are never shown as files or tables */
+  rowKind: string;
+  /** distinct entities behind the rows (files, tables, symbols) */
+  distinct: number;
+  emptyLabel: string;
 }
 
 export interface DossierOptions {
@@ -131,26 +136,43 @@ export function buildNodeDossier(
 
   /* ------------------------------- signatures ----------------------------- */
   const symbols: DossierRow[] = [];
+  const seenSymbols = new Set<string>();
+  const addSymbol = (row: DossierRow) => {
+    const key = `${row.path}\u0000${row.label}\u0000${row.line ?? 0}`;
+    if (seenSymbols.has(key)) return;
+    seenSymbols.add(key);
+    symbols.push(row);
+  };
   for (const path of seeds) {
     const file = index.files.get(path);
-    for (const symbol of file?.symbols ?? [])
-      symbols.push({
+    for (const symbol of file?.symbols ?? []) {
+      const name = symbol.name.trim();
+      addSymbol({
         path,
         line: symbol.line,
-        label: symbol.name,
+        // A blank cell must never look like a complete row. Name the gap and
+        // keep the reason in the detail, so a reviewer can chase it.
+        label: name || "name unavailable",
         kind: "symbol",
         detail: [
           symbol.kind,
           symbol.arity !== undefined ? `${symbol.arity} params` : null,
           symbol.returnType ? `-> ${symbol.returnType}` : null,
           symbol.typeProperties?.length ? `${symbol.typeProperties.length} properties` : null,
+          name ? null : "parser could not derive a symbol name",
         ]
           .filter(Boolean)
           .join(" · "),
       });
+    }
     if (!file?.symbols?.length)
       for (const name of file?.exports.slice(0, 20) ?? [])
-        symbols.push({ path, label: name, kind: "symbol", detail: "exported name" });
+        addSymbol({
+          path,
+          label: name.trim() || "name unavailable",
+          kind: "symbol",
+          detail: name.trim() ? "exported name" : "export list contains an empty name",
+        });
   }
 
   const rows = (items: DossierRow[]) =>
@@ -161,6 +183,8 @@ export function buildNodeDossier(
     title: string,
     subtitle: string,
     items: DossierRow[],
+    rowKind: string,
+    emptyLabel: string,
   ): DossierSection => {
     const sorted = rows(items);
     return {
@@ -169,37 +193,68 @@ export function buildNodeDossier(
       subtitle,
       rows: sorted.slice(0, limit),
       total: sorted.length,
+      rowKind,
+      distinct: new Set(sorted.map((row) => (id === "resources" ? row.label : row.path))).size,
+      emptyLabel,
     };
   };
 
   return [
-    section("importers", "Direct Importers (file:line)", "Files that import this node today", [
-      ...direct.values(),
-    ]),
+    section(
+      "importers",
+      "Direct Importers (file:line)",
+      "Files that import this node today",
+      [...direct.values()],
+      "call-site rows",
+      "No direct importer was found in this analysis.",
+    ),
     section(
       "dependents",
       "Transitive Call Chain",
       "Everything that breaks if this node changes",
       transitive,
+      "distinct files",
+      "No transitive dependent was found in this analysis.",
     ),
     section(
       "entrypoints",
       "Affected API Routes & Pages",
       "Page routes and API handlers downstream",
       entrypoints,
+      "distinct files",
+      "No page or API route reaches this node in this analysis.",
+    ),
+    section(
+      "tests",
+      "Covering Tests",
+      "Test files in the reverse dependency closure of this node",
+      tests,
+      "distinct files",
+      "No covering test file was found in this analysis.",
     ),
     section(
       "resources",
       "SQL Tables & Column Contracts",
-      "Tables, functions and buckets touched here",
+      "Call sites here, with the distinct tables behind them",
       resources,
+      "call-site rows",
+      "No SQL table, function or bucket is touched by this node.",
     ),
     section(
       "drift",
       "SQL Column Contract Drift",
       "Literal column references that disagree with the DDL",
       drift,
+      "call-site rows",
+      "No SQL column drift was found against the replayed DDL.",
     ),
-    section("symbols", "Exported signatures", "What other files are allowed to call", symbols),
+    section(
+      "symbols",
+      "Exported signatures",
+      "What other files are allowed to call",
+      symbols,
+      "export rows",
+      "No exported signature was found for this node.",
+    ),
   ];
 }

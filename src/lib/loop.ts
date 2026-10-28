@@ -40,6 +40,8 @@ export type LoopScenarioId =
   | "unresolved-import"
   | "circular-import"
   | "dropped-column"
+  | "wrong-arity"
+  | "removed-route"
   | "remove-export";
 
 export interface LoopScenario {
@@ -60,6 +62,20 @@ export const LOOP_SCENARIOS: LoopScenario[] = [
     id: "unresolved-import",
     label: "Introduce an unresolved import",
     description: "Imports a real module from the wrong folder, the classic agent slip.",
+    expectation: "breaking",
+  },
+  {
+    id: "wrong-arity",
+    label: "Call a function with the wrong arity",
+    description:
+      "Adds a call to an imported function outside its declared arity envelope, with zero or too many arguments.",
+    expectation: "breaking",
+  },
+  {
+    id: "removed-route",
+    label: "Remove a route or service dependency",
+    description:
+      "Removes the exported Route of a route file while the generated route tree still imports it. On a non-route file the loop refuses with a specific reason instead of testing a different file.",
     expectation: "breaking",
   },
   {
@@ -127,6 +143,10 @@ export interface ScenarioContext {
   directImporter?: string | null;
   /** A real table/column pair used for the column-drift scenario. */
   table?: { name: string; column: string } | null;
+  /** A real imported function and its arity envelope, used by the wrong-arity scenario. */
+  callable?: { name: string; minArity: number; maxArity: number | null } | null;
+  /** True when the target declares a file route, so its Route export can be removed. */
+  route?: boolean;
 }
 
 export interface ScenarioTransform {
@@ -184,6 +204,55 @@ export function scenarioContent(
         content: `${content}${newline}${line}${newline}`,
         summary: `Appended an import of ${context.directImporter}, which already imports this file, closing a runtime cycle.`,
         line: content.split(newline).length + 1,
+      };
+    }
+    case "wrong-arity": {
+      if (!context.callable)
+        return {
+          content,
+          summary:
+            "No imported function with a known required arity was found, so an arity break cannot be constructed here.",
+          line: null,
+        };
+      const { name, minArity, maxArity } = context.callable;
+      const tooFew = minArity > 0;
+      const args = tooFew
+        ? ""
+        : Array.from({ length: (maxArity ?? 0) + 2 }, () => "null").join(", ");
+      const call = `void ${name}(${args});`;
+      return {
+        content: `${content}${newline}${call}${newline}`,
+        summary: tooFew
+          ? `Added a call to ${name}() with 0 arguments, while its declared signature requires at least ${minArity}.`
+          : `Added a call to ${name}() with ${(maxArity ?? 0) + 2} arguments, above its declared maximum of ${maxArity}.`,
+        line: content.split(newline).length + 1,
+      };
+    }
+    case "removed-route": {
+      if (!context.route)
+        return {
+          content,
+          summary:
+            "This file does not declare a file route, so a route export cannot be removed here. The loop refuses to test a different file.",
+          line: null,
+        };
+      const routeLine = content
+        .split(newline)
+        .findIndex((line) => /^\s*export\s+const\s+Route\s*=/.test(line));
+      if (routeLine === -1)
+        return {
+          content,
+          summary:
+            "No `export const Route` declaration was found, so no route can be removed here.",
+          line: null,
+        };
+      const lines = content.split(newline);
+      lines[routeLine] = lines[routeLine]!.replace(/^(\s*)export\s+/, "$1");
+      return {
+        content: lines.join(newline),
+        summary:
+          "Removed the export keyword from the file Route declaration while the generated route tree still imports it.",
+        line: routeLine + 1,
       };
     }
     case "dropped-column": {
@@ -259,6 +328,10 @@ export interface LoopVerdictInput {
   brokenCallers: LoopCaller[];
   newColumnDriftCount?: number;
   missingSymbolUsageFiles?: string[];
+  /** Calls outside a declared arity envelope, observed in the proposed overlay. */
+  arityViolations?: { path: string; line: number; symbolName: string }[];
+  /** Routes removed while other analyzed files still import them. */
+  removedRoutes?: { path: string; role: string; callers: { path: string; line: number }[] }[];
 }
 
 export interface LoopVerdict {
@@ -271,6 +344,8 @@ export interface LoopVerdict {
   driftDelta: number;
   removedExportCount: number;
   callerCount: number;
+  arityViolationCount: number;
+  removedRouteCount: number;
 }
 
 /** Deterministic verdict. Any new structural fact is a breaking change. */
@@ -280,13 +355,17 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
   const newCycleCount = input.newCycles.length;
   const newUnresolvedCount = input.newUnresolved.length;
   const removedExportCount = input.removedExports.length;
+  const arityViolationCount = input.arityViolations?.length ?? 0;
+  const removedRouteCount = input.removedRoutes?.length ?? 0;
   const breaking =
     newCycleCount > 0 ||
     newUnresolvedCount > 0 ||
     driftDelta > 0 ||
     removedExportCount > 0 ||
     input.brokenCallers.length > 0 ||
-    (input.missingSymbolUsageFiles?.length ?? 0) > 0;
+    (input.missingSymbolUsageFiles?.length ?? 0) > 0 ||
+    arityViolationCount > 0 ||
+    removedRouteCount > 0;
 
   const whatBroke: string[] = [];
   if (newCycleCount)
@@ -311,6 +390,19 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
     whatBroke.push(
       `${input.brokenCallers.length} observed downstream usage${input.brokenCallers.length === 1 ? "" : "s"} may no longer match the contract`,
     );
+  if (arityViolationCount)
+    whatBroke.push(
+      `${arityViolationCount} call${arityViolationCount === 1 ? "" : "s"} outside a declared arity envelope: ${input
+        .arityViolations!.map((item) => `${item.symbolName} at ${item.path}:${item.line}`)
+        .join(" · ")}`,
+    );
+  if (removedRouteCount)
+    whatBroke.push(
+      `${removedRouteCount} route or service dependenc${removedRouteCount === 1 ? "y" : "ies"} removed while ${input.removedRoutes!.reduce(
+        (total, item) => total + item.callers.length,
+        0,
+      )} import${input.removedRoutes!.reduce((total, item) => total + item.callers.length, 0) === 1 ? "" : "s"} still reference it`,
+    );
 
   if (input.missingSymbolUsageFiles?.length)
     whatBroke.push(
@@ -331,6 +423,8 @@ export function summarizeVerdict(input: LoopVerdictInput): LoopVerdict {
     driftDelta,
     removedExportCount,
     callerCount: input.brokenCallers.length,
+    arityViolationCount,
+    removedRouteCount,
   };
 }
 
@@ -401,7 +495,8 @@ export interface LoopFinding {
     | "property_break"
     | "cycle"
     | "unresolved_import"
-    | "column_drift";
+    | "column_drift"
+    | "removed_route";
   whatBroke: string;
   why: string;
   architecturalReason: string;
@@ -456,6 +551,14 @@ export interface LoopRun {
     }[];
     removedExports: string[];
     brokenCallers: LoopCaller[];
+    arityViolations: {
+      path: string;
+      line: number;
+      symbolName: string;
+      passedArgs: number;
+      expectedArity: string;
+    }[];
+    removedRoutes: { path: string; role: string; callers: { path: string; line: number }[] }[];
     findings: LoopFinding[];
     blastDelta: number;
   };

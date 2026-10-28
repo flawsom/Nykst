@@ -27,7 +27,7 @@
     "/api/mcp": {
       "post": {
         "operationId": "callMcpTool",
-        "summary": "Stateless Model Context Protocol endpoint exposing the 10 read-only repository tools.",
+        "summary": "Stateless Model Context Protocol endpoint exposing the 11 read-only repository tools.",
         "tags": ["mcp"],
         "requestBody": {
           "required": true,

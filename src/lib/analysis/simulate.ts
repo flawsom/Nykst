@@ -153,8 +153,7 @@ export async function simulateChange(
           !previousUnresolved.has(`${file.path}\u0000${ref.specifier}`),
       )
       .map((ref) => ({ path: file.path, line: ref.line, specifier: ref.specifier })),
-  );
-  // Compare observed symbol usage: direct named and default bindings, namespace
+  ); // Compare observed symbol usage: direct named and default bindings, namespace
   // member calls, and re-export origins, with lexically shadowed bindings
   // filtered by the parser. Dynamically dispatched calls, computed members and
   // full TypeScript assignability still require a type-aware pass, which is why
@@ -184,6 +183,88 @@ export async function simulateChange(
   const afterByPath = new Map(after.files.map((file) => [file.path, file]));
   const changedSet = new Set(changedPaths);
   const changedTargets = new Set([...changedPaths, ...deletedPaths]);
+  /** Observed calls outside the callee's declared arity envelope. */
+  const arityViolationsIn = (analysis: RepoAnalysis, paths: Set<string>) => {
+    const files = new Map(analysis.files.map((file) => [file.path, file]));
+    const out: {
+      path: string;
+      line: number;
+      symbolName: string;
+      targetPath: string;
+      passedArgs: number;
+      minArity: number;
+      maxArity: number;
+    }[] = [];
+    for (const file of analysis.files) {
+      if (!paths.has(file.path)) continue;
+      for (const usage of file.importedSymbolUsages ?? []) {
+        const target = file.imports.find((ref) => ref.specifier === usage.specifier)?.target;
+        if (!target) continue;
+        const members =
+          usage.importedName === "*"
+            ? [...new Set(usage.callSites.flatMap((call) => (call.member ? [call.member] : [])))]
+            : [usage.importedName];
+        for (const member of members) {
+          const origin = resolveExportOrigin(analysis, target, member);
+          if (!origin) continue;
+          const symbol = files
+            .get(origin.path)
+            ?.symbols?.find((candidate) => candidate.name === origin.name);
+          if (symbol?.kind !== "function" || symbol.arity === undefined) continue;
+          const minArity = symbol.requiredArity ?? 0;
+          for (const call of usage.callSites) {
+            if (usage.importedName === "*" && call.member !== member) continue;
+            if (call.hasSpreadArg) continue;
+            if (call.argCount >= minArity && call.argCount <= symbol.arity) continue;
+            out.push({
+              path: file.path,
+              line: call.line,
+              symbolName: origin.name,
+              targetPath: origin.path,
+              passedArgs: call.argCount,
+              minArity,
+              maxArity: symbol.arity,
+            });
+          }
+        }
+      }
+    }
+    return out;
+  };
+  const changedSetForArity = new Set(changedPaths);
+  const previousArity = new Set(
+    arityViolationsIn(before, changedSetForArity).map(
+      (item) => `${item.path}\u0000${item.line}\u0000${item.symbolName}\u0000${item.passedArgs}`,
+    ),
+  );
+  const arityViolations = arityViolationsIn(after, changedSetForArity).filter(
+    (item) =>
+      !previousArity.has(
+        `${item.path}\u0000${item.line}\u0000${item.symbolName}\u0000${item.passedArgs}`,
+      ),
+  );
+  // A removed file route is only breaking when another analyzed file (for
+  // example the generated route tree) still imports that route module.
+  const removedRoutes = changedPaths.flatMap((path) => {
+    const original = beforeByPath.get(path);
+    const updated = afterByPath.get(path);
+    if (!original || !updated) return [];
+    if (original.role !== "route" && original.role !== "api") return [];
+    const hadRoute =
+      original.exports.includes("Route") ||
+      (original.symbols ?? []).some((symbol) => symbol.name === "Route");
+    const hasRoute =
+      updated.exports.includes("Route") ||
+      (updated.symbols ?? []).some((symbol) => symbol.name === "Route");
+    if (!hadRoute || hasRoute) return [];
+    const callers = before.files
+      .filter((file) => file.path !== path && file.imports.some((ref) => ref.target === path))
+      .map((file) => ({
+        path: file.path,
+        line: file.imports.find((ref) => ref.target === path)?.line ?? 1,
+      }));
+    return [{ path, role: original.role, callers }];
+  });
   const missingUsageFiles = before.files
     .filter(
       (file) =>
@@ -346,10 +427,12 @@ export async function simulateChange(
     removed_exports: removedExports,
     removed_export_callers: removedExportCallers,
     signature_arity_breaks: signatureArityBreaks,
+    arity_violations: arityViolations,
+    removed_routes: removedRoutes,
     property_contract_breaks: propertyContractBreaks,
     missing_symbol_usage_files: missingUsageFiles,
     limitations: [
-      "Symbol usage checks are syntactic, not a typecheck. Lexical shadowing, barrel re-exports, namespace calls and overload arity envelopes are resolved from the AST; dynamically dispatched calls, computed members and full TypeScript assignability are not verified. Older snapshots require re-analysis.",
+      "Symbol usage checks are syntactic, not a typecheck. Lexical shadowing, barrel re-exports, namespace calls, overload arity envelopes and observed call-site argument counts are resolved from the AST; dynamically dispatched calls, computed members and full TypeScript assignability are not verified. Older snapshots require re-analysis.",
       ...after.limitations,
       "simulate_change is an in-memory overlay: no repository, snapshot or database row is written.",
     ],

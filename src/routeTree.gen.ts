@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as LimitsRouteImport } from './routes/limits'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
@@ -22,6 +25,7 @@ import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as ApiLoopRouteImport } from './routes/api.loop'
 import { Route as ApiMcpRouteImport } from './routes/api.mcp'
 import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
+import { Route as ApiPlansRouteImport } from './routes/api.plans'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
@@ -32,6 +36,7 @@ import { Route as ApiIntegrationsConnectorsRouteImport } from './routes/api.inte
 import { Route as ApiMcpSchemaRouteImport } from './routes/api.mcp.schema'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
+import { Route as ApiWebhooksRazorpayRouteImport } from './routes/api.webhooks.razorpay'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
@@ -55,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GraphRoute = GraphRouteImport.update({
   id: '/graph',
   path: '/graph',
@@ -65,9 +75,19 @@ const IntelligenceRoute = IntelligenceRouteImport.update({
   path: '/intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LimitsRoute = LimitsRouteImport.update({
+  id: '/limits',
+  path: '/limits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -113,6 +133,11 @@ const ApiMcpRoute = ApiMcpRouteImport.update({
 const ApiMcpTokensRoute = ApiMcpTokensRouteImport.update({
   id: '/api/mcp-tokens',
   path: '/api/mcp-tokens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlansRoute = ApiPlansRouteImport.update({
+  id: '/api/plans',
+  path: '/api/plans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPreRegistrationRoute = ApiPreRegistrationRouteImport.update({
@@ -164,6 +189,11 @@ const ApiSubscriptionAdminRoute = ApiSubscriptionAdminRouteImport.update({
 const ApiWebhooksGithubRoute = ApiWebhooksGithubRouteImport.update({
   id: '/api/webhooks/github',
   path: '/api/webhooks/github',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksRazorpayRoute = ApiWebhooksRazorpayRouteImport.update({
+  id: '/api/webhooks/razorpay',
+  path: '/api/webhooks/razorpay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
@@ -271,9 +301,12 @@ const ApiIntegrationsSlackStartRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
@@ -283,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -293,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
+  '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -313,9 +348,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
@@ -325,6 +363,7 @@ export interface FileRoutesByTo {
   '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -335,6 +374,7 @@ export interface FileRoutesByTo {
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
+  '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -356,9 +396,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
+  '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
@@ -368,6 +411,7 @@ export interface FileRoutesById {
   '/api/loop': typeof ApiLoopRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
   '/api/mcp-tokens': typeof ApiMcpTokensRoute
+  '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -378,6 +422,7 @@ export interface FileRoutesById {
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
+  '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -400,9 +445,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/billing'
     | '/graph'
     | '/intelligence'
+    | '/limits'
     | '/mcp'
+    | '/privacy'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
@@ -412,6 +460,7 @@ export interface FileRouteTypes {
     | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -422,6 +471,7 @@ export interface FileRouteTypes {
     | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
+    | '/api/webhooks/razorpay'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -442,9 +492,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/billing'
     | '/graph'
     | '/intelligence'
+    | '/limits'
     | '/mcp'
+    | '/privacy'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
@@ -454,6 +507,7 @@ export interface FileRouteTypes {
     | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -464,6 +518,7 @@ export interface FileRouteTypes {
     | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
+    | '/api/webhooks/razorpay'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -484,9 +539,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/billing'
     | '/graph'
     | '/intelligence'
+    | '/limits'
     | '/mcp'
+    | '/privacy'
     | '/register'
     | '/subscribe'
     | '/.well-known/$'
@@ -496,6 +554,7 @@ export interface FileRouteTypes {
     | '/api/loop'
     | '/api/mcp'
     | '/api/mcp-tokens'
+    | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
     | '/api/ai/chat'
@@ -506,6 +565,7 @@ export interface FileRouteTypes {
     | '/api/mcp/schema'
     | '/api/subscription/admin'
     | '/api/webhooks/github'
+    | '/api/webhooks/razorpay'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -527,9 +587,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillingRoute: typeof BillingRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  LimitsRoute: typeof LimitsRoute
   McpRoute: typeof McpRoute
+  PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   SubscribeRoute: typeof SubscribeRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
@@ -539,6 +602,7 @@ export interface RootRouteChildren {
   ApiLoopRoute: typeof ApiLoopRoute
   ApiMcpRoute: typeof ApiMcpRouteWithChildren
   ApiMcpTokensRoute: typeof ApiMcpTokensRoute
+  ApiPlansRoute: typeof ApiPlansRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -547,6 +611,7 @@ export interface RootRouteChildren {
   ApiAnalysisSelfRoute: typeof ApiAnalysisSelfRoute
   ApiIntegrationsConnectorsRoute: typeof ApiIntegrationsConnectorsRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
+  ApiWebhooksRazorpayRoute: typeof ApiWebhooksRazorpayRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
@@ -575,6 +640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/graph': {
       id: '/graph'
       path: '/graph'
@@ -589,11 +661,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/limits': {
+      id: '/limits'
+      path: '/limits'
+      fullPath: '/limits'
+      preLoaderRoute: typeof LimitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -657,6 +743,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mcp-tokens'
       fullPath: '/api/mcp-tokens'
       preLoaderRoute: typeof ApiMcpTokensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/plans': {
+      id: '/api/plans'
+      path: '/api/plans'
+      fullPath: '/api/plans'
+      preLoaderRoute: typeof ApiPlansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pre-registration': {
@@ -727,6 +820,13 @@ declare module '@tanstack/react-router' {
       path: '/api/webhooks/github'
       fullPath: '/api/webhooks/github'
       preLoaderRoute: typeof ApiWebhooksGithubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/razorpay': {
+      id: '/api/webhooks/razorpay'
+      path: '/api/webhooks/razorpay'
+      fullPath: '/api/webhooks/razorpay'
+      preLoaderRoute: typeof ApiWebhooksRazorpayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/github/all-repositories': {
@@ -876,9 +976,12 @@ const ApiSubscriptionRouteWithChildren = ApiSubscriptionRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillingRoute: BillingRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
+  LimitsRoute: LimitsRoute,
   McpRoute: McpRoute,
+  PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   SubscribeRoute: SubscribeRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
@@ -888,6 +991,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLoopRoute: ApiLoopRoute,
   ApiMcpRoute: ApiMcpRouteWithChildren,
   ApiMcpTokensRoute: ApiMcpTokensRoute,
+  ApiPlansRoute: ApiPlansRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
   ApiAiChatRoute: ApiAiChatRoute,
@@ -896,6 +1000,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAnalysisSelfRoute: ApiAnalysisSelfRoute,
   ApiIntegrationsConnectorsRoute: ApiIntegrationsConnectorsRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
+  ApiWebhooksRazorpayRoute: ApiWebhooksRazorpayRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,

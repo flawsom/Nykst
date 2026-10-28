@@ -481,10 +481,15 @@ export function RepoSwitcherBar({
                   })}
                 </div>
                 {!loading && !filtered.length && (
-                  <p className="text-muted-foreground border-border rounded-lg border border-dashed p-3 text-[11px] leading-relaxed">
-                    {available.length
-                      ? "No repository matches that search."
-                      : "No repositories are available. Connect GitHub or grant the Nykst app access to the repositories you want to map."}
+                  <p
+                    data-testid="repo-search-empty"
+                    className="text-muted-foreground border-border rounded-lg border border-dashed p-3 text-[11px] leading-relaxed"
+                  >
+                    {search.includes("/")
+                      ? `${search.trim()} is treated as a public repository. Public precomputed graphs are not loaded in this build, so it cannot be browsed yet. Nykst does not fall back to sample data for a repo it cannot load.`
+                      : available.length
+                        ? "No repository matches that search."
+                        : "No repositories are available. Connect GitHub or grant the Nykst app access to the repositories you want to map."}
                   </p>
                 )}
               </div>

@@ -209,6 +209,76 @@ describe("simulate_change and generate_fix_patch", () => {
     });
   });
 
+  test("detects a call outside the callee's declared arity envelope", async () => {
+    const analysis = await analyze({
+      "src/lib/foo.ts": [
+        "export function run(a: string, b: string) {",
+        "  return a + b;",
+        "}",
+      ].join("\n"),
+      "src/lib/bar.ts": [
+        'import { run } from "./foo";',
+        'export const value = run("a", "b");',
+      ].join("\n"),
+    });
+    const result = await simulateChange(
+      {
+        repository_full_name: "flawsom/nykst",
+        created_at: "2026-01-01T00:00:00.000Z",
+        analysis,
+        history: undefined,
+      },
+      [
+        {
+          path: "src/lib/bar.ts",
+          content: ['import { run } from "./foo";', "export const value = run();"].join("\n"),
+        },
+      ],
+    );
+    expect(result.arity_violations).toHaveLength(1);
+    expect(result.arity_violations[0]).toMatchObject({
+      path: "src/lib/bar.ts",
+      line: 2,
+      symbolName: "run",
+      passedArgs: 0,
+      minArity: 2,
+      maxArity: 2,
+    });
+  });
+
+  test("detects a removed route export that the route tree still imports", async () => {
+    const route = [
+      'import { createFileRoute } from "@tanstack/react-router";',
+      'export const Route = createFileRoute("/graph")({ component: () => null });',
+    ].join("\n");
+    const analysis = await analyze({
+      "src/routes/graph.tsx": route,
+      "src/routeTree.gen.ts": [
+        'import { Route } from "./routes/graph";',
+        "export const tree = Route;",
+      ].join("\n"),
+    });
+    const result = await simulateChange(
+      {
+        repository_full_name: "flawsom/nykst",
+        created_at: "2026-01-01T00:00:00.000Z",
+        analysis,
+        history: undefined,
+      },
+      [
+        {
+          path: "src/routes/graph.tsx",
+          content: route.replace("export const Route", "const Route"),
+        },
+      ],
+    );
+    expect(result.removed_routes).toHaveLength(1);
+    expect(result.removed_routes[0]).toMatchObject({ path: "src/routes/graph.tsx", role: "route" });
+    expect(result.removed_routes[0]?.callers.map((caller) => caller.path)).toEqual([
+      "src/routeTree.gen.ts",
+    ]);
+  });
+
   test("refuses to guess when the file content is missing", async () => {
     const analysis = await analyze(lib);
     const result = await generateFixPatch(

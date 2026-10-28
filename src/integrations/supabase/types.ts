@@ -212,6 +212,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      razorpay_webhook_events: {
+        Row: {
+          amount: number | null;
+          category: string;
+          currency: string | null;
+          event_id: string;
+          event_type: string;
+          order_id: string | null;
+          payment_id: string | null;
+          processed_at: string | null;
+          reason: string;
+          received_at: string;
+          status: string;
+          subscription_id: string | null;
+        };
+        Insert: {
+          amount?: number | null;
+          category: string;
+          currency?: string | null;
+          event_id: string;
+          event_type: string;
+          order_id?: string | null;
+          payment_id?: string | null;
+          processed_at?: string | null;
+          reason?: string;
+          received_at?: string;
+          status?: string;
+          subscription_id?: string | null;
+        };
+        Update: {
+          amount?: number | null;
+          category?: string;
+          currency?: string | null;
+          event_id?: string;
+          event_type?: string;
+          order_id?: string | null;
+          payment_id?: string | null;
+          processed_at?: string | null;
+          reason?: string;
+          received_at?: string;
+          status?: string;
+          subscription_id?: string | null;
+        };
+        Relationships: [];
+      };
       root_cause_diagnoses: {
         Row: {
           confidence: string;

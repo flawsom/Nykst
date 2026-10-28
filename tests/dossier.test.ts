@@ -142,6 +142,42 @@ describe("buildNodeDossier", () => {
     expect(symbols.rows[0]!.detail).toContain("2 params");
   });
 
+  test("labels the covering-test section and the distinct SQL table count", () => {
+    const sections = buildNodeDossier(COVERED, ["src/lib/auth.ts"]);
+    expect(sections.map((section) => section.id)).toEqual([
+      "importers",
+      "dependents",
+      "entrypoints",
+      "tests",
+      "resources",
+      "drift",
+      "symbols",
+    ]);
+    const tests = sections.find((section) => section.id === "tests")!;
+    expect(tests.rows.map((row) => row.path)).toEqual(["tests/auth.test.ts"]);
+    expect(tests.rowKind).toBe("distinct files");
+
+    const resources = sections.find((section) => section.id === "resources")!;
+    expect(resources.rowKind).toBe("call-site rows");
+    expect(resources.total).toBe(1);
+    expect(resources.distinct).toBe(1);
+    expect(resources.emptyLabel).toContain("No SQL table");
+  });
+
+  test("never renders a blank symbol name as a complete row", () => {
+    const sections = buildNodeDossier(
+      analysis([
+        file("src/lib/blank.ts", {
+          symbols: [{ name: "", kind: "function", line: 3, arity: 1, requiredArity: 1 }],
+        }),
+      ]),
+      ["src/lib/blank.ts"],
+    );
+    const symbols = sections.find((section) => section.id === "symbols")!;
+    expect(symbols.rows[0]?.label).toBe("name unavailable");
+    expect(symbols.rows[0]?.detail).toContain("parser could not derive a symbol name");
+  });
+
   test("returns nothing without an analysis or matching paths", () => {
     expect(buildNodeDossier(null, ["src/lib/auth.ts"])).toEqual([]);
     expect(buildNodeDossier(COVERED, ["src/unknown.ts"])).toEqual([]);

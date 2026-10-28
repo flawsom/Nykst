@@ -92,10 +92,19 @@ export const TOOLS: McpTool[] = [
   {
     name: "search_files",
     title: "Search files and exports",
-    description: "Find analyzed files whose path or exported symbol names contain the query.",
+    description:
+      "Find analyzed files whose path or exported symbol names contain the query. Pass `path` to scope the search to one file or directory; an unknown path returns an explicit target path not found error instead of results from another path.",
     inputSchema: {
       type: "object",
-      properties: { query: { type: "string" }, ...repositoryArg },
+      properties: {
+        query: { type: "string" },
+        path: {
+          type: "string",
+          description:
+            'Optional repository-relative file or directory prefix, e.g. "src/lib/billing". Results are limited to that path.',
+        },
+        ...repositoryArg,
+      },
       required: ["query"],
     },
     annotations: { readOnlyHint: true },
@@ -444,11 +453,34 @@ export function runAnalysisTool(
   if (name === "search_files") {
     const query = str(args["query"]).toLowerCase();
     if (!query) throw new Error("Pass a query.");
+    const targetPath = str(args["path"])
+      .replace(/^\.?\//, "")
+      .replace(/\/+$/, "");
+    if (targetPath) {
+      const prefix = `${targetPath}/`;
+      const known = analysis.files.some(
+        (file) => file.path === targetPath || file.path.startsWith(prefix),
+      );
+      // Never answer a scoped query with hits from another path: a missing
+      // target is an error a caller can fix, not a silent fallback.
+      if (!known)
+        return {
+          ...header,
+          query,
+          target_path: targetPath,
+          driver: "target path not found",
+          results: [],
+          error: `Target path not found in this analysis: ${targetPath}. No results were returned from any other path.`,
+        };
+    }
+    const inScope = (path: string) =>
+      !targetPath || path === targetPath || path.startsWith(`${targetPath}/`);
     const hits = analysis.files
       .filter(
         (file) =>
-          file.path.toLowerCase().includes(query) ||
-          file.exports.some((name) => name.toLowerCase().includes(query)),
+          inScope(file.path) &&
+          (file.path.toLowerCase().includes(query) ||
+            file.exports.some((name) => name.toLowerCase().includes(query))),
       )
       .slice(0, 50)
       .map((file) => ({
@@ -461,7 +493,13 @@ export function runAnalysisTool(
           .map(summarizeSymbol),
         last_changed: historyFor(history, [file.path]).commits[0]?.date?.slice(0, 10) ?? null,
       }));
-    return { ...header, results: hits };
+    return {
+      ...header,
+      query,
+      target_path: targetPath || null,
+      driver: targetPath ? "target path and query text" : "query text only",
+      results: hits,
+    };
   }
 
   if (name === "search_memory") {

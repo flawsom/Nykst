@@ -33,6 +33,7 @@ import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
+import { PRICING, formatInr } from "@/lib/pricing";
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
 import {
   AnimatedCounter,
@@ -333,7 +334,8 @@ function Landing() {
               </a>
             </div>
             <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
-              Prefer self-serve? The eSewa flow on the pricing page takes about two minutes.
+              Prefer self-serve? The plan registry on the pricing page shows every term before you
+              sign in.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
@@ -836,31 +838,26 @@ function Landing() {
             </div>
 
             <div className="grid gap-3">
-              <div className="border-border bg-surface/80 flex items-baseline justify-between rounded-xl border px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium">Monthly</p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">Full system depth</p>
-                </div>
-                <p className="text-lg font-semibold">
-                  NPR 999<span className="text-muted-foreground text-[11px]">/mo</span>
-                </p>
-              </div>
-              <div className="border-primary/30 bg-primary/5 flex items-baseline justify-between rounded-xl border px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium">
-                    Annual <span className="text-primary font-mono text-[10px]">save 17%</span>
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
-                    For teams staying a while
+              {PRICING.plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`flex items-baseline justify-between rounded-xl border px-4 py-3 ${plan.id === "annual" ? "border-primary/30 bg-primary/5" : "border-border bg-surface/80"}`}
+                >
+                  <div>
+                    <p className="text-sm font-medium">{plan.label}</p>
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">{plan.summary}</p>
+                  </div>
+                  <p className="text-lg font-semibold">
+                    {formatInr(plan.priceInr)}
+                    <span className="text-muted-foreground text-[11px]">
+                      /{plan.period === "week" ? "wk" : plan.period === "month" ? "mo" : "yr"}
+                    </span>
                   </p>
                 </div>
-                <p className="text-lg font-semibold">
-                  NPR 9,999<span className="text-muted-foreground text-[11px]">/yr</span>
-                </p>
-              </div>
+              ))}
               <p className="text-muted-foreground text-[10px] leading-relaxed">
-                Nepal billing is handled through eSewa with manual validation. No card required to
-                start.
+                INR, GST 18 percent included. 7 days free on every plan, then the price above.
+                Checkout stays gated until the live payment gate passes; no card is taken today.
               </p>
             </div>
           </div>

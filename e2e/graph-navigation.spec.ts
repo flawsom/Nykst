@@ -50,6 +50,40 @@ test("clicking a node drills two levels and keeps the breadcrumb and dossier in 
   await expect(page.locator('[data-testid="node-dossier"]')).toContainText(childLabel);
 });
 
+test("a file click agrees across header, breadcrumb, dossier, mentor and reload", async ({
+  page,
+}) => {
+  await openGraph(page);
+  await page.getByTestId("graph-view-list").click();
+
+  // Walk down until this level contains a real file row.
+  let fileRow = page.locator('[data-testid="graph-node-row"][data-expandable="false"]').first();
+  for (let depth = 0; depth < 4 && (await fileRow.count()) === 0; depth += 1) {
+    const next = page.locator('[data-testid="graph-node-row"][data-expandable="true"]').first();
+    await expect(next).toBeVisible({ timeout: 20000 });
+    await next.click();
+    await page.waitForTimeout(500);
+    fileRow = page.locator('[data-testid="graph-node-row"][data-expandable="false"]').first();
+  }
+  await expect(fileRow).toBeVisible({ timeout: 20000 });
+  const label = (await fileRow.locator("[data-node-label]").innerText()).trim();
+  await fileRow.click();
+
+  await expect(page.locator("h1").first()).toHaveText(label);
+  await expect(page.getByTestId("graph-selected-file")).toHaveText(label);
+  await expect(page.getByTestId("graph-selected-path")).toBeVisible();
+  await expect(page.locator('[data-testid="node-dossier"]')).toContainText(label);
+  await expect(page.locator('[data-testid="graph-node-list"]')).toHaveAttribute(
+    "data-selected-id",
+    /.+/,
+  );
+  expect(new URL(page.url()).searchParams.get("file")).toContain("/");
+
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("h1").first()).toHaveText(label, { timeout: 30000 });
+  await expect(page.getByTestId("graph-selected-file")).toHaveText(label);
+});
+
 test("the loop engine follows the selected file when a citation opens it", async ({ page }) => {
   await openGraph(page);
   await page.locator('[data-testid="safe-code-loop-engine"]').scrollIntoViewIfNeeded();

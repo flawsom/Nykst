@@ -56,7 +56,9 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["paths"]
+        "required": [
+          "paths"
+        ]
       },
       "annotations": {
         "readOnlyHint": true
@@ -94,19 +96,25 @@
     {
       "name": "search_files",
       "title": "Search files and exports",
-      "description": "Find analyzed files whose path or exported symbol names contain the query.",
+      "description": "Find analyzed files whose path or exported symbol names contain the query. Pass `path` to scope the search to one file or directory; an unknown path returns an explicit target path not found error instead of results from another path.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string"
           },
+          "path": {
+            "type": "string",
+            "description": "Optional repository-relative file or directory prefix, e.g. \"src/lib/billing\". Results are limited to that path."
+          },
           "repository": {
             "type": "string",
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["query"]
+        "required": [
+          "query"
+        ]
       },
       "annotations": {
         "readOnlyHint": true
@@ -125,7 +133,13 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["adr", "diagram", "migration", "contract", "image"],
+            "enum": [
+              "adr",
+              "diagram",
+              "migration",
+              "contract",
+              "image"
+            ],
             "description": "Optional memory kind filter."
           },
           "repository": {
@@ -133,7 +147,9 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["query"]
+        "required": [
+          "query"
+        ]
       },
       "annotations": {
         "readOnlyHint": true
@@ -173,11 +189,16 @@
                   "description": "Repository-relative path."
                 },
                 "content": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "description": "New file content, or null to simulate deletion."
                 }
               },
-              "required": ["path"]
+              "required": [
+                "path"
+              ]
             },
             "description": "At most 50 file writes or deletions to overlay."
           },
@@ -193,7 +214,9 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["changes"]
+        "required": [
+          "changes"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -217,7 +240,13 @@
           },
           "issue": {
             "type": "string",
-            "enum": ["auto", "unresolved-import", "arity-shim", "cycle", "column-drift"],
+            "enum": [
+              "auto",
+              "unresolved-import",
+              "arity-shim",
+              "cycle",
+              "column-drift"
+            ],
             "description": "Optional remediation class. `auto` (default) evaluates all four deterministic strategies."
           },
           "repository": {
@@ -225,7 +254,10 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["path", "content"]
+        "required": [
+          "path",
+          "content"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -252,7 +284,10 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["path", "content"]
+        "required": [
+          "path",
+          "content"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -282,7 +317,9 @@
             "description": "owner/name of an analyzed repository. Defaults to the most recently analyzed one."
           }
         },
-        "required": ["spans"]
+        "required": [
+          "spans"
+        ]
       },
       "annotations": {
         "readOnlyHint": true

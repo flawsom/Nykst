@@ -32,11 +32,74 @@ describe("loop scenarios", () => {
     expect(LOOP_SCENARIOS.map((scenario) => scenario.id)).toEqual([
       "remove-export",
       "unresolved-import",
+      "wrong-arity",
+      "removed-route",
       "dropped-column",
       "circular-import",
       "clean-enhancement",
     ]);
     expect(LOOP_SCENARIOS.filter((scenario) => scenario.expectation === "safe")).toHaveLength(1);
+    // The six break classes Appendix L4 requires each have a control.
+    expect(
+      LOOP_SCENARIOS.filter((scenario) => scenario.expectation === "breaking").map(
+        (scenario) => scenario.id,
+      ),
+    ).toEqual([
+      "remove-export",
+      "unresolved-import",
+      "wrong-arity",
+      "removed-route",
+      "dropped-column",
+      "circular-import",
+    ]);
+  });
+
+  test("wrong arity calls an imported function outside its declared envelope", () => {
+    const tooFew = scenarioContent(SOURCE, "wrong-arity", {
+      path: "src/lib/loop.ts",
+      callable: { name: "helper", minArity: 2, maxArity: 3 },
+    });
+    expect(tooFew.content.trimEnd().endsWith("void helper();")).toBe(true);
+    expect(tooFew.summary).toContain("requires at least 2");
+    expect(tooFew.line).toBe(SOURCE.split("\n").length + 1);
+
+    const tooMany = scenarioContent(SOURCE, "wrong-arity", {
+      path: "src/lib/loop.ts",
+      callable: { name: "helper", minArity: 0, maxArity: 1 },
+    });
+    expect(tooMany.content.trimEnd().endsWith("void helper(null, null, null);")).toBe(true);
+    expect(tooMany.summary).toContain("above its declared maximum of 1");
+  });
+
+  test("wrong arity refuses when no imported callable has a known arity", () => {
+    const result = scenarioContent(SOURCE, "wrong-arity", {
+      path: "src/lib/loop.ts",
+      callable: null,
+    });
+    expect(result.content).toBe(SOURCE);
+    expect(result.line).toBeNull();
+    expect(result.summary).toContain("cannot be constructed here");
+  });
+
+  test("removed route drops the Route export only on a real route file", () => {
+    const routeSource = [
+      'import { createFileRoute } from "@tanstack/react-router";',
+      "export const Route = createFileRoute('/graph')({ component: GraphPage });",
+    ].join("\n");
+    const removed = scenarioContent(routeSource, "removed-route", {
+      path: "src/routes/graph.tsx",
+      route: true,
+    });
+    expect(removed.content).toContain("const Route = createFileRoute");
+    expect(removed.content).not.toContain("export const Route");
+
+    const refused = scenarioContent(SOURCE, "removed-route", {
+      path: "src/lib/loop.ts",
+      route: false,
+    });
+    expect(refused.content).toBe(SOURCE);
+    expect(refused.line).toBeNull();
+    expect(refused.summary).toContain("refuses to test a different file");
   });
 
   test("an unresolved import points at a missing folder and changes exactly one line", () => {

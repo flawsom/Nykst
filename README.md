@@ -580,7 +580,7 @@ sequenceDiagram
 <img src="https://img.shields.io/badge/GitHub_REST-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub API" />
 <img src="https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white" alt="Slack" />
 <img src="https://img.shields.io/badge/Jira_v3-0052CC?style=flat-square&logo=jira&logoColor=white" alt="Jira" />
-<img src="https://img.shields.io/badge/eSewa-60BB46?style=flat-square" alt="eSewa" />
+<img src="https://img.shields.io/badge/Razorpay-0C2451?style=flat-square&logo=razorpay&logoColor=white" alt="Razorpay, gated" />
 </td></tr>
 <tr><td><b>Testing</b></td><td>
 <img src="https://img.shields.io/badge/bun%3Atest-000000?style=flat-square&logo=bun&logoColor=white" alt="bun:test" />
@@ -772,16 +772,22 @@ nykst/
 │   │   │   ├── context.ts           Evidence serializer
 │   │   │   └── tools.ts             Eleven MCP tools
 │   │   ├── memory/evidence.ts       ADRs, diagrams, migrations, images
+│   │   ├── pricing.ts               INR plan registry and live gates
+│   │   ├── pricing.server.ts        Server-only plan ids and gate state
+│   │   ├── privacy.ts               DPDP purposes, data map, rights, clocks
 │   │   ├── integrations/github.ts   OAuth, tarball ingest, PR creation
 │   │   ├── connectors/              Slack and Jira
 │   │   ├── byok.server.ts           AES-256-GCM vault, Nara client
 │   │   └── mcp.server.ts            JSON-RPC MCP implementation
 │   └── routes/
 │       ├── index.tsx                Landing and live workbench
-│       ├── graph.tsx                Navigator
+│       ├── graph.tsx                Navigator with one selected-file state
 │       ├── intelligence.tsx         System memory
 │       ├── mcp.tsx                  Agent setup
-│       ├── subscribe.tsx            Billing
+│       ├── subscribe.tsx            INR plan registry, gated checkout
+│       ├── billing.tsx              Server billing state, no fake invoices
+│       ├── privacy.tsx              DPDP transparency dashboard
+│       ├── limits.tsx               Measured and unmeasured ceilings
 │       ├── admin.payments.tsx       Settlement queue
 │       └── api.*.ts                 Typed server endpoints
 ├── supabase/
@@ -802,7 +808,10 @@ nykst/
 │   ├── dossier.test.ts              File evidence dossier assembly
 │   ├── compiler-resolution.test.ts  Scopes, overloads, re-exports and auto-heal
 │   ├── mcp-contract.test.ts         Published schema matches the 11 real tools
-│   └── ...                          23 bun:test suites in total
+│   ├── pricing.test.ts              INR amounts, paise, trial and live gates
+│   ├── privacy.test.ts              DPDP purposes, notice and rights status
+│   ├── mcp-target-path.test.ts      Scoped MCP search with no fallback
+│   └── ...                          26 bun:test suites in total
 ├── e2e/
 │   ├── safe-loop.spec.ts            Four-stage loop, heal and WebGL feedback
 │   ├── graph-workspace.spec.ts      Radial graph, switcher and teleport
@@ -1172,13 +1181,13 @@ Measured on this repository with Bun 1.4.2 on Node 22, from a production build. 
 
 | Metric                       | Measured                                         | Command                                                                 |
 | :--------------------------- | :----------------------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 220 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
+| Cold AST compile, 233 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
 | Warm cached response         | **11 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
 | Incremental patch, 500 files | **under 15 ms**                                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **220 files, 41,216 LOC**                        | `jq .stats`                                                             |
-| Internal import edges        | **485, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
+| Analyzed source              | **233 files, 44,036 LOC**                        | `jq .stats`                                                             |
+| Internal import edges        | **507, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
 | Cycles                       | **0**                                            | `jq '.cycles \| length'`                                                |
-| SQL and data resources       | **12**                                           | `jq '.resources \| length'`                                             |
+| SQL and data resources       | **13**                                           | `jq '.resources \| length'`                                             |
 | External services            | **9**                                            | `jq '.services \| length'`                                              |
 | SSR landing response         | **44 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
 | Health probe, all tables     | **450 ms**                                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
@@ -1430,7 +1439,9 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Platform AI plus encrypted BYOK vault
 - [x] Multi-origin GitHub OAuth
 - [x] Slack and Jira connectors
-- [x] eSewa subscription flow with admin verification
+- [x] INR plan registry with weekly 299, monthly 699 and annual 4,999, GST included
+- [x] Gated Razorpay checkout state, trial and refund copy, and a server billing page
+- [ ] Live Razorpay checkout, webhook activation, GST invoices and eSewa migration (M2-09 gate open)
 - [x] Playwright browser matrix in CI, desktop and mobile
 - [x] Committed self-analysis snapshot for source-less production builds
 - [x] Fine-grained exported symbol signatures with parameter arity and type properties

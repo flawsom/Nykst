@@ -33,6 +33,47 @@ import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
  */
 const GENERATION_SOURCE_LIMIT = 20_000;
 
+/** The six break classes Appendix L4 requires, each with its live detection test. */
+const REQUIRED_BREAK_CLASSES: {
+  scenario: LoopScenarioId;
+  label: string;
+  detected: (run: LoopRun) => boolean;
+}[] = [
+  {
+    scenario: "remove-export",
+    label: "Removed export",
+    detected: (run) => run.stage3.removedExports.length > 0,
+  },
+  {
+    scenario: "unresolved-import",
+    label: "Unresolved import",
+    detected: (run) => run.stage3.newUnresolved.length > 0,
+  },
+  {
+    scenario: "wrong-arity",
+    label: "Wrong arity",
+    detected: (run) => run.stage3.arityViolations.length > 0,
+  },
+  {
+    scenario: "dropped-column",
+    label: "SQL column drift",
+    detected: (run) =>
+      run.stage3.columnDrift.some((finding) =>
+        finding.references.some((reference) => reference.path === run.path),
+      ),
+  },
+  {
+    scenario: "circular-import",
+    label: "Runtime cycle",
+    detected: (run) => run.stage3.newCycles.length > 0,
+  },
+  {
+    scenario: "removed-route",
+    label: "Removed route or service dependency",
+    detected: (run) => run.stage3.removedRoutes.length > 0,
+  },
+];
+
 /**
  * The four-stage closed-loop safe-coding engine.
  *
@@ -641,6 +682,47 @@ export function SafeCodeLoopEngine({
                 </button>
               ))}
             </div>
+            <div
+              data-testid="loop-class-coverage"
+              className="border-border bg-surface/60 mt-3 rounded-xl border p-2.5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[10px] font-mono tracking-[0.18em] uppercase text-muted-foreground">
+                  Break-class coverage · six required
+                </span>
+                <span className="text-muted-foreground font-mono text-[10px]">
+                  Full compliance needs 6 of 6 detected; the promotion gate needs 4 of 6
+                </span>
+              </div>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {REQUIRED_BREAK_CLASSES.map((item) => {
+                  const exercised = result.stage2.scenario === item.scenario;
+                  const detected = item.detected(result);
+                  const failed = exercised && !detected;
+                  return (
+                    <li
+                      key={item.scenario}
+                      data-testid={`loop-class-${item.scenario}`}
+                      data-detected={detected ? "true" : "false"}
+                      data-exercised={exercised ? "true" : "false"}
+                      className={cn(
+                        "rounded-full border px-2 py-1 text-[10px] font-medium",
+                        detected
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                          : failed
+                            ? "border-red-500/40 bg-red-500/10 text-red-300"
+                            : "border-border bg-card text-muted-foreground",
+                      )}
+                    >
+                      {detected ? "✓" : failed ? "✕" : "○"} {item.label}
+                      <span className="ml-1 opacity-70">
+                        {detected ? "DETECTED" : failed ? "NOT DETECTED" : "not exercised"}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <p className="text-muted-foreground mt-2 text-[11px]">
               {result.stage2.scenario === scenario ? result.stage2.summary : "Switching scenario…"}
               {result.stage2.changedLine ? (
@@ -752,6 +834,40 @@ export function SafeCodeLoopEngine({
                   </span>
                   <span className="shrink-0 font-mono text-[10px] uppercase">new cycle</span>
                 </button>
+              ))}
+              {result.stage3.arityViolations.map((item) => (
+                <button
+                  key={`arity-${item.path}:${item.line}:${item.symbolName}`}
+                  type="button"
+                  onClick={() =>
+                    open(
+                      item.path,
+                      item.line,
+                      `Call outside the arity envelope: ${item.symbolName} accepts ${item.expectedArity} arguments but this call passes ${item.passedArgs}.`,
+                    )
+                  }
+                  className="flex w-full items-start justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-left text-[11px] text-red-200"
+                >
+                  <span className="min-w-0 font-mono">
+                    {item.path}:{item.line} → {item.symbolName}({item.passedArgs} args, expected{" "}
+                    {item.expectedArity})
+                  </span>
+                  <span className="shrink-0 font-mono text-[10px] uppercase">wrong arity</span>
+                </button>
+              ))}
+              {result.stage3.removedRoutes.map((route) => (
+                <div
+                  key={`route-${route.path}`}
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200"
+                >
+                  Route export removed from <span className="font-mono">{route.path}</span>;{" "}
+                  {route.callers.length
+                    ? `${route.callers.length} analyzed file${route.callers.length === 1 ? "" : "s"} still import it (${route.callers
+                        .slice(0, 2)
+                        .map((caller) => `${caller.path}:${caller.line}`)
+                        .join(", ")}).`
+                    : "no analyzed file still imports it."}
+                </div>
               ))}
               {result.stage3.removedExports.map((name) => (
                 <div

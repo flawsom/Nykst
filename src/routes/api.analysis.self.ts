@@ -235,6 +235,7 @@ async function executeWorkbenchTool(
             .pop()
             ?.replace(/\.[jt]sx?$/, "") ||
           "graph",
+        path: validTarget,
       });
     case "search_memory":
       return runAnalysisTool(snapshot, "search_memory", {

@@ -21,6 +21,7 @@ const PRIVATE_TABLES = [
   "root_cause_diagnoses",
   "mcp_access_tokens",
   "integration_connections",
+  "razorpay_webhook_events",
 ];
 
 /** Tables anonymous visitors may only insert into (surveys and feedback). */
@@ -129,10 +130,10 @@ function rest(path: string, key: string) {
 }
 
 describe("the live project answers for every table", () => {
-  test.skipIf(!live)("service role can read all eleven tables", async () => {
+  test.skipIf(!live)("service role can read every declared table", async () => {
     const results = await Promise.all(
       created.map(async (table) => {
-        const response = await rest(`${table}?select=id&limit=1`, serviceKey!);
+        const response = await rest(`${table}?select=*&limit=1`, serviceKey!);
         return { table, status: response.status };
       }),
     );
@@ -144,7 +145,7 @@ describe("the live project answers for every table", () => {
     async () => {
       const results = await Promise.all(
         PRIVATE_TABLES.map(async (table) => {
-          const response = await rest(`${table}?select=id&limit=1`, publishableKey!);
+          const response = await rest(`${table}?select=*&limit=1`, publishableKey!);
           return { table, status: response.status };
         }),
       );

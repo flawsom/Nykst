@@ -400,6 +400,23 @@ function McpGuidePage() {
                 <FederationPanel result={toolOutput} testId="mcp-page-federation" />
               )}
 
+              {toolOutput !== null &&
+                typeof toolOutput === "object" &&
+                "driver" in (toolOutput as Record<string, unknown>) && (
+                  <p
+                    data-testid="mcp-result-driver"
+                    className="text-muted-foreground font-mono text-[10px]"
+                  >
+                    Result driver: {String((toolOutput as Record<string, unknown>)["driver"])}
+                    {(() => {
+                      const target = (toolOutput as Record<string, unknown>)["target_path"];
+                      return typeof target === "string" && target
+                        ? ` · target path ${target}`
+                        : " · no target path was used";
+                    })()}
+                  </p>
+                )}
+
               <div className="border-border bg-surface/90 max-h-96 overflow-auto rounded-xl border p-3.5 font-mono text-[11px] leading-relaxed">
                 <pre data-testid="mcp-page-output" className="text-foreground">
                   {toolOutput
