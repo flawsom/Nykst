@@ -91,15 +91,15 @@ Release numbers live here. Everything else in this README describes capability. 
 
 | Field             | Value                                                                                                                                                                            |
 | :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Verified tree     | `main` at commit `34721f1` (this README is a documentation-only commit on top of it)                                                                                              |
+| Verified tree     | `main` at commit `3b7bfee` (this README is a documentation-only commit on top of it)                                                                                              |
 | Verification date | 29 October 2026                                                                                                                                                                  |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                                                          |
-| Snapshot          | 237 source files, 44,948 LOC, 515 internal edges, 0 unresolved imports, 13 SQL and data resources, 9 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 239 source files, 45,432 LOC, 515 internal edges, 0 unresolved imports, 13 SQL and data resources, 9 external services, 0 cycles, 11 MCP tools                                |
 
 | Command                                          | Result on that tree                                            |
 | :----------------------------------------------- | :------------------------------------------------------------- |
 | `bun tsc -b --noEmit`                            | pass, 0 errors                                                 |
-| `bun test ./tests`                               | 176 pass, 0 fail, 27 files, 971 assertions, 3.5 s               |
+| `bun test ./tests`                               | 176 pass, 0 fail, 27 files, 971 assertions, 3.2 s               |
 | `bun run check:claims`                           | ok                                                             |
 | `bun run build`                                  | pass, 3.98 s Cloudflare target, 3.56 s node-server target       |
 | `bun run lint`                                   | 0 errors, 9 pre-existing `react-refresh` warnings              |
@@ -1223,9 +1223,9 @@ Three labels are used below and they are not interchangeable. Measured means a v
 
 | Metric                       | Value                                                                                              | How it was obtained                                                                 |
 | :--------------------------- | :------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| Cold AST compile, 237 files  | 1,395 ms in the committed snapshot (28 Oct 2026), 871 ms on the verification host (29 Oct 2026)    | `jq .stats.durationMs src/lib/analysis/self-snapshot.json` and `GET /api/analysis/self` |
+| Cold AST compile, 239 files  | 2,196 ms in the committed snapshot (29 Oct 2026). This is above the 1.5 s target, so the target is not claimed as met | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                          |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                   | `bun test tests/incremental-patch.test.ts`                                          |
-| Analyzed source              | **237 files, 44,948 LOC**                                                                           | `bun run check:claims`                                                              |
+| Analyzed source              | **239 files, 45,432 LOC**                                                                           | `bun run check:claims`                                                              |
 | Internal import edges        | **515, zero unresolved**                                                                            | same                                                                                |
 | Cycles                       | **0**                                                                                               | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **13**                                                                                              | `jq '.resources \| length'`                                                          |
@@ -1271,7 +1271,7 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-Last full unit run on 29 October 2026: 176 tests pass, 0 fail across 27 files, with 971 assertions in 3.5 s. The table below describes what each suite proves, not a count that floats between releases.
+Last full unit run on 29 October 2026: 176 tests pass, 0 fail across 27 files, with 971 assertions in 3.2 s. The table below describes what each suite proves, not a count that floats between releases.
 
 | Suite                               | What it proves                                                                                                                                                                                                    |
 | :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
