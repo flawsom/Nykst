@@ -687,7 +687,7 @@ function Landing() {
                 {
                   step: "1",
                   title: "Connect your GitHub account",
-                  copy: "GitHub asks which repositories Nykst may read. You can grant one repository or several, and you can remove access at any time.",
+                  copy: "GitHub asks for access to the repositories you choose, including private ones. Nykst only reads them and never writes. You can remove access at any time.",
                 },
                 {
                   step: "2",
