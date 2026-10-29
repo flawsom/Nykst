@@ -83,6 +83,46 @@ Push webhooks and local file watchers patch the graph from the changed files alo
 
 ---
 
+<a id="verified"></a>
+
+## ✅ Verified build
+
+Release numbers live here. Everything else in this README describes capability. This section states what was actually executed, on which tree, and what it returned. Nothing in it is copied from an earlier release.
+
+| Field             | Value                                                                                                                                                                            |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Verified tree     | `main` at commit `34721f1` (this README is a documentation-only commit on top of it)                                                                                              |
+| Verification date | 29 October 2026                                                                                                                                                                  |
+| Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                                                          |
+| Snapshot          | 237 source files, 44,948 LOC, 515 internal edges, 0 unresolved imports, 13 SQL and data resources, 9 external services, 0 cycles, 11 MCP tools                                |
+
+| Command                                          | Result on that tree                                            |
+| :----------------------------------------------- | :------------------------------------------------------------- |
+| `bun tsc -b --noEmit`                            | pass, 0 errors                                                 |
+| `bun test ./tests`                               | 176 pass, 0 fail, 27 files, 971 assertions, 3.5 s               |
+| `bun run check:claims`                           | ok                                                             |
+| `bun run build`                                  | pass, 3.98 s Cloudflare target, 3.56 s node-server target       |
+| `bun run lint`                                   | 0 errors, 9 pre-existing `react-refresh` warnings              |
+| Playwright public route renders, desktop 1440x900 | 9 of 9 pass                                                    |
+
+Scope of that browser result: the nine public route render tests only, run sequentially against a running app. The five journey suites and the mobile project were not completed in this verification, so they are not claimed here.
+
+### Gated, with the exact missing input
+
+| Surface                                    | State             | Missing input                                                                                   |
+| :----------------------------------------- | :---------------- | :---------------------------------------------------------------------------------------------- |
+| Razorpay live checkout                     | gated             | real plan ids for `nykst-pro-weekly`, `nykst-pro-monthly`, `nykst-pro-annual`, and a live gate sign off |
+| Weekly refund terms                        | gated             | founder decision OD-15                                                                          |
+| GST invoice breakdown                      | gated             | tax advisor confirmation; billing states "Invoice format pending tax confirmation"              |
+| Hindi notice, consent and rights controls  | gated             | translator text, counsel review, and DPO acceptance                                              |
+| Ten precomputed public graphs              | 0 of 10 ingested  | the ten owner and repo names                                                                     |
+| Repo B promotion gate                      | not run           | count verification and three hand written known answers                                          |
+| `nykst.vercel.app` redirect                | not configured    | it currently serves the same project directly                                                    |
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+---
+
 <a id="why"></a>
 
 ## 🧠 Why Nykst
@@ -811,7 +851,7 @@ nykst/
 │   ├── pricing.test.ts              INR amounts, paise, trial and live gates
 │   ├── privacy.test.ts              DPDP purposes, notice and rights status
 │   ├── mcp-target-path.test.ts      Scoped MCP search with no fallback
-│   └── ...                          26 bun:test suites in total
+│   └── ...                          27 bun:test suites in total
 ├── e2e/
 │   ├── safe-loop.spec.ts            Four-stage loop, heal and WebGL feedback
 │   ├── graph-workspace.spec.ts      Radial graph, switcher and teleport
@@ -1177,23 +1217,25 @@ bun scripts/analyze-local.ts . --changed src/lib/analysis/engine.server.ts,src/r
 
 ## 📊 Performance
 
-Measured on this repository with Bun 1.4.2 on Node 22, from a production build. The committed snapshot keeps the same counts on hosts that ship without a `src/` tree. Reproduce any row with the command beside it.
+### What has been measured, asserted, or not measured
 
-| Metric                       | Measured                                         | Command                                                                 |
-| :--------------------------- | :----------------------------------------------- | :---------------------------------------------------------------------- |
-| Cold AST compile, 233 files  | **~1.5 s**                                       | `curl -s localhost:8080/api/analysis/self \| jq .stats.durationMs`      |
-| Warm cached response         | **11 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/analysis/self` |
-| Incremental patch, 500 files | **under 15 ms**                                  | `bun test tests/incremental-patch.test.ts`                              |
-| Analyzed source              | **233 files, 44,036 LOC**                        | `jq .stats`                                                             |
-| Internal import edges        | **507, zero unresolved**                         | `jq .stats.internalEdges, .stats.unresolvedImports`                     |
-| Cycles                       | **0**                                            | `jq '.cycles \| length'`                                                |
-| SQL and data resources       | **13**                                           | `jq '.resources \| length'`                                             |
-| External services            | **9**                                            | `jq '.services \| length'`                                              |
-| SSR landing response         | **44 ms**                                        | `curl -o /dev/null -w '%{time_total}' localhost:8080/`                  |
-| Health probe, all tables     | **450 ms**                                       | `curl -o /dev/null -w '%{time_total}' localhost:8080/api/health`        |
-| Client payload, all routes   | **924 kB JS + 107 kB CSS**                       | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`     |
-| Test suite                   | Run locally for current results                  | `bun test ./tests`                                                      |
-| Playwright suite             | **5 routes + loop journeys, desktop and mobile** | `bunx playwright test`                                                  |
+Three labels are used below and they are not interchangeable. Measured means a value was read from a named build on a date. Asserted means a test enforces the bound. Not measured means no number is claimed, and the command is given so you can produce one on your own deployment.
+
+| Metric                       | Value                                                                                              | How it was obtained                                                                 |
+| :--------------------------- | :------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| Cold AST compile, 237 files  | 1,395 ms in the committed snapshot (28 Oct 2026), 871 ms on the verification host (29 Oct 2026)    | `jq .stats.durationMs src/lib/analysis/self-snapshot.json` and `GET /api/analysis/self` |
+| Incremental patch, 500 files | asserted under 15 ms, test passes                                                                   | `bun test tests/incremental-patch.test.ts`                                          |
+| Analyzed source              | **237 files, 44,948 LOC**                                                                           | `bun run check:claims`                                                              |
+| Internal import edges        | **515, zero unresolved**                                                                            | same                                                                                |
+| Cycles                       | **0**                                                                                               | `jq '.cycles \| length'`                                                             |
+| SQL and data resources       | **13**                                                                                              | `jq '.resources \| length'`                                                          |
+| External services            | **9**                                                                                               | `jq '.services \| length'`                                                           |
+| Warm cached response         | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/api/analysis/self`                  |
+| SSR landing response         | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/`                                   |
+| Health probe, all tables     | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/api/health`                         |
+| Client payload, all routes   | not measured in this verification                                                                   | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                   |
+| Test suite                   | 176 pass, 0 fail on 29 Oct 2026                                                                     | `bun test ./tests`                                                                  |
+| Playwright suite             | public route renders, 9 of 9 desktop on 29 Oct 2026                                                 | `E2E_BASE_URL=<url> bunx playwright test e2e/routes.spec.ts`                        |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
@@ -1229,6 +1271,8 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
+Last full unit run on 29 October 2026: 176 tests pass, 0 fail across 27 files, with 971 assertions in 3.5 s. The table below describes what each suite proves, not a count that floats between releases.
+
 | Suite                               | What it proves                                                                                                                                                                                                    |
 | :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tests/schema.test.ts`              | Every table and column in `supabase/schema.sql` exists in the generated types, RLS is enabled everywhere, private tables are not readable by `anon`, and live anonymous requests are rejected                     |
@@ -1249,7 +1293,8 @@ bun run screens               # refresh the README captures
 | `tests/dossier.test.ts`             | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                 |
 | `e2e/routes.spec.ts`                | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
 | `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), the list view exposes every child with a real filter, `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link     |
-| `e2e/safe-loop.spec.ts`             | Real Stage 1 evidence, Stage 2 generation, a breaking overlay, verified auto-heal, teleport, repo switching, and the WebGL canvas                                                                                 |
+| `e2e/graph-navigation.spec.ts`      | Ten file selections in a row keep the centre header, breadcrumb, dossier, mentor and `?file=` URL on the full path, and a reload restores the same file                                                           |
+| `e2e/safe-loop.spec.ts`             | Real Stage 1 evidence, Stage 2 generation, all six break classes detected with a verified patch or a named refusal, teleport, repo switching, and the WebGL canvas                                              |
 | `e2e/mcp-tools.spec.ts`             | All eleven MCP tools, real `search_files` output, `simulate_change` overlays, `generate_fix_patch`, trace overlays, and federation data                                                                           |
 
 The unit suite runs offline for the graph, connector, and snapshot tests. The schema test skips live assertions when Supabase credentials are absent, so CI stays green without secrets.
@@ -1267,10 +1312,12 @@ GitHub Actions runs the typecheck and unit suites in [`ci.yml`](.github/workflow
 | Surface              | URL                                                          | Notes                                          |
 | :------------------- | :----------------------------------------------------------- | :--------------------------------------------- |
 | Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes)           | Custom domain on Vercel                        |
-| Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | Same project and build                         |
+| Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | Serves the same project, no redirect to the canonical domain |
 | Source               | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch |
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
+
+Production deploys from `main`. A failed build does not replace the running deployment: the previous production deployment keeps serving, and `bunx vercel rollback` or promoting the last healthy deployment in the Vercel dashboard restores it explicitly. No build in this repository rewrites data, so a rollback never needs a database step.
 
 <details open>
 <summary><b>Vercel (primary, custom domain)</b></summary>
