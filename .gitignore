@@ -27,10 +27,22 @@ dist-ssr
 # Test artifacts
 playwright-report/
 test-results/
+coverage/
 
 # Agent and tool run artifacts
 BUFFY_TASK_OUTPUT/
 .nykst/
+.vly-run/
+
+# Agent skill installer artifacts (not product code)
+.claude/
+agent/
+.agents/
+skills-lock.json
+
+# Local planning and handoff documents for a single run
+NYKST_PRD_*.md
+NYKST_HANDOFF_*.md
 
 # Editor directories and files
 .vscode/*
@@ -45,3 +57,4 @@ BUFFY_TASK_OUTPUT/
 .env
 .vercel
 .env*
+!.env.example
