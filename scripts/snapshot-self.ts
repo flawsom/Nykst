@@ -71,6 +71,14 @@ if (!existsSync(join(root, "src"))) {
 }
 writeFileSync(out, `${JSON.stringify(analysis)}\n`);
 
+// A small stats-only copy for client surfaces. Importing the full snapshot into a
+// route module forces the type checker to walk a megabyte of JSON, and the whole
+// file would reach the browser bundle.
+writeFileSync(
+  join(root, "src/lib/analysis/self-snapshot-stats.json"),
+  `${JSON.stringify({ ...analysis.stats, generatedAt: analysis.generatedAt }, null, 2)}\n`,
+);
+
 console.log(
   JSON.stringify(
     {

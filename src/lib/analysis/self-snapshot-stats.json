@@ -1,0 +1,12 @@
+{
+  "treeFiles": 303,
+  "sourceFiles": 239,
+  "analyzedFiles": 239,
+  "internalEdges": 515,
+  "externalPackages": 53,
+  "unresolvedImports": 0,
+  "skippedFiles": 3,
+  "loc": 45432,
+  "durationMs": 2196,
+  "generatedAt": "2026-10-29T04:35:30.229Z"
+}

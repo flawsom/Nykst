@@ -23,6 +23,9 @@ const schema = JSON.parse(readFileSync("docs/mcp-tools.json", "utf8")) as {
   toolCount: number;
   tools: unknown;
 };
+const statsModule = JSON.parse(
+  readFileSync("src/lib/analysis/self-snapshot-stats.json", "utf8"),
+) as Record<string, number | string>;
 
 const failures: string[] = [];
 const check = (ok: boolean, message: string) => {
@@ -84,10 +87,18 @@ walk("src");
 for (const path of sourceFiles) {
   const text = readFileSync(path, "utf8");
   check(
-    !/\b10\s+(?:read-only|Read-Only)\b|\bten\s+read-only\b/i.test(text),
+    !/\b10\s+(?:read-only|Read-Only|readOnlyHint)\b|\bten\s+read-only\b/i.test(text),
     `${path} still says ten or 10 read-only tools; use TOOLS.length.`,
   );
 }
+
+check(
+  statsModule.sourceFiles === stats.sourceFiles &&
+    statsModule.loc === stats.loc &&
+    statsModule.internalEdges === stats.internalEdges &&
+    statsModule.unresolvedImports === stats.unresolvedImports,
+  "src/lib/analysis/self-snapshot-stats.json is stale; run bun run snapshot:self.",
+);
 
 check(schema.toolCount === TOOLS.length, "docs/mcp-tools.json toolCount is stale.");
 check(

@@ -34,6 +34,8 @@ import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { PRICING, formatInr } from "@/lib/pricing";
+import snapshotStats from "@/lib/analysis/self-snapshot-stats.json";
+import mcpSchema from "../../docs/mcp-tools.json";
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
 import {
   AnimatedCounter,
@@ -234,17 +236,10 @@ function Landing() {
     document.getElementById("live-workbench")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const stats = liveSelf?.stats ?? {
-    treeFiles: 279,
-    sourceFiles: 156,
-    analyzedFiles: 156,
-    internalEdges: 297,
-    externalPackages: 52,
-    unresolvedImports: 0,
-    skippedFiles: 0,
-    loc: 22797,
-    durationMs: 1370,
-  };
+  // Before the client fetch resolves, render the committed snapshot. An invented
+  // fallback here used to print 156 files and 22,797 LOC on a 237 file tree, so
+  // the page contradicted both the graph and the README.
+  const stats = liveSelf?.stats ?? snapshotStats;
 
   const marqueeItems = [
     {
@@ -274,7 +269,7 @@ function Landing() {
     },
     {
       label: "AGENT PROTOCOL",
-      value: "Streamable HTTP MCP (/api/mcp) · 10 readOnlyHint tools",
+      value: `Streamable HTTP MCP (/api/mcp) · ${mcpSchema.toolCount} readOnlyHint tools`,
       badge: "MCP 2025-06-18",
     },
   ];
