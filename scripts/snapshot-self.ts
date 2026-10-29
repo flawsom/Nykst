@@ -30,6 +30,12 @@ const IGNORED = new Set([
   "playwright-report",
   "test-results",
   "BUFFY_TASK_OUTPUT",
+  // Agent skill installer output is gitignored, so it must not enter a snapshot
+  // that CI has to reproduce from a clean checkout.
+  ".claude",
+  "agent",
+  ".agents",
+  "skills-lock.json",
 ]);
 
 const root = process.cwd();
