@@ -213,4 +213,21 @@ describe("trinity diagnostics", () => {
     expect(run.stage4.heal?.verified).toBe(true);
     expect(run.stage4.heal?.strategies).toContain("arity_and_export_compatibility_shim");
   });
+
+  test("refuses to present an unverified patch for a wrong-arity break", async () => {
+    const before = await snapshot({
+      "src/lib/helper.ts":
+        "export function helper(name: string, count: number) { return name.repeat(count); }\n",
+      "src/lib/loop.ts": 'import { helper } from "./helper";\nexport const x = helper("a", 2);\n',
+    });
+    const broken = 'import { helper } from "./helper";\nexport const x = helper();\n';
+    const run = await buildLoopRun(before, { path: "src/lib/loop.ts", content: broken });
+    expect(run.stage3.arityViolations).toHaveLength(1);
+    expect(run.stage4.verdict).toBe("breaking");
+    expect(run.stage4.heal?.verified).toBe(false);
+    expect(run.stage4.heal?.patch).toBe("");
+    expect(run.stage4.heal?.healedContent).toBeNull();
+    expect(run.stage4.heal?.reason).toContain("Wrong arity: helper");
+    expect(run.stage4.heal?.reason).toContain("passes 0 arguments");
+  });
 });

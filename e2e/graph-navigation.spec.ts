@@ -84,6 +84,41 @@ test("a file click agrees across header, breadcrumb, dossier, mentor and reload"
   await expect(page.getByTestId("graph-selected-file")).toHaveText(label);
 });
 
+test("ten file clicks in a row keep header, breadcrumb, dossier, mentor and URL on the full path", async ({
+  page,
+}) => {
+  await openGraph(page);
+  await page.getByTestId("graph-view-list").click();
+
+  // src/routes holds far more than ten real file rows, all directly visible at
+  // this level, so the same list stays in place while files are selected.
+  const routesRow = page
+    .locator('[data-testid="graph-node-row"]')
+    .filter({ hasText: "src/routes" })
+    .first();
+  await expect(routesRow).toBeVisible({ timeout: 20000 });
+  await routesRow.click();
+
+  const rows = page.locator('[data-testid="graph-node-row"][data-expandable="false"]');
+  await expect(rows.nth(9)).toBeVisible({ timeout: 20000 });
+
+  for (let index = 0; index < 10; index += 1) {
+    const row = rows.nth(index);
+    const label = (await row.locator("[data-node-label]").innerText()).trim();
+    await row.click();
+
+    const filePath = new URL(page.url()).searchParams.get("file");
+    expect(filePath, `click ${index + 1} writes the full path to the URL`).toContain(
+      `src/routes/${label}`,
+    );
+    await expect(page.locator("h1").first()).toHaveText(label);
+    await expect(page.getByTestId("graph-selected-file")).toHaveText(label);
+    await expect(page.getByTestId("graph-selected-path")).toContainText(filePath!);
+    await expect(page.locator('[data-testid="node-dossier"]')).toContainText(label);
+    await expect(page.getByTestId("mentor-panel")).toHaveAttribute("data-node-path", filePath!);
+  }
+});
+
 test("the loop engine follows the selected file when a citation opens it", async ({ page }) => {
   await openGraph(page);
   await page.locator('[data-testid="safe-code-loop-engine"]').scrollIntoViewIfNeeded();

@@ -385,7 +385,7 @@ export function SafeCodeLoopEngine({
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="border-border bg-surface/50 rounded-xl border p-3.5">
                 <p className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
-                  Exported signatures · {result.stage1.file.role} · {result.stage1.file.loc} LOC
+                  {`Exported signatures · ${result.stage1.file.role} · ${result.stage1.file.loc} analyzed source LOC`}
                 </p>
                 <div className="mt-2 space-y-1.5">
                   {result.stage1.symbols.length ? (
@@ -424,6 +424,9 @@ export function SafeCodeLoopEngine({
                   <Mini label="Entrypoints" value={result.stage1.transitive.entrypoints.length} />
                   <Mini label="Covering tests" value={result.stage1.transitive.tests.length} />
                 </div>
+                <p className="text-muted-foreground mt-2 font-mono text-[9px] leading-relaxed">
+                  {`Entrypoints are analyzed route and API files in the reverse closure, the same definition the dossier shows as affected routes and pages. Stage 1 reports analyzed source LOC; Stage 2 reports buffer lines after the simulated edit.`}
+                </p>
                 <div className="mt-2 max-h-28 space-y-1 overflow-y-auto pr-1">
                   {result.stage1.directImporters.slice(0, 5).map((caller) => (
                     <button
@@ -559,7 +562,7 @@ export function SafeCodeLoopEngine({
           <Stage
             stage={2}
             icon={FileCode2}
-            aside={`${result.stage2.content.split("\n").length} lines · edit in place`}
+            aside={`${result.stage2.content.split("\n").length} buffer lines ·${result.stage1.file.loc} analyzed source LOC · edit in place`}
           >
             <div className="border-border bg-surface/50 rounded-xl border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -1123,15 +1126,22 @@ export function SafeCodeLoopEngine({
                       <Wrench className="size-3.5" />
                       Auto-Heal All Breaks & Verify
                     </button>
-                    <span className="text-muted-foreground font-mono text-[10px]">
+                    <span
+                      data-testid="loop-heal-status"
+                      data-verified={result.stage4.heal?.verified ? "true" : "false"}
+                      className="text-muted-foreground font-mono text-[10px]"
+                    >
                       {result.stage4.heal?.verified
                         ? `${result.stage4.heal.strategies.join(", ") || "deterministic rewrite"} · unresolved ${result.stage4.heal.unresolvedBefore} → ${result.stage4.heal.unresolvedAfter} · cycles ${result.stage4.heal.cyclesBefore} → ${result.stage4.heal.cyclesAfter}`
                         : (result.stage4.heal?.reason ??
                           "No verified strategy reduced these findings; the patch was refused.")}
                     </span>
                   </div>
-                  {result.stage4.heal?.patch ? (
-                    <pre className="border-border bg-surface mt-2 max-h-48 overflow-auto rounded-lg border p-2.5 font-mono text-[10px] whitespace-pre">
+                  {result.stage4.heal?.verified && result.stage4.heal.patch ? (
+                    <pre
+                      data-testid="loop-heal-patch"
+                      className="border-border bg-surface mt-2 max-h-48 overflow-auto rounded-lg border p-2.5 font-mono text-[10px] whitespace-pre"
+                    >
                       {result.stage4.heal.patch}
                     </pre>
                   ) : null}

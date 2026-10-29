@@ -485,6 +485,39 @@ export async function buildLoopRun(
     candidate.property_contract_breaks.length +
     candidate.new_column_drift.length;
 
+  /**
+   * A refusal must name the check that failed for this break class. Reusing one
+   * generic "cycle" sentence for SQL drift or arity was the exact defect D04
+   * recorded, so each class gets its own reason.
+   */
+  const refusalReason = (fallback?: string) => {
+    const cycle = stage3.newCycles[0];
+    if (cycle)
+      return `New runtime cycle: ${cycle.join(" -> ")} -> ${cycle[0]}. The auto-healer did not find a strategy that removed this cycle without breaking another resolved import, so no patch was presented.`;
+    const drift = stage3.columnDrift[0];
+    if (drift) {
+      const reference = drift.references[0];
+      return `SQL column drift: ${drift.table}.${drift.column}${reference ? ` is read at ${reference.path}:${reference.line}` : ""}. The auto-healer found no active column to rewrite to, so no patch was presented.`;
+    }
+    const arity = stage3.arityViolations[0];
+    if (arity)
+      return `Wrong arity: ${arity.symbolName} at ${arity.path}:${arity.line} passes ${arity.passedArgs} arguments while its declared envelope is ${arity.expectedArity}. The auto-healer will not guess the caller's intended values, so no patch was presented.`;
+    const route = stage3.removedRoutes[0];
+    if (route)
+      return `Route or service dependency removed: ${route.path}. ${route.callers.length ? `${route.callers[0]!.path}:${route.callers[0]!.line} still imports it.` : "No analyzed file still imports it."} No strategy restored a verified route export, so no patch was presented.`;
+    if (stage3.removedExports.length) {
+      const names = stage3.removedExports.join(", ");
+      const caller = simulation.removed_export_callers[0];
+      return caller
+        ? `Export removed: ${names}. ${caller.importerPath}:${caller.importerLine} still imports it, and no strategy restored a verified compatible export, so no patch was presented.`
+        : `Export removed: ${names}. No analyzed importer in this snapshot uses that symbol, so there is no caller-side edit to verify. The public API change is reported and no patch was presented.`;
+    }
+    return (
+      fallback ??
+      "No verified strategy reduced the breaking findings without adding a cycle, so no patch was presented."
+    );
+  };
+
   let heal: LoopHeal | null = null;
   if (breakingTotal(simulation) > 0) {
     try {
@@ -524,24 +557,53 @@ export async function buildLoopRun(
               cyclesAfter: stage3.after.cycles,
             };
       const strategies = "strategiesApplied" in fix ? (fix.strategiesApplied as string[]) : [];
+      // A patch is evidence only when the in-memory overlay verified that it
+      // reduces the breaking score without adding a cycle. An unverified
+      // candidate is refused, never returned as a plausible fix.
+      const verified = Boolean(fix.verified && healedContent);
       heal = {
         available: true,
-        verified: Boolean(fix.verified && healedContent),
-        patch: patch || "",
-        reason: healedContent
+        verified,
+        patch: verified ? patch || "" : "",
+        reason: verified
           ? `Verified ${strategies.length} AST remed${strategies.length === 1 ? "y" : "ies"}: ${strategies.join(", ")}.`
-          : ("reason" in fix && fix.reason) ||
-            "No strategy reduced the verified breaking findings without adding a cycle.",
-        healedContent,
+          : refusalReason("reason" in fix ? fix.reason : undefined),
+        healedContent: verified ? healedContent : null,
         unresolvedBefore: verification.before,
         unresolvedAfter: verification.after,
         cyclesBefore: verification.cyclesBefore,
         cyclesAfter: verification.cyclesAfter,
-        strategies,
+        strategies: verified ? strategies : [],
       };
     } catch {
-      heal = null;
+      heal = {
+        available: true,
+        verified: false,
+        patch: "",
+        reason: refusalReason(),
+        healedContent: null,
+        unresolvedBefore: stage3.before.unresolved,
+        unresolvedAfter: stage3.after.unresolved,
+        cyclesBefore: stage3.before.cycles,
+        cyclesAfter: stage3.after.cycles,
+        strategies: [],
+      };
     }
+  } else if (verdict.verdict === "breaking") {
+    // Detection can block a public API change without any observed caller. That
+    // is still a refusal, so the UI receives a named reason and no patch.
+    heal = {
+      available: true,
+      verified: false,
+      patch: "",
+      reason: refusalReason(),
+      healedContent: null,
+      unresolvedBefore: stage3.before.unresolved,
+      unresolvedAfter: stage3.after.unresolved,
+      cyclesBefore: stage3.before.cycles,
+      cyclesAfter: stage3.after.cycles,
+      strategies: [],
+    };
   }
 
   const coveringTests = briefing.impact.tests_that_cover_it;

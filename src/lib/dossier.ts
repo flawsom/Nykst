@@ -28,8 +28,10 @@ export interface DossierSection {
   total: number;
   /** what a row actually counts, so call-site rows are never shown as files or tables */
   rowKind: string;
-  /** distinct entities behind the rows (files, tables, symbols) */
+  /** distinct entities behind the rows (files, data resources, symbols) */
   distinct: number;
+  /** what those distinct entities are, so the number is never mislabelled */
+  distinctLabel: string;
   emptyLabel: string;
 }
 
@@ -187,6 +189,12 @@ export function buildNodeDossier(
     emptyLabel: string,
   ): DossierSection => {
     const sorted = rows(items);
+    const distinctLabel =
+      id === "symbols"
+        ? "symbols"
+        : id === "resources"
+          ? "tables, RPCs, buckets or models"
+          : "files";
     return {
       id,
       title,
@@ -194,7 +202,10 @@ export function buildNodeDossier(
       rows: sorted.slice(0, limit),
       total: sorted.length,
       rowKind,
-      distinct: new Set(sorted.map((row) => (id === "resources" ? row.label : row.path))).size,
+      distinct: new Set(
+        sorted.map((row) => (id === "resources" || id === "symbols" ? row.label : row.path)),
+      ).size,
+      distinctLabel,
       emptyLabel,
     };
   };

@@ -156,12 +156,45 @@ describe("buildNodeDossier", () => {
     const tests = sections.find((section) => section.id === "tests")!;
     expect(tests.rows.map((row) => row.path)).toEqual(["tests/auth.test.ts"]);
     expect(tests.rowKind).toBe("distinct files");
+    expect(tests.distinctLabel).toBe("files");
 
     const resources = sections.find((section) => section.id === "resources")!;
     expect(resources.rowKind).toBe("call-site rows");
     expect(resources.total).toBe(1);
     expect(resources.distinct).toBe(1);
+    expect(resources.distinctLabel).toBe("tables, RPCs, buckets or models");
     expect(resources.emptyLabel).toContain("No SQL table");
+
+    const symbols = sections.find((section) => section.id === "symbols")!;
+    expect(symbols.distinctLabel).toBe("symbols");
+  });
+
+  test("deduplicates repeated export rows and counts distinct symbols, not files", () => {
+    const duplicated = analysis([
+      file("src/lib/dup.ts", {
+        symbols: [
+          { name: "alpha", kind: "function", line: 2, arity: 1, requiredArity: 1 },
+          { name: "alpha", kind: "function", line: 2, arity: 1, requiredArity: 1 },
+          { name: "beta", kind: "const", line: 6, arity: 0, requiredArity: 0 },
+        ],
+      }),
+    ]);
+    const symbols = buildNodeDossier(duplicated, ["src/lib/dup.ts"]).find(
+      (section) => section.id === "symbols",
+    )!;
+    expect(symbols.total).toBe(2);
+    expect(symbols.distinct).toBe(2);
+    expect(symbols.rows.map((row) => row.label)).toEqual(["alpha", "beta"]);
+  });
+
+  test("says plainly when no covering test was found", () => {
+    const uncovered = analysis([file("src/lib/lonely.ts")]);
+    const tests = buildNodeDossier(uncovered, ["src/lib/lonely.ts"]).find(
+      (section) => section.id === "tests",
+    )!;
+    expect(tests.total).toBe(0);
+    expect(tests.rows).toEqual([]);
+    expect(tests.emptyLabel).toBe("No covering test file was found in this analysis.");
   });
 
   test("never renders a blank symbol name as a complete row", () => {

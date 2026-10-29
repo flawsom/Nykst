@@ -612,7 +612,11 @@ export function MentorPanel({
   };
 
   return (
-    <aside className="border-border bg-card/60 hidden w-[360px] shrink-0 flex-col overflow-hidden border-l backdrop-blur lg:flex">
+    <aside
+      data-testid="mentor-panel"
+      data-node-path={node.detail?.path ?? ""}
+      className="border-border bg-card/60 hidden w-[360px] shrink-0 flex-col overflow-hidden border-l backdrop-blur lg:flex"
+    >
       <div className="border-border border-b px-5 py-4">
         <div className="flex items-center gap-2">
           <span className="glow-ring bg-primary block size-1.5 rounded-full" />

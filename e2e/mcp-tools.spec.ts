@@ -49,8 +49,11 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
     await expect(page.getByTestId(`mcp-page-tool-${name}`)).toBeVisible();
   }
 
-  // 1. Interact with `search_files` and verify real, non-mocked repository output
+  // 1. Interact with `search_files` and verify the stated target path scopes
+  // the real, non-mocked repository output and that the driver is labelled.
   const queryInput = page.getByTestId("mcp-page-query-input");
+  const pathInput = page.getByTestId("mcp-page-path-input");
+  await pathInput.fill("src/lib/analysis");
   await queryInput.fill("analyzeRepository");
   await page.getByTestId("mcp-page-tool-search_files").click();
 
@@ -58,16 +61,41 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
   await expect(outputPre).toContainText('"repository": "flawsom/nykst"', { timeout: 15000 });
   await expect(outputPre).toContainText("src/lib/analysis/engine.server.ts");
   await expect(outputPre).toContainText("analyzeRepository");
+  await expect(page.getByTestId("mcp-result-driver")).toContainText("target path and query text");
 
   const searchJson = JSON.parse((await outputPre.textContent()) ?? "{}") as {
     repository?: string;
+    driver?: string;
+    target_path?: string | null;
     results?: Array<{ path: string; exports: string[]; signatures?: string[] }>;
   };
   expect(searchJson.repository).toBe("flawsom/nykst");
+  expect(searchJson.driver).toBe("target path and query text");
+  expect(searchJson.target_path).toBe("src/lib/analysis");
   expect(Array.isArray(searchJson.results)).toBe(true);
-  expect(searchJson.results!.some((r) => r.path === "src/lib/analysis/engine.server.ts")).toBe(
-    true,
-  );
+  expect(searchJson.results!.length).toBeGreaterThan(0);
+  expect(searchJson.results!.every((r) => r.path.startsWith("src/lib/analysis/"))).toBe(true);
+
+  // 1b. A target path that does not exist returns an explicit error, never
+  // results from another path, and says so in the result driver label.
+  await pathInput.fill("src/does-not-exist");
+  await page.getByTestId("mcp-page-tool-search_files").click();
+  await expect(page.getByTestId("mcp-result-driver")).toContainText("target path not found", {
+    timeout: 15000,
+  });
+  const missingJson = JSON.parse((await outputPre.textContent()) ?? "{}") as {
+    target_path?: string | null;
+    driver?: string;
+    results?: unknown[];
+    error?: string;
+  };
+  expect(missingJson.target_path).toBe("src/does-not-exist");
+  expect(missingJson.driver).toBe("target path not found");
+  expect(missingJson.results).toEqual([]);
+  expect(missingJson.error).toContain("No results were returned from any other path");
+
+  // Restore the default file target used by the overlay tools below.
+  await pathInput.fill("src/lib/integrations/github.ts");
 
   // 2. Switch to `simulate_change`, verify the in-memory overlay UI appears, and run it
   await page.getByTestId("mcp-page-tool-simulate_change").click();
@@ -239,14 +267,17 @@ test("Landing 11-Tool MCP Runner executes search_files, simulate_change overlay,
   await expect(page.getByTestId("mcp-tool-generate_fix_patch")).toBeVisible();
   await expect(page.getByTestId("mcp-tool-run_safe_code_loop")).toBeVisible();
 
-  // Run `search_files` with a real symbol query
+  // Run `search_files` with a real symbol query scoped to the selected target
+  // path. The landing runner states that target path, so a symbol outside it
+  // must not leak into the results.
   const queryInput = page.getByTestId("mcp-query-input");
-  await queryInput.fill("radialLayout");
+  await queryInput.fill("githubContent");
   await page.getByTestId("mcp-tool-search_files").click();
 
   const outputPre = page.getByTestId("mcp-output-pre");
-  await expect(outputPre).toContainText("src/lib/graph-layout.ts", { timeout: 15000 });
-  await expect(outputPre).toContainText("radialLayout");
+  await expect(outputPre).toContainText("src/lib/integrations/github.ts", { timeout: 15000 });
+  await expect(outputPre).toContainText("githubContent");
+  await expect(outputPre).toContainText('"driver": "target path and query text"');
 
   // Select `simulate_change` and confirm the overlay buffer panel and execution
   await page.getByTestId("mcp-tool-simulate_change").click();

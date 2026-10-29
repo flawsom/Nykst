@@ -115,6 +115,53 @@ test("a real unresolved import is blocked, then auto-heals to verified safe", as
   }
 });
 
+test("all six break classes are detected in memory and labelled on the class badge", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const engine = await openLoop(page);
+  const pathInput = page.getByLabel("Target file path");
+
+  const cases: Array<{ scenario: string; path: string }> = [
+    { scenario: "remove-export", path: "src/lib/integrations/github.ts" },
+    { scenario: "unresolved-import", path: "src/lib/integrations/github.ts" },
+    { scenario: "wrong-arity", path: "src/lib/integrations/github.ts" },
+    { scenario: "dropped-column", path: "src/lib/integrations/github.ts" },
+    { scenario: "circular-import", path: "src/lib/integrations/github.ts" },
+    { scenario: "removed-route", path: "src/routes/graph.tsx" },
+  ];
+
+  for (const item of cases) {
+    await pathInput.fill(item.path);
+    await pathInput.press("Enter");
+    await engine.locator(`[data-testid="loop-scenario-${item.scenario}"]`).click();
+
+    const badge = page.locator(`[data-testid="loop-class-${item.scenario}"]`);
+    await expect(badge).toHaveAttribute("data-exercised", "true", { timeout: 30000 });
+    await expect(badge).toHaveAttribute("data-detected", "true", { timeout: 30000 });
+    await expect(badge).toContainText("DETECTED");
+    await expect(page.locator('[data-testid="loop-verdict"]')).toHaveAttribute(
+      "data-verdict",
+      "breaking",
+      { timeout: 30000 },
+    );
+
+    // A patch may appear only when the in-memory overlay verified it. Every
+    // other class must show a refusal reason and no patch candidate.
+    const heal = page.getByTestId("loop-heal-status");
+    await expect(heal).toBeVisible();
+    const verified = await heal.getAttribute("data-verified");
+    if (verified === "true") {
+      await expect(page.getByTestId("loop-heal-patch")).toBeVisible();
+    } else {
+      await expect(page.getByTestId("loop-heal-patch")).toHaveCount(0);
+      // A refusal must name the failed check for this class, never reuse one
+      // generic sentence or present a plausible but unverified patch.
+      await expect(heal).toContainText(/no patch was presented/i);
+    }
+  }
+});
+
 test("the teleport drawer opens real source at the exact line with all three actions", async ({
   page,
 }) => {

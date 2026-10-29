@@ -164,12 +164,7 @@ export function NodeDossier({
                     className="text-muted-foreground font-mono text-[10px]"
                   >
                     {section.shown.length} of {section.filtered.length} shown · {section.total}{" "}
-                    {section.rowKind} · {section.distinct} distinct{" "}
-                    {section.id === "resources"
-                      ? "tables"
-                      : section.id === "symbols"
-                        ? "symbols"
-                        : "files"}
+                    {section.rowKind} · {section.distinct} distinct {section.distinctLabel}
                   </span>
                 </div>
 

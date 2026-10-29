@@ -31,9 +31,18 @@ type IngestionSnapshot = {
   payload: RepositorySnapshot;
 };
 
+/**
+ * The node for one exact file. Every ancestor group also lists the file in
+ * analysisRef.paths, so a plain includes() match would return the organisation
+ * root and select the whole repository on reload instead of the file.
+ */
+function isFileNode(node: GraphNode, path: string): boolean {
+  return node.analysisRef?.type === "file" && node.analysisRef.paths.includes(path);
+}
+
 /** The deepest node that stands for a real file path, so code jumps keep context. */
 function findNodeByPath(node: GraphNode, path: string): GraphNode | null {
-  if (node.analysisRef?.paths.includes(path)) return node;
+  if (isFileNode(node, path)) return node;
   for (const child of childrenOf(node)) {
     const hit = findNodeByPath(child, path);
     if (hit) return hit;
@@ -44,7 +53,7 @@ function findNodeByPath(node: GraphNode, path: string): GraphNode | null {
 /** The full drill chain to the node that stands for a file path, file included. */
 function chainToPath(node: GraphNode, path: string, trail: string[] = []): string[] | null {
   const next = [...trail, node.id];
-  if (node.analysisRef?.paths.includes(path)) return next;
+  if (isFileNode(node, path)) return next;
   for (const child of childrenOf(node)) {
     const hit = chainToPath(child, path, next);
     if (hit) return hit;

@@ -197,6 +197,7 @@ async function executeWorkbenchTool(
   }>,
   customChanges?: Array<{ path: string; content: string | null }>,
   customContent?: string,
+  toolPath?: string,
 ): Promise<unknown> {
   switch (tool) {
     case "list_repositories":
@@ -235,7 +236,11 @@ async function executeWorkbenchTool(
             .pop()
             ?.replace(/\.[jt]sx?$/, "") ||
           "graph",
-        path: validTarget,
+        // The sandbox must answer for the path the caller stated. Passing the
+        // validated fallback here would silently scope the search to a
+        // different file, so an unknown path must reach search_files intact
+        // and come back as an explicit target path not found result.
+        path: toolPath ?? validTarget,
       });
     case "search_memory":
       return runAnalysisTool(snapshot, "search_memory", {
@@ -499,6 +504,9 @@ export const Route = createFileRoute("/api/analysis/self")({
               validTarget,
               query,
               ingestedRepositories,
+              undefined,
+              undefined,
+              target,
             );
           }
 
@@ -568,6 +576,7 @@ export const Route = createFileRoute("/api/analysis/self")({
                   ingestedRepositories,
                   body.changes,
                   body.content,
+                  target,
                 );
 
           return json(

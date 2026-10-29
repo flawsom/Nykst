@@ -67,9 +67,26 @@ test("the list view exposes every child, filters them and opens the dossier", as
   await page.locator('[data-testid="graph-node-search"]').fill("");
   await expect(rows).toHaveCount(total);
 
-  // A row is a native button and opens the real evidence dossier.
+  // The inline dossier is the evidence surface. Its cap is never a dead end:
+  // the total is stated and Show all is a live control.
+  const dossier = page.locator('[data-testid="node-dossier"]');
+  await expect(dossier).toBeVisible({ timeout: 20000 });
+  const showAll = page.getByTestId("dossier-show-all");
+  await expect(showAll).toBeVisible();
+  await expect(showAll).toHaveAttribute("aria-expanded", "false");
+  await showAll.click();
+  await expect(showAll).toHaveAttribute("aria-expanded", "true");
+  await expect(showAll).toContainText("Show first 40 rows");
+
+  // Counts are labelled by what they actually count, and the covering test
+  // section is present even when it has nothing to report.
+  await expect(page.getByTestId("dossier-count-resources")).toContainText("call-site rows");
+  await expect(page.getByTestId("dossier-count-resources")).toContainText("distinct");
+  await expect(page.locator('[data-dossier-section="tests"]')).toContainText("Covering Tests");
+
+  // A row is a native button and Details opens the real system dossier modal.
   await list.locator('[data-testid="graph-node-details"]').first().click();
-  await expect(page.locator('[data-testid="node-dossier"]')).toBeVisible({ timeout: 20000 });
+  await expect(page.getByRole("dialog")).toBeVisible({ timeout: 20000 });
 });
 
 test("the repository switcher lists workspaces and the analyze tab", async ({ page }) => {
