@@ -11,12 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as ChangelogRouteImport } from './routes/changelog'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as LimitsRouteImport } from './routes/limits'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PartnershipsRouteImport } from './routes/partnerships'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
@@ -65,6 +69,16 @@ const BillingRoute = BillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GraphRoute = GraphRouteImport.update({
   id: '/graph',
   path: '/graph',
@@ -85,6 +99,11 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnershipsRoute = PartnershipsRouteImport.update({
+  id: '/partnerships',
+  path: '/partnerships',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -93,6 +112,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubscribeRoute = SubscribeRouteImport.update({
@@ -302,12 +326,16 @@ const ApiIntegrationsSlackStartRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
+  '/changelog': typeof ChangelogRoute
+  '/docs': typeof DocsRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/partnerships': typeof PartnershipsRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -349,12 +377,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
+  '/changelog': typeof ChangelogRoute
+  '/docs': typeof DocsRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/partnerships': typeof PartnershipsRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -397,12 +429,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
+  '/changelog': typeof ChangelogRoute
+  '/docs': typeof DocsRoute
   '/graph': typeof GraphRoute
   '/intelligence': typeof IntelligenceRoute
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
+  '/partnerships': typeof PartnershipsRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -446,12 +482,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/billing'
+    | '/changelog'
+    | '/docs'
     | '/graph'
     | '/intelligence'
     | '/limits'
     | '/mcp'
+    | '/partnerships'
     | '/privacy'
     | '/register'
+    | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
@@ -493,12 +533,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/billing'
+    | '/changelog'
+    | '/docs'
     | '/graph'
     | '/intelligence'
     | '/limits'
     | '/mcp'
+    | '/partnerships'
     | '/privacy'
     | '/register'
+    | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
@@ -540,12 +584,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/billing'
+    | '/changelog'
+    | '/docs'
     | '/graph'
     | '/intelligence'
     | '/limits'
     | '/mcp'
+    | '/partnerships'
     | '/privacy'
     | '/register'
+    | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
@@ -588,12 +636,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BillingRoute: typeof BillingRoute
+  ChangelogRoute: typeof ChangelogRoute
+  DocsRoute: typeof DocsRoute
   GraphRoute: typeof GraphRoute
   IntelligenceRoute: typeof IntelligenceRoute
   LimitsRoute: typeof LimitsRoute
   McpRoute: typeof McpRoute
+  PartnershipsRoute: typeof PartnershipsRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
+  StatusRoute: typeof StatusRoute
   SubscribeRoute: typeof SubscribeRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
@@ -647,6 +699,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/graph': {
       id: '/graph'
       path: '/graph'
@@ -675,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partnerships': {
+      id: '/partnerships'
+      path: '/partnerships'
+      fullPath: '/partnerships'
+      preLoaderRoute: typeof PartnershipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -687,6 +760,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe': {
@@ -977,12 +1057,16 @@ const ApiSubscriptionRouteWithChildren = ApiSubscriptionRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BillingRoute: BillingRoute,
+  ChangelogRoute: ChangelogRoute,
+  DocsRoute: DocsRoute,
   GraphRoute: GraphRoute,
   IntelligenceRoute: IntelligenceRoute,
   LimitsRoute: LimitsRoute,
   McpRoute: McpRoute,
+  PartnershipsRoute: PartnershipsRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
+  StatusRoute: StatusRoute,
   SubscribeRoute: SubscribeRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,

@@ -910,6 +910,18 @@ function Landing() {
             <Link to="/subscribe" className="text-muted-foreground hover:text-foreground">
               Pricing
             </Link>
+            <Link to="/docs" className="text-muted-foreground hover:text-foreground">
+              Docs
+            </Link>
+            <Link to="/status" className="text-muted-foreground hover:text-foreground">
+              Status
+            </Link>
+            <Link to="/changelog" className="text-muted-foreground hover:text-foreground">
+              Changelog
+            </Link>
+            <Link to="/partnerships" className="text-muted-foreground hover:text-foreground">
+              Partnerships
+            </Link>
             <button
               onClick={() => setContactOpen(true)}
               className="text-muted-foreground hover:text-foreground"

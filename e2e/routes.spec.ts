@@ -13,6 +13,10 @@ const routes = [
   { path: "/intelligence", name: "memory" },
   { path: "/mcp", name: "mcp" },
   { path: "/subscribe", name: "subscribe" },
+  { path: "/docs", name: "docs" },
+  { path: "/status", name: "status" },
+  { path: "/changelog", name: "changelog" },
+  { path: "/partnerships", name: "partnerships" },
 ];
 
 async function visit(page: Page, path: string): Promise<VisitResult> {
