@@ -102,10 +102,11 @@ Release numbers live here. Everything else in this README describes capability. 
 | `bun test ./tests`                               | 176 pass, 0 fail, 27 files, 971 assertions, 3.2 s               |
 | `bun run check:claims`                           | ok                                                             |
 | `bun run build`                                  | pass, 3.98 s Cloudflare target, 3.56 s node-server target       |
-| `bun run lint`                                   | 0 errors, 9 pre-existing `react-refresh` warnings              |
-| Playwright public route renders, desktop 1440x900 | 9 of 9 pass                                                    |
+| `bun run lint`                                   | 0 errors, 9 pre-existing module-level lint warnings            |
+| Playwright public route renders, production       | 9 of 9 desktop, 9 of 9 mobile, against `nykst.unifies.codes`   |
+| GitHub Actions CI and E2E                         | both success on this commit                                    |
 
-Scope of that browser result: the nine public route render tests only, run sequentially against a running app. The five journey suites and the mobile project were not completed in this verification, so they are not claimed here.
+Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow, which passed on this commit; they were not re-run by hand for this page.
 
 ### Gated, with the exact missing input
 
@@ -1217,9 +1218,9 @@ bun scripts/analyze-local.ts . --changed src/lib/analysis/engine.server.ts,src/r
 
 ## 📊 Performance
 
-### What has been measured, asserted, or not measured
+### What has been measured or asserted
 
-Three labels are used below and they are not interchangeable. Measured means a value was read from a named build on a date. Asserted means a test enforces the bound. Not measured means no number is claimed, and the command is given so you can produce one on your own deployment.
+Two labels are used below and they are not interchangeable. Measured means a value was read from a named build on a date. Asserted means a test enforces the bound. No row is copied from an older release, and no row presents a target as a result.
 
 | Metric                       | Value                                                                                              | How it was obtained                                                                 |
 | :--------------------------- | :------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
@@ -1230,12 +1231,12 @@ Three labels are used below and they are not interchangeable. Measured means a v
 | Cycles                       | **0**                                                                                               | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **13**                                                                                              | `jq '.resources \| length'`                                                          |
 | External services            | **9**                                                                                               | `jq '.services \| length'`                                                           |
-| Warm cached response         | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/api/analysis/self`                  |
-| SSR landing response         | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/`                                   |
-| Health probe, all tables     | not measured in this verification                                                                   | `curl -o /dev/null -w '%{time_total}' <your-url>/api/health`                         |
-| Client payload, all routes   | not measured in this verification                                                                   | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                   |
+| Warm cached response         | 275 ms warm, up to 1,278 ms across three calls from this workspace on 29 Oct 2026, network included | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/analysis/self` |
+| SSR landing response         | 229 ms warm across two calls from this workspace on 29 Oct 2026, network included                   | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/`                  |
+| Health probe, all tables     | 1.16 s to 1.95 s across three calls on 29 Oct 2026, dominated by the live database round trip       | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/health`        |
+| Client payload, all routes   | 1.3 MB uncompressed JavaScript and CSS in `.output/public`, measured 29 Oct 2026                    | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                   |
 | Test suite                   | 176 pass, 0 fail on 29 Oct 2026                                                                     | `bun test ./tests`                                                                  |
-| Playwright suite             | public route renders, 9 of 9 desktop on 29 Oct 2026                                                 | `E2E_BASE_URL=<url> bunx playwright test e2e/routes.spec.ts`                        |
+| Playwright suite             | public route renders, 9 of 9 desktop and 9 of 9 mobile against production on 29 Oct 2026            | `E2E_BASE_URL=https://nykst.unifies.codes bunx playwright test e2e/routes.spec.ts`   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
 
