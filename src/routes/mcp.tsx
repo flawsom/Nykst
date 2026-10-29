@@ -135,11 +135,11 @@ function McpGuidePage() {
     <main className="bg-background text-foreground min-h-screen">
       <header className="border-border bg-card/80 sticky top-0 z-20 flex items-center justify-between border-b px-4 py-3 backdrop-blur sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <NykstBrand subtitle="MCP Protocol" size={26} />
+          <NykstBrand subtitle="For developers" size={26} />
         </Link>
         <nav className="flex items-center gap-4 text-xs">
           <Link to="/graph" className="text-muted-foreground hover:text-foreground">
-            Graph
+            System map
           </Link>
           <Link to="/" className="text-muted-foreground hover:text-foreground">
             Home
@@ -149,16 +149,16 @@ function McpGuidePage() {
 
       <div className="mx-auto w-full max-w-3xl px-4 pt-12 pb-24 sm:px-6 sm:pt-16">
         <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-          Model Context Protocol
+          Developer setup
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           Use Nykst inside your AI coding agent
         </h1>
         <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-          Before your agent edits a file, it can ask Nykst what that change will break: which files
+          Before your agent edits a file, it can ask Nykst what that change will affect: which files
           import it, which pages and API routes it reaches, which tests cover it, and which database
-          tables and services it touches. It takes a few minutes to set up and works with any agent
-          that supports MCP.
+          tables and services it touches. Setup takes a few minutes and works with any editor or
+          assistant that supports MCP.
         </p>
 
         <section className="mt-12 space-y-4">
@@ -179,8 +179,8 @@ function McpGuidePage() {
 
         <section className="mt-12 space-y-4">
           <StepHeading n={2} title="Create an access token">
-            The token lets your agent read the analysis of your repositories, and nothing else.
-            Nykst stores only a hash of it. You can revoke it here at any time.
+            The token lets your assistant read the map of the repositories you connected, and
+            nothing else. You can revoke it here at any time.
           </StepHeading>
           <div className="pl-9">
             <TokenPanel token={token} onCreated={setToken} />
@@ -224,8 +224,8 @@ function McpGuidePage() {
 
               {!token && (
                 <p className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-300">
-                  The snippets below contain {TOKEN_PLACEHOLDER}. Create a token in step 2 and they
-                  fill in automatically.
+                  The snippets below use {TOKEN_PLACEHOLDER}. Create a token in step 2 and they fill
+                  in automatically.
                 </p>
               )}
 
@@ -260,20 +260,19 @@ function McpGuidePage() {
 
         <section className="mt-12 space-y-4">
           <StepHeading n={4} title="Try it">
-            Click any of the {TOOLS.length} read-only tools below to execute it against the live AST
-            of <code className="text-primary font-mono text-xs">flawsom/nykst</code> right now, or
-            ask your coding agent in plain English.
+            Run any tool below against the example repository, or ask your assistant in plain
+            English.
           </StepHeading>
           <p className="text-muted-foreground pl-0 text-xs sm:pl-9">
-            Every tool, input schema and read-only annotation is published at{" "}
+            The full tool list is available at{" "}
             <a
               href="/api/mcp/schema"
               data-testid="mcp-schema-link"
               className="text-primary font-mono underline underline-offset-2"
             >
               /api/mcp/schema
-            </a>{" "}
-            and committed as <code className="font-mono">docs/mcp-tools.json</code>.
+            </a>
+            .
           </p>
           <div className="space-y-4 pl-0 sm:pl-9">
             <ul className="space-y-2">
@@ -323,10 +322,11 @@ function McpGuidePage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-primary font-mono text-[10px] tracking-[0.2em] uppercase">
-                    Live MCP Tool Sandbox · {activeTool}
+                    Try a tool · {activeTool}
                   </span>
                   <p className="text-muted-foreground mt-0.5 text-xs">
-                    Executes directly against the compiled repository graph with zero mock data.
+                    Runs against the example repository and shows the answer your assistant would
+                    receive.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -407,12 +407,11 @@ function McpGuidePage() {
                     data-testid="mcp-result-driver"
                     className="text-muted-foreground font-mono text-[10px]"
                   >
-                    Result driver: {String((toolOutput as Record<string, unknown>)["driver"])}
                     {(() => {
                       const target = (toolOutput as Record<string, unknown>)["target_path"];
                       return typeof target === "string" && target
-                        ? ` · target path ${target}`
-                        : " · no target path was used";
+                        ? `Searched in ${target}`
+                        : "Searched across the example repository";
                     })()}
                   </p>
                 )}
@@ -421,7 +420,7 @@ function McpGuidePage() {
                 <pre data-testid="mcp-page-output" className="text-foreground">
                   {toolOutput
                     ? JSON.stringify(toolOutput, null, 2)
-                    : "Click any Run button above or press Execute to inspect the live MCP structured output."}
+                    : "Choose a tool above and press Run to see the answer for this repository."}
                 </pre>
               </div>
             </div>
@@ -455,9 +454,9 @@ function McpGuidePage() {
             <div>
               <dt className="font-medium">Error 401, or “token” in the message</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
-                Nykst tells you what is wrong: no token sent, the token is still the placeholder
+                Nykst tells you what is wrong: no token sent, the token is still the sample value
                 YOUR_NYKST_TOKEN, it doesn't start with nyk_, or it was revoked. Create a new token
-                in step 2 and paste it in place of the placeholder.
+                in step 2 and paste it in place of the sample value.
               </dd>
             </div>
             <div>
@@ -479,8 +478,8 @@ function McpGuidePage() {
             <div>
               <dt className="font-medium">“No repository has been analyzed yet”</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
-                Map a repository first (step 1). If Nykst says the repository was mapped before code
-                analysis existed, open the graph and press Re-analyze.
+                Map a repository first (step 1). If Nykst says the repository was mapped with an
+                older version, open the system map and press Re-analyze.
               </dd>
             </div>
             <div>

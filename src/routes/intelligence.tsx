@@ -603,43 +603,6 @@ function IntelligencePage() {
                   </div>
                 </div>
               )}
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  data-testid="memory-ask-input"
-                  aria-label="Ask the repository memory"
-                  placeholder="Ask about a module, a change or a past decision…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleAskAi();
-                  }}
-                  className="flex-1 bg-card border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-primary font-mono"
-                />
-                <button
-                  onClick={handleAskAi}
-                  data-testid="memory-ask-btn"
-                  disabled={loading}
-                  className="bg-primary text-primary-foreground hover:bg-primary-glow px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 shrink-0"
-                >
-                  {loading ? (
-                    <RefreshCw className="size-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="size-3.5" />
-                  )}
-                  Ask Memory
-                </button>
-              </div>
-
-              {aiResult && (
-                <div
-                  data-testid="memory-ask-result"
-                  className="border-border bg-card rounded-xl border p-3.5 text-xs font-mono text-foreground whitespace-pre-line leading-relaxed shadow-sm"
-                >
-                  {aiResult}
-                </div>
-              )}
             </div>
           </div>
         </div>

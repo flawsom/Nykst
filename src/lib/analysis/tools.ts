@@ -198,14 +198,14 @@ export const TOOLS: McpTool[] = [
   },
   {
     name: "run_safe_code_loop",
-    title: "Check a proposed file with the safe coding loop",
+    title: "Check a replacement file with the safe coding loop",
     description:
-      "Run the four-stage in-memory loop over a complete proposed file: bounded architecture and six-layer memory, AST call-site verification (scope, overloads, namespace calls, barrel re-exports), a deterministic verdict, Trinity root-cause cards with causal chains, and a verified four-strategy auto-heal. Nothing is written; a clean overlay is not a substitute for a full typecheck and test run.",
+      "Run the four-stage in-memory loop over a complete replacement file: architecture and history checks, call-site verification (scope, overloads, namespace calls, barrel re-exports), a clear verdict, root-cause cards with causal chains, and a verified auto-heal. Nothing is written; a clean overlay is not a substitute for a full typecheck and test run.",
     inputSchema: {
       type: "object",
       properties: {
         path: { type: "string", description: "Repository-relative analyzed source file." },
-        content: { type: "string", description: "Complete proposed replacement content." },
+        content: { type: "string", description: "Complete replacement content." },
         ...repositoryArg,
       },
       required: ["path", "content"],

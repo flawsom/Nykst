@@ -33,9 +33,9 @@ import { PreRegisterForm } from "@/components/graph/PreRegisterForm";
 import { AdvantagesForm } from "@/components/graph/AdvantagesForm";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
-import { PRICING, formatInr } from "@/lib/pricing";
+
 import snapshotStats from "@/lib/analysis/self-snapshot-stats.json";
-import mcpSchema from "../../docs/mcp-tools.json";
+
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
 import {
   AnimatedCounter,
@@ -50,20 +50,20 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst · Deterministic AST & Blast-Radius Intelligence" },
+      { title: "Nykst · See what your next change will affect" },
       {
         name: "description",
         content:
-          "Nykst compiles your repository into a deterministic AST, dependency topology, and SQL migration graph. Drill from organization to file and compute exact blast radius before you or an AI agent edits code.",
+          "Connect your repositories and get one map of how your system fits together. See every file, service and database table a change will touch before you make it.",
       },
       {
         property: "og:title",
-        content: "Nykst · Deterministic AST & Blast-Radius Intelligence",
+        content: "Nykst · See what your next change will affect",
       },
       {
         property: "og:description",
         content:
-          "Know the blast radius before you change the code. Connect GitHub, compile the AST architecture from real source, and drill from org to file in one click.",
+          "One map of your system, built from your real code. See what a change will touch before you make it.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -77,75 +77,75 @@ const LEVELS = [
     icon: Building2,
     level: "01",
     title: "Organization",
-    count: "1 root · live repository telemetry",
-    copy: "Your organization root with repositories, external services, SQL tables, contributors, and commit cadence measured directly from the AST and Git history.",
+    count: "Everything in one place",
+    copy: "All of your repositories, services, databases and the people who work on them, seen together.",
   },
   {
     icon: Layers3,
     level: "02",
-    title: "Core domain",
-    count: "Derived from directory & import trie",
-    copy: "The architectural domains the codebase actually organizes itself into: analysis engine, API routes, graph UI, connectors, and persistence.",
+    title: "System area",
+    count: "How your code is actually organised",
+    copy: "The parts your system really divides into, read from the directories and connections in your code rather than a document someone has to maintain.",
   },
   {
     icon: Boxes,
     level: "03",
-    title: "Capability",
-    count: "Ranked by reverse dependency weight",
-    copy: "What each domain delivers for the system: AST parsing, OAuth verification, blast-radius computation, or MCP serving, ranked by caller reachability.",
+    title: "What it does",
+    count: "Grouped by what depends on it",
+    copy: "What each part is responsible for, ordered by how much of the rest of your system relies on it.",
   },
   {
     icon: Server,
     level: "04",
-    title: "Service & SQL Resource",
-    count: "SDKs, API hosts, env vars & DDL tables",
-    copy: "Every external service and PostgreSQL/Supabase table or RPC function detected from migrations and client calls, with exact file:line evidence.",
+    title: "Services and data",
+    count: "External services and database tables",
+    copy: "The external services you call and the database tables you use, linked to the places in your code that touch them.",
   },
   {
     icon: Box,
     level: "05",
     title: "Module",
-    count: "Runtime & type-only boundaries",
-    copy: "The internal module boundaries inside each capability: route handlers, AST resolvers, encryption utilities, and realtime broadcasters.",
+    count: "Files that belong together",
+    copy: "The internal boundaries inside each part: request handlers, helpers, and shared utilities.",
   },
   {
     icon: FileCode2,
     level: "06",
     title: "File",
-    count: "Exports, classes, functions, tests & blame",
-    copy: "Every exported symbol, function, class, importer line number, covering test file, and commit author for an individual source file.",
+    count: "What it exports and what uses it",
+    copy: "For any single file: what it exports, who imports it, which pages or endpoints reach it, and which tests cover it.",
   },
 ];
 
 const FEATURES = [
   {
     icon: ShieldCheck,
-    title: "Before You Act Envelope",
-    copy: "A deterministic consequence envelope for any node: direct and transitive importers, affected route/API entrypoints, historical co-changes, and covering tests.",
-    link: "Open the 6-level navigator",
+    title: "Know what a change will touch",
+    copy: "Before you edit a file, see every place that depends on it, which pages and endpoints are affected, and which tests cover it.",
+    link: "Open the navigator",
     to: "/graph",
   },
   {
     icon: BrainCircuit,
-    title: "6-Layer Compounding Memory",
-    copy: "Outcome-weighted, failure-pattern, architectural-decision, incident-resolution, team-convention, and continuity memories anchored directly to AST nodes.",
-    link: "Explore Nykst Memory",
+    title: "Keep the reasons, not just the code",
+    copy: "Decisions, past incidents and team conventions stay attached to the parts of the system they explain, so the next person does not start from zero.",
+    link: "Explore system memory",
     to: "/intelligence",
   },
   {
     icon: Plug,
-    title: "Streamable HTTP MCP Server",
-    copy: "Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, and Zed query Nykst over /api/mcp to verify blast radius before writing a single line of code.",
-    link: "Connect your coding agent",
+    title: "Use it where you already work",
+    copy: "Ask the same questions from your editor or coding assistant, so the answer arrives before the code is written.",
+    link: "Set up your coding assistant",
     to: "/mcp",
   },
 ];
 
 const TRUST = [
-  { icon: Lock, label: "Read-only GitHub OAuth & App" },
-  { icon: Cpu, label: "Deterministic TypeScript AST compiler" },
-  { icon: Database, label: "Live Supabase + SQL schema linker" },
-  { icon: ShieldCheck, label: "Zero mock or synthetic data" },
+  { icon: Lock, label: "You choose which repositories to connect" },
+  { icon: Cpu, label: "Built from your real code, not a diagram" },
+  { icon: Database, label: "Database tables linked to the code that uses them" },
+  { icon: ShieldCheck, label: "Nothing written back to your repositories" },
 ];
 
 function Landing() {
@@ -158,11 +158,6 @@ function Landing() {
   const [githubNotice, setGithubNotice] = useState<string | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [liveSelf, setLiveSelf] = useState<LiveSelfAnalysis | null>(null);
-  const [healthStatus, setHealthStatus] = useState<{
-    status: string;
-    project: string | null;
-    tableCount: number;
-  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -178,9 +173,7 @@ function Landing() {
     if (githubResult === "failed") {
       const reason = params.get("reason") ?? "unknown_error";
       setGithubNotice(
-        reason === "oauth_not_configured"
-          ? "GitHub sign-in is not configured on this deployment yet. Everything on this page still works; the graph itself needs a connected repository, or contact us for access."
-          : `GitHub sign-in failed: ${reason.replace(/_/g, " ")}. Please try again.`,
+        "We could not start the GitHub connection just now. Please try again, or email us and we will help you get set up.",
       );
     }
     if (githubResult) window.history.replaceState(null, "", window.location.pathname);
@@ -199,21 +192,6 @@ function Landing() {
           setActiveRepo((current) => current ?? data.repository);
         }
       })
-      .catch(() => undefined);
-
-    void fetch("/api/health")
-      .then((r) => r.json())
-      .then(
-        (data: { status?: string; project?: string | null; tables?: Record<string, boolean> }) => {
-          if (active && data) {
-            setHealthStatus({
-              status: data.status ?? "ok",
-              project: data.project ?? null,
-              tableCount: Object.values(data.tables ?? {}).filter(Boolean).length,
-            });
-          }
-        },
-      )
       .catch(() => undefined);
 
     return () => {
@@ -243,34 +221,34 @@ function Landing() {
 
   const marqueeItems = [
     {
-      label: "SELF-INDEXED REPO",
+      label: "EXAMPLE REPOSITORY",
       value: liveSelf?.repository ?? "flawsom/nykst",
-      badge: "LIVE AST",
+      badge: "LIVE MAP",
     },
     {
-      label: "COMPILER ENGINE",
-      value: `${stats.analyzedFiles} TypeScript/TSX files (${stats.loc.toLocaleString()} LOC)`,
-      badge: `${stats.durationMs}ms`,
+      label: "FILES MAPPED",
+      value: `${stats.analyzedFiles} files, ${stats.loc.toLocaleString()} lines`,
+      badge: "READ FROM SOURCE",
     },
     {
-      label: "DEPENDENCY EDGES",
-      value: `${stats.internalEdges} verified internal edges · ${stats.unresolvedImports} unresolved`,
-      badge: "TARJAN SCC",
+      label: "CONNECTIONS",
+      value: `${stats.internalEdges} links between files`,
+      badge: "TRACED",
     },
     {
-      label: "SQL & DATA LAYER",
-      value: `${liveSelf?.resources.length ?? 10} Postgres tables & resources linked to call sites`,
-      badge: healthStatus?.status === "ok" ? "SUPABASE OK" : "SCHEMA READY",
+      label: "DATABASE",
+      value: `${liveSelf?.resources.length ?? snapshotStats.resourceCount} tables and data sources linked to the code that uses them`,
+      badge: "LINKED",
     },
     {
-      label: "AI ENGINE",
-      value: "Configurable AI providers · BYOK AES-256-GCM",
-      badge: "EVIDENCE-LED",
+      label: "YOUR CONTROL",
+      value: "You choose which repositories to connect, and you can remove access at any time",
+      badge: "YOUR DATA",
     },
     {
-      label: "AGENT PROTOCOL",
-      value: `Streamable HTTP MCP (/api/mcp) · ${mcpSchema.toolCount} readOnlyHint tools`,
-      badge: "MCP 2025-06-18",
+      label: "SUPPORT",
+      value: "A person reads every message and replies within 2 business days",
+      badge: "HUMAN REPLY",
     },
   ];
 
@@ -347,7 +325,7 @@ function Landing() {
                 }}
                 className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-4 py-2 text-xs font-semibold transition-colors"
               >
-                Pre-register instead
+                Request access instead
               </button>
             </div>
           </div>
@@ -389,38 +367,38 @@ function Landing() {
       {/* Top Executive Navigation */}
       <header className="relative z-20 mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
         <Link to="/" className="group flex items-center gap-2.5">
-          <NykstBrand subtitle="Graph-RAG Architecture" size={32} />
+          <NykstBrand subtitle="See what your change will touch" size={32} />
         </Link>
         <nav className="flex w-full items-center gap-1 overflow-x-auto pb-0.5 text-xs sm:w-auto sm:gap-1.5 sm:text-sm">
           <a
             href="#architecture-engine"
             className="text-muted-foreground hover:text-foreground hover:bg-surface hidden shrink-0 rounded-lg px-2.5 py-2 font-medium whitespace-nowrap transition-colors md:inline-flex"
           >
-            Graph-RAG Engine
+            How it works
           </a>
           <Link
             to="/graph"
             className="text-muted-foreground hover:text-foreground hover:bg-surface shrink-0 rounded-lg px-2.5 py-2 font-medium whitespace-nowrap transition-colors"
           >
-            Graph
+            System map
           </Link>
           <Link
             to="/intelligence"
             className="text-muted-foreground hover:text-foreground hover:bg-surface shrink-0 rounded-lg px-2.5 py-2 font-medium whitespace-nowrap transition-colors"
           >
-            Memory
+            History
           </Link>
           <Link
             to="/mcp"
             className="text-muted-foreground hover:text-foreground hover:bg-surface shrink-0 rounded-lg px-2.5 py-2 font-medium whitespace-nowrap transition-colors"
           >
-            AI agents
+            Developers
           </Link>
           <Link
             to="/subscribe"
             className="text-muted-foreground hover:text-foreground hover:bg-surface shrink-0 rounded-lg px-2.5 py-2 font-medium whitespace-nowrap transition-colors"
           >
-            Pricing
+            Plans
           </Link>
           <ApiSettingsButton />
           <Magnetic strength={0.18}>
@@ -428,7 +406,7 @@ function Landing() {
               onClick={() => setPreRegister(true)}
               className="bg-primary text-primary-foreground hover:bg-primary-glow glow-ring ml-1 shrink-0 rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors"
             >
-              Pre-register
+              Get access
             </button>
           </Magnetic>
         </nav>
@@ -445,22 +423,21 @@ function Landing() {
           <div>
             <div className="animate-rise inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-3 py-1 font-mono text-[10px] tracking-[0.22em] uppercase text-primary">
               <span className="bg-primary size-1.5 rounded-full animate-pulse" />
-              <ScrambleText text="DETERMINISTIC AST · GRAPH-RAG ARCHITECTURE" durationMs={750} />
+              <ScrambleText text="A MAP OF YOUR SYSTEM, FROM YOUR REAL CODE" durationMs={750} />
             </div>
             <h1
               className="animate-rise text-gradient mt-4 max-w-[19ch] text-4xl leading-[1.04] font-semibold tracking-tight sm:mt-5 sm:text-5xl md:text-6xl"
               style={{ animationDelay: "60ms" }}
             >
-              Know the blast radius before you change the code.
+              See what your next change will affect.
             </h1>
             <p
               className="animate-rise text-muted-foreground mt-5 max-w-xl text-sm leading-relaxed sm:text-base"
               style={{ animationDelay: "130ms" }}
             >
-              AI writes code fast, but hidden dependencies in real codebases break production. Nykst
-              checks architecture and history first, verifies every change in memory against your
-              AST, SQL columns, and API routes, and jumps straight to the exact{" "}
-              <code className="text-primary">file:line</code> before anything breaks.
+              A change that looks small can reach further than you think. Nykst maps every file,
+              connection and database table in your repositories, then shows you exactly what a
+              change will touch before you make it.
             </p>
 
             <div
@@ -487,7 +464,7 @@ function Landing() {
                 onClick={() => scrollToWorkbench()}
                 className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-3.5 text-xs font-semibold transition-colors sm:w-auto"
               >
-                <Activity className="size-3.5" /> Inspect live AST workbench
+                <Activity className="size-3.5" /> See a live example
               </button>
               <button
                 onClick={() => setAdvantages(true)}
@@ -517,7 +494,7 @@ function Landing() {
           />
         </div>
 
-        {/* Real-Time Measured Telemetry Counters (Zero Mock Data) */}
+        {/* What the example map shows, read from real source. */}
         <div
           className="animate-rise border-border bg-border mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border sm:mt-16 sm:grid-cols-3 lg:grid-cols-6"
           style={{ animationDelay: "300ms" }}
@@ -526,32 +503,32 @@ function Landing() {
             {
               value: stats.analyzedFiles,
               suffix: "",
-              label: "AST files compiled live",
+              label: "Files mapped",
             },
             {
               value: stats.internalEdges,
               suffix: "",
-              label: "Verified import edges",
+              label: "Connections traced",
             },
             {
               value: stats.loc,
               suffix: "",
-              label: "Lines of TypeScript AST",
+              label: "Lines of code mapped",
             },
             {
-              value: liveSelf?.resources.length ?? 10,
+              value: liveSelf?.resources.length ?? snapshotStats.resourceCount,
               suffix: "",
-              label: "SQL tables & RPCs linked",
+              label: "Database tables linked",
             },
             {
               value: 6,
-              suffix: " lvls",
-              label: "Hierarchy navigation",
+              suffix: "",
+              label: "Levels to explore",
             },
             {
-              value: 0,
+              value: 1,
               suffix: "",
-              label: "Simulated or mock values",
+              label: "Example repository to explore",
             },
           ].map((stat) => (
             <div key={stat.label} className="bg-card/90 px-4 py-4 sm:px-5 sm:py-5">
@@ -564,19 +541,11 @@ function Landing() {
             </div>
           ))}
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-muted-foreground/80">
-          <span>
-            Live telemetry above is computed directly from{" "}
-            <code className="text-primary">{liveSelf?.repository ?? "this repository"}</code> via{" "}
-            <code className="text-foreground">/api/analysis/self</code> ({stats.durationMs}ms AST
-            parse).
-          </span>
-          {healthStatus && (
-            <span className="text-emerald-300">
-              ● Supabase schema verified ({healthStatus.tableCount}/10 production tables active)
-            </span>
-          )}
-        </div>
+        <p className="text-muted-foreground/80 mt-2.5 font-mono text-[10px]">
+          Every number above is read from{" "}
+          <code className="text-primary">{liveSelf?.repository ?? "the example repository"}</code>.
+          Nothing is estimated or filled in.
+        </p>
       </section>
 
       {/* NEW: Sticky Scroll-Storytelling Graph-RAG Architecture & Live AST Workbench */}
@@ -703,22 +672,22 @@ function Landing() {
         <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
             <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-              Connect your organization
+              Connect your repository
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
               Three minutes to your first map.
             </h2>
             <p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
-              Nykst installs read-only and derives the graph itself. It never asks you to describe
-              your architecture, and it never writes to your repositories.
+              Nykst reads the repositories you choose and builds the map itself. It never asks you
+              to describe your architecture, and it never writes to your code.
             </p>
 
             <ol className="mt-8 space-y-4">
               {[
                 {
                   step: "1",
-                  title: "Authorize read-only access",
-                  copy: "Authenticate with GitHub OAuth or the GitHub App across nykst.unifies.codes, nykst.vercel.app, or localhost.",
+                  title: "Connect your GitHub account",
+                  copy: "GitHub asks which repositories Nykst may read. You can grant one repository or several, and you can remove access at any time.",
                 },
                 {
                   step: "2",
@@ -727,8 +696,8 @@ function Landing() {
                 },
                 {
                   step: "3",
-                  title: "Compile the system map",
-                  copy: "Nykst downloads the tarball once, runs the TypeScript AST compiler, links SQL tables, and broadcasts the live graph.",
+                  title: "See your system map",
+                  copy: "Nykst reads the files you approved and shows how they connect, including the database tables they use.",
                 },
               ].map((item) => (
                 <li key={item.step} className="flex gap-3">
@@ -760,10 +729,10 @@ function Landing() {
             style={{ boxShadow: "var(--shadow-panel)" }}
           >
             <div className="border-primary/30 bg-secondary/40 rounded-xl border px-4 py-3">
-              <span className="block text-sm font-medium">GitHub Integration</span>
+              <span className="block text-sm font-medium">Connect GitHub</span>
               <span className="text-muted-foreground block text-[11px]">
-                Connect securely to choose an organization and repository, or inspect the live
-                self-indexed repository right now.
+                Choose an organization and repository, or explore the example map of this site
+                first.
               </span>
             </div>
 
@@ -780,16 +749,15 @@ function Landing() {
                 <div>
                   <span className="block text-sm font-medium">Explore before connecting?</span>
                   <span className="text-muted-foreground block text-[11px]">
-                    Open <code className="text-primary font-mono">/graph</code> or{" "}
-                    <code className="text-primary font-mono">/intelligence</code> to navigate the
-                    live self-indexed AST of this repository immediately.
+                    Open the system map or the history view to see a real repository mapped out
+                    before you connect your own.
                   </span>
                 </div>
                 <Link
                   to="/graph"
                   className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shrink-0 rounded-lg border px-4 py-2 text-center text-xs font-semibold transition-colors"
                 >
-                  Explore live graph →
+                  Explore the example map →
                 </Link>
               </div>
             </div>
@@ -807,21 +775,21 @@ function Landing() {
           <div className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-                Pricing
+                Plans
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
                 Start with the map. Keep the memory.
               </h2>
               <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-relaxed">
-                The graph, the memory model and the MCP setup are open. Premium adds historical
-                depth, system-wide context and team workflows as your repository grows.
+                Nykst is open for early access. We set your workspace up with you, connect your
+                first repository, and agree the right plan before anything starts.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <Link
                   to="/subscribe"
                   className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors"
                 >
-                  See plans <ArrowRight className="size-4" />
+                  Talk to us about access <ArrowRight className="size-4" />
                 </Link>
                 <button
                   onClick={() => setContactOpen(true)}
@@ -833,26 +801,27 @@ function Landing() {
             </div>
 
             <div className="grid gap-3">
-              {PRICING.plans.map((plan) => (
+              {(
+                [
+                  ["One repository", "Everything you need to map it and keep its history."],
+                  ["A whole team", "One shared map, so nobody has to reconstruct context alone."],
+                  [
+                    "Your own setup",
+                    "Tell us what you need and we will agree it with you in writing.",
+                  ],
+                ] as const
+              ).map(([title, copy]) => (
                 <div
-                  key={plan.id}
-                  className={`flex items-baseline justify-between rounded-xl border px-4 py-3 ${plan.id === "annual" ? "border-primary/30 bg-primary/5" : "border-border bg-surface/80"}`}
+                  key={title}
+                  className="border-border bg-surface/80 rounded-xl border px-4 py-3"
                 >
-                  <div>
-                    <p className="text-sm font-medium">{plan.label}</p>
-                    <p className="text-muted-foreground mt-0.5 text-[11px]">{plan.summary}</p>
-                  </div>
-                  <p className="text-lg font-semibold">
-                    {formatInr(plan.priceInr)}
-                    <span className="text-muted-foreground text-[11px]">
-                      /{plan.period === "week" ? "wk" : plan.period === "month" ? "mo" : "yr"}
-                    </span>
-                  </p>
+                  <p className="text-sm font-medium">{title}</p>
+                  <p className="text-muted-foreground mt-0.5 text-[11px]">{copy}</p>
                 </div>
               ))}
               <p className="text-muted-foreground text-[10px] leading-relaxed">
-                INR, GST 18 percent included. 7 days free on every plan, then the price above.
-                Checkout stays gated until the live payment gate passes; no card is taken today.
+                No payment is taken on this site. You agree a plan with us before anything starts,
+                and you can stop at any time.
               </p>
             </div>
           </div>
@@ -867,8 +836,7 @@ function Landing() {
               Map your first repository.
             </h2>
             <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed">
-              Pre-register for early access, or connect GitHub now and let Nykst derive the graph
-              from your own code.
+              Tell us about your codebase, or connect GitHub now and see the map of your own code.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -876,7 +844,7 @@ function Landing() {
               onClick={() => setPreRegister(true)}
               className="bg-primary text-primary-foreground hover:bg-primary-glow rounded-xl px-5 py-3 text-sm font-semibold transition-colors"
             >
-              Pre-register for early access
+              Request access
             </button>
             <button
               onClick={() => setAdvantages(true)}
@@ -894,16 +862,17 @@ function Landing() {
           <NykstBrand subtitle="software system intelligence" size={26} />
           <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[11px]">
             <Link to="/graph" className="text-muted-foreground hover:text-foreground">
-              Graph
+              {" "}
+              System map
             </Link>
             <Link to="/intelligence" className="text-muted-foreground hover:text-foreground">
-              Memory
+              History
             </Link>
             <Link to="/mcp" className="text-muted-foreground hover:text-foreground">
-              AI agents
+              Developers
             </Link>
             <Link to="/subscribe" className="text-muted-foreground hover:text-foreground">
-              Pricing
+              Plans
             </Link>
             <Link to="/docs" className="text-muted-foreground hover:text-foreground">
               Docs
@@ -926,8 +895,8 @@ function Landing() {
           </nav>
         </div>
         <p className="text-muted-foreground/60 mt-5 max-w-2xl text-[10px] leading-relaxed">
-          Nykst analyzes repositories read-only and stores derived metadata. Your source stays in
-          your GitHub account; disconnect the app whenever you want.
+          Nykst reads only the repositories you choose and stores a map of how they fit together.
+          Your code stays in your GitHub account, and you can remove access at any time.
         </p>
       </footer>
     </main>

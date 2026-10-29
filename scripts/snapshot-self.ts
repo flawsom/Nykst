@@ -82,7 +82,16 @@ writeFileSync(out, `${JSON.stringify(analysis)}\n`);
 // file would reach the browser bundle.
 writeFileSync(
   join(root, "src/lib/analysis/self-snapshot-stats.json"),
-  `${JSON.stringify({ ...analysis.stats, generatedAt: analysis.generatedAt }, null, 2)}\n`,
+  `${JSON.stringify(
+    {
+      ...analysis.stats,
+      resourceCount: analysis.resources.length,
+      serviceCount: analysis.services.length,
+      generatedAt: analysis.generatedAt,
+    },
+    null,
+    2,
+  )}\n`,
 );
 
 console.log(

@@ -93,7 +93,6 @@ function GraphPage() {
   const [lastChecked, setLastChecked] = useState<number | null>(null);
   const [polling, setPolling] = useState(true);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
-  const [softModal, setSoftModal] = useState<"premium" | null>(null);
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [connectorsOpen, setConnectorsOpen] = useState(false);
   const [connectorMessage, setConnectorMessage] = useState<string | null>(null);
@@ -438,9 +437,9 @@ function GraphPage() {
             </p>
           )}
           <ol className="text-muted-foreground mt-5 space-y-1.5 text-[12px]">
-            <li>1 · Authorize the read-only GitHub connection.</li>
-            <li>2 · Choose the repository to analyze.</li>
-            <li>3 · The graph, dossier and impact envelope are built from that analysis.</li>
+            <li>1 · Connect your GitHub account and choose which repositories we may read.</li>
+            <li>2 · Pick the repository you want to map.</li>
+            <li>3 · The map and its impact view are built from that repository.</li>
           </ol>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
@@ -589,12 +588,12 @@ function GraphPage() {
               Connect AI tools
             </button>
           )}
-          <button
-            onClick={() => setSoftModal("premium")}
+          <Link
+            to="/subscribe"
             className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
-            Premium
-          </button>
+            Plans
+          </Link>
           <RepoSwitcherBar
             activeRepo={activeRepo ?? snapshot.repository_full_name}
             onSwitch={switchRepository}
@@ -679,28 +678,19 @@ function GraphPage() {
               {reanalyzeError && <p className="mt-2 text-[11px] text-red-400">{reanalyzeError}</p>}
               {snapshot.payload.analysis ? (
                 <p className="text-muted-foreground mt-2 text-[11px]">
-                  Parsed {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")}{" "}
-                  source files with the TypeScript compiler ·{" "}
-                  {snapshot.payload.analysis.stats.internalEdges.toLocaleString("en-US")} import
-                  edges · {snapshot.payload.analysis.services.length} external services ·{" "}
-                  {snapshot.payload.analysis.resources.length} data resources
-                  {snapshot.payload.analysis.stats.unresolvedImports
-                    ? ` · ${snapshot.payload.analysis.stats.unresolvedImports} unresolved imports`
-                    : ""}
+                  {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")} files ·{" "}
+                  {snapshot.payload.analysis.stats.internalEdges.toLocaleString("en-US")}{" "}
+                  connections · {snapshot.payload.analysis.services.length} external services ·{" "}
+                  {snapshot.payload.analysis.resources.length} database tables
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] text-amber-400">
-                  This snapshot predates the code analysis engine, the map below only reflects
-                  folder names. Re-analyze to get real dependencies and impact.
+                  This repository was mapped before the current version, so this view shows folders
+                  only. Connect it again to see files and what they depend on.
                 </p>
               )}
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-                <span>{snapshot.payload.files?.length ?? 0} files</span>
-                <span>{snapshot.payload.commits?.length ?? 0} commits</span>
-                <span>{snapshot.payload.branches?.length ?? 0} branches</span>
-                <span>{snapshot.payload.pull_requests?.length ?? 0} pull requests</span>
-                <span>{snapshot.payload.issues?.length ?? 0} issues</span>
-                <span>{snapshot.payload.contributors?.length ?? 0} contributors</span>
+                <span>{snapshot.payload.files?.length ?? 0} files mapped</span>
               </div>
               {problems.length > 0 && (
                 <div className="border-border/70 mt-3 border-t pt-3">
@@ -961,49 +951,6 @@ function GraphPage() {
         onClose={() => setBeforeYouActOpen(false)}
         onOpenCode={setCodeTarget}
       />
-      {softModal && (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
-          role="presentation"
-          onClick={() => setSoftModal(null)}
-        >
-          <section
-            className="border-border bg-card w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="graph-soft-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-primary text-[10px] font-mono uppercase tracking-[0.24em]">
-                  Nykst access
-                </p>
-                <h2 id="graph-soft-modal-title" className="mt-1 text-lg font-semibold">
-                  Premium workspace
-                </h2>
-              </div>
-              <button
-                onClick={() => setSoftModal(null)}
-                className="text-muted-foreground hover:text-foreground rounded-lg p-1"
-                aria-label="Close"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
-              Premium access adds deeper repository history, broader system context, and team-ready
-              workflows. You can keep exploring the graph without signing in.
-            </p>
-            <button
-              onClick={() => setSoftModal(null)}
-              className="border-border bg-surface hover:bg-surface-2 mt-5 rounded-lg border px-4 py-2 text-xs font-semibold"
-            >
-              Keep exploring
-            </button>
-          </section>
-        </div>
-      )}
     </main>
   );
 }

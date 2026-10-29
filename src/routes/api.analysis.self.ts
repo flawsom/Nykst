@@ -160,8 +160,7 @@ async function resolveTargetAnalysis(
     repository: {
       full_name: "flawsom/nykst",
       default_branch: "main",
-      description:
-        "Deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture.",
+      description: "One map of how this system fits together, built from its real code.",
       html_url: "https://github.com/flawsom/nykst",
     },
     files: analysis.files.map((f) => ({ path: f.path, type: "blob", size: f.loc * 38 })),

@@ -145,7 +145,7 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "02",
-    name: "Tarjan SCC Cycle & Dependency Topology",
+    name: "Dependency cycles and connections",
     metric: "Iterative Tarjan strongly-connected components + 6-level radial trie",
     naiveFail:
       "Text similarity cannot detect circular runtime imports or distinguish a leaf UI component from a high-fan-in authentication hub.",
@@ -296,7 +296,7 @@ export function LiveGraphRagExplorer({
       <div className="border-border bg-card/70 rounded-3xl border p-8 text-center">
         <RefreshCw className="text-primary mx-auto size-6 animate-spin" />
         <p className="text-muted-foreground mt-3 font-mono text-xs uppercase tracking-widest">
-          Executing AST compiler over live repository…
+          Reading the repository…
         </p>
       </div>
     );
@@ -333,17 +333,16 @@ export function LiveGraphRagExplorer({
       <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
         <div className="lg:sticky lg:top-24 space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-primary">
-            <Cpu className="size-3.5" /> Deterministic AST & Lineage Engine
+            <Cpu className="size-3.5" /> A live map of this site
           </div>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Software is a typed dependency graph.{" "}
-            <span className="text-gradient">Know the blast radius before you edit.</span>
+            Every change starts somewhere.{" "}
+            <span className="text-gradient">See everything that depends on it.</span>
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed sm:text-base">
-            Nykst compiles your repository into a deterministic AST, resolves tsconfig aliases,
-            workspace packages, and polyglot imports (Python, Go, Rust), links SQL migrations to
-            client call sites, and traces exact blast radius before you or an AI agent touches a
-            file.
+            Nykst reads the repository, follows every connection between files, links the database
+            tables your code uses, and shows what a change will touch before you or your coding
+            assistant make it.
           </p>
 
           {/* Active Layer Spotlight Card */}

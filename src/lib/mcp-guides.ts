@@ -385,14 +385,14 @@ export const TOOLS: Tool[] = [
   {
     name: "get_federation",
     summary:
-      "Cross-repository OpenAPI and gRPC contract federation, matching consumer routes to provider operations.",
+      "See which of your repositories use the same API contracts, and which endpoints call which.",
     example: "Which repositories call our OpenAPI or gRPC endpoints?",
   },
   {
     name: "run_safe_code_loop",
     summary:
-      "Check a proposed complete file against architecture and supported in-memory checks, without writing to the repository.",
-    example: "Check my proposed replacement for src/lib/auth.ts.",
+      "Check a complete replacement file against architecture and supported in-memory checks, without writing to the repository.",
+    example: "Check my replacement for src/lib/auth.ts.",
   },
   {
     name: "get_trace_overlay",
@@ -403,7 +403,7 @@ export const TOOLS: Tool[] = [
   {
     name: "simulate_change",
     summary:
-      "Preview proposed file writes or deletions on an in-memory clone of the graph before touching disk.",
+      "Preview file writes or deletions on an in-memory copy of the map before touching disk.",
     example: "Simulate deleting src/lib/legacy.ts and show what breaks.",
   },
   {

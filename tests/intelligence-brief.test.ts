@@ -161,7 +161,7 @@ describe("buildGroundedAiBrief", () => {
       "Which files import the loop?",
       FOCUS,
     );
-    expect(brief).toContain("no AST analysis is stored for this snapshot");
+    expect(brief).toContain("only a file list stored");
     expect(brief).toContain("per-symbol evidence is not applicable");
     expect(brief).not.toContain("Importers (");
     expect(brief.toLowerCase()).not.toContain("grounded in the latest repository snapshot");

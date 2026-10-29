@@ -232,7 +232,7 @@ export async function buildLoopRun(
       kind: "removed_export",
       whatBroke: `Export removed: ${symbolName}`,
       why: primary
-        ? `${primary.importerPath}:${primary.importerLine} still imports ${symbolName}, but the proposed content no longer exports it.`
+        ? `${primary.importerPath}:${primary.importerLine} still imports ${symbolName}, but the replacement no longer exports it.`
         : `${input.path} no longer exports ${symbolName}; no observed importer uses it.`,
       architecturalReason,
       causalChain: primary ? (chainByImporter.get(primary.importerPath) ?? []) : [],
@@ -271,7 +271,7 @@ export async function buildLoopRun(
             .map((caller) => `${caller.path}:${caller.line}`)
             .join(
               ", ",
-            )} still import${route.callers.length === 1 ? "s" : ""} this route module, but the proposed content no longer exports Route.`
+            )} still import${route.callers.length === 1 ? "s" : ""} this route module, but the replacement no longer exports Route.`
         : "The route export was removed; no analyzed file still imports this route module.",
       architecturalReason,
       causalChain: route.callers[0] ? (chainByImporter.get(route.callers[0].path) ?? []) : [],
@@ -285,7 +285,7 @@ export async function buildLoopRun(
       id: `property:${breakage.symbolName}:${breakage.property}:${breakage.importerPath}:${breakage.accessLine}`,
       kind: "property_break",
       whatBroke: `Property contract break: ${breakage.symbolName}.${breakage.property}`,
-      why: `${breakage.importerPath}:${breakage.accessLine} reads ${breakage.property}, which the proposed ${breakage.symbolName} no longer declares.`,
+      why: `${breakage.importerPath}:${breakage.accessLine} reads ${breakage.property}, which the replacement ${breakage.symbolName} no longer declares.`,
       architecturalReason,
       causalChain: chainByImporter.get(breakage.importerPath) ?? [],
       target: { path: breakage.importerPath, line: breakage.accessLine },

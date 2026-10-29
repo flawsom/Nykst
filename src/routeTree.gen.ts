@@ -18,12 +18,14 @@ import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as LimitsRouteImport } from './routes/limits'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PartnershipsRouteImport } from './routes/partnerships'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as ApiContactRouteImport } from './routes/api.contact'
 import { Route as ApiDiagnosisRouteImport } from './routes/api.diagnosis'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as ApiLoopRouteImport } from './routes/api.loop'
@@ -104,6 +106,11 @@ const PartnershipsRoute = PartnershipsRouteImport.update({
   path: '/partnerships',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -132,6 +139,11 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/admin/payments',
   path: '/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContactRoute = ApiContactRouteImport.update({
+  id: '/api/contact',
+  path: '/api/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDiagnosisRoute = ApiDiagnosisRouteImport.update({
@@ -333,12 +345,14 @@ export interface FileRoutesByFullPath {
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
   '/partnerships': typeof PartnershipsRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
@@ -384,12 +398,14 @@ export interface FileRoutesByTo {
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
   '/partnerships': typeof PartnershipsRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
@@ -436,12 +452,14 @@ export interface FileRoutesById {
   '/limits': typeof LimitsRoute
   '/mcp': typeof McpRoute
   '/partnerships': typeof PartnershipsRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/status': typeof StatusRoute
   '/subscribe': typeof SubscribeRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/api/contact': typeof ApiContactRoute
   '/api/diagnosis': typeof ApiDiagnosisRoute
   '/api/health': typeof ApiHealthRoute
   '/api/loop': typeof ApiLoopRoute
@@ -489,12 +507,14 @@ export interface FileRouteTypes {
     | '/limits'
     | '/mcp'
     | '/partnerships'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/contact'
     | '/api/diagnosis'
     | '/api/health'
     | '/api/loop'
@@ -540,12 +560,14 @@ export interface FileRouteTypes {
     | '/limits'
     | '/mcp'
     | '/partnerships'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/contact'
     | '/api/diagnosis'
     | '/api/health'
     | '/api/loop'
@@ -591,12 +613,14 @@ export interface FileRouteTypes {
     | '/limits'
     | '/mcp'
     | '/partnerships'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/status'
     | '/subscribe'
     | '/.well-known/$'
     | '/admin/payments'
+    | '/api/contact'
     | '/api/diagnosis'
     | '/api/health'
     | '/api/loop'
@@ -643,12 +667,14 @@ export interface RootRouteChildren {
   LimitsRoute: typeof LimitsRoute
   McpRoute: typeof McpRoute
   PartnershipsRoute: typeof PartnershipsRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   StatusRoute: typeof StatusRoute
   SubscribeRoute: typeof SubscribeRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  ApiContactRoute: typeof ApiContactRoute
   ApiDiagnosisRoute: typeof ApiDiagnosisRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiLoopRoute: typeof ApiLoopRoute
@@ -748,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnershipsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -788,6 +821,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contact': {
+      id: '/api/contact'
+      path: '/api/contact'
+      fullPath: '/api/contact'
+      preLoaderRoute: typeof ApiContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/diagnosis': {
@@ -1064,12 +1104,14 @@ const rootRouteChildren: RootRouteChildren = {
   LimitsRoute: LimitsRoute,
   McpRoute: McpRoute,
   PartnershipsRoute: PartnershipsRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   StatusRoute: StatusRoute,
   SubscribeRoute: SubscribeRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  ApiContactRoute: ApiContactRoute,
   ApiDiagnosisRoute: ApiDiagnosisRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiLoopRoute: ApiLoopRoute,

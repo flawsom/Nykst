@@ -55,12 +55,12 @@ export function LandingGraphPreview({
             <span className="size-2 rounded-full bg-amber-400/80" />
             <span className="size-2 rounded-full bg-emerald-400/80" />
             <span className="text-muted-foreground ml-2 truncate font-mono text-[10px] tracking-wide">
-              nykst://ast/{liveData?.repository ?? "compiling..."}
+              nykst://map/{liveData?.repository ?? "reading..."}
             </span>
           </div>
           <span className="border-primary/40 bg-primary/15 text-primary flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase">
             <span className="bg-primary size-1.5 rounded-full animate-pulse" />
-            {stats ? `live AST · ${stats.analyzedFiles} files` : "compiling live AST…"}
+            {stats ? `live map · ${stats.analyzedFiles} files` : "reading the repository…"}
           </span>
         </div>
 
@@ -225,7 +225,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-primary font-mono text-[8.5px] tracking-[0.24em] uppercase"
               >
-                GRAPH-RAG AST
+                SYSTEM MAP
               </text>
               <text
                 x={CX}
@@ -256,7 +256,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-primary font-mono text-[9px] font-semibold tracking-[0.12em] uppercase"
               >
-                click any domain to trace blast radius
+                click any area to see what it connects to
               </text>
             </g>
 
@@ -266,9 +266,7 @@ export function LandingGraphPreview({
               textAnchor="middle"
               className="fill-muted-foreground font-mono text-[9px]"
             >
-              {stats
-                ? `Real-time TypeScript AST telemetry · parsed in ${stats.durationMs}ms · 0 simulated nodes`
-                : "Real-time TypeScript AST telemetry · 0 simulated nodes"}
+              {stats ? "Read from this repository, not a sample" : "Reading this repository"}
             </text>
           </svg>
         </div>
@@ -276,17 +274,17 @@ export function LandingGraphPreview({
         <div className="border-border/80 text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5 font-mono text-[10px]">
           <span className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
-              <span className="bg-primary inline-block size-1.5 rounded-full" /> AST root
+              <span className="bg-primary inline-block size-1.5 rounded-full" /> Repository root
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> derived domain
+              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> system area
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="bg-node-service inline-block size-1.5 rounded-full" /> SQL & service
-              edges
+              <span className="bg-node-service inline-block size-1.5 rounded-full" /> services and
+              data
             </span>
           </span>
-          <span className="text-primary">ts.createSourceFile · Tarjan SCC</span>
+          <span className="text-primary">files · connections</span>
         </div>
       </div>
     </TiltCard>

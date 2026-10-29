@@ -73,11 +73,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nykst · Deterministic Graph-RAG Architecture & System Intelligence" },
+      { title: "Nykst · See what your next change will affect" },
       {
         name: "description",
         content:
-          "Deterministic AST + dependency graph + temporal commit-history Graph-RAG architecture. Drill from organization to file in one click and compute blast radius before any agent writes code.",
+          "One map of your repositories, built from your real code. See every file, service and database table a change will touch before you make it.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

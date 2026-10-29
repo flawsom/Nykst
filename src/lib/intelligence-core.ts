@@ -51,14 +51,14 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
       title: "1. System Map",
       subtitle: "What exists?",
       icon: Network,
-      description: `Live structure inferred from ${files.length} repository files across ${topLevel.length} top-level areas${analysis ? ` (${analysis.stats.internalEdges} AST import edges)` : ""}.`,
+      description: `Live structure read from ${files.length} repository files across ${topLevel.length} top-level areas${analysis ? `, with ${analysis.stats.internalEdges} connections between them` : ""}.`,
       files: [
         {
           name: "RepositoryTree.json",
           path: `/live/${repo}/RepositoryTree.json`,
           size: size(files.reduce((sum, file) => sum + (file.size ?? 0), 0)),
           summary:
-            "The file tree and AST statistics used to derive domains, services, modules, and files.",
+            "The file tree and connection counts used to group your system into areas, services, modules, and files.",
           content: json({
             repository: repo,
             domains: topLevel,
@@ -81,21 +81,21 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
     },
     {
       id: "dependencies",
-      title: "2. Dependency & SQL Graph",
+      title: "2. Connections and data",
       subtitle: "What connects to what?",
       icon: Network,
       description: analysis
-        ? `${analysis.stats.internalEdges} internal AST edges, ${astServices.length} external services, and ${astResources.length} SQL/data resources linked.`
+        ? `${analysis.stats.internalEdges} connections between files, ${astServices.length} external services, and ${astResources.length} database tables and data sources linked.`
         : `${manifests.length} dependency manifests detected; package and module boundaries are ready for deeper linkage analysis.`,
       files: [
         ...(analysis
           ? [
               {
-                name: "AstDependencyTopology.json",
-                path: `/live/${repo}/AstDependencyTopology.json`,
+                name: "Connections.json",
+                path: `/live/${repo}/Connections.json`,
                 size: `${Math.max(2, Math.round(analysis.stats.internalEdges / 12))} KB`,
                 summary:
-                  "TypeScript AST compiler dependency edges, external services, and SQL data resources.",
+                  "Connections between files, external services, and the database tables your code uses.",
                 content: json({
                   repository: repo,
                   stats: analysis.stats,
@@ -120,8 +120,8 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
               name: file.path!.split("/").pop() ?? file.path!,
               path: file.path!,
               size: size(file.size ?? 0),
-              summary: "Dependency manifest discovered in the connected repository.",
-              content: `Repository: ${repo}\nPath: ${file.path}\n\nDependency edges are derived from this manifest and the TypeScript AST compiler.`,
+              summary: "Dependency manifest found in the connected repository.",
+              content: `Repository: ${repo}\nPath: ${file.path}\n\nConnections in this manifest are read directly from your code.`,
             }))
           : []),
       ],
@@ -149,7 +149,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
                 }))
               : {
                   repository: repo,
-                  note: "Connect GitHub to hydrate full commit blame history alongside live AST analysis.",
+                  note: "Connect a repository to see its commit history here.",
                   analyzedAt: analysis?.generatedAt ?? new Date().toISOString(),
                 },
           ),
@@ -172,7 +172,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
     },
     {
       id: "risk",
-      title: "4. Risk & Blast-Radius",
+      title: "4. Risk",
       subtitle: "Where should you be careful?",
       icon: ShieldAlert,
       description: `${openIssues.length} open issue signals and ${astCycles.length} circular import loops inspected for file-level risk tracing.`,
@@ -181,7 +181,8 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
           name: "ArchitecturalRiskProfile.json",
           path: `/live/${repo}/ArchitecturalRiskProfile.json`,
           size: "6 KB",
-          summary: "Circular runtime dependencies, unresolved imports, and high-fan-in AST hubs.",
+          summary:
+            "Circular dependencies, unresolved imports, and files that many other files rely on.",
           content: json({
             repository: repo,
             circularRuntimeCycles: astCycles,
@@ -235,7 +236,7 @@ export function buildCoreModules(snapshot: RepositorySnapshot): CoreModule[] {
               path: `/live/${repo}/RepositoryContext.md`,
               size: "2 KB",
               summary: "System context generated from repository metadata and change history.",
-              content: `# ${repo}\n\nDefault branch: ${snapshot.repository?.default_branch ?? "main"}\n\n${snapshot.repository?.description ?? "Deterministic AST + Graph-RAG system intelligence."}`,
+              content: `# ${repo}\n\nDefault branch: ${snapshot.repository?.default_branch ?? "main"}\n\n${snapshot.repository?.description ?? "System intelligence for your codebase."}`,
             },
           ],
     },
@@ -301,7 +302,7 @@ export function buildGroundedAiBrief(snapshot: RepositorySnapshot, query: string
     );
   } else {
     push(
-      `Analysis: no AST analysis is stored for this snapshot; only the ${snapshot.files?.length ?? 0}-entry file tree is available.`,
+      `Detail: this repository has only a file list stored, so file-level detail is not available (${snapshot.files?.length ?? 0} files listed).`,
     );
   }
   push(`Question: ${query}`);
@@ -417,9 +418,7 @@ export function buildGroundedAiBrief(snapshot: RepositorySnapshot, query: string
     for (const pull of pulls) push(`- #${pull.number} [${pull.state}] ${pull.title}`);
   }
   if (!commits.length && !pulls.length)
-    push(
-      "\nCommit and pull-request history: not present in this snapshot (the self-index is AST-only).",
-    );
+    push("\nCommit and pull-request history: not available for this example repository.");
 
   const openIssues = (snapshot.issues ?? []).filter(
     (issue) => text(issue["state"]).toLowerCase() !== "closed" && text(issue["title"]),
