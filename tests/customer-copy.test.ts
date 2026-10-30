@@ -48,6 +48,32 @@ describe("AI settings copy", () => {
   });
 });
 
+describe("first-screen language", () => {
+  const stripComments = (text: string) =>
+    text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const screens = {
+    landing: source("src/routes/index.tsx"),
+    graph: source("src/routes/graph.tsx"),
+    preview: source("src/components/graph/LandingGraphPreview.tsx"),
+    workbench: source("src/components/graph/LiveGraphRagExplorer.tsx"),
+    canvas: source("src/components/graph/GraphCanvas.tsx"),
+    brand: source("src/components/brand/NykstLogo.tsx"),
+  };
+
+  test("plain words come before compiler terms", () => {
+    for (const [name, text] of Object.entries(screens)) {
+      const visible = stripComments(text);
+      for (const term of ["Graph-RAG", "GraphRAG", "AST", "source files", "import edges", "LOC"]) {
+        expect({ name, term, present: visible.includes(term) }).toEqual({
+          name,
+          term,
+          present: false,
+        });
+      }
+    }
+  });
+});
+
 describe("MCP sandbox copy", () => {
   test("states that the sandbox is the example project before it runs", () => {
     expect(prose(mcp)).toContain("This sandbox runs on the Nykst example project only");

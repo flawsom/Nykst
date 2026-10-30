@@ -135,8 +135,8 @@ type McpToolName =
 const ARCHITECTURE_LAYERS = [
   {
     step: "01",
-    name: "Polyglot & TypeScript AST Compiler",
-    metric: "ts.createSourceFile + Python, Go, Rust adapters · tsconfig alias & workspace resolver",
+    name: "Reads your code",
+    metric: "TypeScript, JavaScript, Python, Go and Rust · aliases and workspace packages resolved",
     naiveFail:
       "Lexical search and chunked text indexers split files arbitrarily, severing function signatures from imports and missing cross-file path aliases.",
     nykstTruth:
@@ -145,8 +145,8 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "02",
-    name: "Dependency cycles and connections",
-    metric: "Iterative Tarjan strongly-connected components + 6-level radial trie",
+    name: "Finds two-way connections",
+    metric: "Circular links isolated from one-way imports · six-level map",
     naiveFail:
       "Text similarity cannot detect circular runtime imports or distinguish a leaf UI component from a high-fan-in authentication hub.",
     nykstTruth:
@@ -155,8 +155,8 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "03",
-    name: "Reverse BFS Blast-Radius Reachability",
-    metric: "Exact line-level importer chains → API & route entrypoints",
+    name: "Follows every file that depends on a change",
+    metric: "Exact file and line → the page or API endpoint it reaches",
     naiveFail:
       "Heuristic impact checks guess what might break from file names, missing transitive callers several hops away.",
     nykstTruth:
@@ -165,8 +165,8 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "04",
-    name: "SQL Column Contracts & Service Lineage",
-    metric: "DDL migration replay + PostgREST/Prisma column drift verifier",
+    name: "Links database tables to the code that uses them",
+    metric: "Migrations replayed in order · columns checked against the calls that read them",
     naiveFail:
       "Standard code indexers treat SQL migrations, environment variables, and SDK calls as unlinked strings.",
     nykstTruth:
@@ -175,8 +175,8 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "05",
-    name: "Pre-Flight Simulation & Verified Remediation",
-    metric: "simulate_change overlay + generate_fix_patch in-memory verification",
+    name: "Tries a change before you make it",
+    metric: "Safe copy of the map + an exact fix when something breaks",
     naiveFail:
       "Agents edit files on disk first and discover broken imports or new cycles only after the build fails.",
     nykstTruth:
@@ -185,8 +185,8 @@ const ARCHITECTURE_LAYERS = [
   },
   {
     step: "06",
-    name: `Streamable HTTP MCP Server (${MCP_TOOLS.length} Read-Only Tools)`,
-    metric: `${MCP_TOOLS.length} readOnlyHint MCP tools · OTLP trace overlay · OpenAPI/gRPC federation`,
+    name: `Connects to your coding assistant (${MCP_TOOLS.length} read-only tools)`,
+    metric: `${MCP_TOOLS.length} read-only tools · trace overlay · API contracts`,
     naiveFail: "IDE agents burn context tokens grepping hundreds of files before making a change.",
     nykstTruth: `Claude Code, Cursor, VS Code, Windsurf, and Codex call all ${MCP_TOOLS.length} read-only tools over /api/mcp in milliseconds before touching a line of code.`,
     proofFile: "src/lib/mcp.server.ts",
@@ -392,8 +392,8 @@ export function LiveGraphRagExplorer({
             <span className="flex items-center gap-2">
               <span className="bg-primary glow-ring size-2 rounded-full" />
               <span>
-                Compiler run: <strong>{stats.durationMs}ms</strong> · {stats.analyzedFiles} AST
-                files · {stats.internalEdges} edges
+                Read in <strong>{stats.durationMs}ms</strong> · {stats.analyzedFiles} files ·{" "}
+                {stats.internalEdges} connections
               </span>
             </span>
             <button
@@ -402,7 +402,7 @@ export function LiveGraphRagExplorer({
               className="text-primary hover:underline inline-flex items-center gap-1"
             >
               <RefreshCw className={cn("size-3", loadingTarget && "animate-spin")} />
-              Re-compile live AST
+              Read the code again
             </button>
           </div>
         </div>
@@ -474,7 +474,7 @@ export function LiveGraphRagExplorer({
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
-              <Activity className="size-3.5" /> Live AST & Blast-Radius Workbench
+              <Activity className="size-3.5" /> See what a change would touch
             </div>
             <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
               Inspect{" "}
@@ -492,7 +492,7 @@ export function LiveGraphRagExplorer({
           <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-surface p-1">
             {(
               [
-                { id: "blast", label: "Blast Radius & Importers", icon: Zap },
+                { id: "blast", label: "What a change touches", icon: Zap },
                 {
                   id: "sql",
                   label: `SQL & Services (${resources.length + services.length})`,
@@ -525,7 +525,7 @@ export function LiveGraphRagExplorer({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
-                  Highest-impact AST hubs (click to trace)
+                  Files other code depends on most (click to trace)
                 </span>
                 <span className="text-primary font-mono text-[11px]">
                   {topHubs.length} ranked hubs
@@ -557,13 +557,13 @@ export function LiveGraphRagExplorer({
                               : "border-border bg-card text-muted-foreground",
                           )}
                         >
-                          {hub.importers} importers
+                          {hub.importers} files use it
                         </span>
                       </div>
                       <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px]">
                         <span>{hub.role}</span>
                         <span>·</span>
-                        <span>{hub.loc} LOC</span>
+                        <span>{hub.loc} lines</span>
                         {hub.services.length > 0 && (
                           <>
                             <span>·</span>
@@ -583,7 +583,7 @@ export function LiveGraphRagExplorer({
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
                   <div>
                     <span className="text-primary font-mono text-[10px] uppercase tracking-[0.2em]">
-                      Selected AST Target
+                      Selected file
                     </span>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <h4 className="font-mono text-base font-bold sm:text-lg">
@@ -597,7 +597,7 @@ export function LiveGraphRagExplorer({
                             path: selectedTarget.path,
                             line: 1,
                             label: selectedTarget.path,
-                            reason: `Source file (${selectedTarget.file?.loc ?? 0} LOC · ${impact.direct_importers.length} direct importers)`,
+                            reason: `${selectedTarget.file?.loc ?? 0} lines · ${impact.direct_importers.length} files use it`,
                           })
                         }
                         className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors"
@@ -607,8 +607,8 @@ export function LiveGraphRagExplorer({
                     </div>
                     {selectedTarget.file && (
                       <p className="text-muted-foreground mt-1 font-mono text-[11px]">
-                        Role: {selectedTarget.file.role} · {selectedTarget.file.loc} LOC · Exports:{" "}
-                        {selectedTarget.file.exports.slice(0, 5).join(", ") || "none"}
+                        What it does: {selectedTarget.file.role} · {selectedTarget.file.loc} lines ·{" "}
+                        Exports: {selectedTarget.file.exports.slice(0, 5).join(", ") || "none"}
                       </p>
                     )}
                   </div>
@@ -618,7 +618,7 @@ export function LiveGraphRagExplorer({
                       levelColor,
                     )}
                   >
-                    {impact.level} Blast Radius
+                    {impact.level} impact
                   </span>
                 </div>
 
@@ -627,7 +627,7 @@ export function LiveGraphRagExplorer({
                   <div className="border-border bg-card/80 rounded-xl border p-3">
                     <p className="text-xl font-bold">{impact.direct_importers.length}</p>
                     <p className="text-muted-foreground font-mono text-[10px] uppercase">
-                      Direct Importers
+                      Files that use it
                     </p>
                   </div>
                   <div className="border-border bg-card/80 rounded-xl border p-3">
@@ -696,7 +696,7 @@ export function LiveGraphRagExplorer({
                 {/* Direct Importers with Line Numbers */}
                 <div className="mt-4 space-y-2">
                   <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-[0.18em]">
-                    Direct Importers (Click file:line to open exact import statement)
+                    Files that use it (click a file and line to open the exact import)
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {impact.direct_importers.slice(0, 10).map((d) => (
@@ -735,7 +735,7 @@ export function LiveGraphRagExplorer({
                   to="/graph"
                   className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors"
                 >
-                  Open full 6-level navigator <ArrowRight className="size-3.5" />
+                  Open the full map <ArrowRight className="size-3.5" />
                 </Link>
               </div>
             </div>

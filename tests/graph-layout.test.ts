@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
+  ORBIT_PAGE_SIZE,
   RADIAL_START_ANGLE,
   curvedEdgePath,
   isRadial,
+  orbitCardSize,
   orbitPlan,
   radialLayout,
 } from "../src/lib/graph-layout";
@@ -34,7 +36,7 @@ describe("radialLayout", () => {
     expect(isRadial(points)).toBe(true);
   });
 
-  test("uses two staggered concentric rings above twelve siblings", () => {
+  test("uses two staggered concentric rings above eight siblings", () => {
     const points = radialLayout(14, { width: W, height: H });
     expect(points).toHaveLength(14);
     const rings = new Set(points.map((point) => point.ring));
@@ -59,8 +61,9 @@ describe("radialLayout", () => {
 
   test("keeps every sibling inside the viewport for a very wide hub", () => {
     const points = radialLayout(30, { width: W, height: H });
-    // A hub wider than two clean orbits keeps the orbits readable and reports the rest.
-    expect(points).toHaveLength(24);
+    // A hub wider than one readable orbit keeps the two clean orbits and pages
+    // the rest through the sector selector.
+    expect(points).toHaveLength(ORBIT_PAGE_SIZE);
     for (const point of points) {
       expect(point.x).toBeGreaterThanOrEqual(0);
       expect(point.x).toBeLessThanOrEqual(W);
@@ -68,17 +71,17 @@ describe("radialLayout", () => {
       expect(point.y).toBeLessThanOrEqual(H);
     }
     expect(new Set(points.map((point) => `${point.x.toFixed(2)}:${point.y.toFixed(2)}`)).size).toBe(
-      24,
+      ORBIT_PAGE_SIZE,
     );
   });
 
   test("orbitPlan is balanced and empty for no children", () => {
     expect(orbitPlan(0)).toEqual([]);
     expect(orbitPlan(8)).toEqual([{ ring: 1, count: 8, radiusFactor: 1 }]);
-    const plan = orbitPlan(24);
-    expect(plan.reduce((sum, orbit) => sum + orbit.count, 0)).toBe(24);
-    expect(plan.map((orbit) => orbit.count)).toEqual([12, 12]);
-    expect(orbitPlan(40).reduce((sum, orbit) => sum + orbit.count, 0)).toBe(24);
+    const plan = orbitPlan(ORBIT_PAGE_SIZE);
+    expect(plan.reduce((sum, orbit) => sum + orbit.count, 0)).toBe(ORBIT_PAGE_SIZE);
+    expect(plan.map((orbit) => orbit.count)).toEqual([8, 8]);
+    expect(orbitPlan(40).reduce((sum, orbit) => sum + orbit.count, 0)).toBe(ORBIT_PAGE_SIZE);
   });
 });
 
@@ -89,11 +92,38 @@ describe("radial coordinate invariant", () => {
   };
 
   test("every sibling count spreads past 80px on both axes", () => {
-    for (const count of [3, 6, 8, 13, 24]) {
+    for (const count of [3, 6, 8, 13, ORBIT_PAGE_SIZE]) {
       const points = radialLayout(count, { width: W, height: H });
       expect(points.length).toBeGreaterThan(0);
       expect(stdDev(points.map((point) => point.x))).toBeGreaterThan(80);
       expect(stdDev(points.map((point) => point.y))).toBeGreaterThan(80);
+    }
+  });
+
+  test("no two rendered cards overlap at any orbit size", () => {
+    for (let count = 2; count <= ORBIT_PAGE_SIZE; count += 1) {
+      const points = radialLayout(count, { width: W, height: H });
+      const plan = orbitPlan(count);
+      const counts = new Map<number, number>();
+      for (const orbit of plan) counts.set(orbit.ring, orbit.count);
+      const rects = points.map((point) => {
+        const size = orbitCardSize(point.ring, counts.get(point.ring) ?? 0);
+        return {
+          left: point.x - size.width / 2,
+          right: point.x + size.width / 2,
+          top: point.y - size.height / 2,
+          bottom: point.y + size.height / 2,
+        };
+      });
+      for (let i = 0; i < rects.length; i += 1) {
+        for (let j = i + 1; j < rects.length; j += 1) {
+          const a = rects[i]!;
+          const b = rects[j]!;
+          const overlaps =
+            a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+          expect({ count, i, j, overlaps }).toEqual({ count, i, j, overlaps: false });
+        }
+      }
     }
   });
 });

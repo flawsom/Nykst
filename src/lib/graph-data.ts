@@ -63,19 +63,19 @@ export function childrenOf(node: GraphNode): GraphNode[] {
 }
 
 export const kindLabel: Record<NodeKind, string> = {
-  org: "Organization",
-  domain: "Core domain",
-  capability: "Capability",
+  org: "Project",
+  domain: "Part of the project",
+  capability: "Area",
   service: "Service",
-  module: "Module",
+  module: "Group of files",
   file: "File",
 };
 
 export const childKindLabel: Record<NodeKind, string> = {
-  org: "Core domains",
-  domain: "Capabilities",
+  org: "Parts of the project",
+  domain: "Areas",
   capability: "Services",
-  service: "Modules",
+  service: "Groups of files",
   module: "Files",
-  file: "Structure",
+  file: "Details",
 };

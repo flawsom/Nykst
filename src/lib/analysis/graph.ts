@@ -437,16 +437,16 @@ export function buildAnalysisGraph(
     repoName,
     all,
     topLevel,
-    `${plural(analysis.stats.analyzedFiles, ["source file", "source files"])}, ${analysis.stats.internalEdges.toLocaleString("en-US")} import edges, ${plural(analysis.services.length, ["external service", "external services"])}. Parsed with the TypeScript compiler at ${analysis.ref.slice(0, 8)}.`,
+    `${plural(analysis.stats.analyzedFiles, ["file", "files"])} in this project, ${analysis.stats.internalEdges.toLocaleString("en-US")} connections between them, and ${plural(analysis.services.length, ["outside service", "outside services"])}. Read from the code itself.`,
     "repository",
     repoName,
   );
   root.metrics = [
-    { label: "Source files", value: analysis.stats.analyzedFiles.toLocaleString("en-US") },
-    { label: "LOC", value: analysis.stats.loc.toLocaleString("en-US") },
-    { label: "Import edges", value: analysis.stats.internalEdges.toLocaleString("en-US") },
-    { label: "Services", value: String(analysis.services.length) },
-    { label: "Cycles", value: String(analysis.cycles.length) },
+    { label: "Files", value: analysis.stats.analyzedFiles.toLocaleString("en-US") },
+    { label: "Lines of code", value: analysis.stats.loc.toLocaleString("en-US") },
+    { label: "Connections", value: analysis.stats.internalEdges.toLocaleString("en-US") },
+    { label: "Outside services", value: String(analysis.services.length) },
+    { label: "Two-way links", value: String(analysis.cycles.length) },
   ];
   return root;
 }

@@ -1,7 +1,7 @@
 <a id="top"></a>
 
 <p align="center">
-  <img src="docs/assets/readme-banner.svg" width="100%" alt="Nykst · Deterministic Graph-RAG architecture for software systems. Know the blast radius before you change the code." />
+  <img src="docs/assets/readme-banner.svg" width="100%" alt="Nykst · See what your next change will affect." />
 </p>
 
 <div align="center">
@@ -10,7 +10,9 @@
 
 **Know the blast radius before you change the code.**
 
-Nykst compiles a repository with the TypeScript compiler and static adapters for Python, Go, and Rust, links SQL migrations and external services, federates OpenAPI and gRPC contracts, overlays OpenTelemetry traces onto the static graph, and answers one question with evidence: _if I touch this file, what breaks?_
+Nykst reads a repository and shows you what a change will touch: the files that depend on it, the pages and APIs they reach, the database columns they use, and the tests that cover them. Every answer points to a real file and line.
+
+Under the hood, Nykst compiles the repository with the TypeScript compiler and static adapters for Python, Go, and Rust, links SQL migrations and external services, federates OpenAPI and gRPC contracts, and overlays OpenTelemetry traces onto the static graph. The first screen stays plain: files, connections, lines, outside services, and what a change touches.
 
 Push webhooks and local file watchers patch the graph from the changed files alone, with no second tarball download. Exported signatures carry parameter arity and type properties, SQL columns are checked against the calls that read them, and `simulate_change` previews a write before it happens. Every number it reports is computed from real source, with file and line citations. Nothing is seeded, sampled, or guessed.
 
@@ -94,31 +96,38 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 261 source files, 49,526 LOC, 581 internal edges, 0 unresolved imports, 15 SQL and data resources, 11 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 261 source files, 49,580 LOC, 581 internal edges, 0 unresolved imports, 15 SQL and data resources, 11 external services, 0 cycles, 11 MCP tools |
 
-| Command                                     | Result on that tree                                          |
-| :------------------------------------------ | :----------------------------------------------------------- |
-| `bun tsc -b --noEmit`                       | pass, 0 errors                                               |
-| `bun test ./tests`                          | 257 pass, 0 fail, 34 files, 1,757 assertions, 2.41 s         |
-| `bun run check:claims`                      | ok                                                           |
-| `bun run build`                             | pass, 2.92 s client and 2.88 s Nitro server                   |
-| `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings          |
-| Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, last run 29 October 2026      |
-| GitHub Actions CI and E2E                   | run on every push; local checks below passed for this tree  |
+| Command                                     | Result on that tree                                        |
+| :------------------------------------------ | :--------------------------------------------------------- |
+| `bun tsc -b --noEmit`                       | pass, 0 errors                                             |
+| `bun test ./tests`                          | 259 pass, 0 fail, 34 files, 2,441 assertions, 2.60 s       |
+| `bun run check:claims`                      | ok                                                         |
+| `bun run build`                             | pass, 2.81 s client and 2.84 s Nitro server                |
+| `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings        |
+| Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, last run 29 October 2026    |
+| GitHub Actions CI and E2E                   | run on every push; local checks below passed for this tree |
 
-Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow. They were not re-run by hand for the mail change; its server paths are covered by the new unit tests and the production build below.
+Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow. They were not re-run by hand for this tree; its server paths are covered by the unit tests and the production build below.
+
+### Changed in this release
+
+- **First screens now speak plainly.** The landing hero and the graph root say files, connections, lines, outside services and what a change touches. Compiler terms stay in the deep technical sections, not in the first decision.
+- **The root orbit no longer overlaps.** Orbit rings are sized from the rendered card dimensions, not an estimate. A new regression test checks every root count from 2 to 16 and fails on any overlapping pair. The root of this repository is 13 parts and renders without collisions.
+- **The public example is a projection.** `/api/analysis/self` returns no environment names, table names, columns, memory records or file bodies. An unknown repository returns 404 instead of another project's map.
+- **Source evidence is bounded.** Environment, build and secret paths are refused, and full file content requires a validated GitHub token. The route no longer acts as an anonymous proxy for any public repository.
 
 ### Gated, with the exact missing input
 
-| Surface                                   | State            | Missing input                                                                                           |
-| :---------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------ |
+| Surface                                   | State            | Missing input                                                                                                                                                                                    |
+| :---------------------------------------- | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Razorpay live checkout                    | live             | monthly INR 699 with a 7 day refund window, annual INR 4,999 with a 14 day refund window, 7 day trial, 18 percent GST included; weekly INR 299 is gated because its refund window is not decided |
-| Weekly refund terms                       | gated            | founder decision OD-15; weekly stays closed until a refund window is decided                            |
-| GST invoice breakdown                     | gated            | tax advisor confirmation; billing states "Invoice format pending tax confirmation"                      |
-| Hindi notice, consent and rights controls | gated            | translator text, counsel review, and DPO acceptance                                                     |
-| Ten precomputed public graphs             | 0 of 10 ingested | the ten owner and repo names                                                                            |
-| Repo B promotion gate                     | not run          | count verification and three hand written known answers                                                 |
-| `nykst.vercel.app` redirect               | configured       | 307 redirect to `nykst.unifies.codes`, verified in Vercel on 30 October 2026                            |
+| Weekly refund terms                       | gated            | founder decision OD-15; weekly stays closed until a refund window is decided                                                                                                                     |
+| GST invoice breakdown                     | gated            | tax advisor confirmation; billing states "Invoice format pending tax confirmation"                                                                                                               |
+| Hindi notice, consent and rights controls | gated            | translator text, counsel review, and DPO acceptance                                                                                                                                              |
+| Ten precomputed public graphs             | 0 of 10 ingested | the ten owner and repo names                                                                                                                                                                     |
+| Repo B promotion gate                     | not run          | count verification and three hand written known answers                                                                                                                                          |
+| `nykst.vercel.app` redirect               | configured       | 307 redirect to `nykst.unifies.codes`, verified in Vercel on 30 October 2026                                                                                                                     |
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -306,7 +315,7 @@ Call-site checks follow lexical scope bindings, merge overload signatures into o
 
 The web application and the analysis engine share one graph, and the UI now behaves the same way on `/` and `/graph`:
 
-- **Radial orbit layout with an accessible list view.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. A hub wider than 24 children keeps two readable orbits and offers a sector selector to reach every child in the canvas. A List toggle replaces the canvas with every child as a native, keyboard-focusable button, with full labels, a text filter over names and paths, the same drill and details actions, and no 24-child cap. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
+- **Radial orbit layout with an accessible list view.** The focused node sits at the centre of the viewport and its children are placed by polar trigonometry (`angle = 2π·i/n − π/2`, `x = cx + r·cos(a)`, `y = cy + r·sin(a)`). Up to eight children use one orbit; more than eight use two staggered concentric orbits. Ring radii and card widths are computed together, and `tests/graph-layout.test.ts` checks every count from 2 to 16 for an overlapping card pair. A hub wider than 16 children keeps two readable orbits and offers a sector selector to reach every child in the canvas. A List toggle replaces the canvas with every child as a native, keyboard-focusable button, with full labels, a text filter over names and paths, the same drill and details actions, and no 16-child cap. There is no column or grid fallback, so a connected GitHub repository never collapses into a vertical lineup.
 - **Curved dependency edges.** Every edge is a quadratic Bezier (`M ... Q ...`) from the centre hub to the child. Importer edges are teal (`#2DD4BF`), runtime cycle edges are red (`#F87171`), and the focused edge is amber. The legend sits under the canvas.
 - **Repository switcher.** `<RepoSwitcherBar />` is mounted on `/`, `/graph` and `/intelligence`. Its first tab lists every ingested workspace (with branch, short commit, file and edge counts) plus `flawsom/nykst (Live Workspace)`; the second tab searches all accessible GitHub repositories, picks a branch, and calls the ingest endpoint with inline progress. Switching updates `?repo=` so the graph, dossier, envelope, memory page and reloads all follow the same repository.
 - **Click-to-code.** Every `file:line` row in the dossier (importers, transitive dependents, entrypoints, SQL resources, column drift, exported signatures), in Before You Act, and in the landing workbench is a button. It opens `<CodeProblemInspector />`, which fetches the real source, scrolls to the line, highlights it, explains why the line matters, and offers three actions: inspect the node in the graph, open the exact line on GitHub (`#L<line>`), or open it in VS Code / Cursor (`vscode://file/...:<line>`).
@@ -321,10 +330,10 @@ The web application and the analysis engine share one graph, and the UI now beha
 
 Real captures from the running application. No mockups.
 
-### Landing: live AST telemetry
+### Landing: live map
 
 <p align="center">
-  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst landing page with live AST graph preview and GitHub connect" />
+  <img src="docs/assets/screens/landing.png" width="100%" alt="Nykst landing page with a live project map preview and GitHub connect" />
 </p>
 
 ### Navigator: six-level graph and inspector
@@ -394,13 +403,13 @@ Real captures from the running application. No mockups.
 
 ### Live surfaces
 
-| Surface                       | What you can do                                                                                      | URL                                                         |
-| :---------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- |
-| **Landing and AST workbench** | Explore this repository compiled live, click a hub, read exact importer lines, inspect SQL resources | [`/`](https://nykst.unifies.codes/)                         |
-| **System graph**              | Walk from organization to file, open a dossier, run Before You Act                                   | [`/graph`](https://nykst.unifies.codes/graph)               |
-| **System memory**             | Browse change intelligence and risk, ask a grounded question                                         | [`/intelligence`](https://nykst.unifies.codes/intelligence) |
-| **MCP hub**                   | Mint a token and copy a ready config for your agent                                                  | [`/mcp`](https://nykst.unifies.codes/mcp)                   |
-| **Health probe**              | JSON readiness for Supabase and every required table                                                 | [`/api/health`](https://nykst.unifies.codes/api/health)     |
+| Surface                  | What you can do                                                                                          | URL                                                         |
+| :----------------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- |
+| **Landing and live map** | Explore this repository read live, click a part, see the exact files that use it, inspect data resources | [`/`](https://nykst.unifies.codes/)                         |
+| **System graph**         | Walk from organization to file, open a dossier, run Before You Act                                       | [`/graph`](https://nykst.unifies.codes/graph)               |
+| **System memory**        | Browse change intelligence and risk, ask a grounded question                                             | [`/intelligence`](https://nykst.unifies.codes/intelligence) |
+| **MCP hub**              | Mint a token and copy a ready config for your agent                                                      | [`/mcp`](https://nykst.unifies.codes/mcp)                   |
+| **Health probe**         | JSON readiness for Supabase and every required table                                                     | [`/api/health`](https://nykst.unifies.codes/api/health)     |
 
 <details>
 <summary><b>Embedding a GIF, MP4, or YouTube walkthrough</b></summary>
@@ -548,7 +557,7 @@ sequenceDiagram
 | Remember  | Cited ADRs, diagrams, migrations, and image references                                                                | `src/lib/memory/evidence.ts`                         |
 | Impact    | Reverse BFS, import chains, co-change history, tests                                                                  | `src/lib/analysis/impact.ts`                         |
 | Shape     | Six-level graph and dossiers                                                                                          | `src/lib/analysis/graph.ts`                          |
-| Mail      | Table HTML and text, escaped recipients, best-effort transactional delivery                                          | `src/lib/email/`, `src/lib/resend.server.ts`         |
+| Mail      | Table HTML and text, escaped recipients, best-effort transactional delivery                                           | `src/lib/email/`, `src/lib/resend.server.ts`         |
 | Serve     | Eleven read-only MCP tools                                                                                            | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
 | Store     | Snapshots, keys, tokens, signals, subscriptions                                                                       | `supabase/migrations`                                |
 
@@ -563,10 +572,10 @@ sequenceDiagram
 
 Two messages leave Nykst. Both are transactional, not marketing: there is no unsubscribe link because nobody is subscribed, and there is no tracking pixel, remote image, web font, or open and click tracking.
 
-| Path | Trigger | Recipient | Subject | What the message proves |
-| :--- | :------ | :-------- | :------ | :---------------------- |
-| Contact receipt | A contact message is stored | The address that submitted the form | `Nykst received your message [NYKST-XXXXXXXX]` | The exact reference, topic, received time in IST, full message, per-topic reply promise, and a reply-to action |
-| GitHub sign-in notice | A GitHub OAuth callback succeeds | The verified GitHub email, primary first | `New sign-in to Nykst` | The GitHub login, IST time, coarse browser and operating system, OAuth method, and a link to GitHub security settings |
+| Path                  | Trigger                          | Recipient                                | Subject                                        | What the message proves                                                                                               |
+| :-------------------- | :------------------------------- | :--------------------------------------- | :--------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| Contact receipt       | A contact message is stored      | The address that submitted the form      | `Nykst received your message [NYKST-XXXXXXXX]` | The exact reference, topic, received time in IST, full message, per-topic reply promise, and a reply-to action        |
+| GitHub sign-in notice | A GitHub OAuth callback succeeds | The verified GitHub email, primary first | `New sign-in to Nykst`                         | The GitHub login, IST time, coarse browser and operating system, OAuth method, and a link to GitHub security settings |
 
 ```mermaid
 flowchart LR
@@ -919,7 +928,7 @@ nykst/
 | `VITE_SUPABASE_URL`             |   Yes    | Client | `https://<ref>.supabase.co`                          | Browser client for Realtime.                                                                                                                                                                                     |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` |   Yes    | Client | `sb_publishable_...`                                 | Browser key, guarded by RLS.                                                                                                                                                                                     |
 | `GITHUB_CLIENT_ID`              |   Yes    | Server | OAuth or App client id                               | GitHub authorization.                                                                                                                                                                                            |
-| `GITHUB_CLIENT_SECRET`          |   Yes    | Server | 40 hex chars                                         | Token exchange and state signing. Vercel may store the rotated value as `CLIENT_SECRET`; the server accepts either name.                                                                                          |
+| `GITHUB_CLIENT_SECRET`          |   Yes    | Server | 40 hex chars                                         | Token exchange and state signing. Vercel may store the rotated value as `CLIENT_SECRET`; the server accepts either name.                                                                                         |
 | `GITHUB_WEBHOOK_SECRET`         |   Yes    | Server | Random string                                        | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`.                                                                                                                                                        |
 | `GITHUB_BOT_TOKEN`              |    No    | Server | Fine-grained: Issues RW, Pull requests R, Metadata R | Posts and updates the PR blast-radius comment. The repository also needs a committed snapshot. Without the token the webhook stores the signal and skips the comment.                                            |
 | `GITHUB_REDIRECT_URI`           |    No    | Server | Absolute URL                                         | Optional override; otherwise the host is matched automatically.                                                                                                                                                  |
@@ -931,16 +940,16 @@ nykst/
 | `GEMINI_API_KEY`                |    No    | Server | `AIza...`                                            | Secondary platform fallback.                                                                                                                                                                                     |
 | `SLACK_CLIENT_ID` / `_SECRET`   |    No    | Server | Slack app credentials                                | Enables `/nykst` slash commands.                                                                                                                                                                                 |
 | `JIRA_CLIENT_ID` / `_SECRET`    |    No    | Server | Atlassian OAuth                                      | Enables issue correlation.                                                                                                                                                                                       |
-| `RESEND_API_KEY`                |   Yes    | Server | `re_...`                                             | Sends the owner notification, the sender receipt, and the GitHub sign-in security notice. Without it a contact message is stored but the visitor is told mail was not sent; GitHub sign-in still succeeds.          |
+| `RESEND_API_KEY`                |   Yes    | Server | `re_...`                                             | Sends the owner notification, the sender receipt, and the GitHub sign-in security notice. Without it a contact message is stored but the visitor is told mail was not sent; GitHub sign-in still succeeds.       |
 | `CONTACT_MAIL_FROM`             |   Yes    | Server | `Nykst <contact@yourdomain>`                         | Verified Resend sender for every transactional message. It must use a domain verified in Resend, with SPF, DKIM, and a DMARC policy.                                                                             |
 | `RESEND_WEBHOOK_SECRET`         |    No    | Server | `whsec_...`                                          | Verifies inbound mail on `/api/webhooks/resend` before anything is stored.                                                                                                                                       |
 | `NYKST_ADMIN_GITHUB_ID`         |    No    | Server | Numeric GitHub id                                    | Grants `/admin/payments`.                                                                                                                                                                                        |
 | `RAZORPAY_KEY_ID`               |   Yes    | Server | `rzp_live_...`                                       | Public key id passed to Checkout. The prefix selects live or test mode.                                                                                                                                          |
-| `RAZORPAY_KEY_SECRET`           |   Yes    | Server | Secret                                               | Server-side subscription creation and payment signature verification.                                                                                                                                           |
+| `RAZORPAY_KEY_SECRET`           |   Yes    | Server | Secret                                               | Server-side subscription creation and payment signature verification.                                                                                                                                            |
 | `RAZORPAY_WEBHOOK_SECRET`       |   Yes    | Server | Webhook secret                                       | Verifies `X-Razorpay-Signature` over the exact raw body on `/api/webhooks/razorpay`.                                                                                                                             |
 | `RAZORPAY_PLAN_ID_MONTHLY`      |   Yes    | Server | `plan_...`                                           | Created by `bun run razorpay:plans`.                                                                                                                                                                             |
 | `RAZORPAY_PLAN_ID_ANNUAL`       |   Yes    | Server | `plan_...`                                           | Created by `bun run razorpay:plans`.                                                                                                                                                                             |
-| `NYKST_LIVE_PAYMENTS_APPROVED`  |    No    | Server | `true`                                               | Founder sign-off for live checkout. Anything else keeps live checkout closed.                                                                                                                                   |
+| `NYKST_LIVE_PAYMENTS_APPROVED`  |    No    | Server | `true`                                               | Founder sign-off for live checkout. Anything else keeps live checkout closed.                                                                                                                                    |
 | `NYKST_GST_CONFIRMED`           |    No    | Server | `true`                                               | Tax confirmation for the GST-inclusive price. Anything else keeps live checkout closed.                                                                                                                          |
 | `RAZORPAY_LIVE_MODE`            |    No    | Server | `false`                                              | Kill switch for live keys. It can never turn a test key into a live checkout.                                                                                                                                    |
 
@@ -965,31 +974,31 @@ nykst/
 - Browser and app routes: `HttpOnly; Secure; SameSite=Lax` cookie set by the OAuth callback.
 - MCP: `Authorization: Bearer nyk_<token>`, stored as a SHA-256 hash.
 
-|        Method         | Path                                                                                           |       Auth        | Purpose                                                                                   |
-| :-------------------: | :--------------------------------------------------------------------------------------------- | :---------------: | :---------------------------------------------------------------------------------------- |
-|         `GET`         | `/api/health`                                                                                  |      Public       | Supabase tables, billing schema, and mail readiness booleans                               |
-|         `GET`         | `/api/analysis/self`                                                                           |      Public       | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                   |
-|         `GET`         | `/api/integrations/github/start`                                                               |      Public       | Signed state, then redirect to GitHub                                                     |
-|         `GET`         | `/api/integrations/github/callback`                                                            |      Public       | Verify state, exchange code, send the sign-in notice, set cookie                           |
-|        `POST`         | `/api/integrations/github/ingest`                                                              |      Session      | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`    |
-|         `GET`         | `/api/integrations/github/latest`                                                              |      Session      | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one               |
-|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |      Session      | Repository discovery; `repositories` also returns the ingested workspaces                 |
-|         `GET`         | `/api/integrations/github/file-evidence`                                                       |  Session/Public   | `?repo=&path=&line=` code window, `#L` and editor links, plus full history                |
-|        `POST`         | `/api/integrations/github/coding`                                                              |      Session      | Grounded edit proposal with diff                                                          |
-|        `POST`         | `/api/loop`                                                                                    | Public or Session | Four-stage safe loop: envelope, overlay, Trinity cards, verified auto-heal                |
-|        `POST`         | `/api/ai/chat`                                                                                 |  Public or BYOK   | Architecture Q and A (`mode: navigator \| code`)                                          |
-| `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |      Session      | Provider status, save, delete                                                             |
-|        `POST`         | `/api/mcp`                                                                                     |   Bearer `nyk_`   | Streamable HTTP MCP, protocol `2025-06-18`                                                |
-| `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |      Session      | Mint, list, revoke tokens                                                                 |
-|        `POST`         | `/api/diagnosis`                                                                               |      Session      | Root-cause candidates for a production signal                                             |
-|        `POST`         | `/api/webhooks/github`                                                                         |       HMAC        | Verified intake: incremental push patch, production signal, and PR blast-radius comment   |
+|        Method         | Path                                                                                           |       Auth        | Purpose                                                                                             |
+| :-------------------: | :--------------------------------------------------------------------------------------------- | :---------------: | :-------------------------------------------------------------------------------------------------- |
+|         `GET`         | `/api/health`                                                                                  |      Public       | Supabase tables, billing schema, and mail readiness booleans                                        |
+|         `GET`         | `/api/analysis/self`                                                                           |      Public       | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                             |
+|         `GET`         | `/api/integrations/github/start`                                                               |      Public       | Signed state, then redirect to GitHub                                                               |
+|         `GET`         | `/api/integrations/github/callback`                                                            |      Public       | Verify state, exchange code, send the sign-in notice, set cookie                                    |
+|        `POST`         | `/api/integrations/github/ingest`                                                              |      Session      | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`              |
+|         `GET`         | `/api/integrations/github/latest`                                                              |      Session      | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one                         |
+|         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |      Session      | Repository discovery; `repositories` also returns the ingested workspaces                           |
+|         `GET`         | `/api/integrations/github/file-evidence`                                                       |  Session/Public   | `?repo=&path=&line=` code window, `#L` and editor links, plus full history                          |
+|        `POST`         | `/api/integrations/github/coding`                                                              |      Session      | Grounded edit proposal with diff                                                                    |
+|        `POST`         | `/api/loop`                                                                                    | Public or Session | Four-stage safe loop: envelope, overlay, Trinity cards, verified auto-heal                          |
+|        `POST`         | `/api/ai/chat`                                                                                 |  Public or BYOK   | Architecture Q and A (`mode: navigator \| code`)                                                    |
+| `GET` `POST` `DELETE` | `/api/ai/key`                                                                                  |      Session      | Provider status, save, delete                                                                       |
+|        `POST`         | `/api/mcp`                                                                                     |   Bearer `nyk_`   | Streamable HTTP MCP, protocol `2025-06-18`                                                          |
+| `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |      Session      | Mint, list, revoke tokens                                                                           |
+|        `POST`         | `/api/diagnosis`                                                                               |      Session      | Root-cause candidates for a production signal                                                       |
+|        `POST`         | `/api/webhooks/github`                                                                         |       HMAC        | Verified intake: incremental push patch, production signal, and PR blast-radius comment             |
 |        `POST`         | `/api/contact`                                                                                 |      Public       | Validate, rate limit, store, notify the owner and send the sender receipt; returns `NYKST-XXXXXXXX` |
-|        `POST`         | `/api/webhooks/resend`                                                                         |       Svix        | Verified inbound mail, stored in `contact_replies` and matched to a reference             |
-|         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |      Session      | Connector OAuth and command endpoints                                                     |
-|     `GET` `POST`      | `/api/subscription`                                                                            |      Session      | Plan state and settlement submission                                                      |
-|        `POST`         | `/api/billing/subscription`                                                                    |      Session      | Start a Razorpay subscription after claiming one pending checkout                         |
-|        `POST`         | `/api/billing/verify`                                                                          |      Session      | Verify the subscription payment signature and start the trial                             |
-|        `POST`         | `/api/webhooks/razorpay`                                                                       |      HMAC       | Verify, record and apply subscription lifecycle events                                    |
+|        `POST`         | `/api/webhooks/resend`                                                                         |       Svix        | Verified inbound mail, stored in `contact_replies` and matched to a reference                       |
+|         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |      Session      | Connector OAuth and command endpoints                                                               |
+|     `GET` `POST`      | `/api/subscription`                                                                            |      Session      | Plan state and settlement submission                                                                |
+|        `POST`         | `/api/billing/subscription`                                                                    |      Session      | Start a Razorpay subscription after claiming one pending checkout                                   |
+|        `POST`         | `/api/billing/verify`                                                                          |      Session      | Verify the subscription payment signature and start the trial                                       |
+|        `POST`         | `/api/webhooks/razorpay`                                                                       |       HMAC        | Verify, record and apply subscription lifecycle events                                              |
 
 ### Multi-repository switching
 
@@ -1287,7 +1296,7 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
 | Cold AST compile, 261 files  | 1,129 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
-| Analyzed source              | **261 files, 49,526 LOC**                                                                           | `bun run check:claims`                                                              |
+| Analyzed source              | **261 files, 49,580 LOC**                                                                                        | `bun run check:claims`                                                               |
 | Internal import edges        | **581, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |
@@ -1296,7 +1305,7 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | SSR landing response         | 229 ms warm across two calls from this workspace on 29 Oct 2026, network included                                | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/`                  |
 | Health probe, all tables     | 1.16 s to 1.95 s across three calls on 29 Oct 2026, dominated by the live database round trip                    | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/health`        |
 | Client payload, all routes   | 1.3 MB uncompressed JavaScript and CSS in `.output/public`, measured 29 Oct 2026                                 | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                  |
-| Test suite                   | 257 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
+| Test suite                   | 259 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
 | Playwright suite             | public route renders, 9 of 9 desktop and 9 of 9 mobile against production on 29 Oct 2026                         | `E2E_BASE_URL=https://nykst.unifies.codes bunx playwright test e2e/routes.spec.ts`   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
@@ -1353,7 +1362,7 @@ Last full unit run on 30 October 2026: 257 tests pass, 0 fail across 34 files, w
 | `tests/graph-layout.test.ts`        | Radial orbit geometry: full 360-degree rings, two staggered orbits above eight siblings, unique positions, viewport bounds, and quadratic Bezier edges                                                            |
 | `tests/code-links.test.ts`          | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                              |
 | `tests/dossier.test.ts`             | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                 |
-| `tests/email.test.ts`               | Contact receipts and GitHub sign-in notices, HTML escaping, plain-text fallback, explicit recipients, idempotency keys, verified-email selection, and CRLF-safe subjects                                                  |
+| `tests/email.test.ts`               | Contact receipts and GitHub sign-in notices, HTML escaping, plain-text fallback, explicit recipients, idempotency keys, verified-email selection, and CRLF-safe subjects                                          |
 | `e2e/routes.spec.ts`                | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
 | `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), the list view exposes every child with a real filter, `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link     |
 | `e2e/graph-navigation.spec.ts`      | Ten file selections in a row keep the centre header, breadcrumb, dossier, mentor and `?file=` URL on the full path, and a reload restores the same file                                                           |
@@ -1372,11 +1381,11 @@ GitHub Actions runs the typecheck and unit suites in [`ci.yml`](.github/workflow
 
 ## 🚀 Deployment
 
-| Surface              | URL                                                          | Notes                                                        |
-| :------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes)           | Custom domain on Vercel                                      |
+| Surface              | URL                                                          | Notes                                                          |
+| :------------------- | :----------------------------------------------------------- | :------------------------------------------------------------- |
+| Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes)           | Custom domain on Vercel                                        |
 | Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | 307 redirect to the canonical domain, verified 30 October 2026 |
-| Source               | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch               |
+| Source               | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch                 |
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
 

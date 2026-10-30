@@ -15,7 +15,7 @@ export function TreePanel({ root, activeId, openIds, onSelect, visible }: Props)
   return (
     <aside className="border-border bg-card/40 hidden w-[248px] shrink-0 overflow-y-auto border-r backdrop-blur md:block">
       <div className="border-border text-muted-foreground border-b px-4 py-3 text-[10px] tracking-[0.24em] uppercase">
-        System tree
+        Project tree
       </div>
       <div className="py-2">
         <TreeRow

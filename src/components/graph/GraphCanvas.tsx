@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { curvedEdgePath, radialLayout } from "@/lib/graph-layout";
-import type { GraphNode, NodeKind } from "@/lib/graph-data";
+import { ORBIT_PAGE_SIZE, curvedEdgePath, orbitCardSize, radialLayout } from "@/lib/graph-layout";
+import { kindLabel, type GraphNode, type NodeKind } from "@/lib/graph-data";
 
 const kindColor: Record<NodeKind, string> = {
   org: "var(--primary)",
@@ -42,15 +42,15 @@ function repoOf(node: GraphNode) {
 
 function techLine(node: GraphNode) {
   if (node.analysisRef) {
-    const importers = `${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`;
+    const users = `${node.dependents.length} file${node.dependents.length === 1 ? "" : "s"} use it`;
     if (node.analysisRef.type === "file")
-      return `${node.detail?.loc ?? 0} LOC · ${importers} · ${node.blast.level} impact`;
+      return `${node.detail?.loc ?? 0} lines · ${users} · ${node.blast.level} impact`;
     const files = node.analysisRef.paths.length;
-    return `${files} file${files === 1 ? "" : "s"} · ${importers} · ${node.blast.level} impact`;
+    return `${files} file${files === 1 ? "" : "s"} · ${users} · ${node.blast.level} impact`;
   }
   if (!node.expandable && node.detail)
-    return `${node.detail.language} · ${node.detail.loc} LOC · ${node.detail.path}`;
-  return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} svc · ${node.dependencies.length}↑ ${node.dependents.length}↓`;
+    return `${node.detail.language} · ${node.detail.loc} lines · ${node.detail.path}`;
+  return `${repoOf(node)} · ${node.language ?? "TypeScript"} · ${node.blast.services} outside services · ${node.dependencies.length} used · ${node.dependents.length} use it`;
 }
 
 function InfoBadge({
@@ -104,7 +104,7 @@ export function GraphCanvas({
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [sector, setSector] = useState({ centerId: center.id, page: 0 });
-  const pageCount = Math.max(1, Math.ceil(children.length / 24));
+  const pageCount = Math.max(1, Math.ceil(children.length / ORBIT_PAGE_SIZE));
   const page = sector.centerId === center.id ? Math.min(sector.page, pageCount - 1) : 0;
   void technical;
 
@@ -123,7 +123,7 @@ export function GraphCanvas({
   // that. No column or grid fallback, so a real repository never collapses into
   // a vertical lineup on /graph.
   const points = useMemo(() => {
-    const visible = children.slice(page * 24, (page + 1) * 24);
+    const visible = children.slice(page * ORBIT_PAGE_SIZE, (page + 1) * ORBIT_PAGE_SIZE);
     const slots = radialLayout(visible.length, { width: W, height: H });
     return visible.map((node, index) => ({ node, ...slots[index]! }));
   }, [children, page]);
@@ -132,12 +132,10 @@ export function GraphCanvas({
     for (const point of points) sizes[point.ring] = (sizes[point.ring] ?? 0) + 1;
     return sizes;
   }, [points]);
-  // Cards shrink as an orbit fills up, so two siblings never sit on top of each other.
-  const cardWidth = (ring: number) => {
-    const count = ringSizes[ring] ?? 0;
-    if (ring === 1) return count > 10 ? 175 : count > 8 ? 190 : 240;
-    return count > 10 ? 140 : count > 8 ? 150 : 190;
-  };
+  // Card dimensions live with the orbit geometry, so the radii were chosen for
+  // the actual card size rather than an estimate. This is what keeps a 13-node
+  // root level from overlapping.
+  const cardSize = (ring: 0 | 1 | 2) => orbitCardSize(ring, ringSizes[ring] ?? 0);
 
   return (
     <div className="relative h-full w-full overflow-hidden select-none">
@@ -145,9 +143,9 @@ export function GraphCanvas({
       {pageCount > 1 && (
         <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-2 text-xs shadow-lg">
           <label className="flex items-center gap-2">
-            <span>Orbit sector</span>
+            <span>More items</span>
             <select
-              aria-label="Orbit sector"
+              aria-label="More items"
               data-testid="orbit-sector-switcher"
               className="max-w-44 bg-transparent text-foreground"
               value={page}
@@ -157,8 +155,8 @@ export function GraphCanvas({
             >
               {Array.from({ length: pageCount }, (_, index) => (
                 <option key={index} value={index}>
-                  Sector {index + 1} ({index * 24 + 1}-{Math.min((index + 1) * 24, children.length)}
-                  )
+                  Items {index * ORBIT_PAGE_SIZE + 1}-
+                  {Math.min((index + 1) * ORBIT_PAGE_SIZE, children.length)}
                 </option>
               ))}
             </select>
@@ -169,7 +167,7 @@ export function GraphCanvas({
         viewBox={`0 0 ${W} ${H}`}
         className="relative h-full w-full"
         role="img"
-        aria-label={`${center.label} dependency orbit`}
+        aria-label={`Map of ${center.label} and the items inside it`}
         data-graph-layout="radial"
       >
         <defs>
@@ -249,7 +247,7 @@ export function GraphCanvas({
             textAnchor="middle"
             className="fill-primary text-[11px] tracking-widest uppercase font-mono font-semibold"
           >
-            {center.kind}
+            {kindLabel[center.kind]}
           </text>
           <text
             x={cx}
@@ -264,7 +262,7 @@ export function GraphCanvas({
             x={cx}
             y={cy + 48}
             color={kindColor[center.kind]}
-            label="Inspect Details"
+            label="Open details"
             onClick={() => onInspect(center)}
           />
         </g>
@@ -272,8 +270,9 @@ export function GraphCanvas({
         {/* Surrounding circular nodes */}
         {points.map((p, i) => {
           const active = hovered === p.node.id || selectedId === p.node.id;
-          const w = cardWidth(p.ring);
-          const h = p.ring === 1 ? 56 : 46;
+          const { width: w, height: h } = cardSize(p.ring);
+          const labelChars = Math.max(10, Math.floor((w - 44) / 6.4));
+          const techChars = Math.max(11, Math.floor((w - 44) / 5.2));
           return (
             <g
               key={p.node.id}
@@ -314,7 +313,7 @@ export function GraphCanvas({
                 className="fill-foreground text-[12px] font-semibold tracking-tight cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(p.node.label, p.ring === 1 ? 22 : 16)}
+                {truncate(p.node.label, labelChars)}
               </text>
               <text
                 x={-w / 2 + 32}
@@ -322,7 +321,7 @@ export function GraphCanvas({
                 className="fill-muted-foreground font-mono text-[9px] cursor-pointer"
                 onClick={() => onSelect(p.node)}
               >
-                {truncate(techLine(p.node), p.ring === 1 ? 32 : 25)}
+                {truncate(techLine(p.node), techChars)}
               </text>
 
               {/* 'i' badge opens the inspector for this child */}
@@ -366,7 +365,7 @@ export function GraphCanvas({
               className="fill-muted-foreground font-mono text-[10px]"
               data-legend="importer"
             >
-              imports this node
+              connected to this part
             </text>
           </g>
           <g transform="translate(30, 0)">
@@ -377,7 +376,7 @@ export function GraphCanvas({
               className="fill-muted-foreground font-mono text-[10px]"
               data-legend="cycle"
             >
-              runtime cycle
+              two-way dependency
             </text>
           </g>
         </g>

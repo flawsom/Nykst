@@ -10,8 +10,8 @@ const RADIUS_X = 286;
 const RADIUS_Y = 228;
 
 /**
- * Live interactive Graph-RAG preview rendered strictly from the real TypeScript AST analysis
- * of flawsom/nykst (or the connected repository). Zero static or hardcoded fallback arrays.
+ * Live interactive map preview rendered from the real analysis of flawsom/nykst (or the
+ * connected repository). Zero static or hardcoded fallback arrays.
  */
 export function LandingGraphPreview({
   className,
@@ -70,7 +70,7 @@ export function LandingGraphPreview({
             viewBox={`0 0 ${W} ${H}`}
             className="relative block h-auto w-full"
             role="img"
-            aria-label="Live Nykst Graph-RAG topology showing real AST domains, file counts, and import edges"
+            aria-label="Live Nykst map showing the parts of the project, their file counts, connections and lines of code"
           >
             <defs>
               <radialGradient id="landing-halo">
@@ -186,8 +186,8 @@ export function LandingGraphPreview({
                     y={12}
                     className="fill-muted-foreground font-mono text-[8.5px]"
                   >
-                    {node.files} files · {node.edgesIn + node.edgesOut} AST edges ·{" "}
-                    {node.loc.toLocaleString()} LOC
+                    {node.files} files · {node.edgesIn + node.edgesOut} connections ·{" "}
+                    {node.loc.toLocaleString()} lines
                   </text>
                 </g>
               );
@@ -225,7 +225,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-primary font-mono text-[8.5px] tracking-[0.24em] uppercase"
               >
-                SYSTEM MAP
+                PROJECT MAP
               </text>
               <text
                 x={CX}
@@ -234,7 +234,7 @@ export function LandingGraphPreview({
                 className="fill-muted-foreground font-mono text-[8.5px]"
               >
                 {stats
-                  ? `${stats.internalEdges} edges · ${stats.loc.toLocaleString()} LOC`
+                  ? `${stats.internalEdges} connections · ${stats.loc.toLocaleString()} lines`
                   : "loading live topology…"}
               </text>
             </g>
@@ -277,7 +277,8 @@ export function LandingGraphPreview({
               <span className="bg-primary inline-block size-1.5 rounded-full" /> Repository root
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> system area
+              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> part of the
+              system
             </span>
             <span className="flex items-center gap-1.5">
               <span className="bg-node-service inline-block size-1.5 rounded-full" /> services and

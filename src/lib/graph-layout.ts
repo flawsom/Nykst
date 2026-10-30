@@ -4,8 +4,9 @@
  * The live app used to fall back to a vertical two-column lineup once a hub had
  * more than eleven children, which is exactly what `/graph` looked like for a
  * real GitHub repository. Everything now stays on a circle: one orbit up to
- * twelve siblings, two staggered orbits above that, and a third only for a hub
- * that is wider than a screen can read.
+ * eight siblings, then two balanced, staggered orbits. The rings are far enough
+ * apart for the rendered cards, which have a real width and height; the old
+ * 100px separation made the root level of a 13-node repository overlap itself.
  *
  * Pure functions only, so the geometry is unit-testable without a DOM.
  */
@@ -37,18 +38,23 @@ export interface RadialLayoutOptions {
 const DEFAULTS = {
   width: 1200,
   height: 820,
-  radius: 340,
-  innerRadius: 240,
-  ringCapacity: 12,
+  radius: 365,
+  ringCapacity: 8,
 } as const;
 
 export const RADIAL_START_ANGLE = -Math.PI / 2;
 
+/**
+ * The maximum number of cards one canvas page shows. The orbit stays readable
+ * at 16 siblings; wider hubs use the same sector selector as before.
+ */
+export const ORBIT_PAGE_SIZE = 16;
+
 /** Orbit sizes for a given number of siblings. */
 /**
- * One orbit up to `singleRing`, then two concentric orbits up to `capacity`
- * siblings each. Wider hubs keep the two clean orbits and report the remainder,
- * because a third orbit would stack cards on top of each other.
+ * One orbit up to `singleRing`, then two balanced concentric orbits. The split
+ * is balanced so neither ring is crowded; the caller pages a hub wider than
+ * `ORBIT_PAGE_SIZE` instead of stacking a third ring on top of the cards.
  */
 export function orbitPlan(
   count: number,
@@ -58,11 +64,30 @@ export function orbitPlan(
   if (count <= 0) return [];
   const capacity = Math.max(4, ringCapacity);
   if (count <= singleRing) return [{ ring: 1, count, radiusFactor: 1 }];
-  const inner = Math.min(capacity, Math.ceil(count / 2));
+  const outer = Math.min(capacity, Math.ceil(count / 2));
+  const inner = Math.min(count - outer, capacity);
   return [
-    { ring: 0, count: inner, radiusFactor: 0.58 },
-    { ring: 1, count: Math.min(capacity, count - inner), radiusFactor: 1 },
+    { ring: 0, count: inner, radiusFactor: 0.548 },
+    { ring: 1, count: outer, radiusFactor: 1 },
   ];
+}
+
+/**
+ * Width and height of a rendered sibling card. These are deliberately kept in
+ * the layout module next to the radii, because overlap is a property of the
+ * geometry, not a visual detail. `ring 1` is the outer ring; `ring 0` is inner.
+ */
+export function orbitCardSize(ring: 0 | 1 | 2, count: number): { width: number; height: number } {
+  if (ring === 1) return { width: count <= 6 ? 240 : 220, height: 56 };
+  // The inner orbit is a compact secondary ring. Its cards must fit between the
+  // hub and the outer cards, so they are deliberately narrower than the outer
+  // cards rather than an arbitrary smaller copy of them.
+  return { width: count <= 6 ? 140 : 125, height: 40 };
+}
+
+/** Radius for the inner orbit: enough room for the hub and for the card gap. */
+export function orbitInnerRadius(count: number): number {
+  return count >= 13 ? 185 : 170;
 }
 
 /**
@@ -75,18 +100,23 @@ export function radialLayout(count: number, options: RadialLayoutOptions = {}): 
   const height = options.height ?? DEFAULTS.height;
   const capacity = options.ringCapacity ?? DEFAULTS.ringCapacity;
   // Leave room for the node cards, which are about 240 x 56 in the viewport.
-  const maxRadius = Math.min(width / 2 - 70, height / 2 - 70);
+  // Cards are wider than they are tall, so the vertical edge is the binding
+  // constraint. Leave half a card plus a small margin inside the viewport.
+  const maxRadius = Math.min(width / 2 - 70, height / 2 - 40);
   const plan = orbitPlan(count, capacity);
   const radius = Math.min(options.radius ?? DEFAULTS.radius, maxRadius);
-  const innerRadius = Math.min(options.innerRadius ?? DEFAULTS.innerRadius, radius - 60);
+  const innerRadius = Math.min(options.innerRadius ?? orbitInnerRadius(count), radius - 60);
   const cx = width / 2;
   const cy = height / 2;
+  const outer = plan.find((orbit) => orbit.ring === 1);
 
   const points: RadialPoint[] = [];
   for (const orbit of plan) {
-    const ringRadius = orbit.radiusFactor === 0.58 ? innerRadius : radius * orbit.radiusFactor;
-    // Stagger the inner orbit by half a step so labels never line up radially.
-    const offset = orbit.ring === 0 ? Math.PI / Math.max(orbit.count, 1) : 0;
+    const ringRadius = orbit.radiusFactor === 0.548 ? innerRadius : radius * orbit.radiusFactor;
+    // Stagger the inner orbit by half an outer step, so its cards sit between
+    // outer cards. Using the inner step instead lets the two rings line up at
+    // some angles, which is what produced the root-level overlaps.
+    const offset = orbit.ring === 0 ? Math.PI / Math.max(outer?.count ?? orbit.count, 1) : 0;
     for (let index = 0; index < orbit.count; index += 1) {
       const angle = (2 * Math.PI * index) / orbit.count + RADIAL_START_ANGLE + offset;
       points.push({

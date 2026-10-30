@@ -127,10 +127,7 @@ export function ImpactPanel({ snapshot, node }: { snapshot: RepositorySnapshot; 
     (item) => !item.typeOnly && item.role !== "test",
   ).length;
 
-  if (!seeds.length)
-    return (
-      <Empty>No analyzed source files belong to this node, so there is nothing to trace.</Empty>
-    );
+  if (!seeds.length) return <Empty>No files in this part can be traced yet.</Empty>;
 
   const outgoing = seeds.flatMap((path) =>
     (index.dependencies.get(path) ?? [])
@@ -596,11 +593,10 @@ export function ArchitecturePanel({ snapshot }: { snapshot: RepositorySnapshot }
       <Card title="Analysis" hint={`${analysis.method} · ${analysis.ref.slice(0, 8)}`}>
         <div className="grid grid-cols-2 gap-2 font-mono text-xs sm:grid-cols-4">
           <div>
-            Source files{" "}
-            <strong className="block">{stats.analyzedFiles.toLocaleString("en-US")}</strong>
+            Files <strong className="block">{stats.analyzedFiles.toLocaleString("en-US")}</strong>
           </div>
           <div>
-            Import edges{" "}
+            Connections{" "}
             <strong className="block">{stats.internalEdges.toLocaleString("en-US")}</strong>
           </div>
           <div>
@@ -610,13 +606,13 @@ export function ArchitecturePanel({ snapshot }: { snapshot: RepositorySnapshot }
             Entry points <strong className="block">{entrypoints.length}</strong>
           </div>
           <div>
-            LOC <strong className="block">{stats.loc.toLocaleString("en-US")}</strong>
+            Lines <strong className="block">{stats.loc.toLocaleString("en-US")}</strong>
           </div>
           <div>
             Unresolved <strong className="block">{stats.unresolvedImports}</strong>
           </div>
           <div>
-            Cycles <strong className="block">{analysis.cycles.length}</strong>
+            Two-way links <strong className="block">{analysis.cycles.length}</strong>
           </div>
           <div>
             Workspaces <strong className="block">{analysis.packages.length}</strong>
@@ -715,7 +711,7 @@ export function ArchitecturePanel({ snapshot }: { snapshot: RepositorySnapshot }
             key={item.path}
             href={link(item.path)}
             path={item.path}
-            tag={`${item.count} importers`}
+            tag={`${item.count} files use it`}
           />
         ))}
       </Card>

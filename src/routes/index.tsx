@@ -448,7 +448,7 @@ function Landing() {
                   to="/graph"
                   className="bg-primary text-primary-foreground hover:bg-primary-glow magic-button inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/20 sm:w-auto"
                 >
-                  Open the system graph <ArrowRight className="size-4" />
+                  Open the example map <ArrowRight className="size-4" />
                 </Link>
               </Magnetic>
               <Magnetic strength={0.16}>

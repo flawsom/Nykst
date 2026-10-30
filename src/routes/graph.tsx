@@ -65,16 +65,16 @@ function chainToPath(node: GraphNode, path: string, trail: string[] = []): strin
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
-      { title: "Software Graph & Navigator · Nykst" },
+      { title: "System map · Nykst" },
       {
         name: "description",
         content:
-          "Navigate your organization's software graph: drill from core domains into capabilities, services, modules and individual files, with dependencies and blast radius.",
+          "See your whole project as a map. Start with the parts, open one, and follow it down to the files and database tables a change will touch.",
       },
-      { property: "og:title", content: "Software Graph & Navigator · Nykst" },
+      { property: "og:title", content: "System map · Nykst" },
       {
         property: "og:description",
-        content: "Drill from core domains down to a single file, one click at a time.",
+        content: "See your whole project as a map, then open the part a change will touch.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -545,6 +545,10 @@ function GraphPage() {
               <span className="font-mono text-foreground">{notAnalysedRepo}</span> in this account.
               Nothing is shown in its place, so you never read another project's code by mistake.
             </p>
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              A map is built from the files in the project and the connections between them. Nothing
+              is filled in from a sample.
+            </p>
             <ol className="text-muted-foreground mt-5 space-y-1.5 text-[12px] leading-relaxed">
               <li>1 - Connect GitHub so Nykst may read this repository.</li>
               <li>2 - Press Analyse this repo to build the map from the code itself.</li>
@@ -603,8 +607,8 @@ function GraphPage() {
           </h1>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
             {unauthenticated
-              ? "Nykst only ever renders a real system. Connect GitHub, pick a repository, and the graph is built from your actual import graph, commit history and entry points, nothing is simulated."
-              : (loadError ?? "The latest analysis could not be loaded.")}
+              ? "Nykst only ever shows a real project. Connect GitHub, pick a repository, and the map is built from the files and connections in that code. Nothing is simulated."
+              : (loadError ?? "The latest map could not be loaded.")}
           </p>
           {loadError && !unauthenticated && (
             <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 font-mono text-[11px] text-amber-400">
@@ -822,8 +826,13 @@ function GraphPage() {
                   className="text-muted-foreground mt-1 font-mono text-[11px] break-all"
                 >
                   {selectedFile} · {focus.detail?.loc ?? 0} lines · {focus.dependents.length}{" "}
-                  importer
-                  {focus.dependents.length === 1 ? "" : "s"}
+                  {focus.dependents.length === 1 ? "file uses" : "files use"} it
+                </p>
+              )}
+              {!selected && centerChildren.length > 0 && (
+                <p className="text-muted-foreground mt-2 max-w-2xl text-xs leading-relaxed">
+                  This is everything in this part. Click a card to open it, or switch to List to
+                  search every item at this level.
                 </p>
               )}
             </div>
@@ -908,7 +917,7 @@ function GraphPage() {
                 <p className="text-muted-foreground mt-2 text-[11px]">
                   {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")} files ·{" "}
                   {snapshot.payload.analysis.stats.internalEdges.toLocaleString("en-US")}{" "}
-                  connections · {snapshot.payload.analysis.services.length} external services ·{" "}
+                  connections · {snapshot.payload.analysis.services.length} outside services ·{" "}
                   {snapshot.payload.analysis.resources.length} database tables
                 </p>
               ) : (
@@ -1019,7 +1028,8 @@ function GraphPage() {
               />
               {selected && (
                 <p className="text-muted-foreground mt-2 font-mono text-[10px]">
-                  Orbit centre is the selected file; the ring highlights its siblings at this level.
+                  The selected file sits in the middle. The ring shows the other items at this
+                  level.
                 </p>
               )}
             </div>
@@ -1050,9 +1060,9 @@ function GraphPage() {
                 {filteredChildren.map((node) => {
                   const metric =
                     node.analysisRef?.type === "file"
-                      ? `${node.detail?.loc ?? 0} LOC · ${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`
+                      ? `${node.detail?.loc ?? 0} lines · ${node.dependents.length} file${node.dependents.length === 1 ? " uses" : "s use"} it`
                       : node.analysisRef
-                        ? `${node.analysisRef.paths.length} file${node.analysisRef.paths.length === 1 ? "" : "s"} · ${node.dependents.length} importer${node.dependents.length === 1 ? "" : "s"}`
+                        ? `${node.analysisRef.paths.length} file${node.analysisRef.paths.length === 1 ? "" : "s"} · ${node.dependents.length} file${node.dependents.length === 1 ? " uses" : "s use"} it`
                         : (node.metrics ?? [])
                             .slice(0, 3)
                             .map((item) => `${item.value} ${item.label}`)
@@ -1115,10 +1125,10 @@ function GraphPage() {
 
           <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground font-mono sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Software Navigator · {center.analysisRef ? "Contents" : childKindLabel[center.kind]} (
+              {center.analysisRef ? "Inside this part" : childKindLabel[center.kind]} (
               {centerChildren.length})
             </span>
-            <span>Choose a node or tree item to drill deeper</span>
+            <span>Choose a card or tree item to open it</span>
           </div>
 
           <div className="mt-5">

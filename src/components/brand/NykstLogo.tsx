@@ -9,7 +9,7 @@ export function NykstMark({ className, size = 28 }: { className?: string; size?:
       height={size}
       className={cn("shrink-0 select-none", className)}
       role="img"
-      aria-label="Nykst Graph-RAG mark"
+      aria-label="Nykst mark"
     >
       <defs>
         <linearGradient id="nykst-mark-bg" x1="0" y1="0" x2="1" y2="1">
@@ -74,7 +74,7 @@ export function NykstMark({ className, size = 28 }: { className?: string; size?:
 }
 
 export function NykstBrand({
-  subtitle = "Graph-RAG Architecture",
+  subtitle = "See what your change will touch",
   size = 30,
   className,
 }: {
