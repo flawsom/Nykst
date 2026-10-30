@@ -11,6 +11,7 @@ import {
   validateContactInput,
 } from "@/lib/contact.server";
 import { CONTACT_EMAIL, REPLY_PROMISE } from "@/lib/contact";
+import { deliverContactConfirmation } from "@/lib/email/deliver.server";
 
 /**
  * POST /api/contact
@@ -143,14 +144,18 @@ export const Route = createFileRoute("/api/contact")({
           return fail("We could not save your message. Please email us instead.", 502);
         }
 
-        const mail = await deliverContactNotification({
-          env: process.env,
-          notification: {
-            reference: stored.reference,
-            input,
-            receivedAt: stored.created_at,
-          },
-        });
+        const notification = {
+          reference: stored.reference,
+          input,
+          receivedAt: stored.created_at,
+        };
+        const [mail, receipt] = await Promise.all([
+          deliverContactNotification({ env: process.env, notification }),
+          deliverContactConfirmation({ env: process.env, notification }).catch(() => ({
+            status: "failed" as const,
+            detail: "The receipt did not send.",
+          })),
+        ]);
 
         const { error: updateError } = await supabase
           .from("contact_messages")
@@ -167,13 +172,16 @@ export const Route = createFileRoute("/api/contact")({
           console.error("Contact status update failed:", updateError.code ?? "unknown");
 
         // Reference and outcome only. No name, address, message or provider detail.
-        console.log(`Contact ${stored.reference}: stored, mail ${mail.status}.`);
+        console.log(
+          `Contact ${stored.reference}: stored, mail ${mail.status}, receipt ${receipt.status}.`,
+        );
 
         return Response.json(
           {
             ok: true,
             reference: stored.reference,
             delivered: mail.status === "sent",
+            confirmationDelivered: receipt.status === "sent",
             message: confirmationCopy(input.topic, mail.status),
             replyWithin: mail.status === "sent" ? REPLY_PROMISE[input.topic].acknowledge : null,
             contactEmail: CONTACT_EMAIL,

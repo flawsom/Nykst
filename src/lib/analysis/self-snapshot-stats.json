@@ -1,14 +1,14 @@
 {
-  "treeFiles": 315,
-  "sourceFiles": 255,
-  "analyzedFiles": 255,
-  "internalEdges": 560,
+  "treeFiles": 319,
+  "sourceFiles": 259,
+  "analyzedFiles": 259,
+  "internalEdges": 575,
   "externalPackages": 54,
   "unresolvedImports": 0,
   "skippedFiles": 2,
-  "loc": 48220,
-  "durationMs": 1025,
+  "loc": 48992,
+  "durationMs": 1224,
   "resourceCount": 15,
   "serviceCount": 10,
-  "generatedAt": "2026-10-30T06:30:45.408Z"
+  "generatedAt": "2026-10-30T13:07:47.364Z"
 }

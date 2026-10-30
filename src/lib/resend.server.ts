@@ -50,26 +50,38 @@ export function resendWebhookConfigured(env: ResendEnv): boolean {
   return Boolean(text(env[RESEND_WEBHOOK_SECRET_ENV]));
 }
 
+function validEmail(value: string): boolean {
+  return /^[^@\s\r\n]+@[^@\s\r\n]+\.[^@\s\r\n]+$/.test(value);
+}
+
 /**
- * Send one plain text email through Resend.
+ * Send one transactional email through Resend.
  *
- * The recipient is always the single product address and is never taken from a
- * request. `replyTo` is the visitor's address so the owner can answer directly.
- * A non 2xx answer is a failure; the provider body is not stored or logged,
- * because provider errors can echo the payload.
+ * Owner notifications default to the single product address. Transactional
+ * receipts and security notices pass an explicit recipient; those recipients
+ * are validated and are never built from raw mail headers. `replyTo` lets the
+ * owner answer a visitor directly. HTML is optional and always accompanied by
+ * a plain text body. A non 2xx answer is a failure; the provider body is not
+ * stored or logged, because provider errors can echo the payload.
  */
 export async function sendResendEmail({
   env,
   subject,
   body,
+  html,
+  to,
   replyTo,
+  idempotencyKey,
   fetchImpl = fetch,
   timeoutMs = 8000,
 }: {
   env: ResendEnv;
   subject: string;
   body: string;
+  html?: string | undefined;
+  to?: string | string[] | undefined;
   replyTo?: string | undefined;
+  idempotencyKey?: string | undefined;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 }): Promise<MailDelivery> {
@@ -77,19 +89,37 @@ export async function sendResendEmail({
   const from = text(env[CONTACT_MAIL_FROM_ENV]);
   if (!key || !from) return { status: "not_configured" };
 
+  const requested = to === undefined ? [CONTACT_EMAIL] : Array.isArray(to) ? to : [to];
+  const recipients = requested.map((value) => text(value));
+  if (!recipients.length || recipients.some((value) => !validEmail(value)))
+    return { status: "failed", detail: "A valid recipient email is required." };
+
+  const safeSubject = text(subject)
+    .replace(/[\r\n]+/g, " ")
+    .slice(0, 240);
+  if (!safeSubject) return { status: "failed", detail: "A subject is required." };
+
+  const reply = text(replyTo);
+  const idempotency = text(idempotencyKey)
+    .replace(/[\r\n]+/g, "")
+    .slice(0, 255);
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${key}`,
+    "content-type": "application/json",
+    ...(idempotency ? { "idempotency-key": idempotency } : {}),
+  };
+
   try {
     const response = await fetchImpl(`${RESEND_API_BASE}/emails`, {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${key}`,
-        "content-type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         from,
-        to: [CONTACT_EMAIL],
-        subject,
+        to: [...new Set(recipients)],
+        subject: safeSubject,
         text: body,
-        ...(replyTo ? { reply_to: [replyTo] } : {}),
+        ...(html?.trim() ? { html } : {}),
+        ...(reply && validEmail(reply) ? { reply_to: [reply] } : {}),
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });

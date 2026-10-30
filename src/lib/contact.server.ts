@@ -265,6 +265,6 @@ export function confirmationCopy(topic: ContactTopic, mailStatus: MailStatus) {
   if (mailStatus === "sent")
     return `Your message is with us. ${replyPromiseText(topic)} Keep the reference if you follow up.`;
   if (mailStatus === "not_configured")
-    return `Your message is saved with this reference, but our email notification is not set up, so nobody has been alerted yet. To be sure it reaches us, email ${CONTACT_EMAIL} with the same text and this reference.`;
-  return `Your message is saved with this reference, but our email notification did not go through. Please email ${CONTACT_EMAIL} with the same text and this reference so it is not missed.`;
+    return `Your message is saved with this reference, but our team notification is not set up, so nobody has been alerted yet. To be sure it reaches us, email ${CONTACT_EMAIL} with the same text and this reference.`;
+  return `Your message is saved with this reference, but our team notification did not go through. Please email ${CONTACT_EMAIL} with the same text and this reference so it is not missed.`;
 }

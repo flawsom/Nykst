@@ -13,6 +13,7 @@ const MESSAGE_MAX = 4000;
 type Result = {
   reference: string;
   delivered: boolean;
+  confirmationDelivered: boolean;
   message: string;
   topic: ContactTopic;
 };
@@ -48,6 +49,7 @@ export function ContactForm({
         error?: string;
         reference?: string;
         delivered?: boolean;
+        confirmationDelivered?: boolean;
         message?: string;
       };
       if (!response.ok || !body.reference)
@@ -55,6 +57,7 @@ export function ContactForm({
       setResult({
         reference: body.reference,
         delivered: body.delivered === true,
+        confirmationDelivered: body.confirmationDelivered === true,
         message: body.message ?? "",
         topic,
       });
@@ -86,7 +89,7 @@ export function ContactForm({
           ) : (
             <TriangleAlert className="size-4" />
           )}
-          {result.delivered ? "Message received" : "Message saved, email not sent"}
+          {result.delivered ? "Message received" : "Message saved, team not alerted"}
         </p>
         <p
           className={`mt-2 text-sm leading-relaxed ${
@@ -96,6 +99,9 @@ export function ContactForm({
           Your reference is <span className="font-mono font-semibold">{result.reference}</span>.{" "}
           {result.message}
         </p>
+        {result.confirmationDelivered && (
+          <p className="mt-2 text-xs text-emerald-100/80">A receipt is on its way to {email}.</p>
+        )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <a
             href={mailtoHref(result.topic, result.reference)}

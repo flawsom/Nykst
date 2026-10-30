@@ -5,12 +5,14 @@ import {
   githubCookieOptions,
   githubRedirectUri,
   githubUser,
+  githubUserEmail,
   GITHUB_RETURN_TO_COOKIE,
   oauthCookieOptions,
   readCookie,
   safeGithubReturnTo,
   verifyOauthState,
 } from "@/lib/integrations/github";
+import { deliverGithubSignIn } from "@/lib/email/deliver.server";
 
 export const Route = createFileRoute("/api/integrations/github/callback")({
   server: {
@@ -39,7 +41,33 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
         }
         try {
           const token = await exchangeGithubCode(code, githubRedirectUri(request));
-          await githubUser(token);
+          const user = await githubUser(token);
+
+          // A security notice is best-effort. The signed-in session must not
+          // fail because the mail provider is slow or unconfigured.
+          try {
+            const email = await githubUserEmail(token, user.email);
+            if (email) {
+              const delivery = await deliverGithubSignIn({
+                env: process.env,
+                signIn: {
+                  email,
+                  user,
+                  signedInAt: new Date().toISOString(),
+                  userAgent: request.headers.get("user-agent"),
+                },
+              });
+              if (delivery.status === "failed")
+                console.warn("[github-signin] notice not sent:", delivery.detail ?? "failed");
+            }
+          } catch (error) {
+            // Never include the address, token or provider payload.
+            console.warn(
+              "[github-signin] notice skipped:",
+              error instanceof Error ? error.name : "unknown",
+            );
+          }
+
           const returnTo = safeGithubReturnTo(readCookie(request, GITHUB_RETURN_TO_COOKIE));
           const headers = new Headers({ Location: returnTo ?? "/?github=connected" });
           headers.append(

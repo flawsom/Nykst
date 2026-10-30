@@ -94,31 +94,31 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 255 source files, 48,220 LOC, 560 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 259 source files, 48,992 LOC, 575 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
 
 | Command                                     | Result on that tree                                          |
 | :------------------------------------------ | :----------------------------------------------------------- |
 | `bun tsc -b --noEmit`                       | pass, 0 errors                                               |
-| `bun test ./tests`                          | 176 pass, 0 fail, 27 files, 971 assertions, 3.2 s            |
+| `bun test ./tests`                          | 251 pass, 0 fail, 33 files, 1,706 assertions, 2.61 s         |
 | `bun run check:claims`                      | ok                                                           |
-| `bun run build`                             | pass, 3.98 s Cloudflare target, 3.56 s node-server target    |
+| `bun run build`                             | pass, 2.92 s client and 2.88 s Nitro server                   |
 | `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings          |
-| Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, against `nykst.unifies.codes` |
-| GitHub Actions CI and E2E                   | both success on this commit                                  |
+| Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, last run 29 October 2026      |
+| GitHub Actions CI and E2E                   | run on every push; local checks below passed for this tree  |
 
-Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow, which passed on this commit; they were not re-run by hand for this page.
+Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow. They were not re-run by hand for the mail change; its server paths are covered by the new unit tests and the production build below.
 
 ### Gated, with the exact missing input
 
 | Surface                                   | State            | Missing input                                                                                           |
 | :---------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------ |
-| Razorpay live checkout                    | GST gate pending | live monthly and annual plans created; checkout opens after GST confirmation |
+| Razorpay live checkout                    | GST gate pending | live plans created; production also lacks `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, the two plan ids, `NYKST_LIVE_PAYMENTS_APPROVED` and `NYKST_GST_CONFIRMED` |
 | Weekly refund terms                       | gated            | founder decision OD-15                                                                                  |
 | GST invoice breakdown                     | gated            | tax advisor confirmation; billing states "Invoice format pending tax confirmation"                      |
 | Hindi notice, consent and rights controls | gated            | translator text, counsel review, and DPO acceptance                                                     |
 | Ten precomputed public graphs             | 0 of 10 ingested | the ten owner and repo names                                                                            |
 | Repo B promotion gate                     | not run          | count verification and three hand written known answers                                                 |
-| `nykst.vercel.app` redirect               | not configured   | it currently serves the same project directly                                                           |
+| `nykst.vercel.app` redirect               | configured       | 307 redirect to `nykst.unifies.codes`, verified in Vercel on 30 October 2026                            |
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -548,6 +548,7 @@ sequenceDiagram
 | Remember  | Cited ADRs, diagrams, migrations, and image references                                                                | `src/lib/memory/evidence.ts`                         |
 | Impact    | Reverse BFS, import chains, co-change history, tests                                                                  | `src/lib/analysis/impact.ts`                         |
 | Shape     | Six-level graph and dossiers                                                                                          | `src/lib/analysis/graph.ts`                          |
+| Mail      | Table HTML and text, escaped recipients, best-effort transactional delivery                                          | `src/lib/email/`, `src/lib/resend.server.ts`         |
 | Serve     | Eleven read-only MCP tools                                                                                            | `src/lib/analysis/tools.ts`, `src/lib/mcp.server.ts` |
 | Store     | Snapshots, keys, tokens, signals, subscriptions                                                                       | `supabase/migrations`                                |
 
@@ -557,6 +558,34 @@ sequenceDiagram
 - **Row-level security on every table.** Anonymous reads of private tables are revoked and covered by tests.
 - **Two secrets at rest.** BYOK provider keys are encrypted with AES-256-GCM under `NYKST_BYOK_SECRET`; MCP tokens are stored as SHA-256 hashes and shown once.
 - **No write scopes.** A repository is fetched as a tarball, parsed in memory, and reduced to structural metadata.
+
+### Transactional mail
+
+Two messages leave Nykst. Both are transactional, not marketing: there is no unsubscribe link because nobody is subscribed, and there is no tracking pixel, remote image, web font, or open and click tracking.
+
+| Path | Trigger | Recipient | Subject | What the message proves |
+| :--- | :------ | :-------- | :------ | :---------------------- |
+| Contact receipt | A contact message is stored | The address that submitted the form | `Nykst received your message [NYKST-XXXXXXXX]` | The exact reference, topic, received time in IST, full message, per-topic reply promise, and a reply-to action |
+| GitHub sign-in notice | A GitHub OAuth callback succeeds | The verified GitHub email, primary first | `New sign-in to Nykst` | The GitHub login, IST time, coarse browser and operating system, OAuth method, and a link to GitHub security settings |
+
+```mermaid
+flowchart LR
+  C[Contact form] --> V[Validate and rate limit]
+  V --> D[(contact_messages)]
+  D --> O[Owner notification]
+  D --> R[Sender receipt]
+  G[GitHub OAuth callback] --> E[GET /user/emails]
+  E --> P[Verified primary address]
+  P --> S[Sign-in security notice]
+```
+
+Both messages use the same `src/lib/email/template.ts` shell: a 600 px table layout, inline styles, hidden preheader, dark theme with a teal accent, and a complete plain-text sibling. Dynamic values are escaped, subjects are stripped of CRLF, and only constant URLs are allowed. The table markup degrades cleanly in Gmail, Apple Mail, Outlook, and a text-only client. There are no remote assets or redirects that could turn a transactional message into a tracking surface.
+
+`sendResendEmail` validates every recipient, keeps `CONTACT_EMAIL` as the default for owner notifications, sends HTML only alongside text, and attaches an idempotency key. The contact receipt uses `contact-receipt-<reference>`; the sign-in notice uses `github-signin-<user id>-<timestamp>`. Resend deduplicates retries for the same key.
+
+Contact storage comes first. The owner notification and the sender receipt run in parallel, and the response exposes `delivered` and `confirmationDelivered` separately. A failed mail never removes the stored row, and the visitor always keeps a prefilled mailto with the reference. GitHub sign-in never depends on mail success: the callback exchanges the code, verifies the user, attempts the notice with a 3.5 s timeout, then sets the session cookie whether mail succeeded or not. A missing verified address skips the notice instead of falling back to the owner address.
+
+The callback reads `/user/emails` and uses only a verified address, preferring the primary. The public profile email is a fallback; an unverified address is never mailed. The OAuth app requests `user:email`; a GitHub App needs the Email addresses read permission instead. `/api/health` exposes `mail.outbound` and `mail.inbound` as booleans, never the key or the address.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -695,6 +724,11 @@ GITHUB_CLIENT_SECRET=...
 GITHUB_WEBHOOK_SECRET=...
 GITHUB_BOT_TOKEN=github_pat_...
 
+# Resend transactional mail
+RESEND_API_KEY=re_...
+CONTACT_MAIL_FROM=Nykst <contact@yourdomain>
+RESEND_WEBHOOK_SECRET=whsec_...
+
 # Vault and platform AI
 NYKST_BYOK_SECRET=<32+ random characters>
 NYKST_AI_API_KEY=...
@@ -713,8 +747,8 @@ done
 curl -s http://localhost:8080/api/health | jq
 ```
 
-`/api/health` reports `billing.schemaReady`. It stays false until
-`supabase/migrations/20261030130000_razorpay_subscriptions.sql` is applied.
+`/api/health` reports `billing.schemaReady` and the `mail.outbound` and `mail.inbound` booleans. Billing stays false until
+`supabase/migrations/20261030130000_razorpay_subscriptions.sql` is applied. Mail readiness only says the environment keys exist; it does not send a test message.
 
 ### Verify
 
@@ -815,6 +849,10 @@ nykst/
 │   │   │   ├── graph.ts             Six-level hierarchy
 │   │   │   ├── context.ts           Evidence serializer
 │   │   │   └── tools.ts             Eleven MCP tools
+│   │   ├── email/
+│   │   │   ├── template.ts           Table HTML, escaping, and plain-text shell
+│   │   │   ├── messages.ts           Contact receipt and GitHub sign-in copy
+│   │   │   └── deliver.server.ts     Best-effort Resend delivery
 │   │   ├── memory/evidence.ts       ADRs, diagrams, migrations, images
 │   │   ├── pricing.ts               INR plan registry and live gates
 │   │   ├── pricing.server.ts        Server-only plan ids and gate state
@@ -852,10 +890,11 @@ nykst/
 │   ├── dossier.test.ts              File evidence dossier assembly
 │   ├── compiler-resolution.test.ts  Scopes, overloads, re-exports and auto-heal
 │   ├── mcp-contract.test.ts         Published schema matches the 11 real tools
+│   ├── email.test.ts                Receipts, sign-in notices, escaping, recipients, idempotency
 │   ├── pricing.test.ts              INR amounts, paise, trial and live gates
 │   ├── privacy.test.ts              DPDP purposes, notice and rights status
 │   ├── mcp-target-path.test.ts      Scoped MCP search with no fallback
-│   └── ...                          27 bun:test suites in total
+│   └── ...                          33 bun:test suites in total
 ├── e2e/
 │   ├── safe-loop.spec.ts            Four-stage loop, heal and WebGL feedback
 │   ├── graph-workspace.spec.ts      Radial graph, switcher and teleport
@@ -880,7 +919,7 @@ nykst/
 | `VITE_SUPABASE_URL`             |   Yes    | Client | `https://<ref>.supabase.co`                          | Browser client for Realtime.                                                                                                                                                                                     |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` |   Yes    | Client | `sb_publishable_...`                                 | Browser key, guarded by RLS.                                                                                                                                                                                     |
 | `GITHUB_CLIENT_ID`              |   Yes    | Server | OAuth or App client id                               | GitHub authorization.                                                                                                                                                                                            |
-| `GITHUB_CLIENT_SECRET`          |   Yes    | Server | 40 hex chars                                         | Token exchange and state signing.                                                                                                                                                                                |
+| `GITHUB_CLIENT_SECRET`          |   Yes    | Server | 40 hex chars                                         | Token exchange and state signing. Vercel may store the rotated value as `CLIENT_SECRET`; the server accepts either name.                                                                                          |
 | `GITHUB_WEBHOOK_SECRET`         |   Yes    | Server | Random string                                        | Verifies `X-Hub-Signature-256` on `/api/webhooks/github`.                                                                                                                                                        |
 | `GITHUB_BOT_TOKEN`              |    No    | Server | Fine-grained: Issues RW, Pull requests R, Metadata R | Posts and updates the PR blast-radius comment. The repository also needs a committed snapshot. Without the token the webhook stores the signal and skips the comment.                                            |
 | `GITHUB_REDIRECT_URI`           |    No    | Server | Absolute URL                                         | Optional override; otherwise the host is matched automatically.                                                                                                                                                  |
@@ -892,8 +931,8 @@ nykst/
 | `GEMINI_API_KEY`                |    No    | Server | `AIza...`                                            | Secondary platform fallback.                                                                                                                                                                                     |
 | `SLACK_CLIENT_ID` / `_SECRET`   |    No    | Server | Slack app credentials                                | Enables `/nykst` slash commands.                                                                                                                                                                                 |
 | `JIRA_CLIENT_ID` / `_SECRET`    |    No    | Server | Atlassian OAuth                                      | Enables issue correlation.                                                                                                                                                                                       |
-| `RESEND_API_KEY`                |   Yes    | Server | `re_...`                                             | Sends the owner notification for every contact message. Without it the message is stored and the visitor is told the mail was not sent.                                                                          |
-| `CONTACT_MAIL_FROM`             |   Yes    | Server | `Nykst <contact@yourdomain>`                         | Verified Resend sender address.                                                                                                                                                                                  |
+| `RESEND_API_KEY`                |   Yes    | Server | `re_...`                                             | Sends the owner notification, the sender receipt, and the GitHub sign-in security notice. Without it a contact message is stored but the visitor is told mail was not sent; GitHub sign-in still succeeds.          |
+| `CONTACT_MAIL_FROM`             |   Yes    | Server | `Nykst <contact@yourdomain>`                         | Verified Resend sender for every transactional message. It must use a domain verified in Resend, with SPF, DKIM, and a DMARC policy.                                                                             |
 | `RESEND_WEBHOOK_SECRET`         |    No    | Server | `whsec_...`                                          | Verifies inbound mail on `/api/webhooks/resend` before anything is stored.                                                                                                                                       |
 | `NYKST_ADMIN_GITHUB_ID`         |    No    | Server | Numeric GitHub id                                    | Grants `/admin/payments`.                                                                                                                                                                                        |
 | `RAZORPAY_KEY_ID`               |   Yes    | Server | `rzp_live_...`                                       | Public key id passed to Checkout. The prefix selects live or test mode.                                                                                                                                          |
@@ -904,6 +943,9 @@ nykst/
 | `NYKST_LIVE_PAYMENTS_APPROVED`  |    No    | Server | `true`                                               | Founder sign-off for live checkout. Anything else keeps live checkout closed.                                                                                                                                   |
 | `NYKST_GST_CONFIRMED`           |    No    | Server | `true`                                               | Tax confirmation for the GST-inclusive price. Anything else keeps live checkout closed.                                                                                                                          |
 | `RAZORPAY_LIVE_MODE`            |    No    | Server | `false`                                              | Kill switch for live keys. It can never turn a test key into a live checkout.                                                                                                                                    |
+
+> [!NOTE]
+> The OAuth app requests `read:org,repo,read:user,user:email`. A GitHub App gets the same email access from its **Email addresses: Read** permission, not from OAuth scopes. For deliverability, verify the `CONTACT_MAIL_FROM` domain in Resend and publish the SPF, DKIM, and DMARC records Resend shows. Transactional mail is not routed through a tracking domain.
 
 > [!WARNING]
 > `SUPABASE_SERVICE_ROLE_KEY` and `NYKST_BYOK_SECRET` bypass or unlock protection layers. They belong in server environment variables only, never in `VITE_` variables and never in the repository.
@@ -925,10 +967,10 @@ nykst/
 
 |        Method         | Path                                                                                           |       Auth        | Purpose                                                                                   |
 | :-------------------: | :--------------------------------------------------------------------------------------------- | :---------------: | :---------------------------------------------------------------------------------------- |
-|         `GET`         | `/api/health`                                                                                  |      Public       | Supabase connectivity and required tables                                                 |
+|         `GET`         | `/api/health`                                                                                  |      Public       | Supabase tables, billing schema, and mail readiness booleans                               |
 |         `GET`         | `/api/analysis/self`                                                                           |      Public       | Compile the live workspace; `?path=`, `?tool=`, `?query=`, `?refresh=1`                   |
 |         `GET`         | `/api/integrations/github/start`                                                               |      Public       | Signed state, then redirect to GitHub                                                     |
-|         `GET`         | `/api/integrations/github/callback`                                                            |      Public       | Verify state, exchange code, set cookie                                                   |
+|         `GET`         | `/api/integrations/github/callback`                                                            |      Public       | Verify state, exchange code, send the sign-in notice, set cookie                           |
 |        `POST`         | `/api/integrations/github/ingest`                                                              |      Session      | Tarball fetch, AST and history analysis, snapshot write; body `{owner, repo, branch?}`    |
 |         `GET`         | `/api/integrations/github/latest`                                                              |      Session      | Newest snapshot plus every ingested workspace; `?repo=owner/name` picks one               |
 |         `GET`         | `/api/integrations/github/{repositories,all-repositories,organizations,personal-repositories}` |      Session      | Repository discovery; `repositories` also returns the ingested workspaces                 |
@@ -941,7 +983,7 @@ nykst/
 | `GET` `POST` `DELETE` | `/api/mcp-tokens`                                                                              |      Session      | Mint, list, revoke tokens                                                                 |
 |        `POST`         | `/api/diagnosis`                                                                               |      Session      | Root-cause candidates for a production signal                                             |
 |        `POST`         | `/api/webhooks/github`                                                                         |       HMAC        | Verified intake: incremental push patch, production signal, and PR blast-radius comment   |
-|        `POST`         | `/api/contact`                                                                                 |      Public       | Validate, rate limit, store and notify the single owner address; returns `NYKST-XXXXXXXX` |
+|        `POST`         | `/api/contact`                                                                                 |      Public       | Validate, rate limit, store, notify the owner and send the sender receipt; returns `NYKST-XXXXXXXX` |
 |        `POST`         | `/api/webhooks/resend`                                                                         |       Svix        | Verified inbound mail, stored in `contact_replies` and matched to a reference             |
 |         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |      Session      | Connector OAuth and command endpoints                                                     |
 |     `GET` `POST`      | `/api/subscription`                                                                            |      Session      | Plan state and settlement submission                                                      |
@@ -1243,10 +1285,10 @@ Two labels are used below and they are not interchangeable. Measured means a val
 
 | Metric                       | Value                                                                                                            | How it was obtained                                                                  |
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| Cold AST compile, 255 files  | 1,025 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
+| Cold AST compile, 259 files  | 1,224 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
-| Analyzed source              | **255 files, 48,220 LOC**                                                                           | `bun run check:claims`                                                              |
-| Internal import edges        | **560, zero unresolved**                                                                                         | same                                                                                 |
+| Analyzed source              | **259 files, 48,992 LOC**                                                                           | `bun run check:claims`                                                              |
+| Internal import edges        | **575, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |
 | External services            | **10**                                                                                                           | `jq '.services \| length'`                                                           |
@@ -1254,7 +1296,7 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | SSR landing response         | 229 ms warm across two calls from this workspace on 29 Oct 2026, network included                                | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/`                  |
 | Health probe, all tables     | 1.16 s to 1.95 s across three calls on 29 Oct 2026, dominated by the live database round trip                    | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/health`        |
 | Client payload, all routes   | 1.3 MB uncompressed JavaScript and CSS in `.output/public`, measured 29 Oct 2026                                 | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                  |
-| Test suite                   | 176 pass, 0 fail on 29 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
+| Test suite                   | 251 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
 | Playwright suite             | public route renders, 9 of 9 desktop and 9 of 9 mobile against production on 29 Oct 2026                         | `E2E_BASE_URL=https://nykst.unifies.codes bunx playwright test e2e/routes.spec.ts`   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
@@ -1291,7 +1333,7 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-Last full unit run on 29 October 2026: 176 tests pass, 0 fail across 27 files, with 971 assertions in 3.2 s. The table below describes what each suite proves, not a count that floats between releases.
+Last full unit run on 30 October 2026: 251 tests pass, 0 fail across 33 files, with 1,706 assertions in 2.61 s. The table below describes what each suite proves, not a count that floats between releases.
 
 | Suite                               | What it proves                                                                                                                                                                                                    |
 | :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1311,6 +1353,7 @@ Last full unit run on 29 October 2026: 176 tests pass, 0 fail across 27 files, w
 | `tests/graph-layout.test.ts`        | Radial orbit geometry: full 360-degree rings, two staggered orbits above eight siblings, unique positions, viewport bounds, and quadratic Bezier edges                                                            |
 | `tests/code-links.test.ts`          | Repository slugs, `#L<line>` GitHub deep links, `vscode://file/...:line` URLs, the +/- 20 line excerpt, and the per-line explanation                                                                              |
 | `tests/dossier.test.ts`             | Dossier sections for importers, transitive dependents, entrypoints, SQL resources, column drift, and exported signatures, each with file and line                                                                 |
+| `tests/email.test.ts`               | Contact receipts and GitHub sign-in notices, HTML escaping, plain-text fallback, explicit recipients, idempotency keys, verified-email selection, and CRLF-safe subjects                                                  |
 | `e2e/routes.spec.ts`                | Every public route answers `200`, has a title and `h1`, renders real content, and produces no page errors, failed requests, broken images, missing `alt` text, or horizontal overflow at desktop and phone widths |
 | `e2e/graph-workspace.spec.ts`       | The live graph is radial (not a column), the list view exposes every child with a real filter, `?repo=` selects the requested workspace, and a `file:line` row opens the code with the exact `#L` GitHub link     |
 | `e2e/graph-navigation.spec.ts`      | Ten file selections in a row keep the centre header, breadcrumb, dossier, mentor and `?file=` URL on the full path, and a reload restores the same file                                                           |
@@ -1332,7 +1375,7 @@ GitHub Actions runs the typecheck and unit suites in [`ci.yml`](.github/workflow
 | Surface              | URL                                                          | Notes                                                        |
 | :------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
 | Canonical production | [nykst.unifies.codes](https://nykst.unifies.codes)           | Custom domain on Vercel                                      |
-| Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | Serves the same project, no redirect to the canonical domain |
+| Vercel alias         | [nykst.vercel.app](https://nykst.vercel.app)                 | 307 redirect to the canonical domain, verified 30 October 2026 |
 | Source               | [github.com/flawsom/nykst](https://github.com/flawsom/nykst) | Public repository, `main` is the deploy branch               |
 
 OAuth callbacks are host-matched, so `nykst.unifies.codes`, `nykst.vercel.app`, preview subdomains, and `localhost:8080` all work without configuration.
@@ -1352,8 +1395,13 @@ bunx vercel env add GITHUB_WEBHOOK_SECRET production
 bunx vercel env add GITHUB_BOT_TOKEN production
 bunx vercel env add NYKST_BYOK_SECRET production
 bunx vercel env add NYKST_AI_API_KEY production
+bunx vercel env add RESEND_API_KEY production
+bunx vercel env add CONTACT_MAIL_FROM production
+bunx vercel env add RESEND_WEBHOOK_SECRET production
 bunx vercel --prod
 ```
+
+The `nykst` Vercel project has `RESEND_API_KEY`, `CONTACT_MAIL_FROM`, `RESEND_WEBHOOK_SECRET`, and the GitHub OAuth keys in Production. It does not yet have `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_PLAN_ID_MONTHLY`, `RAZORPAY_PLAN_ID_ANNUAL`, `NYKST_LIVE_PAYMENTS_APPROVED`, or `NYKST_GST_CONFIRMED`; that is why live checkout remains gated independently of the code.
 
 The build runs `npm install` from `package-lock.json` and `vite build`. Keep TanStack packages current: Vercel blocks versions with known advisories.
 

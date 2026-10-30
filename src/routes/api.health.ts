@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { resendConfigured, resendWebhookConfigured } from "@/lib/resend.server";
 
 // Live readiness probe: reports whether Supabase is configured and whether the
 // schema Nykst needs is actually present. Every value is measured on request,
@@ -15,6 +16,8 @@ const TABLES = [
   "mcp_access_tokens",
   "integration_connections",
   "razorpay_webhook_events",
+  "contact_messages",
+  "contact_replies",
 ] as const;
 
 export const Route = createFileRoute("/api/health")({
@@ -77,6 +80,10 @@ export const Route = createFileRoute("/api/health")({
               billing: {
                 schemaReady: billingSchemaReady,
                 ...(billingSchemaError ? { error: billingSchemaError } : {}),
+              },
+              mail: {
+                outbound: resendConfigured(process.env),
+                inbound: resendWebhookConfigured(process.env),
               },
               hint: missing.length
                 ? "Apply supabase/schema.sql in the Supabase SQL editor to finish provisioning."

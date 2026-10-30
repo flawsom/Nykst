@@ -9,11 +9,18 @@ import { fetchRepositoryTarball } from "@/lib/analysis/tarball.server";
 
 const GITHUB_API = "https://api.github.com";
 const GITHUB_AUTHORIZE = "https://github.com/login/oauth/authorize";
+export const GITHUB_OAUTH_SCOPES = "read:org,repo,read:user,user:email";
 const GITHUB_TOKEN = "https://github.com/login/oauth/access_token";
 // GitHub rejects requests without a User-Agent. Node adds one by default; Workers do not.
 export const GITHUB_USER_AGENT = "nykst-software-intelligence";
 
-type GithubUser = { id: number; login: string; name?: string | null; avatar_url?: string };
+type GithubUser = {
+  id: number;
+  login: string;
+  name?: string | null;
+  email?: string | null;
+  avatar_url?: string;
+};
 type GithubOrg = { id: number; login: string; avatar_url?: string };
 type GithubRepo = {
   id: number;
@@ -129,7 +136,7 @@ export function githubAuthorizeUrl(state: string, request: Request) {
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", githubRedirectUri(request));
   // GitHub Apps take their permissions from the app settings, not from scopes.
-  if (!githubIsApp()) url.searchParams.set("scope", "read:org,repo,read:user");
+  if (!githubIsApp()) url.searchParams.set("scope", GITHUB_OAUTH_SCOPES);
   url.searchParams.set("state", state);
   return url.toString();
 }
@@ -473,6 +480,58 @@ export async function githubCreatePullRequest(
 
 export async function githubUser(token: string) {
   return githubFetch<GithubUser>(token, "/user");
+}
+
+export type GithubEmail = {
+  email?: string | null;
+  primary?: boolean;
+  verified?: boolean;
+  visibility?: string | null;
+};
+
+function normalizeGithubEmail(value: unknown): string | null {
+  const email = typeof value === "string" ? value.trim() : "";
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
+}
+
+/**
+ * Pick the address GitHub has verified, preferring the primary one. A public
+ * profile email is only a fallback: it is never used when `/user/emails`
+ * returned a verified address. Unverified addresses are never mailed.
+ */
+export function pickGithubEmail(
+  emails: readonly GithubEmail[],
+  fallback?: string | null,
+): string | null {
+  const verified = emails
+    .filter((entry) => entry.verified === true)
+    .map((entry) => ({ email: normalizeGithubEmail(entry.email), primary: entry.primary === true }))
+    .filter((entry): entry is { email: string; primary: boolean } => Boolean(entry.email));
+
+  return (
+    verified.find((entry) => entry.primary)?.email ??
+    verified[0]?.email ??
+    normalizeGithubEmail(fallback)
+  );
+}
+
+/**
+ * Read the verified GitHub email. The endpoint needs the `user:email` scope
+ * (or the Email addresses permission on a GitHub App), so a refusal falls back
+ * to the public profile email instead of failing the sign-in.
+ */
+export async function githubUserEmail(
+  token: string,
+  fallback?: string | null,
+): Promise<string | null> {
+  try {
+    const emails = await githubFetch<GithubEmail[]>(token, "/user/emails?per_page=100", {
+      signal: AbortSignal.timeout(2000),
+    });
+    return pickGithubEmail(emails, fallback);
+  } catch {
+    return normalizeGithubEmail(fallback);
+  }
 }
 /** Repositories the user granted to the GitHub App, across all their installations. */
 async function githubInstallationRepositories(token: string) {
