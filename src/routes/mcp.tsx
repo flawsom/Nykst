@@ -411,6 +411,9 @@ function McpGuidePage() {
                   >
                     {(() => {
                       const target = (toolOutput as Record<string, unknown>)["target_path"];
+                      const driver = (toolOutput as Record<string, unknown>)["driver"];
+                      if (driver === "target path not found")
+                        return `Target path not found: ${String(target ?? "")}`;
                       return typeof target === "string" && target
                         ? `Searched in ${target}`
                         : "Searched across the example repository";

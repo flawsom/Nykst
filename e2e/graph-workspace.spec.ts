@@ -80,9 +80,11 @@ test("the list view exposes every child, filters them and opens the dossier", as
 
   // Counts are labelled by what they actually count, and the covering test
   // section is present even when it has nothing to report.
-  await expect(page.getByTestId("dossier-count-resources")).toContainText("call-site rows");
-  await expect(page.getByTestId("dossier-count-resources")).toContainText("distinct");
-  await expect(page.locator('[data-dossier-section="tests"]')).toContainText("Covering Tests");
+  await expect(page.getByTestId("dossier-count-resources")).toContainText("places in code");
+  await expect(page.getByTestId("dossier-count-resources")).toContainText("tables or buckets");
+  await expect(page.locator('[data-dossier-section="tests"]')).toContainText(
+    "Tests that check this",
+  );
 
   // A row is a native button and Details opens the real system dossier modal.
   await list.locator('[data-testid="graph-node-details"]').first().click();

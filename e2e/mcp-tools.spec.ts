@@ -61,7 +61,7 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
   await expect(outputPre).toContainText('"repository": "flawsom/nykst"', { timeout: 15000 });
   await expect(outputPre).toContainText("src/lib/analysis/engine.server.ts");
   await expect(outputPre).toContainText("analyzeRepository");
-  await expect(page.getByTestId("mcp-result-driver")).toContainText("target path and query text");
+  await expect(page.getByTestId("mcp-result-driver")).toContainText("Searched in src/lib/analysis");
 
   const searchJson = JSON.parse((await outputPre.textContent()) ?? "{}") as {
     repository?: string;
@@ -80,7 +80,7 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
   // results from another path, and says so in the result driver label.
   await pathInput.fill("src/does-not-exist");
   await page.getByTestId("mcp-page-tool-search_files").click();
-  await expect(page.getByTestId("mcp-result-driver")).toContainText("target path not found", {
+  await expect(page.getByTestId("mcp-result-driver")).toContainText("Target path not found", {
     timeout: 15000,
   });
   const missingJson = JSON.parse((await outputPre.textContent()) ?? "{}") as {
