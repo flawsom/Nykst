@@ -405,7 +405,9 @@ function PlansPage() {
         <p className="text-muted-foreground mt-4 text-[11px] leading-relaxed">
           {pricing?.anyPlanLive
             ? "The trial is free for 7 days. Razorpay authorizes the payment method now and charges on day 8 unless you cancel. Card details are handled by Razorpay, not stored by Nykst."
-            : "Checkout is not open yet. The plans above are shown for evaluation. Send a message below and we will tell you when access opens."}
+            : pricing
+              ? "Checkout is not open yet. Send a message below and we will tell you when access opens."
+              : "The live checkout state is still loading. Reload this page before starting a trial."}
         </p>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_1.1fr]">

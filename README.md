@@ -94,12 +94,12 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 259 source files, 48,992 LOC, 575 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 261 source files, 49,526 LOC, 581 internal edges, 0 unresolved imports, 15 SQL and data resources, 11 external services, 0 cycles, 11 MCP tools                                |
 
 | Command                                     | Result on that tree                                          |
 | :------------------------------------------ | :----------------------------------------------------------- |
 | `bun tsc -b --noEmit`                       | pass, 0 errors                                               |
-| `bun test ./tests`                          | 251 pass, 0 fail, 33 files, 1,706 assertions, 2.61 s         |
+| `bun test ./tests`                          | 257 pass, 0 fail, 34 files, 1,757 assertions, 3.25 s         |
 | `bun run check:claims`                      | ok                                                           |
 | `bun run build`                             | pass, 2.92 s client and 2.88 s Nitro server                   |
 | `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings          |
@@ -112,8 +112,8 @@ Scope of that browser result: the nine public route render tests on both project
 
 | Surface                                   | State            | Missing input                                                                                           |
 | :---------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------ |
-| Razorpay live checkout                    | GST gate pending | live plans created; production also lacks `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, the two plan ids, `NYKST_LIVE_PAYMENTS_APPROVED` and `NYKST_GST_CONFIRMED` |
-| Weekly refund terms                       | gated            | founder decision OD-15                                                                                  |
+| Razorpay live checkout                    | live             | monthly INR 699 with a 7 day refund window, annual INR 4,999 with a 14 day refund window, 7 day trial, 18 percent GST included; weekly INR 299 is gated because its refund window is not decided |
+| Weekly refund terms                       | gated            | founder decision OD-15; weekly stays closed until a refund window is decided                            |
 | GST invoice breakdown                     | gated            | tax advisor confirmation; billing states "Invoice format pending tax confirmation"                      |
 | Hindi notice, consent and rights controls | gated            | translator text, counsel review, and DPO acceptance                                                     |
 | Ten precomputed public graphs             | 0 of 10 ingested | the ten owner and repo names                                                                            |
@@ -650,7 +650,7 @@ The callback reads `/user/emails` and uses only a verified address, preferring t
 <img src="https://img.shields.io/badge/GitHub_REST-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub API" />
 <img src="https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white" alt="Slack" />
 <img src="https://img.shields.io/badge/Jira_v3-0052CC?style=flat-square&logo=jira&logoColor=white" alt="Jira" />
-<img src="https://img.shields.io/badge/Razorpay-0C2451?style=flat-square&logo=razorpay&logoColor=white" alt="Razorpay, gated" />
+<img src="https://img.shields.io/badge/Razorpay-0C2451?style=flat-square&logo=razorpay&logoColor=white" alt="Razorpay, live" />
 </td></tr>
 <tr><td><b>Testing</b></td><td>
 <img src="https://img.shields.io/badge/bun%3Atest-000000?style=flat-square&logo=bun&logoColor=white" alt="bun:test" />
@@ -1285,18 +1285,18 @@ Two labels are used below and they are not interchangeable. Measured means a val
 
 | Metric                       | Value                                                                                                            | How it was obtained                                                                  |
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| Cold AST compile, 259 files  | 1,224 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
+| Cold AST compile, 261 files  | 1,129 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
-| Analyzed source              | **259 files, 48,992 LOC**                                                                           | `bun run check:claims`                                                              |
-| Internal import edges        | **575, zero unresolved**                                                                                         | same                                                                                 |
+| Analyzed source              | **261 files, 49,526 LOC**                                                                           | `bun run check:claims`                                                              |
+| Internal import edges        | **581, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |
-| External services            | **10**                                                                                                           | `jq '.services \| length'`                                                           |
+| External services            | **11**                                                                                                           | `jq '.services \| length'`                                                           |
 | Warm cached response         | 275 ms warm, up to 1,278 ms across three calls from this workspace on 29 Oct 2026, network included              | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/analysis/self` |
 | SSR landing response         | 229 ms warm across two calls from this workspace on 29 Oct 2026, network included                                | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/`                  |
 | Health probe, all tables     | 1.16 s to 1.95 s across three calls on 29 Oct 2026, dominated by the live database round trip                    | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/health`        |
 | Client payload, all routes   | 1.3 MB uncompressed JavaScript and CSS in `.output/public`, measured 29 Oct 2026                                 | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                  |
-| Test suite                   | 251 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
+| Test suite                   | 257 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
 | Playwright suite             | public route renders, 9 of 9 desktop and 9 of 9 mobile against production on 29 Oct 2026                         | `E2E_BASE_URL=https://nykst.unifies.codes bunx playwright test e2e/routes.spec.ts`   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
@@ -1333,7 +1333,7 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-Last full unit run on 30 October 2026: 251 tests pass, 0 fail across 33 files, with 1,706 assertions in 2.61 s. The table below describes what each suite proves, not a count that floats between releases.
+Last full unit run on 30 October 2026: 257 tests pass, 0 fail across 34 files, with 1,757 assertions in 3.25 s. The table below describes what each suite proves, not a count that floats between releases.
 
 | Suite                               | What it proves                                                                                                                                                                                                    |
 | :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1401,7 +1401,7 @@ bunx vercel env add RESEND_WEBHOOK_SECRET production
 bunx vercel --prod
 ```
 
-The `nykst` Vercel project has `RESEND_API_KEY`, `CONTACT_MAIL_FROM`, `RESEND_WEBHOOK_SECRET`, and the GitHub OAuth keys in Production. It does not yet have `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_PLAN_ID_MONTHLY`, `RAZORPAY_PLAN_ID_ANNUAL`, `NYKST_LIVE_PAYMENTS_APPROVED`, or `NYKST_GST_CONFIRMED`; that is why live checkout remains gated independently of the code.
+The live plans API is the source of truth for billing. On 30 October 2026 it reported monthly and annual checkout live, weekly gated, a 7 day trial, 18 percent GST included, and refund windows of 7 days for monthly and 14 days for annual. Production secrets and hosting environment values are managed in the hosting dashboard, not in this repository.
 
 The build runs `npm install` from `package-lock.json` and `vite build`. Keep TanStack packages current: Vercel blocks versions with known advisories.
 
@@ -1556,7 +1556,7 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Slack and Jira connectors
 - [x] INR plan registry with weekly 299, monthly 699 and annual 4,999, GST included
 - [x] Razorpay subscription checkout, webhook activation, live monthly and annual plans, and a server billing page
-- [ ] GST invoice treatment and live charge sign-off (M2-09 gate open)
+- [ ] GST invoice treatment and invoice format confirmation (M2-09 invoice gate open)
 - [x] Playwright browser matrix in CI, desktop and mobile
 - [x] Committed self-analysis snapshot for source-less production builds
 - [x] Fine-grained exported symbol signatures with parameter arity and type properties
