@@ -105,7 +105,7 @@ Release numbers live here. Everything else in this README describes capability. 
 | `bun run check:claims`                      | ok                                                         |
 | `bun run build`                             | pass, client and Nitro server                              |
 | `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings        |
-| Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, last run 29 October 2026    |
+| Playwright public route renders, production | 18 of 18 (9 desktop, 9 mobile), last run 30 October 2026   |
 | GitHub Actions CI and E2E                   | run on every push; local checks below passed for this tree |
 
 Scope of that browser result: the nine public route render tests on both projects, run sequentially against production. The five journey suites run in the GitHub Actions E2E workflow. They were not re-run by hand for this tree; its server paths are covered by the unit tests and the production build below.
@@ -166,21 +166,29 @@ flawsom           src/lib           analysis           supabase          impact.
 
 ### Ecosystem benchmark: what each tool covers, and what Nykst adds
 
-This table reflects each project's publicly documented scope. It is a capability map, not a quality score: every tool below is useful for the job it was built for.
+This table reflects each project's publicly documented scope, reviewed on 30 October 2026. It is a capability map, not a quality score: every tool below is useful for the job it was built for. **No** means the capability is not documented on the official product surface, not that it is impossible; **Partial** means only one side of the column is documented.
 
-| Tool              | Local-first |       MCP tools        |    In-memory pre-flight    |   SQL and contract lineage    |  Verified AST auto-heal  | License     |
-| :---------------- | :---------: | :--------------------: | :------------------------: | :---------------------------: | :----------------------: | :---------- |
-| Harmony MCP       |     No      |    Memory retrieval    |             No             |              No               |            No            | Proprietary |
-| CodeGraph         |     Yes     |      Graph query       |             No             |              No               |            No            | MIT         |
-| GitNexus          |     Yes     |      Graph query       |             No             |              No               |            No            | PolyForm NC |
-| Repomix           |     Yes     |           No           |             No             |              No               |            No            | MIT         |
-| Serena            |     Yes     |  Yes, symbol and LSP   |             No             |              No               |            No            | MIT         |
-| Greptile          |     No      |           No           |             No             |              No               |            No            | Proprietary |
-| Sourcegraph Cody  |   Partial   |           No           |             No             |              No               |            No            | Proprietary |
-| Augment CE        |     No      |           No           |             No             |              No               |            No            | Proprietary |
-| grepai            |     Yes     |           No           |             No             |              No               |            No            | MIT         |
-| code-review-graph |     Yes     |        Partial         |             No             |              No               |            No            | MIT         |
-| **Nykst**         |   **Yes**   | **11 read-only tools** | **Yes, `simulate_change`** | **Yes, DDL replay and drift** | **Yes, four strategies** | **MIT**     |
+| Tool                     | Local-first |         MCP tools          |    In-memory pre-flight    |   SQL and contract lineage    |  Verified AST auto-heal  | License     |
+| :----------------------- | :---------: | :------------------------: | :------------------------: | :---------------------------: | :----------------------: | :---------- |
+| Harmony MCP              |     No      |      Memory retrieval      |             No             |              No               |            No            | Proprietary |
+| CodeGraph                |     Yes     |        Graph query         |             No             |              No               |            No            | MIT         |
+| GitNexus                 |     Yes     |        Graph query         |             No             |              No               |            No            | PolyForm NC |
+| Repomix                  |     Yes     |             No             |             No             |              No               |            No            | MIT         |
+| Serena                   |     Yes     |    Yes, symbol and LSP     |             No             |              No               |            No            | MIT         |
+| Greptile                 |     No      |             No             |             No             |              No               |            No            | Proprietary |
+| Sourcegraph Cody         |   Partial   |             No             |             No             |              No               |            No            | Proprietary |
+| Augment CE               |     No      |             No             |             No             |              No               |            No            | Proprietary |
+| grepai                   |     Yes     |             No             |             No             |              No               |            No            | MIT         |
+| code-review-graph        |     Yes     |          Partial           |             No             |              No               |            No            | MIT         |
+| Graphify (OSS)           |     Yes     |  Yes, 10 graph/PR tools    |             No             |    Partial, SQL schema only   |            No            | Apache-2.0  |
+| CodeGraphContext         |     Yes     |      Yes, graph query      |             No             |              No               |            No            | MIT         |
+| code-graph-mcp           |     Yes     |    Yes, graph and impact   |             No             |    Partial, HTTP routes only  |            No            | MIT         |
+| Synapse MCP (preview)    |     Yes     |   Yes, safe-write tools    |      Yes, per docs         |      Partial, SQL DDL         |            No            | MIT         |
+| **Nykst**                |   **Yes**   |   **11 read-only tools**   | **Yes, `simulate_change`** | **Yes, DDL replay and drift** | **Yes, four strategies** | **MIT**     |
+
+<sub>Graphify here is the open-source CLI, not the separate hosted Graphify Cloud product. Its pinned <code>v8</code> LICENSE is Apache-2.0, while the current package metadata says MIT; pin the release before relying on either. Synapse MCP labels itself Preview, so its safe-write claim is a documented product claim, not independent verification. Sources: [Graphify](https://github.com/Graphify-Labs/graphify) and its [MCP tool reference](https://docs.graphify.com/reference/mcp-tools); [Synapse MCP](https://github.com/myelixlabs/synapse-mcp); [CodeGraphContext](https://github.com/CodeGraphContext/CodeGraphContext); [code-graph-mcp](https://github.com/sdsrss/code-graph-mcp).</sub>
+
+Graph tools overlap on local indexing and impact exploration. Nykst's narrower claim is the closed loop: DDL replay and column drift, SQL-to-call-site and OpenAPI/gRPC contract checks, then a patch returned only after an in-memory re-check. This table tests that loop; it is not a claim that another tool cannot add it later.
 
 ### The 4-Stage Closed-Loop Safe-Coding Engine
 
