@@ -334,7 +334,8 @@ export function SafeCodeLoopEngine({
           </h3>
           <p className="text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed">
             Architecture and history first, then the edit, then an in-memory overlay of the real
-            AST, SQL columns and runtime cycles, then an exact <code>file:line</code> verdict.
+            code structure, SQL columns and runtime cycles, then an exact <code>file:line</code>{" "}
+            verdict.
           </p>
         </div>
         <div className="flex min-w-0 items-center gap-2">
@@ -385,7 +386,7 @@ export function SafeCodeLoopEngine({
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="border-border bg-surface/50 rounded-xl border p-3.5">
                 <p className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
-                  {`Exported signatures · ${result.stage1.file.role} · ${result.stage1.file.loc} analyzed source LOC`}
+                  {`Exported signatures · ${result.stage1.file.role} · ${result.stage1.file.loc} lines read`}
                 </p>
                 <div className="mt-2 space-y-1.5">
                   {result.stage1.symbols.length ? (
@@ -425,7 +426,7 @@ export function SafeCodeLoopEngine({
                   <Mini label="Covering tests" value={result.stage1.transitive.tests.length} />
                 </div>
                 <p className="text-muted-foreground mt-2 font-mono text-[9px] leading-relaxed">
-                  {`Entrypoints are analyzed route and API files in the reverse closure, the same definition the dossier shows as affected routes and pages. Stage 1 reports analyzed source LOC; Stage 2 reports buffer lines after the simulated edit.`}
+                  {`Entrypoints are analyzed route and API files in the reverse closure, the same definition the dossier shows as affected routes and pages. Stage 1 reports lines read; Stage 2 reports buffer lines after the simulated edit.`}
                 </p>
                 <div className="mt-2 max-h-28 space-y-1 overflow-y-auto pr-1">
                   {result.stage1.directImporters.slice(0, 5).map((caller) => (
@@ -562,7 +563,7 @@ export function SafeCodeLoopEngine({
           <Stage
             stage={2}
             icon={FileCode2}
-            aside={`${(result.stage2.content ?? "").split("\n").length} buffer lines ·${result.stage1.file.loc} analyzed source LOC · edit in place`}
+            aside={`${(result.stage2.content ?? "").split("\n").length} buffer lines ·${result.stage1.file.loc} lines read · edit in place`}
           >
             <div className="border-border bg-surface/50 rounded-xl border p-3">
               <div className="flex flex-wrap items-center gap-2">
