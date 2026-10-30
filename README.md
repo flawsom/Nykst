@@ -99,7 +99,7 @@ Release numbers live here. Everything else in this README describes capability. 
 | Command                                     | Result on that tree                                          |
 | :------------------------------------------ | :----------------------------------------------------------- |
 | `bun tsc -b --noEmit`                       | pass, 0 errors                                               |
-| `bun test ./tests`                          | 257 pass, 0 fail, 34 files, 1,757 assertions, 3.25 s         |
+| `bun test ./tests`                          | 257 pass, 0 fail, 34 files, 1,757 assertions, 2.41 s         |
 | `bun run check:claims`                      | ok                                                           |
 | `bun run build`                             | pass, 2.92 s client and 2.88 s Nitro server                   |
 | `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings          |
@@ -1333,7 +1333,7 @@ bunx playwright test          # browser checks on the built server
 bun run screens               # refresh the README captures
 ```
 
-Last full unit run on 30 October 2026: 257 tests pass, 0 fail across 34 files, with 1,757 assertions in 3.25 s. The table below describes what each suite proves, not a count that floats between releases.
+Last full unit run on 30 October 2026: 257 tests pass, 0 fail across 34 files, with 1,757 assertions in 2.41 s. The table below describes what each suite proves, not a count that floats between releases.
 
 | Suite                               | What it proves                                                                                                                                                                                                    |
 | :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
