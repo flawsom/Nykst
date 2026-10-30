@@ -94,7 +94,7 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 249 source files, 46,624 LOC, 541 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 249 source files, 46,627 LOC, 541 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
 
 | Command                                     | Result on that tree                                          |
 | :------------------------------------------ | :----------------------------------------------------------- |
@@ -1230,7 +1230,8 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | Metric                       | Value                                                                                                            | How it was obtained                                                                  |
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
 | Cold AST compile, 249 files  | 1,060 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
-| Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           || Analyzed source              | **249 files, 46,624 LOC**                                                                           | `bun run check:claims`                                                              |
+| Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
+| Analyzed source              | **249 files, 46,627 LOC**                                                                           | `bun run check:claims`                                                              |
 | Internal import edges        | **541, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |

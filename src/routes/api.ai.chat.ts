@@ -31,6 +31,8 @@ const CODE_SYSTEM = [
 /** Bounds for an anonymous endpoint: no unbounded prompt, context or body. */
 const MAX_BODY_BYTES = 128_000;
 const MAX_PROMPT_CHARS = 4_000;
+/** Stage 2 sends a whole-file instruction, so it needs more room than a question. */
+const MAX_CODE_PROMPT_CHARS = 30_000;
 const MAX_CONTEXT_CHARS = 24_000;
 
 /** One budget window per server instance, shared by every platform key request. */
@@ -68,7 +70,8 @@ export const Route = createFileRoute("/api/ai/chat")({
         const context = typeof body["context"] === "string" ? body["context"] : "";
         const mode = body["mode"] === "code" ? "code" : "navigator";
         if (!prompt) return Response.json({ error: "Ask a question first." }, { status: 400 });
-        if (prompt.length > MAX_PROMPT_CHARS)
+        const promptLimit = mode === "code" ? MAX_CODE_PROMPT_CHARS : MAX_PROMPT_CHARS;
+        if (prompt.length > promptLimit)
           return Response.json(
             { error: "That question is too long. Please shorten it and try again." },
             { status: 413 },
