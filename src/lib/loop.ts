@@ -133,7 +133,7 @@ export function computeFinOps(
     blindLoc: stats.loc,
     analysedFiles: stats.analyzedFiles ?? stats.sourceFiles ?? 0,
     reductionPct,
-    basis: `bounded envelope measured exactly; blind baseline = ${stats.loc.toLocaleString("en-US")} analysed LOC × ${BLIND_CHARS_PER_LINE} chars/line ÷ 4 chars/token`,
+    basis: `bounded envelope measured exactly; blind baseline = ${stats.loc.toLocaleString("en-US")} analysed lines × ${BLIND_CHARS_PER_LINE} chars/line ÷ 4 chars/token`,
   };
 }
 

@@ -184,7 +184,7 @@ export function buildAnalysisGraph(
       label: path.split("/").pop() ?? path,
       summary: `${ROLE_LABEL[file.role][0][0]!.toUpperCase()}${ROLE_LABEL[file.role][0].slice(1)} · ${exportsText} Imported by ${edges.dependents.length} file${edges.dependents.length === 1 ? "" : "s"}${file.services.length ? ` · talks to ${file.services.map((id) => index.services.get(id)?.name ?? id).join(", ")}` : ""}.`,
       metrics: [
-        { label: "LOC", value: String(file.loc) },
+        { label: "Lines", value: String(file.loc) },
         { label: "Imports", value: String(edges.dependencies.length) },
         { label: "Imported by", value: String(edges.dependents.length) },
         { label: "Packages", value: String(external.length) },
@@ -235,7 +235,7 @@ export function buildAnalysisGraph(
       summary,
       metrics: [
         { label: "Files", value: String(paths.length) },
-        { label: "LOC", value: described.loc.toLocaleString("en-US") },
+        { label: "Lines", value: described.loc.toLocaleString("en-US") },
         { label: "Used from outside", value: String(edges.dependents.length) },
         { label: "Uses outside", value: String(edges.dependencies.length) },
       ],
