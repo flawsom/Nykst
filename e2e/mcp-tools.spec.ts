@@ -102,7 +102,7 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
 
   const overlayPanel = page.getByTestId("mcp-page-simulate-overlay");
   await expect(overlayPanel).toBeVisible();
-  await expect(overlayPanel).toContainText("In-Memory Overlay Buffer");
+  await expect(overlayPanel).toContainText("Trying your change in a safe copy");
 
   const textarea = page.getByTestId("mcp-page-simulate-textarea");
   await expect(textarea).toBeVisible();
@@ -134,7 +134,7 @@ test("MCP tools page lists all 11 tools, runs search_files with real data, execu
   );
   await page.getByTestId("mcp-page-tool-generate_fix_patch").click();
 
-  await expect(overlayPanel).toContainText("Machine-Verified Remediation Buffer");
+  await expect(overlayPanel).toContainText("Proposed patch for");
   await expect(outputPre).toContainText('"remediation": "machine-verified"', { timeout: 15000 });
   await expect(outputPre).toContainText('"verified": true');
   await expect(outputPre).toContainText("Machine-verified remediation");
@@ -283,7 +283,7 @@ test("Landing 11-Tool MCP Runner executes search_files, simulate_change overlay,
   await page.getByTestId("mcp-tool-simulate_change").click();
   const overlayPanel = page.getByTestId("mcp-simulate-overlay-panel");
   await expect(overlayPanel).toBeVisible();
-  await expect(overlayPanel).toContainText("In-Memory Overlay Buffer");
+  await expect(overlayPanel).toContainText("Trying your change in a safe copy");
 
   const simTextarea = page.getByTestId("mcp-simulate-textarea");
   await simTextarea.fill(
@@ -300,7 +300,7 @@ test("Landing 11-Tool MCP Runner executes search_files, simulate_change overlay,
   );
   await page.getByTestId("mcp-tool-generate_fix_patch").click();
 
-  await expect(overlayPanel).toContainText("Machine-Verified Remediation Buffer");
+  await expect(overlayPanel).toContainText("Proposed patch for");
   await expect(outputPre).toContainText('"remediation": "machine-verified"', { timeout: 15000 });
   await expect(outputPre).toContainText('"verified": true');
   await expect(outputPre).toContainText("Machine-verified remediation");

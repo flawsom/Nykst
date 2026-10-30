@@ -577,6 +577,46 @@ function IntelligencePage() {
                   Instant Codebase QA
                 </span>
               </div>
+              <form
+                className="border-border space-y-2 border-t pt-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!loading) void handleAskAi();
+                }}
+              >
+                <label
+                  htmlFor="memory-ask"
+                  className="text-muted-foreground text-[11px] tracking-wide uppercase"
+                >
+                  Ask about this file
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    id="memory-ask"
+                    data-testid="memory-ask-input"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Ask a question about this file"
+                    className="border-border bg-surface focus:border-primary min-w-0 flex-1 rounded-lg border px-3 py-2 text-xs outline-none"
+                  />
+                  <button
+                    data-testid="memory-ask-btn"
+                    type="submit"
+                    disabled={loading || !repositorySnapshot}
+                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Reading the evidence..." : "Ask"}
+                  </button>
+                </div>
+              </form>
+              {aiResult && (
+                <div
+                  data-testid="memory-ask-result"
+                  className="border-border bg-surface max-h-72 overflow-auto rounded-lg border p-3 text-[11px] leading-relaxed whitespace-pre-wrap"
+                >
+                  {aiResult}
+                </div>
+              )}
               {memoryGuide && (
                 <div className="grid gap-3 border-t border-border pt-3 text-[11px] md:grid-cols-3">
                   <div>

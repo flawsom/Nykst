@@ -966,10 +966,10 @@ export function LiveGraphRagExplorer({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-primary font-mono text-[10px] uppercase tracking-wider">
                     {mcpTool === "simulate_change"
-                      ? `In-Memory Overlay Buffer for ${selectedPath} (nothing written to disk)`
+                      ? `Trying your change in a safe copy of ${selectedPath}. Nothing is written to your project.`
                       : mcpTool === "run_safe_code_loop"
-                        ? `Safe-code loop buffer for ${selectedPath} (nothing written to disk)`
-                        : `Machine-Verified Remediation Buffer for ${selectedPath} (in-memory diff generator)`}
+                        ? `Trying your change safely in ${selectedPath}. Nothing is written to your project.`
+                        : `Proposed patch for ${selectedPath}. Nothing is written to your project.`}
                   </span>
                   <button
                     type="button"

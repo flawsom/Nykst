@@ -13,6 +13,7 @@ const source = (path: string) => readFileSync(path, "utf8");
 const api = source("src/components/graph/ApiSettings.tsx");
 const providers = source("src/lib/byok.server.ts");
 const mcp = source("src/routes/mcp.tsx");
+const landingMcp = source("src/components/graph/LiveGraphRagExplorer.tsx");
 const tokens = source("src/components/mcp/TokenPanel.tsx");
 /** JSX wraps sentences across lines; compare prose with whitespace collapsed. */
 const prose = (text: string) => text.replace(/\s+/g, " ");
@@ -58,6 +59,9 @@ describe("MCP sandbox copy", () => {
     expect(mcp).not.toContain("Machine-Verified Remediation Buffer");
     expect(mcp).not.toContain("overlay →");
     expect(mcp).toContain("Nothing is written to your project");
+    expect(landingMcp).not.toContain("In-Memory Overlay Buffer");
+    expect(landingMcp).not.toContain("Machine-Verified Remediation Buffer");
+    expect(landingMcp).toContain("Nothing is written to your project");
   });
 });
 
