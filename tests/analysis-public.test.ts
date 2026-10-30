@@ -170,5 +170,31 @@ describe("public analysis boundary", () => {
     expect(body).not.toContain("export const secret");
     expect(body).toContain("Table 1");
     expect(body).toContain("[hidden]");
+    expect((safe as { content?: string }).content).toBe("");
+  });
+
+  test("keeps the public workbench shape when it hides contracts and source", () => {
+    const names = collectSensitiveNames(analysis);
+    const safe = redactPublicValue(
+      {
+        stage1: {
+          directImporters: [{ path: "src/a.ts", line: 1 }],
+          contracts: [{ id: "contact_messages", name: "contact_messages" }],
+          memory: [{ label: "Decisions" }],
+        },
+        stage2: { content: "export const secret = true;" },
+      },
+      names,
+    ) as {
+      stage1: { directImporters: unknown[]; contracts: unknown[]; memory: unknown[] };
+      stage2: { content: string };
+    };
+
+    expect(Array.isArray(safe.stage1.directImporters)).toBe(true);
+    expect(Array.isArray(safe.stage1.contracts)).toBe(true);
+    expect(safe.stage1.contracts).toEqual([]);
+    expect(Array.isArray(safe.stage1.memory)).toBe(true);
+    expect(safe.stage2.content).toBe("");
+    expect(JSON.stringify(safe)).not.toContain("export const secret");
   });
 });

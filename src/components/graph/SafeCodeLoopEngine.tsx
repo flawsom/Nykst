@@ -157,7 +157,7 @@ export function SafeCodeLoopEngine({
         setResult(next);
         setPath(payload.path ?? targetPath);
         setPathDraft(payload.path ?? targetPath);
-        setDraft(next.stage2.content);
+        setDraft(next.stage2.content ?? "");
         setScenario(next.stage2.scenario);
         verdictRef.current?.(next.stage4.verdict);
       } catch (cause) {
@@ -461,8 +461,8 @@ export function SafeCodeLoopEngine({
                   <Database className="size-3" /> SQL tables & column contracts
                 </p>
                 <div className="mt-2 space-y-1.5">
-                  {result.stage1.contracts.length ? (
-                    result.stage1.contracts.slice(0, 4).map((contract) => (
+                  {(result.stage1.contracts ?? []).length ? (
+                    (result.stage1.contracts ?? []).slice(0, 4).map((contract) => (
                       <div key={contract.id} className="text-[11px]">
                         <button
                           type="button"
@@ -562,7 +562,7 @@ export function SafeCodeLoopEngine({
           <Stage
             stage={2}
             icon={FileCode2}
-            aside={`${result.stage2.content.split("\n").length} buffer lines ·${result.stage1.file.loc} analyzed source LOC · edit in place`}
+            aside={`${(result.stage2.content ?? "").split("\n").length} buffer lines ·${result.stage1.file.loc} analyzed source LOC · edit in place`}
           >
             <div className="border-border bg-surface/50 rounded-xl border p-3">
               <div className="flex flex-wrap items-center gap-2">

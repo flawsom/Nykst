@@ -121,7 +121,19 @@ export function redactPublicValue(value: unknown, names: SensitiveNames): unknow
 
   const out: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(value)) {
-    if (key === "content" || key === "knowledge" || key === "resolver" || key === "contracts") {
+    // Keep the shape the public workbench renders. Hiding a field by deleting
+    // it crashes components that expect an array or a string, so sensitive
+    // values are replaced with an empty value of the same shape instead.
+    if (key === "content") {
+      out["content"] = "";
+      continue;
+    }
+    if (key === "contracts" || key === "knowledge") {
+      out[key] = [];
+      continue;
+    }
+    if (key === "resolver") {
+      out["resolver"] = null;
       continue;
     }
     if (key === "memory") {

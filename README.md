@@ -96,14 +96,14 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 261 source files, 49,580 LOC, 581 internal edges, 0 unresolved imports, 15 SQL and data resources, 11 external services, 0 cycles, 11 MCP tools |
+| Snapshot          | 261 source files, 49,640 LOC, 581 internal edges, 0 unresolved imports, 15 SQL and data resources, 11 external services, 0 cycles, 11 MCP tools |
 
 | Command                                     | Result on that tree                                        |
 | :------------------------------------------ | :--------------------------------------------------------- |
 | `bun tsc -b --noEmit`                       | pass, 0 errors                                             |
-| `bun test ./tests`                          | 259 pass, 0 fail, 34 files, 2,441 assertions, 2.60 s       |
+| `bun test ./tests`                          | 260 pass, 0 fail, 34 files, 2,448 assertions, 2.40 s       |
 | `bun run check:claims`                      | ok                                                         |
-| `bun run build`                             | pass, 2.81 s client and 2.84 s Nitro server                |
+| `bun run build`                             | pass, 2.71 s client and 2.74 s Nitro server                |
 | `bun run lint`                              | 0 errors, 9 pre-existing module-level lint warnings        |
 | Playwright public route renders, production | 9 of 9 desktop, 9 of 9 mobile, last run 29 October 2026    |
 | GitHub Actions CI and E2E                   | run on every push; local checks below passed for this tree |
@@ -1296,7 +1296,7 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
 | Cold AST compile, 261 files  | 1,129 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
-| Analyzed source              | **261 files, 49,580 LOC**                                                                                        | `bun run check:claims`                                                               |
+| Analyzed source              | **261 files, 49,640 LOC**                                                                                        | `bun run check:claims`                                                               |
 | Internal import edges        | **581, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |
@@ -1305,7 +1305,7 @@ Two labels are used below and they are not interchangeable. Measured means a val
 | SSR landing response         | 229 ms warm across two calls from this workspace on 29 Oct 2026, network included                                | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/`                  |
 | Health probe, all tables     | 1.16 s to 1.95 s across three calls on 29 Oct 2026, dominated by the live database round trip                    | `curl -o /dev/null -w '%{time_total}' https://nykst.unifies.codes/api/health`        |
 | Client payload, all routes   | 1.3 MB uncompressed JavaScript and CSS in `.output/public`, measured 29 Oct 2026                                 | `find .output/public -name '*.js' -o -name '*.css' \| xargs du -ch`                  |
-| Test suite                   | 259 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
+| Test suite                   | 260 pass, 0 fail on 30 Oct 2026                                                                                  | `bun test ./tests`                                                                   |
 | Playwright suite             | public route renders, 9 of 9 desktop and 9 of 9 mobile against production on 29 Oct 2026                         | `E2E_BASE_URL=https://nykst.unifies.codes bunx playwright test e2e/routes.spec.ts`   |
 
 Lighthouse and bundle budgets are tracked, not asserted here. Run them against your own deployment, since results depend on region and network:
