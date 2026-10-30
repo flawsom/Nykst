@@ -32,6 +32,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      contact_messages: {
+        Row: {
+          created_at: string;
+          id: string;
+          mail_detail: string | null;
+          mail_status: string;
+          message: string;
+          network_hash: string;
+          notified_at: string | null;
+          reference: string;
+          sender_email: string;
+          sender_name: string;
+          status: string;
+          topic: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          mail_detail?: string | null;
+          mail_status?: string;
+          message: string;
+          network_hash: string;
+          notified_at?: string | null;
+          reference: string;
+          sender_email: string;
+          sender_name: string;
+          status?: string;
+          topic: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          mail_detail?: string | null;
+          mail_status?: string;
+          message?: string;
+          network_hash?: string;
+          notified_at?: string | null;
+          reference?: string;
+          sender_email?: string;
+          sender_name?: string;
+          status?: string;
+          topic?: string;
+        };
+        Relationships: [];
+      };
+      contact_replies: {
+        Row: {
+          body_text: string;
+          contact_reference: string | null;
+          created_at: string;
+          from_email: string;
+          id: string;
+          message_id: string | null;
+          received_at: string | null;
+          resend_email_id: string;
+          subject: string;
+          to_email: string;
+        };
+        Insert: {
+          body_text?: string;
+          contact_reference?: string | null;
+          created_at?: string;
+          from_email: string;
+          id?: string;
+          message_id?: string | null;
+          received_at?: string | null;
+          resend_email_id: string;
+          subject?: string;
+          to_email?: string;
+        };
+        Update: {
+          body_text?: string;
+          contact_reference?: string | null;
+          created_at?: string;
+          from_email?: string;
+          id?: string;
+          message_id?: string | null;
+          received_at?: string | null;
+          resend_email_id?: string;
+          subject?: string;
+          to_email?: string;
+        };
+        Relationships: [];
+      };
       pre_registration: {
         Row: {
           closing_thoughts: string | null;

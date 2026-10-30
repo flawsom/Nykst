@@ -22,6 +22,10 @@ export type RepositorySnapshot = {
     method?: string;
     scanned_files?: number;
     edges?: Array<{ from?: string; to?: string; kind?: "internal" | "external" }>;
+    /** true number of links between files, before the stored list was capped */
+    edges_total?: number;
+    /** present only when the stored list is shorter than the true total */
+    edges_truncated?: boolean;
   };
   validation_profile?: {
     generated_at?: string;

@@ -4,13 +4,14 @@ import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { NodeDossier } from "@/components/graph/NodeDossier";
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
-import { isSelfRepository } from "@/lib/code-links";
+import { SELF_REPOSITORY, isSelfRepository } from "@/lib/code-links";
 import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
 import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
 import { WebGLFieldCanvas } from "@/components/motion/WebGLFieldCanvas";
 import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
+import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { ConnectorsPanel } from "@/components/graph/ConnectorsPanel";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
 import { TreePanel } from "@/components/graph/TreePanel";
@@ -23,7 +24,7 @@ import {
 } from "@/lib/repository-graph";
 import { subscribeToIngestion } from "@/lib/realtime";
 import { NykstBrand } from "@/components/brand/NykstLogo";
-import { List, Orbit, Search, X } from "lucide-react";
+import { Github, List, Loader2, Orbit, Search, X } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -104,6 +105,10 @@ function GraphPage() {
   const [listQuery, setListQuery] = useState("");
   const [loopPath, setLoopPath] = useState("src/lib/integrations/github.ts");
   const [loopVerdict, setLoopVerdict] = useState<"safe" | "breaking" | "simulating">("safe");
+  const [notAnalysedRepo, setNotAnalysedRepo] = useState<string | null>(null);
+  const [showingExample, setShowingExample] = useState(false);
+  const [analysing, setAnalysing] = useState(false);
+  const [analyseError, setAnalyseError] = useState<string | null>(null);
   const repoRef = useRef<string | null>(null);
 
   const selectFile = useCallback((node: GraphNode) => {
@@ -136,12 +141,22 @@ function GraphPage() {
   };
 
   const reanalyze = async () => {
-    const [owner, repo] = (snapshot?.repository_full_name ?? "").split("/");
-    if (!owner || !repo) return;
+    const repositoryName = snapshot?.repository_full_name ?? "";
     setReanalyzing(true);
     setReanalyzeError(null);
     setPolling(false);
     try {
+      // The example project is this site's own code, so it is rebuilt from the
+      // server snapshot. Sending it through GitHub ingestion would ask an
+      // anonymous visitor to sign in for a map they are already looking at.
+      if (showingExample || isSelfRepository(repositoryName)) {
+        const refreshed = await loadSelf();
+        if (!refreshed) throw new Error("We could not rebuild the example map. Please try again.");
+        setLastChecked(Date.now());
+        return;
+      }
+      const [owner, repo] = repositoryName.split("/");
+      if (!owner || !repo) return;
       const response = await fetch("/api/integrations/github/ingest", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -189,16 +204,23 @@ function GraphPage() {
   }, []);
 
   /**
-   * Loads the requested repository snapshot (or the newest one), falling back to the
-   * live self-indexed AST of this repository when the visitor is not signed in.
+   * Loads the requested repository snapshot.
+   *
+   * A repository with no saved map never falls back to another project. The
+   * page says plainly that this project is not mapped yet and offers the two
+   * real next steps. The Nykst example project is only shown when no
+   * repository was requested, and is always labelled as an example.
    */
   const loadLatest = useCallback(
     async (silent = false, repository?: string | null) => {
       const target = repository === undefined ? repoRef.current : repository;
+      const explicit = Boolean(target);
       if (!silent) setLoading(true);
       try {
         if (target && isSelfRepository(target)) {
           if (await loadSelf()) {
+            setNotAnalysedRepo(null);
+            setShowingExample(false);
             setLoadError(null);
             setLastChecked(Date.now());
             setLoading(false);
@@ -219,12 +241,24 @@ function GraphPage() {
             setSnapshot(payload.ingestion);
             setActiveRepo(payload.ingestion.repository_full_name);
             repoRef.current = payload.ingestion.repository_full_name;
+            setNotAnalysedRepo(null);
+            setShowingExample(false);
             setLoadError(null);
             return;
           }
         }
-        // No stored analysis for the request: fall back to the live self-indexed AST.
+        if (explicit && target) {
+          // This account has no saved map for this repository. Never render a
+          // different project in its place, and never present the example as it.
+          setSnapshot(null);
+          setNotAnalysedRepo(target);
+          setShowingExample(false);
+          setLoadError(null);
+          return;
+        }
         if (await loadSelf()) {
+          setShowingExample(true);
+          setNotAnalysedRepo(null);
           setLoadError(null);
           return;
         }
@@ -235,9 +269,9 @@ function GraphPage() {
         }
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         setSnapshot(null);
-        setLoadError(payload.error ?? `Could not load your system map (${response.status}).`);
+        setLoadError(payload.error ?? `Could not load this map (${response.status}).`);
       } catch {
-        setLoadError("Network error while loading your system map.");
+        setLoadError("Network error while loading this map.");
       } finally {
         setLastChecked(Date.now());
         setLoading(false);
@@ -260,6 +294,9 @@ function GraphPage() {
       setSelected(null);
       setDossier(null);
       setCodeTarget(null);
+      setShowingExample(false);
+      setNotAnalysedRepo(null);
+      setAnalyseError(null);
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
         url.searchParams.delete("file");
@@ -269,6 +306,44 @@ function GraphPage() {
     },
     [loadLatest],
   );
+
+  /** Build a map for a repository the visitor typed or chose, on demand. */
+  const analyzeRepository = async (repository: string) => {
+    const [owner, repo] = repository.split("/");
+    if (!owner || !repo) return;
+    setAnalysing(true);
+    setAnalyseError(null);
+    try {
+      const response = await fetch("/api/integrations/github/ingest", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ owner, repo }),
+      });
+      const payload = (await response.json()) as { error?: string } & RepositorySnapshot;
+      if (!response.ok) throw new Error(payload.error ?? "We could not build this map.");
+      const { ingestionId: _id, ...rest } = payload as RepositorySnapshot & {
+        ingestionId?: string;
+      };
+      setSnapshot({
+        repository_full_name: repository,
+        created_at: new Date().toISOString(),
+        payload: rest,
+      });
+      setActiveRepo(repository);
+      repoRef.current = repository;
+      setNotAnalysedRepo(null);
+      setShowingExample(false);
+      setPathIds([]);
+      setSelected(null);
+      setLastChecked(Date.now());
+    } catch (error) {
+      setAnalyseError(
+        error instanceof Error ? error.message : "We could not build this map. Please try again.",
+      );
+    } finally {
+      setAnalysing(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -403,17 +478,117 @@ function GraphPage() {
     ? Math.max(0, Math.round((Date.now() - lastChecked) / 1000))
     : null;
 
+  // Freshness is stated, never implied. A map saved more than a day ago is stale,
+  // a rebuild in progress says so, and the code ref ties the map to a commit.
+  const savedAt = snapshot ? new Date(snapshot.created_at) : null;
+  const savedAgeHours = savedAt ? (Date.now() - savedAt.getTime()) / 3_600_000 : 0;
+  const freshness = reanalyzing ? "Updating" : savedAgeHours > 24 ? "Stale" : "Current";
+  // Only a commit SHA is meaningful to show as "code at". A worktree label such
+  // as the self snapshot's name would look like a hash and mean nothing.
+  const rawRef = snapshot?.payload.analysis?.ref ?? null;
+  const codeRef = rawRef && /^[0-9a-f]{7,40}$/i.test(rawRef) ? rawRef : null;
+  const graphEdges = snapshot?.payload.dependency_graph;
+  const edgesStored = graphEdges?.edges?.length ?? 0;
+  const edgesTotal = graphEdges?.edges_total ?? edgesStored;
+  const mapLimits = [
+    ...(snapshot?.payload.analysis?.limitations ?? []),
+    ...(snapshot?.payload.history?.limitations ?? []),
+  ].slice(0, 6);
+
   if (loading && !snapshot) {
     return (
-      <main className="bg-background flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground font-mono text-xs tracking-[0.2em] uppercase">
-          Loading your system map…
+      <main aria-busy="true" className="bg-background min-h-screen">
+        <p role="status" className="sr-only">
+          Loading this map. Reading the files, then linking them.
         </p>
+        <div className="border-border flex items-center justify-between border-b px-4 py-3 sm:px-5">
+          <div className="bg-surface h-7 w-32 animate-pulse rounded-lg" />
+          <div className="flex gap-2">
+            <div className="bg-surface h-7 w-24 animate-pulse rounded-lg" />
+            <div className="bg-surface h-7 w-20 animate-pulse rounded-lg" />
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row">
+          <aside className="border-border w-full border-b p-3 md:w-64 md:border-r md:border-b-0">
+            {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+              <div
+                key={row}
+                className="bg-surface mb-2 h-6 animate-pulse rounded"
+                style={{ width: `${88 - row * 6}%` }}
+              />
+            ))}
+          </aside>
+          <section className="flex-1 p-3 sm:p-5">
+            <div className="bg-surface mb-3 h-3 w-24 animate-pulse rounded" />
+            <div className="bg-surface mb-6 h-8 w-64 max-w-full animate-pulse rounded-lg" />
+            <div className="bg-surface mx-auto aspect-square w-full max-w-sm animate-pulse rounded-full" />
+            <p className="text-muted-foreground mt-6 text-center text-xs">
+              Loading this map. Reading the files, then linking them.
+            </p>
+          </section>
+        </div>
       </main>
     );
   }
 
   if (!snapshot || !root || !center) {
+    if (notAnalysedRepo) {
+      return (
+        <main className="bg-background flex min-h-screen items-center justify-center px-4">
+          <section className="border-border bg-card w-full max-w-xl rounded-2xl border p-7">
+            <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
+              Map of this project
+            </p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight">This is not your project yet</h1>
+            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+              Nykst has no saved map for{" "}
+              <span className="font-mono text-foreground">{notAnalysedRepo}</span> in this account.
+              Nothing is shown in its place, so you never read another project's code by mistake.
+            </p>
+            <ol className="text-muted-foreground mt-5 space-y-1.5 text-[12px] leading-relaxed">
+              <li>1 - Connect GitHub so Nykst may read this repository.</li>
+              <li>2 - Press Analyse this repo to build the map from the code itself.</li>
+              <li>3 - From then on, the map and what it affects open straight away.</li>
+            </ol>
+            {analyseError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-300"
+              >
+                {analyseError}
+              </p>
+            )}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <a
+                href="/api/integrations/github/start"
+                className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold"
+              >
+                <Github className="size-4" /> Connect GitHub
+              </a>
+              <button
+                onClick={() => void analyzeRepository(notAnalysedRepo)}
+                disabled={analysing}
+                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold disabled:opacity-60"
+              >
+                {analysing && <Loader2 className="size-4 animate-spin" />}
+                {analysing ? "Building the map" : "Analyse this repo"}
+              </button>
+              <button
+                onClick={() => switchRepository(SELF_REPOSITORY)}
+                className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-4 py-2 text-xs font-semibold"
+              >
+                See the example project
+              </button>
+            </div>
+            <p className="text-muted-foreground mt-4 text-[11px] leading-relaxed">
+              This build reads JavaScript and TypeScript source. Files over 400,000 bytes are
+              skipped and counted, so a mixed repository shows a partial map rather than an empty
+              one.
+            </p>
+          </section>
+        </main>
+      );
+    }
     const unauthenticated = loadError === "unauthenticated";
     return (
       <main className="bg-background flex min-h-screen items-center justify-center px-4">
@@ -565,7 +740,7 @@ function GraphPage() {
           )}
         </nav>
 
-        <div className="order-2 flex w-full items-center gap-2 overflow-x-auto sm:order-none sm:w-auto sm:gap-3">
+        <div className="order-2 flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto sm:flex-nowrap sm:gap-3">
           <button
             onClick={() => setBeforeYouActOpen(true)}
             className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -588,6 +763,7 @@ function GraphPage() {
               Connect AI tools
             </button>
           )}
+          <ApiSettingsButton className="shrink-0" />
           <Link
             to="/subscribe"
             className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -601,6 +777,27 @@ function GraphPage() {
           />
         </div>
       </header>
+
+      {showingExample && (
+        <div
+          role="note"
+          className="border-primary/25 bg-primary/10 relative z-10 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 sm:px-5"
+        >
+          <p className="text-[11px] leading-relaxed">
+            <span className="font-semibold">You are looking at the Nykst example project.</span>{" "}
+            <span className="text-muted-foreground">
+              This is our own codebase, shown so you can see what a map looks like. Connect GitHub
+              to map yours.
+            </span>
+          </p>
+          <a
+            href="/api/integrations/github/start"
+            className="border-primary/40 bg-primary/15 text-primary hover:bg-primary/25 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold"
+          >
+            <Github className="size-3.5" /> Connect GitHub
+          </a>
+        </div>
+      )}
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-visible md:flex-row md:overflow-hidden">
         <TreePanel
@@ -654,27 +851,55 @@ function GraphPage() {
           {snapshot && (
             <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
-                    Live repository intelligence
+                    Map of this project
                   </p>
                   <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground font-mono text-[10px]">
-                    analyzed {new Date(snapshot.created_at).toLocaleString()}
+                  <p
+                    data-testid="graph-freshness"
+                    className="text-muted-foreground mt-0.5 font-mono text-[10px]"
+                  >
+                    Saved map from {savedAt ? savedAt.toLocaleString() : "an unknown date"}
+                    {codeRef ? ` · code at ${codeRef.slice(0, 7)}` : ""}
                     {checkedSecondsAgo !== null &&
                       ` · rechecked ${checkedSecondsAgo < 5 ? "just now" : `${checkedSecondsAgo}s ago`}`}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    data-testid="graph-freshness-label"
+                    className={`rounded-lg border px-2 py-1 text-[10px] font-semibold tracking-wide uppercase ${
+                      freshness === "Stale"
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                        : freshness === "Updating"
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                    }`}
+                  >
+                    {freshness}
                   </span>
                   <button
                     onClick={reanalyze}
                     disabled={reanalyzing}
                     className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 rounded-lg border px-3 py-1 text-[11px] font-semibold disabled:opacity-60"
                   >
-                    {reanalyzing ? "Analyzing…" : "Re-analyze"}
+                    {reanalyzing ? "Re-checking this project…" : "Re-check this project now"}
                   </button>
                 </div>
               </div>
+              {freshness === "Stale" && (
+                <p className="mt-2 text-[11px] text-amber-300">
+                  This map was saved more than a day ago, so the code may have changed since. Press
+                  Re-check this project now before you trust it.
+                </p>
+              )}
+              {freshness === "Updating" && (
+                <p className="text-muted-foreground mt-2 text-[11px]">
+                  Re-checking this project now. Everything below is the last saved map until it
+                  finishes.
+                </p>
+              )}
               {reanalyzeError && <p className="mt-2 text-[11px] text-red-400">{reanalyzeError}</p>}
               {snapshot.payload.analysis ? (
                 <p className="text-muted-foreground mt-2 text-[11px]">
@@ -689,9 +914,28 @@ function GraphPage() {
                   only. Connect it again to see files and what they depend on.
                 </p>
               )}
+              {edgesTotal > edgesStored && (
+                <p data-testid="graph-edge-cap" className="mt-2 text-[11px] text-amber-300">
+                  This map stores the first {edgesStored.toLocaleString("en-US")} of{" "}
+                  {edgesTotal.toLocaleString("en-US")} links between files. Open proof on a file to
+                  see the links that file needs.
+                </p>
+              )}
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                 <span>{snapshot.payload.files?.length ?? 0} files mapped</span>
               </div>
+              {mapLimits.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px]">
+                    What this map does not include ({mapLimits.length})
+                  </summary>
+                  <ul className="text-muted-foreground mt-1 list-disc space-y-1 pl-4 text-[11px]">
+                    {mapLimits.map((limit) => (
+                      <li key={limit}>{limit}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               {problems.length > 0 && (
                 <div className="border-border/70 mt-3 border-t pt-3">
                   <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
@@ -885,6 +1129,7 @@ function GraphPage() {
                 if (node) jumpTo(node);
               }}
               onOpenCode={setCodeTarget}
+              onRecheck={() => void reanalyze()}
             />
           </div>
 

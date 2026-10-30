@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Braces, FileText, Gauge, LockKeyhole, Terminal } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
+import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
 
 export const Route = createFileRoute("/docs")({
   head: () => ({ meta: [{ title: "Docs · Nykst" }] }),
@@ -180,11 +181,8 @@ function DocsPage() {
             <Link to="/status" className="text-primary font-medium hover:underline">
               Service status
             </Link>
-            <a
-              href="mailto:nykstsoftint@gmail.com"
-              className="text-primary font-medium hover:underline"
-            >
-              nykstsoftint@gmail.com
+            <a href={mailtoHref("Support")} className="text-primary font-medium hover:underline">
+              {CONTACT_EMAIL}
             </a>
           </div>
         </section>

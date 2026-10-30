@@ -3,8 +3,6 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
 
-const CONTACT_EMAIL = "nykstsoftint@gmail.com";
-
 export const Route = createFileRoute("/subscribe")({
   head: () => ({
     meta: [
@@ -79,7 +77,6 @@ function PlansPage() {
         <div>
           <ContactForm
             defaultTopic="Plans and access"
-            contactEmail={CONTACT_EMAIL}
             intro="Tell us your name, the best email to reach you, and one sentence about your codebase."
           />
         </div>

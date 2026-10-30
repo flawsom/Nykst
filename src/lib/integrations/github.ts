@@ -648,6 +648,10 @@ async function analyzeRepositorySource(token: string, owner: string, repo: strin
         kind: item.kind as "internal" | "external",
       })),
   );
+  // The stored edge list is capped for payload size, so both the true total and
+  // the cap are recorded. A capped list can then be labelled in the product
+  // instead of looking complete.
+  const internalEdges = edges.filter((edge) => edge.kind === "internal");
   return {
     analysis,
     packageJson: archive.contents.get("package.json") ?? null,
@@ -655,7 +659,9 @@ async function analyzeRepositorySource(token: string, owner: string, repo: strin
       generated_at: analysis.generatedAt,
       method: analysis.method,
       scanned_files: analysis.stats.analyzedFiles,
-      edges: edges.filter((edge) => edge.kind === "internal").slice(0, 4000),
+      edges: internalEdges.slice(0, 4000),
+      edges_total: internalEdges.length,
+      edges_truncated: internalEdges.length > 4000,
     },
   };
 }

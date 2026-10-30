@@ -1,25 +1,57 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Eye, EyeOff, KeyRound, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 import { fetchKeyStatus, type KeyStatus } from "@/lib/ai-client";
 import { cn } from "@/lib/utils";
 
+/**
+ * The AI service a visitor already pays for. The internal `model` value is sent
+ * to the server as a default and is never rendered: a customer sees the service
+ * they recognise and a plain description, not a version string or a key suffix.
+ */
 const PROVIDERS = [
   {
     id: "custom",
-    label: "Nara / OpenRouter",
-    hint: "nara_... or sk-or-...",
-    model: "agnes-2.5-flash",
+    label: "Another AI service",
+    description: "Any service with an OpenAI compatible endpoint you control",
+    hint: "Paste the key from your account",
+    model: "",
   },
-  { id: "openai", label: "OpenAI", hint: "sk-...", model: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", hint: "sk-ant-...", model: "claude-haiku-5-5" },
-  { id: "gemini", label: "Google Gemini", hint: "AIza...", model: "gemini-3.8-flash" },
+  {
+    id: "openai",
+    label: "OpenAI",
+    description: "Use your own OpenAI account",
+    hint: "Paste the key from your account",
+    model: "gpt-4o-mini",
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    description: "Use your own Anthropic account",
+    hint: "Paste the key from your account",
+    model: "claude-haiku-5-5",
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    description: "Use your own Google AI account",
+    hint: "Paste the key from your account",
+    model: "gemini-3.8-flash",
+  },
   {
     id: "cloudflare",
     label: "Cloudflare Workers AI",
-    hint: "Workers AI API token",
+    description: "Use your own Cloudflare account",
+    hint: "Paste your Workers AI token",
     model: "@cf/qwen/qwen3.8-27b",
   },
-  { id: "deepseek", label: "DeepSeek", hint: "sk-...", model: "deepseek-flash" },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    description: "Use your own DeepSeek account",
+    hint: "Paste the key from your account",
+    model: "deepseek-flash",
+  },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]["id"];
@@ -49,7 +81,7 @@ export function ApiSettingsButton({ className }: { className?: string }) {
         )}
       >
         <KeyRound className="size-3.5" />
-        Connect API
+        AI settings
         <span
           className={cn(
             "ml-1 size-1.5 rounded-full",
@@ -57,9 +89,17 @@ export function ApiSettingsButton({ className }: { className?: string }) {
           )}
         />
       </button>
-      {open && (
-        <ApiSettingsDialog status={status} onStatus={setStatus} onClose={() => setOpen(false)} />
-      )}
+      {open &&
+        (typeof document === "undefined"
+          ? null
+          : createPortal(
+              <ApiSettingsDialog
+                status={status}
+                onStatus={setStatus}
+                onClose={() => setOpen(false)}
+              />,
+              document.body,
+            ))}
     </>
   );
 }
@@ -82,15 +122,17 @@ function ApiSettingsDialog({
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<"test" | "save" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const selected = PROVIDERS.find((item) => item.id === provider)!;
   const connectedLabel =
-    PROVIDERS.find((item) => item.id === status.provider)?.label ?? status.provider;
+    PROVIDERS.find((item) => item.id === status.provider)?.label ?? "An AI service";
 
   useEffect(() => {
-    setApiBaseUrl(provider === "custom" ? "https://router.bynara.id/v1" : "");
+    setApiBaseUrl("");
     setModel(selected.model);
-    setAdvanced(false);
+    setAdvanced(provider === "custom");
     setMessage(null);
+    setConfirmRemove(false);
   }, [provider, selected.model]);
 
   const run = async (kind: "test" | "save") => {
@@ -118,10 +160,10 @@ function ApiSettingsDialog({
       else {
         setMessage({
           tone: "ok",
-          text: "Connected and saved securely. Nykst features can now use this provider.",
+          text: "Connected and saved securely. Nykst features can now use this AI account.",
         });
         setApiKey("");
-        onStatus({ configured: true, provider, last4: data.last4 ?? null });
+        onStatus({ configured: true, provider, last4: null });
       }
     } catch {
       setMessage({ tone: "error", text: "Network error. Please try again." });
@@ -132,30 +174,45 @@ function ApiSettingsDialog({
 
   const remove = async () => {
     setBusy("remove");
-    await fetch("/api/ai/key", { method: "DELETE" });
-    onStatus({ configured: false, provider: null, last4: null });
-    setMessage({ tone: "ok", text: "Connected provider removed." });
-    setBusy(null);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/ai/key", { method: "DELETE" });
+      if (!response.ok) throw new Error("Could not remove the key. Please try again.");
+      onStatus({ configured: false, provider: null, last4: null });
+      setMessage({ tone: "ok", text: "Key removed. Nykst no longer uses this AI account." });
+      setConfirmRemove(false);
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text:
+          error instanceof Error ? error.message : "Could not remove the key. Please try again.",
+      });
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI settings"
         onClick={(event) => event.stopPropagation()}
-        className="border-border bg-card w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
+        className="border-border bg-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Bring your own provider
+              Use your own AI account
             </p>
-            <h2 className="mt-1 text-lg font-semibold">Connect an API</h2>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Choose one provider. Nykst tests the key before saving it encrypted on the server so
-              Memory can use it.
+            <h2 className="mt-1 text-lg font-semibold">AI settings</h2>
+            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+              Use an AI account you already pay for. Nykst tests the key, then stores it encrypted
+              on the server. Only the parts of a repository needed to answer a question are sent.
             </p>
           </div>
           <button
@@ -168,28 +225,53 @@ function ApiSettingsDialog({
         </div>
 
         {status.configured && (
-          <div className="border-primary/25 bg-primary/5 mt-4 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
-            <span className="flex items-center gap-2 text-xs">
-              <ShieldCheck className="text-primary size-4" />{" "}
-              {status.platformDefault
-                ? `${connectedLabel} (${status.model ?? "configured model"}) active · platform key · ends in ${status.last4}`
-                : `${connectedLabel} connected · ends in ${status.last4}`}
-            </span>
-            {!status.platformDefault && (
-              <button
-                onClick={remove}
-                disabled={busy !== null}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[11px]"
-              >
-                <Trash2 className="size-3.5" /> Remove
-              </button>
+          <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-xs">
+                <ShieldCheck className="text-primary size-4" />{" "}
+                {status.platformDefault
+                  ? `Your AI answers use Nykst's shared account. Add your own account to use it instead.`
+                  : `${connectedLabel} connected.`}
+              </span>
+              {!status.platformDefault && !confirmRemove && (
+                <button
+                  onClick={() => setConfirmRemove(true)}
+                  className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[11px]"
+                >
+                  <Trash2 className="size-3.5" /> Remove
+                </button>
+              )}
+            </div>
+            {!status.platformDefault && confirmRemove && (
+              <div className="border-border mt-3 border-t pt-2">
+                <p className="text-[11px] leading-relaxed">
+                  Remove this key? Nykst stops using this account immediately. Your key itself is
+                  not changed at the AI service, so you can also revoke it there.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => void remove()}
+                    disabled={busy !== null}
+                    className="rounded-lg bg-red-500/90 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-60"
+                  >
+                    {busy === "remove" ? "Removing" : "Yes, remove the key"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmRemove(false)}
+                    disabled={busy !== null}
+                    className="border-border bg-surface rounded-lg border px-3 py-1.5 text-[11px] font-semibold"
+                  >
+                    Keep it
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}
 
         <div className="mt-5">
           <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
-            Choose provider
+            Choose your AI service
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {PROVIDERS.map((item) => (
@@ -204,8 +286,8 @@ function ApiSettingsDialog({
                 )}
               >
                 <span className="block text-xs font-semibold">{item.label}</span>
-                <span className="text-muted-foreground block font-mono text-[10px]">
-                  {item.model}
+                <span className="text-muted-foreground mt-0.5 block text-[10px] leading-snug">
+                  {item.description}
                 </span>
               </button>
             ))}
@@ -240,48 +322,47 @@ function ApiSettingsDialog({
         )}
         {provider === "custom" && (
           <div className="border-primary/20 bg-primary/5 mt-4 rounded-xl border px-3 py-3">
-            <p className="text-xs font-medium">Nara Router & OpenAI-compatible endpoints</p>
+            <p className="text-xs font-medium">Another AI service</p>
             <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-              Defaults to{" "}
-              <code className="text-primary font-mono">https://router.bynara.id/v1</code> with{" "}
-              <code className="text-primary font-mono">agnes-2.5-flash</code>. Expand advanced
-              settings to switch to OpenRouter or any custom endpoint.
+              Enter the web address of the service you use. Nykst sends your question to that
+              address only. The service must accept the standard chat format used by OpenAI
+              compatible endpoints. If you do not know the address, choose a listed service instead.
             </p>
-            <button
-              type="button"
-              onClick={() => setAdvanced((value) => !value)}
-              className="text-primary mt-2 text-[11px] font-medium hover:underline"
-            >
-              {advanced ? "Hide advanced settings" : "Configure endpoint or model"}
-            </button>
-            {advanced && (
-              <div className="mt-3 grid gap-3">
-                <label className="text-muted-foreground text-[11px] uppercase tracking-wide">
-                  Provider endpoint (HTTPS)
-                  <input
-                    value={apiBaseUrl}
-                    onChange={(event) => setApiBaseUrl(event.target.value)}
-                    placeholder="https://api.example.com/v1"
-                    className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="text-muted-foreground text-[11px] uppercase tracking-wide">
-                  Model name
+            <div className="mt-3 grid gap-3">
+              <label className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                Web address of the service
+                <input
+                  value={apiBaseUrl}
+                  onChange={(event) => setApiBaseUrl(event.target.value)}
+                  placeholder="https://api.example.com/v1"
+                  className="border-border bg-surface focus:border-primary mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setAdvanced((value) => !value)}
+                className="text-primary text-left text-[11px] font-medium hover:underline"
+              >
+                {advanced ? "Hide the exact version name" : "Set the exact version name"}
+              </button>
+              {advanced && (
+                <label className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                  Version name, exactly as your service documents it
                   <input
                     value={model}
                     onChange={(event) => setModel(event.target.value)}
-                    placeholder="provider-model"
-                    className="border-border bg-surface mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none focus:border-primary"
+                    placeholder="the name from your service's documentation"
+                    className="border-border bg-surface focus:border-primary mt-2 w-full rounded-xl border px-3 py-2.5 font-mono text-xs outline-none"
                   />
                 </label>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
         <div className="mt-4">
           <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
-            {provider === "cloudflare" ? "Workers AI API token" : "API key"}
+            {provider === "cloudflare" ? "Your Workers AI token" : "Your key from that account"}
           </p>
           <div className="border-border bg-surface mt-2 flex items-center gap-2 rounded-xl border px-3">
             <input

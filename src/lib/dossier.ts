@@ -189,12 +189,10 @@ export function buildNodeDossier(
     emptyLabel: string,
   ): DossierSection => {
     const sorted = rows(items);
+    // "Distinct" is only ever shown with what it counts, so a table count can
+    // never be mistaken for a count of the places in code that use it.
     const distinctLabel =
-      id === "symbols"
-        ? "symbols"
-        : id === "resources"
-          ? "tables, RPCs, buckets or models"
-          : "files";
+      id === "symbols" ? "named pieces" : id === "resources" ? "tables or buckets" : "files";
     return {
       id,
       title,
@@ -213,59 +211,59 @@ export function buildNodeDossier(
   return [
     section(
       "importers",
-      "Direct Importers (file:line)",
-      "Files that import this node today",
+      "Files that use this file",
+      "Directly, with the exact line in each file",
       [...direct.values()],
-      "call-site rows",
-      "No direct importer was found in this analysis.",
+      "places in code",
+      "No file uses this one directly in this saved map.",
     ),
     section(
       "dependents",
-      "Transitive Call Chain",
-      "Everything that breaks if this node changes",
+      "Files affected further down the chain",
+      "Step 2: affected through another file that uses it",
       transitive,
-      "distinct files",
-      "No transitive dependent was found in this analysis.",
+      "different files",
+      "Nothing else is affected through another file in this saved map.",
     ),
     section(
       "entrypoints",
-      "Affected API Routes & Pages",
-      "Page routes and API handlers downstream",
+      "Screens and API pages affected",
+      "What a user or another app would see break if this changes",
       entrypoints,
-      "distinct files",
-      "No page or API route reaches this node in this analysis.",
+      "different files",
+      "No screen or API page reaches this item in this saved map.",
     ),
     section(
       "tests",
-      "Covering Tests",
-      "Test files in the reverse dependency closure of this node",
+      "Tests that check this",
+      "Test files that use this file, directly or through another file. Being listed is not a pass.",
       tests,
-      "distinct files",
-      "No covering test file was found in this analysis.",
+      "different files",
+      "No test file was found for this in this saved map. Treat a change here as riskier.",
     ),
     section(
       "resources",
-      "SQL Tables & Column Contracts",
-      "Call sites here, with the distinct tables behind them",
+      "Database tables and fields used",
+      "Places in code that use a table, with the different tables behind them",
       resources,
-      "call-site rows",
-      "No SQL table, function or bucket is touched by this node.",
+      "places in code",
+      "No database table, function or bucket is used by this item.",
     ),
     section(
       "drift",
-      "SQL Column Contract Drift",
-      "Literal column references that disagree with the DDL",
+      "Database mismatches",
+      "Code asks for a field the design does not have, or the other way round",
       drift,
-      "call-site rows",
-      "No SQL column drift was found against the replayed DDL.",
+      "places in code",
+      "No database mismatch was found against the official design.",
     ),
     section(
       "symbols",
-      "Exported signatures",
-      "What other files are allowed to call",
+      "Named pieces inside this file",
+      "What other files are allowed to use",
       symbols,
-      "export rows",
-      "No exported signature was found for this node.",
+      "named pieces",
+      "No named piece other files can use was found in this file.",
     ),
   ];
 }

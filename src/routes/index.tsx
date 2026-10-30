@@ -35,6 +35,7 @@ import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 
 import snapshotStats from "@/lib/analysis/self-snapshot-stats.json";
+import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
 
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
 import {
@@ -298,12 +299,10 @@ function Landing() {
             <div className="border-primary/25 bg-primary/5 mt-5 rounded-xl border p-4">
               <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Contact</p>
               <a
-                href="https://mail.google.com/mail/?view=cm&fs=1&to=nykstsoftint%40gmail.com&su=Nykst%20subscription%20enquiry"
-                target="_blank"
-                rel="noreferrer"
+                href={mailtoHref("Plans and access")}
                 className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
               >
-                <Mail className="size-4" /> nykstsoftint@gmail.com
+                <Mail className="size-4" /> {CONTACT_EMAIL}
               </a>
             </div>
             <p className="text-muted-foreground mt-4 text-xs leading-relaxed">

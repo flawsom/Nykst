@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileCode2, Files, Layers, ShieldCheck } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
-
-const CONTACT_EMAIL = "nykstsoftint@gmail.com";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export const Route = createFileRoute("/limits")({
   head: () => ({ meta: [{ title: "Limits · Nykst" }] }),

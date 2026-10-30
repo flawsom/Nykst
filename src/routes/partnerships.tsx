@@ -3,8 +3,6 @@ import { ArrowLeft, Handshake } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
 
-const CONTACT_EMAIL = "nykstsoftint@gmail.com";
-
 export const Route = createFileRoute("/partnerships")({
   head: () => ({
     meta: [
@@ -81,7 +79,6 @@ function PartnershipsPage() {
         <div>
           <ContactForm
             defaultTopic="Partnerships"
-            contactEmail={CONTACT_EMAIL}
             intro="Share the shape of the partnership and the best way to reach you."
           />
         </div>

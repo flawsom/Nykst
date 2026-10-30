@@ -3,8 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Clock3, LockKeyhole, Mail, ShieldCheck, Trash2, Users } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
-
-const CONTACT_EMAIL = "nykstsoftint@gmail.com";
+import { CONTACT_EMAIL } from "@/lib/contact";
 const UPDATED = "29 October 2026";
 
 export const Route = createFileRoute("/privacy")({
@@ -150,7 +149,6 @@ function PrivacyPage() {
           <div className="mt-4">
             <ContactForm
               defaultTopic="Privacy request"
-              contactEmail={CONTACT_EMAIL}
               intro="Tell us what you need. Choose Privacy request so it reaches the right queue."
             />
           </div>

@@ -324,9 +324,10 @@ function McpGuidePage() {
                   <span className="text-primary font-mono text-[10px] tracking-[0.2em] uppercase">
                     Try a tool · {activeTool}
                   </span>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
-                    Runs against the example repository and shows the answer your assistant would
-                    receive.
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                    This sandbox runs on the Nykst example project only, never on your repository.
+                    It shows the answer your assistant would receive. To ask about your own project,
+                    create a token above and use it in your AI tool.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -342,9 +343,10 @@ function McpGuidePage() {
                     data-testid="mcp-page-path-input"
                     value={targetPath}
                     onChange={(e) => setTargetPath(e.target.value)}
-                    aria-label="MCP target path"
-                    placeholder="Target path…"
-                    className="border-border bg-surface rounded-lg border px-3 py-1.5 font-mono text-xs outline-none focus:border-primary"
+                    aria-label="File path in the example project"
+                    placeholder="File path in the example project"
+                    title="This path belongs to the Nykst example project, not to your repository."
+                    className="border-border bg-surface focus:border-primary rounded-lg border px-3 py-1.5 font-mono text-xs outline-none"
                   />
                   <button
                     type="button"
@@ -353,7 +355,7 @@ function McpGuidePage() {
                     disabled={runningTool}
                     className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 font-mono text-xs font-semibold disabled:opacity-60"
                   >
-                    {runningTool ? "Running…" : `Execute ${activeTool}`}
+                    {runningTool ? "Running…" : `Run ${activeTool}`}
                   </button>
                 </div>
               </div>
@@ -368,10 +370,10 @@ function McpGuidePage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-primary font-mono text-[10px] tracking-wider uppercase">
                       {activeTool === "simulate_change"
-                        ? `In-Memory Overlay Buffer for ${targetPath} (nothing written to disk)`
+                        ? `Trying your change in a safe copy of ${targetPath}. Nothing is written to your project.`
                         : activeTool === "run_safe_code_loop"
-                          ? `Safe-code loop buffer for ${targetPath} (nothing written to disk)`
-                          : `Machine-Verified Remediation Buffer for ${targetPath} (in-memory diff generator)`}
+                          ? `Trying your change safely in ${targetPath}. Nothing is written to your project.`
+                          : `Proposed patch for ${targetPath}. Nothing is written to your project.`}
                     </span>
                     <button
                       type="button"
@@ -379,7 +381,7 @@ function McpGuidePage() {
                       onClick={() => void executeLiveTool(activeTool)}
                       className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
                     >
-                      Run {activeTool} overlay →
+                      Run the check →
                     </button>
                   </div>
                   <textarea
@@ -454,9 +456,9 @@ function McpGuidePage() {
             <div>
               <dt className="font-medium">Error 401, or “token” in the message</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
-                Nykst tells you what is wrong: no token sent, the token is still the sample value
-                YOUR_NYKST_TOKEN, it doesn't start with nyk_, or it was revoked. Create a new token
-                in step 2 and paste it in place of the sample value.
+                Nykst tells you what is wrong: no token was sent, the sample value was left in
+                place, or the token was revoked. Create a new token in step 2 and paste it in place
+                of the sample value. A key can be deleted at any time.
               </dd>
             </div>
             <div>
@@ -479,14 +481,14 @@ function McpGuidePage() {
               <dt className="font-medium">“No repository has been analyzed yet”</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
                 Map a repository first (step 1). If Nykst says the repository was mapped with an
-                older version, open the system map and press Re-analyze.
+                older version, open the map and press Re-check this project now.
               </dd>
             </div>
             <div>
               <dt className="font-medium">The answers look out of date</dt>
               <dd className="text-muted-foreground mt-1 leading-relaxed">
-                Nykst answers from the last time you mapped the repository. Press Re-analyze in the
-                graph after you push changes.
+                Nykst answers from the last time you mapped the repository. Press Re-check this
+                project now in the map after you push changes.
               </dd>
             </div>
             <div>

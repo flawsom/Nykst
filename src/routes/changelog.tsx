@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, GitCommitHorizontal, ShieldCheck } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
+import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
 
 export const Route = createFileRoute("/changelog")({
   head: () => ({ meta: [{ title: "Changelog · Nykst" }] }),
@@ -123,8 +124,8 @@ function ChangelogPage() {
           <p className="text-muted-foreground text-[11px] leading-relaxed">
             Every entry above is live on this site before it appears here. If something looks wrong,
             email{" "}
-            <a href="mailto:nykstsoftint@gmail.com" className="underline">
-              nykstsoftint@gmail.com
+            <a href={mailtoHref("Support")} className="underline">
+              {CONTACT_EMAIL}
             </a>{" "}
             and a person will reply.
           </p>

@@ -377,6 +377,59 @@ alter table public.razorpay_webhook_events enable row level security;
 revoke all on public.razorpay_webhook_events from anon, authenticated;
 grant all on public.razorpay_webhook_events to service_role;
 
+create table if not exists public.contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  reference text not null unique,
+  topic text not null
+    check (topic in ('Plans and access', 'Partnerships', 'Privacy request', 'Support')),
+  sender_name text not null,
+  sender_email text not null,
+  message text not null,
+  network_hash text not null,
+  status text not null default 'stored'
+    check (status in ('stored', 'notified', 'failed', 'closed')),
+  mail_status text not null default 'pending'
+    check (mail_status in ('pending', 'sent', 'not_configured', 'failed')),
+  mail_detail text,
+  created_at timestamptz not null default now(),
+  notified_at timestamptz
+);
+
+create index if not exists contact_messages_sender_time_idx
+  on public.contact_messages (sender_email, created_at desc);
+create index if not exists contact_messages_network_time_idx
+  on public.contact_messages (network_hash, created_at desc);
+create index if not exists contact_messages_open_work_idx
+  on public.contact_messages (status, created_at desc);
+
+alter table public.contact_messages enable row level security;
+revoke all on public.contact_messages from anon, authenticated;
+grant all on public.contact_messages to service_role;
+
+-- Inbound mail received by the Nykst address, stored by /api/webhooks/resend
+-- after the Resend signature is verified. Browser roles have no access.
+create table if not exists public.contact_replies (
+  id uuid primary key default gen_random_uuid(),
+  resend_email_id text not null unique,
+  contact_reference text,
+  from_email text not null,
+  to_email text not null default '',
+  subject text not null default '',
+  body_text text not null default '',
+  message_id text,
+  received_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists contact_replies_reference_idx
+  on public.contact_replies (contact_reference, created_at desc);
+create index if not exists contact_replies_received_idx
+  on public.contact_replies (created_at desc);
+
+alter table public.contact_replies enable row level security;
+revoke all on public.contact_replies from anon, authenticated;
+grant all on public.contact_replies to service_role;
+
 -- ---------------------------------------------------------------------------
 -- Hardening: nothing private is reachable through the anon/authenticated roles.
 -- ---------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 # Production verification & gap report
 
+> Historical record. This audit covers release `fbfb357` only. Current counts, capabilities and limits are in the README; the AI provider gap listed below was closed in the October 2026 mail and AI pass.
+
 Origin: `https://nykst.unifies.codes`
 Repository: `flawsom/nykst`
 Release audited: `fbfb357`, the list-view and published MCP contract release.

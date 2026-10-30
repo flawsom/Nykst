@@ -42,10 +42,9 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
   },
   {
     id: "custom",
-    label: "Nara / OpenRouter",
+    label: "Another AI service",
     hint: "Provider API key",
-    model: "agnes-2.5-flash",
-    baseUrl: "https://router.bynara.id/v1",
+    model: "",
   },
 ];
 
@@ -123,7 +122,10 @@ export function platformRouterKey(): StoredKey | null {
     last4: apiKey.slice(-4),
     apiKey,
     apiBaseUrl,
-    model: safeModel(process.env["NYKST_AI_MODEL"]?.trim() || "agnes-2.5-flash", "custom"),
+    model: safeModel(
+      process.env["NYKST_AI_MODEL"]?.trim() || "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "custom",
+    ),
   };
 }
 
@@ -142,6 +144,8 @@ function safeBaseUrl(value: unknown, provider: AiProvider): string | null {
   if (!raw) {
     if (provider === "cloudflare")
       throw new AiKeyError("Enter your Cloudflare Workers AI account endpoint.", 400);
+    if (provider === "custom")
+      throw new AiKeyError("Enter the web address of your AI service.", 400);
     return defaultUrl || null;
   }
   try {
@@ -168,6 +172,8 @@ function safeModel(value: unknown, provider: AiProvider): string {
   const model = typeof value === "string" ? value.trim() : "";
   if (model.length > 120 || /[\r\n]/.test(model))
     throw new AiKeyError("Enter a valid model name.", 400);
+  if (!model && provider === "custom")
+    throw new AiKeyError("Enter the model name from your service's documentation.", 400);
   if (
     provider === "gemini" &&
     (!model ||

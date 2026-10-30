@@ -155,18 +155,18 @@ describe("buildNodeDossier", () => {
     ]);
     const tests = sections.find((section) => section.id === "tests")!;
     expect(tests.rows.map((row) => row.path)).toEqual(["tests/auth.test.ts"]);
-    expect(tests.rowKind).toBe("distinct files");
+    expect(tests.rowKind).toBe("different files");
     expect(tests.distinctLabel).toBe("files");
 
     const resources = sections.find((section) => section.id === "resources")!;
-    expect(resources.rowKind).toBe("call-site rows");
+    expect(resources.rowKind).toBe("places in code");
     expect(resources.total).toBe(1);
     expect(resources.distinct).toBe(1);
-    expect(resources.distinctLabel).toBe("tables, RPCs, buckets or models");
-    expect(resources.emptyLabel).toContain("No SQL table");
+    expect(resources.distinctLabel).toBe("tables or buckets");
+    expect(resources.emptyLabel).toContain("No database table");
 
     const symbols = sections.find((section) => section.id === "symbols")!;
-    expect(symbols.distinctLabel).toBe("symbols");
+    expect(symbols.distinctLabel).toBe("named pieces");
   });
 
   test("deduplicates repeated export rows and counts distinct symbols, not files", () => {
@@ -194,7 +194,7 @@ describe("buildNodeDossier", () => {
     )!;
     expect(tests.total).toBe(0);
     expect(tests.rows).toEqual([]);
-    expect(tests.emptyLabel).toBe("No covering test file was found in this analysis.");
+    expect(tests.emptyLabel).toContain("No test file was found for this");
   });
 
   test("never renders a blank symbol name as a complete row", () => {

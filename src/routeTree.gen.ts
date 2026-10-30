@@ -43,6 +43,7 @@ import { Route as ApiMcpSchemaRouteImport } from './routes/api.mcp.schema'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
 import { Route as ApiWebhooksGithubRouteImport } from './routes/api.webhooks.github'
 import { Route as ApiWebhooksRazorpayRouteImport } from './routes/api.webhooks.razorpay'
+import { Route as ApiWebhooksResendRouteImport } from './routes/api.webhooks.resend'
 import { Route as ApiIntegrationsGithubAllRepositoriesRouteImport } from './routes/api.integrations.github.all-repositories'
 import { Route as ApiIntegrationsGithubCallbackRouteImport } from './routes/api.integrations.github.callback'
 import { Route as ApiIntegrationsGithubCodingRouteImport } from './routes/api.integrations.github.coding'
@@ -232,6 +233,11 @@ const ApiWebhooksRazorpayRoute = ApiWebhooksRazorpayRouteImport.update({
   path: '/api/webhooks/razorpay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksResendRoute = ApiWebhooksResendRouteImport.update({
+  id: '/api/webhooks/resend',
+  path: '/api/webhooks/resend',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntegrationsGithubAllRepositoriesRoute =
   ApiIntegrationsGithubAllRepositoriesRouteImport.update({
     id: '/api/integrations/github/all-repositories',
@@ -370,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -423,6 +430,7 @@ export interface FileRoutesByTo {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -477,6 +485,7 @@ export interface FileRoutesById {
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
   '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/api/webhooks/razorpay': typeof ApiWebhooksRazorpayRoute
+  '/api/webhooks/resend': typeof ApiWebhooksResendRoute
   '/api/integrations/github/all-repositories': typeof ApiIntegrationsGithubAllRepositoriesRoute
   '/api/integrations/github/callback': typeof ApiIntegrationsGithubCallbackRoute
   '/api/integrations/github/coding': typeof ApiIntegrationsGithubCodingRoute
@@ -532,6 +541,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/webhooks/razorpay'
+    | '/api/webhooks/resend'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/webhooks/razorpay'
+    | '/api/webhooks/resend'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -638,6 +649,7 @@ export interface FileRouteTypes {
     | '/api/subscription/admin'
     | '/api/webhooks/github'
     | '/api/webhooks/razorpay'
+    | '/api/webhooks/resend'
     | '/api/integrations/github/all-repositories'
     | '/api/integrations/github/callback'
     | '/api/integrations/github/coding'
@@ -690,6 +702,7 @@ export interface RootRouteChildren {
   ApiIntegrationsConnectorsRoute: typeof ApiIntegrationsConnectorsRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiWebhooksRazorpayRoute: typeof ApiWebhooksRazorpayRoute
+  ApiWebhooksResendRoute: typeof ApiWebhooksResendRoute
   ApiIntegrationsGithubAllRepositoriesRoute: typeof ApiIntegrationsGithubAllRepositoriesRoute
   ApiIntegrationsGithubCallbackRoute: typeof ApiIntegrationsGithubCallbackRoute
   ApiIntegrationsGithubCodingRoute: typeof ApiIntegrationsGithubCodingRoute
@@ -949,6 +962,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksRazorpayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/resend': {
+      id: '/api/webhooks/resend'
+      path: '/api/webhooks/resend'
+      fullPath: '/api/webhooks/resend'
+      preLoaderRoute: typeof ApiWebhooksResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/github/all-repositories': {
       id: '/api/integrations/github/all-repositories'
       path: '/api/integrations/github/all-repositories'
@@ -1127,6 +1147,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsConnectorsRoute: ApiIntegrationsConnectorsRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiWebhooksRazorpayRoute: ApiWebhooksRazorpayRoute,
+  ApiWebhooksResendRoute: ApiWebhooksResendRoute,
   ApiIntegrationsGithubAllRepositoriesRoute:
     ApiIntegrationsGithubAllRepositoriesRoute,
   ApiIntegrationsGithubCallbackRoute: ApiIntegrationsGithubCallbackRoute,

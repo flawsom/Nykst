@@ -14,7 +14,7 @@
     // connect flow to a GitHub App; the two modes are mutually exclusive.
     "GITHUB_CLIENT_ID": "Ov23liop0HWjpzTRSmqj",
     "NYKST_ADMIN_GITHUB_ID": "297429012",
-    "NYKST_AI_BASE_URL": "https://router.bynara.id/v1",
-    "NYKST_AI_MODEL": "agnes-2.5-flash"
+    "NYKST_AI_BASE_URL": "https://proxy.gonkabroker.com/v1",
+    "NYKST_AI_MODEL": "deepseek-ai/DeepSeek-V4-Flash-0731"
   }
 }

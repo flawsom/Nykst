@@ -3,8 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
-
-const CONTACT_EMAIL = "nykstsoftint@gmail.com";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export const Route = createFileRoute("/status")({
   head: () => ({ meta: [{ title: "Status · Nykst" }] }),
@@ -165,7 +164,7 @@ function StatusPage() {
             business days.
           </p>
           <div className="mt-4">
-            <ContactForm defaultTopic="Support" contactEmail={CONTACT_EMAIL} />
+            <ContactForm defaultTopic="Support" />
           </div>
         </section>
       </div>

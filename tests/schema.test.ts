@@ -22,6 +22,7 @@ const PRIVATE_TABLES = [
   "mcp_access_tokens",
   "integration_connections",
   "razorpay_webhook_events",
+  "contact_messages",
 ];
 
 /** Tables anonymous visitors may only insert into (surveys and feedback). */

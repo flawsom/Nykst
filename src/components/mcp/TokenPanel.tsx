@@ -24,6 +24,10 @@ export function TokenPanel({ onCreated, token }: Props) {
   const [tokens, setTokens] = useState<TokenRecord[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  /** A success line for create and revoke, so no action ends without feedback. */
+  const [notice, setNotice] = useState("");
+  const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -49,6 +53,7 @@ export function TokenPanel({ onCreated, token }: Props) {
   const create = async () => {
     setBusy(true);
     setMessage("");
+    setNotice("");
     try {
       const response = await fetch("/api/mcp-tokens", {
         method: "POST",
@@ -68,8 +73,22 @@ export function TokenPanel({ onCreated, token }: Props) {
   };
 
   const revoke = async (id: string) => {
-    await fetch(`/api/mcp-tokens?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    await load();
+    setRevoking(true);
+    setMessage("");
+    setNotice("");
+    try {
+      const response = await fetch(`/api/mcp-tokens?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Could not delete that key. Please try again.");
+      setNotice("Key deleted. Any AI tool using it can no longer read your map.");
+      setConfirmRevoke(null);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not delete that key.");
+    } finally {
+      setRevoking(false);
+    }
   };
 
   if (status === "loading")
@@ -93,12 +112,29 @@ export function TokenPanel({ onCreated, token }: Props) {
 
   if (status === "error")
     return (
-      <p className="text-sm text-red-400">
-        {message || "Something went wrong."}{" "}
-        <button className="underline" onClick={() => void load()}>
-          Try again
-        </button>
-      </p>
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+        <p className="text-sm text-red-300">
+          We could not load your keys. {message || "The connection failed."}
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+          Your GitHub connection is separate from this key. Try again, or create a fresh key below.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => void load()}
+            className="border-border bg-surface hover:bg-surface-2 rounded-lg border px-3 py-1.5 text-xs font-semibold"
+          >
+            Try again
+          </button>
+          <button
+            onClick={() => void create()}
+            disabled={busy}
+            className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+          >
+            {busy ? "Creating…" : "Create a new key"}
+          </button>
+        </div>
+      </div>
     );
 
   return (
@@ -134,10 +170,19 @@ export function TokenPanel({ onCreated, token }: Props) {
           Create another token
         </button>
       )}
-      {message && <p className="text-xs text-red-400">{message}</p>}
+      {message && (
+        <p role="alert" className="text-xs text-red-400">
+          {message}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="text-primary text-xs">
+          {notice}
+        </p>
+      )}
       {tokens.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-muted-foreground text-[11px] font-semibold">Your active tokens</p>
+          <p className="text-muted-foreground text-[11px] font-semibold">Your active keys</p>
           {tokens.map((item) => (
             <div
               key={item.id}
@@ -150,12 +195,34 @@ export function TokenPanel({ onCreated, token }: Props) {
                   ? ` · used ${new Date(item.last_used_at).toLocaleDateString()}`
                   : " · never used"}
               </span>
-              <button
-                onClick={() => void revoke(item.id)}
-                className="text-[11px] text-red-400 hover:underline"
-              >
-                Revoke
-              </button>
+              {confirmRevoke === item.id ? (
+                <span className="flex items-center gap-2">
+                  <button
+                    onClick={() => void revoke(item.id)}
+                    disabled={revoking}
+                    className="rounded-md bg-red-500/90 px-2 py-1 text-[10px] font-semibold text-white disabled:opacity-60"
+                  >
+                    {revoking ? "Deleting" : "Yes, delete"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmRevoke(null)}
+                    disabled={revoking}
+                    className="text-muted-foreground text-[10px] underline"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => {
+                    setConfirmRevoke(item.id);
+                    setNotice("");
+                  }}
+                  className="text-[11px] text-red-400 hover:underline"
+                >
+                  Delete key
+                </button>
+              )}
             </div>
           ))}
         </div>

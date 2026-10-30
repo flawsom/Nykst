@@ -11,6 +11,15 @@ const TESTID = "impact-teleport-row";
 const FIRST_PAINT = 40;
 const MAX_ROWS = 1000;
 
+/** "1 different table or bucket", never "1 different tables". */
+function distinctNoun(label: string, count: number): string {
+  if (count !== 1) return label;
+  return label
+    .replace(/files$/, "file")
+    .replace(/tables or buckets$/, "table or bucket")
+    .replace(/named pieces$/, "named piece");
+}
+
 const KIND_FILTERS = [
   "all",
   "importer",
@@ -36,6 +45,7 @@ export function NodeDossier({
   activeRepo,
   onInspectNode,
   onOpenCode,
+  onRecheck,
 }: {
   node: GraphNode;
   analysis?: RepoAnalysis | undefined;
@@ -43,6 +53,8 @@ export function NodeDossier({
   activeRepo: string | null;
   onInspectNode: (path: string) => void;
   onOpenCode: (target: CodeTarget) => void;
+  /** One click rebuild from the dossier itself, never advice without an action. */
+  onRecheck?: (() => void) | undefined;
 }) {
   const repository = snapshot?.repository?.full_name ?? activeRepo;
   const ref = snapshot?.repository?.default_branch ?? null;
@@ -89,20 +101,33 @@ export function NodeDossier({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-primary font-mono text-[10px] tracking-[0.22em] uppercase">
-            Evidence dossier
+            Proof for this item
           </p>
           <h3 className="mt-0.5 truncate text-sm font-semibold">{node.label}</h3>
         </div>
         <span className="text-muted-foreground font-mono text-[10px]">
-          {paths?.length ?? 0} file{(paths?.length ?? 0) === 1 ? "" : "s"} in scope ·{" "}
-          {totalRows.toLocaleString("en-US")} evidence rows · click any row to jump to code
+          Files checked: {(paths?.length ?? 0).toLocaleString("en-US")} · Findings:{" "}
+          {totalRows.toLocaleString("en-US")} · every row opens the exact code
         </span>
       </div>
 
       {!sections.length ? (
-        <p className="text-muted-foreground mt-3 text-[11px] leading-relaxed">
-          No evidence in this analysis. Re-analyze the repository to build the dossier.
-        </p>
+        <div className="mt-3">
+          <p className="text-muted-foreground text-[11px] leading-relaxed">
+            No proof found for this item yet. The saved map has no findings for it, so this is not
+            an empty project and not a failed search. Re-check the project to rebuild the proof.
+          </p>
+          {onRecheck && (
+            <button
+              type="button"
+              data-testid="dossier-recheck"
+              onClick={onRecheck}
+              className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 mt-2 rounded-lg border px-3 py-1.5 text-[11px] font-semibold"
+            >
+              Re-check this project now
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <div className="border-border mt-3 flex flex-wrap items-center gap-2 border-y py-2">
@@ -146,8 +171,8 @@ export function NodeDossier({
             </button>
             <span className="text-muted-foreground font-mono text-[10px]" aria-live="polite">
               {hiddenRows > 0
-                ? `${hiddenRows.toLocaleString("en-US")} rows hidden by the display cap`
-                : "every matching row is shown"}
+                ? `${hiddenRows.toLocaleString("en-US")} more findings not shown. Press Show all to read them.`
+                : "Every matching finding is shown."}
             </span>
           </div>
 
@@ -161,10 +186,18 @@ export function NodeDossier({
                   </div>
                   <span
                     data-testid={`dossier-count-${section.id}`}
-                    className="text-muted-foreground font-mono text-[10px]"
+                    className="text-muted-foreground text-right font-mono text-[10px]"
                   >
-                    {section.shown.length} of {section.filtered.length} shown · {section.total}{" "}
-                    {section.rowKind} · {section.distinct} distinct {section.distinctLabel}
+                    <span className="block">
+                      {section.filtered.length === section.total
+                        ? `All ${section.total.toLocaleString("en-US")} shown`
+                        : `${section.shown.length.toLocaleString("en-US")} of ${section.filtered.length.toLocaleString("en-US")} matching shown`}
+                    </span>
+                    <span className="block">
+                      {section.total.toLocaleString("en-US")} {section.rowKind} in total ·{" "}
+                      {section.distinct} different{" "}
+                      {distinctNoun(section.distinctLabel, section.distinct)}
+                    </span>
                   </span>
                 </div>
 
@@ -242,7 +275,7 @@ export function NodeDossier({
                 ) : (
                   <p className="text-muted-foreground mt-1.5 text-[11px]">
                     {section.filtered.length
-                      ? "No row matches the current filter."
+                      ? "Nothing here matches your search. Clear the search to see all findings."
                       : section.emptyLabel}
                   </p>
                 )}
