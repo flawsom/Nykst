@@ -94,7 +94,7 @@ Release numbers live here. Everything else in this README describes capability. 
 | Verified tree     | `main` at the commit that ships this README (the numbers below are from that tree)                                                              |
 | Verification date | 30 October 2026                                                                                                                                 |
 | Runtime           | Bun 1.4.2, Node 22.23.2                                                                                                                         |
-| Snapshot          | 249 source files, 46,676 LOC, 541 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
+| Snapshot          | 255 source files, 48,220 LOC, 560 internal edges, 0 unresolved imports, 15 SQL and data resources, 10 external services, 0 cycles, 11 MCP tools                                |
 
 | Command                                     | Result on that tree                                          |
 | :------------------------------------------ | :----------------------------------------------------------- |
@@ -112,7 +112,7 @@ Scope of that browser result: the nine public route render tests on both project
 
 | Surface                                   | State            | Missing input                                                                                           |
 | :---------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------ |
-| Razorpay live checkout                    | gated            | real plan ids for `nykst-pro-weekly`, `nykst-pro-monthly`, `nykst-pro-annual`, and a live gate sign off |
+| Razorpay live checkout                    | GST gate pending | live monthly and annual plans created; checkout opens after GST confirmation |
 | Weekly refund terms                       | gated            | founder decision OD-15                                                                                  |
 | GST invoice breakdown                     | gated            | tax advisor confirmation; billing states "Invoice format pending tax confirmation"                      |
 | Hindi notice, consent and rights controls | gated            | translator text, counsel review, and DPO acceptance                                                     |
@@ -713,6 +713,9 @@ done
 curl -s http://localhost:8080/api/health | jq
 ```
 
+`/api/health` reports `billing.schemaReady`. It stays false until
+`supabase/migrations/20261030130000_razorpay_subscriptions.sql` is applied.
+
 ### Verify
 
 ```bash
@@ -825,7 +828,7 @@ nykst/
 │       ├── graph.tsx                Navigator with one selected-file state
 │       ├── intelligence.tsx         System memory
 │       ├── mcp.tsx                  Agent setup
-│       ├── subscribe.tsx            INR plan registry, gated checkout
+│       ├── subscribe.tsx            INR plans, Razorpay checkout, contact fallback
 │       ├── billing.tsx              Server billing state, no fake invoices
 │       ├── privacy.tsx              DPDP transparency dashboard
 │       ├── limits.tsx               Measured and unmeasured ceilings
@@ -833,7 +836,7 @@ nykst/
 │       └── api.*.ts                 Typed server endpoints
 ├── supabase/
 │   ├── schema.sql                   Consolidated idempotent schema
-│   └── migrations/                  15 chronological migrations
+│   └── migrations/                  16 chronological migrations
 ├── bin/
 │   └── nykst.mjs                    npx nykst init and watch commands
 ├── scripts/
@@ -893,6 +896,14 @@ nykst/
 | `CONTACT_MAIL_FROM`             |   Yes    | Server | `Nykst <contact@yourdomain>`                         | Verified Resend sender address.                                                                                                                                                                                  |
 | `RESEND_WEBHOOK_SECRET`         |    No    | Server | `whsec_...`                                          | Verifies inbound mail on `/api/webhooks/resend` before anything is stored.                                                                                                                                       |
 | `NYKST_ADMIN_GITHUB_ID`         |    No    | Server | Numeric GitHub id                                    | Grants `/admin/payments`.                                                                                                                                                                                        |
+| `RAZORPAY_KEY_ID`               |   Yes    | Server | `rzp_live_...`                                       | Public key id passed to Checkout. The prefix selects live or test mode.                                                                                                                                          |
+| `RAZORPAY_KEY_SECRET`           |   Yes    | Server | Secret                                               | Server-side subscription creation and payment signature verification.                                                                                                                                           |
+| `RAZORPAY_WEBHOOK_SECRET`       |   Yes    | Server | Webhook secret                                       | Verifies `X-Razorpay-Signature` over the exact raw body on `/api/webhooks/razorpay`.                                                                                                                             |
+| `RAZORPAY_PLAN_ID_MONTHLY`      |   Yes    | Server | `plan_...`                                           | Created by `bun run razorpay:plans`.                                                                                                                                                                             |
+| `RAZORPAY_PLAN_ID_ANNUAL`       |   Yes    | Server | `plan_...`                                           | Created by `bun run razorpay:plans`.                                                                                                                                                                             |
+| `NYKST_LIVE_PAYMENTS_APPROVED`  |    No    | Server | `true`                                               | Founder sign-off for live checkout. Anything else keeps live checkout closed.                                                                                                                                   |
+| `NYKST_GST_CONFIRMED`           |    No    | Server | `true`                                               | Tax confirmation for the GST-inclusive price. Anything else keeps live checkout closed.                                                                                                                          |
+| `RAZORPAY_LIVE_MODE`            |    No    | Server | `false`                                              | Kill switch for live keys. It can never turn a test key into a live checkout.                                                                                                                                    |
 
 > [!WARNING]
 > `SUPABASE_SERVICE_ROLE_KEY` and `NYKST_BYOK_SECRET` bypass or unlock protection layers. They belong in server environment variables only, never in `VITE_` variables and never in the repository.
@@ -934,6 +945,9 @@ nykst/
 |        `POST`         | `/api/webhooks/resend`                                                                         |       Svix        | Verified inbound mail, stored in `contact_replies` and matched to a reference             |
 |         `GET`         | `/api/integrations/{slack,jira,connectors}/*`                                                  |      Session      | Connector OAuth and command endpoints                                                     |
 |     `GET` `POST`      | `/api/subscription`                                                                            |      Session      | Plan state and settlement submission                                                      |
+|        `POST`         | `/api/billing/subscription`                                                                    |      Session      | Start a Razorpay subscription after claiming one pending checkout                         |
+|        `POST`         | `/api/billing/verify`                                                                          |      Session      | Verify the subscription payment signature and start the trial                             |
+|        `POST`         | `/api/webhooks/razorpay`                                                                       |      HMAC       | Verify, record and apply subscription lifecycle events                                    |
 
 ### Multi-repository switching
 
@@ -1229,10 +1243,10 @@ Two labels are used below and they are not interchangeable. Measured means a val
 
 | Metric                       | Value                                                                                                            | How it was obtained                                                                  |
 | :--------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| Cold AST compile, 249 files  | 1,060 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
+| Cold AST compile, 255 files  | 1,025 ms in the committed snapshot (30 Oct 2026), under the 1.5 s target on this run. One run is not a benchmark | `jq .stats.durationMs src/lib/analysis/self-snapshot.json`                           |
 | Incremental patch, 500 files | asserted under 15 ms, test passes                                                                                | `bun test tests/incremental-patch.test.ts`                                           |
-| Analyzed source              | **249 files, 46,676 LOC**                                                                           | `bun run check:claims`                                                              |
-| Internal import edges        | **541, zero unresolved**                                                                                         | same                                                                                 |
+| Analyzed source              | **255 files, 48,220 LOC**                                                                           | `bun run check:claims`                                                              |
+| Internal import edges        | **560, zero unresolved**                                                                                         | same                                                                                 |
 | Cycles                       | **0**                                                                                                            | `jq '.cycles \| length'`                                                             |
 | SQL and data resources       | **15**                                                                                                           | `jq '.resources \| length'`                                                          |
 | External services            | **10**                                                                                                           | `jq '.services \| length'`                                                           |
@@ -1493,8 +1507,8 @@ Contributions that sharpen the analysis engine, widen language support, or impro
 - [x] Multi-origin GitHub OAuth
 - [x] Slack and Jira connectors
 - [x] INR plan registry with weekly 299, monthly 699 and annual 4,999, GST included
-- [x] Gated Razorpay checkout state, trial and refund copy, and a server billing page
-- [ ] Live Razorpay checkout, webhook activation, GST invoices and eSewa migration (M2-09 gate open)
+- [x] Razorpay subscription checkout, webhook activation, live monthly and annual plans, and a server billing page
+- [ ] GST invoice treatment and live charge sign-off (M2-09 gate open)
 - [x] Playwright browser matrix in CI, desktop and mobile
 - [x] Committed self-analysis snapshot for source-less production builds
 - [x] Fine-grained exported symbol signatures with parameter arity and type properties

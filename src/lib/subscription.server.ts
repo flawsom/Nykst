@@ -59,7 +59,7 @@ export function isSubscriptionAdmin(userId: string) {
   return Boolean(configured && configured === userId);
 }
 
-async function ensureSubscription(user: { id: number; login: string }) {
+export async function ensureSubscription(user: { id: number; login: string }) {
   const { data, error } = await supabaseAdmin
     .from("nykst_subscriptions")
     .upsert(
@@ -67,7 +67,7 @@ async function ensureSubscription(user: { id: number; login: string }) {
       { onConflict: "provider_user_id" },
     )
     .select(
-      "id, provider_user_id, provider_username, plan, status, active_until, created_at, updated_at",
+      "id, provider, provider_user_id, provider_username, plan, status, active_until, razorpay_subscription_id, razorpay_plan_id, razorpay_payment_id, trial_ends_at, checkout_started_at, cancel_at_period_end, created_at, updated_at",
     )
     .single();
   if (error) throw new Error("Could not prepare your subscription record.");

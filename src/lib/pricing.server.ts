@@ -1,4 +1,5 @@
 import { publicPricing, type PlanId } from "./pricing";
+import { razorpayKeyMode } from "./razorpay-mode";
 
 /**
  * Server-only plan registry. Credentials and plan ids are read from server
@@ -23,22 +24,21 @@ export function registeredPlanIds(env: Record<string, string | undefined>) {
 }
 
 /**
- * The public pricing payload. `checkoutImplemented` is deliberately false in
- * this build: the order and webhook flow is specified in M2-02 and has not been
- * verified against test mode, so no plan may be presented as purchasable.
+ * The public pricing payload. Checkout is implemented, but a plan still needs
+ * live keys, founder approval, a real plan id and confirmed GST treatment
+ * before it can take money. The key prefix decides test or live mode; the
+ * explicit flag can only close live checkout, never open a test key.
  */
 export function planRegistry(env: Record<string, string | undefined> = process.env) {
   const keyId = readEnv(env, "RAZORPAY_KEY_ID");
   const keySecret = readEnv(env, "RAZORPAY_KEY_SECRET");
+  const keyMode = razorpayKeyMode(keyId);
   return publicPricing({
     providerConfigured: Boolean(keyId && keySecret),
     liveApproved: readEnv(env, "NYKST_LIVE_PAYMENTS_APPROVED") === "true",
-    liveMode: readEnv(env, "RAZORPAY_LIVE_MODE") === "true",
+    liveMode: keyMode === "live" && readEnv(env, "RAZORPAY_LIVE_MODE") !== "false",
     planIds: registeredPlanIds(env),
     taxConfirmed: readEnv(env, "NYKST_GST_CONFIRMED") === "true",
-    checkoutImplemented: false,
+    checkoutImplemented: true,
   });
 }
-
-/** The fake gateway flag is never exposed; this exists to document the gate. */
-export const CHECKOUT_IMPLEMENTED = false;

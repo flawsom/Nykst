@@ -152,6 +152,11 @@ export interface PublicPlan extends PricingPlan {
   refundCopy: string;
 }
 
+/** The public payload never explains internal gates such as OD-15 or M2-09. */
+function publicCheckout(state: CheckoutState): CheckoutState {
+  return state.state === "live" ? state : { state: "gated", reason: "Checkout is not open yet." };
+}
+
 export function refundCopy(plan: PricingPlan) {
   return plan.refundDays === null
     ? "Refund window not decided"
@@ -176,15 +181,17 @@ export function publicPricing(input: {
     plans: PRICING.plans.map((plan) => ({
       ...plan,
       refundCopy: refundCopy(plan),
-      checkout: resolveCheckout({
-        planId: plan.id,
-        providerConfigured: input.providerConfigured,
-        liveApproved: input.liveApproved,
-        liveMode: input.liveMode,
-        razorpayPlanId: input.planIds[plan.id] ?? null,
-        taxConfirmed: input.taxConfirmed,
-        checkoutImplemented: input.checkoutImplemented,
-      }),
+      checkout: publicCheckout(
+        resolveCheckout({
+          planId: plan.id,
+          providerConfigured: input.providerConfigured,
+          liveApproved: input.liveApproved,
+          liveMode: input.liveMode,
+          razorpayPlanId: input.planIds[plan.id] ?? null,
+          taxConfirmed: input.taxConfirmed,
+          checkoutImplemented: input.checkoutImplemented,
+        }),
+      ),
     })),
     anyPlanLive: PRICING.plans.some(
       (plan) =>

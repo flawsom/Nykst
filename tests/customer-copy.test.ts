@@ -65,6 +65,18 @@ describe("MCP sandbox copy", () => {
   });
 });
 
+describe("billing copy", () => {
+  const subscribe = source("src/routes/subscribe.tsx");
+
+  test("does not expose internal gate names or payment secrets", () => {
+    expect(subscribe).not.toContain("M2-09");
+    expect(subscribe).not.toContain("RAZORPAY_KEY_SECRET");
+    expect(subscribe).not.toContain("No payment is taken on this page");
+    expect(subscribe).toContain("Checkout is not open yet");
+    expect(subscribe).toContain("7-day");
+  });
+});
+
 describe("MCP key panel copy", () => {
   test("deleting a key asks first and reports success", () => {
     expect(tokens).toContain("Yes, delete");

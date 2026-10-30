@@ -5,6 +5,7 @@ import {
   parseRazorpayWebhook,
   razorpayEventCategory,
   razorpayEventId,
+  razorpaySubscriptionState,
   verifyRazorpayWebhookSignature,
 } from "../src/lib/razorpay-webhook.server";
 
@@ -73,7 +74,7 @@ describe("Razorpay webhook normalization", () => {
     expect(text).not.toContain("9876543210");
     expect(text).not.toContain("last4");
     expect(text).not.toContain("do not store");
-    expect(record.reason).toContain("No checkout activation");
+    expect(record.reason).toContain("Access is applied only");
   });
 
   test("maps order and subscription events to the right identifiers", () => {
@@ -130,6 +131,51 @@ describe("Razorpay webhook normalization", () => {
     expect(razorpayEventCategory("payment.captured")).toBe("payment");
     expect(razorpayEventCategory("refund.processed")).toBe("refund");
     expect(razorpayEventCategory("engage.balance.low_balance")).toBe("unsupported");
+  });
+
+  test("extracts only the subscription state needed to update access", () => {
+    const endsAt = 1_893_456_000;
+    const event = parseRazorpayWebhook(
+      JSON.stringify({
+        event: "subscription.charged",
+        payload: {
+          subscription: {
+            entity: {
+              id: "sub_abc",
+              plan_id: "plan_monthly",
+              status: "active",
+              current_end: endsAt,
+            },
+          },
+          payment: {
+            entity: { id: "pay_abc", email: "customer@example.com", contact: "9876543210" },
+          },
+        },
+      }),
+    );
+    const state = razorpaySubscriptionState(event);
+    expect(state).toEqual({
+      subscriptionId: "sub_abc",
+      planId: "plan_monthly",
+      status: "active",
+      currentEnd: new Date(endsAt * 1000).toISOString(),
+      paymentId: "pay_abc",
+      eventType: "subscription.charged",
+    });
+    expect(JSON.stringify(state)).not.toContain("customer@example.com");
+    expect(JSON.stringify(state)).not.toContain("9876543210");
+  });
+
+  test("returns no subscription transition for other events or missing ids", () => {
+    const payment = parseRazorpayWebhook(paymentBody);
+    expect(razorpaySubscriptionState(payment)).toBeNull();
+    const missingId = parseRazorpayWebhook(
+      JSON.stringify({
+        event: "subscription.activated",
+        payload: { subscription: { entity: {} } },
+      }),
+    );
+    expect(razorpaySubscriptionState(missingId)).toBeNull();
   });
 
   test("event id prefers the header, then the body, then a body hash", () => {

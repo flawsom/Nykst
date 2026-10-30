@@ -33,10 +33,18 @@ export const Route = createFileRoute("/api/health")({
         const tables: Record<string, boolean> = {};
         let reachable = false;
         let error: string | null = null;
+        let billingSchemaReady = false;
+        let billingSchemaError: string | null = null;
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           reachable = true;
+          const { error: billingError } = await supabaseAdmin
+            .from("nykst_subscriptions")
+            .select("razorpay_subscription_id")
+            .limit(1);
+          billingSchemaReady = !billingError;
+          if (billingError) billingSchemaError = billingError.message.slice(0, 200);
           await Promise.all(
             TABLES.map(async (table) => {
               // A real GET with limit 1: PostgREST answers HEAD with 204 even for a
@@ -66,6 +74,10 @@ export const Route = createFileRoute("/api/health")({
               tables,
               missing,
               error,
+              billing: {
+                schemaReady: billingSchemaReady,
+                ...(billingSchemaError ? { error: billingSchemaError } : {}),
+              },
               hint: missing.length
                 ? "Apply supabase/schema.sql in the Supabase SQL editor to finish provisioning."
                 : undefined,

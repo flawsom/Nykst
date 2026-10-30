@@ -38,6 +38,15 @@ export interface RazorpayWebhookRecord {
   received_at: string;
 }
 
+export interface RazorpaySubscriptionState {
+  subscriptionId: string;
+  planId: string | null;
+  status: string | null;
+  currentEnd: string | null;
+  paymentId: string | null;
+  eventType: string;
+}
+
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -136,9 +145,8 @@ function entityFor(event: RazorpayWebhookEvent, category: RazorpayWebhookCategor
 
 /**
  * Build the only record Nykst stores for a verified event. No email, phone,
- * card, bank account or free-form notes field is copied. Access is never
- * granted here: checkout activation is a separate server action that is not
- * enabled in this build.
+ * card, bank account or free-form notes field is copied. This record is for
+ * reconciliation; the route applies access separately to a matching row.
  */
 export function normalizeRazorpayWebhook(
   event: RazorpayWebhookEvent,
@@ -163,7 +171,37 @@ export function normalizeRazorpayWebhook(
     reason:
       category === "unsupported"
         ? "Verified and recorded. This event type is not handled by Nykst."
-        : "Verified and recorded. No checkout activation was performed in this build.",
+        : "Verified and recorded. Access is applied only for a matching Nykst subscription.",
     received_at: receivedAt,
+  };
+}
+
+/**
+ * Extract the subscription state transition from a verified event. Only the
+ * identifiers and dates needed to update one Nykst row are returned; the raw
+ * payload is never passed to the database layer.
+ */
+export function razorpaySubscriptionState(
+  event: RazorpayWebhookEvent,
+): RazorpaySubscriptionState | null {
+  if (!event.event.startsWith("subscription.")) return null;
+  const payload = object(event.payload);
+  const subscription = object(object(payload["subscription"])["entity"]);
+  const payment = object(object(payload["payment"])["entity"]);
+  const subscriptionId = text(subscription["id"]);
+  if (!subscriptionId) return null;
+
+  const seconds =
+    integer(subscription["current_end"]) ??
+    integer(subscription["end_at"]) ??
+    integer(subscription["charge_at"]);
+  return {
+    subscriptionId,
+    planId: text(subscription["plan_id"]) || null,
+    status: text(subscription["status"]) || null,
+    currentEnd:
+      typeof seconds === "number" && seconds > 0 ? new Date(seconds * 1000).toISOString() : null,
+    paymentId: text(payment["id"]) || null,
+    eventType: event.event,
   };
 }

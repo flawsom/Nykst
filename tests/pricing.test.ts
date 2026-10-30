@@ -69,13 +69,15 @@ describe("pricing registry", () => {
     expect(text).not.toContain("plan_abcdef123456");
     expect(text).not.toContain("razorpay");
     expect(text).not.toContain("secret");
+    expect(text).not.toContain("OD-15");
+    expect(text).not.toContain("M2-09");
     expect(payload.plans).toHaveLength(3);
     expect(payload.trialCopy).toBe(TRIAL_COPY);
   });
 
-  test("this build has no implemented checkout, so the server registry stays gated", () => {
+  test("checkout is implemented and opens every non-weekly plan when every gate passes", () => {
     const env = {
-      RAZORPAY_KEY_ID: "rzp_test_fixture",
+      RAZORPAY_KEY_ID: "rzp_live_fixture",
       RAZORPAY_KEY_SECRET: "fixture-secret",
       RAZORPAY_LIVE_MODE: "true",
       NYKST_LIVE_PAYMENTS_APPROVED: "true",
@@ -85,9 +87,27 @@ describe("pricing registry", () => {
       RAZORPAY_PLAN_ID_ANNUAL: "plan_annual123456",
     };
     const registry = planRegistry(env);
-    expect(registry.anyPlanLive).toBe(false);
-    expect(registry.plans.every((plan) => plan.checkout.state === "gated")).toBe(true);
+    expect(registry.anyPlanLive).toBe(true);
+    expect(registry.plans.find((plan) => plan.id === "monthly")?.checkout.state).toBe("live");
+    expect(registry.plans.find((plan) => plan.id === "annual")?.checkout.state).toBe("live");
+    expect(registry.plans.find((plan) => plan.id === "weekly")?.checkout.state).toBe("gated");
     expect(JSON.stringify(registry)).not.toContain("plan_monthly123456");
+    expect(JSON.stringify(registry)).not.toContain("fixture-secret");
+  });
+
+  test("test keys and the live kill switch keep every plan closed", () => {
+    const base = {
+      RAZORPAY_KEY_ID: "rzp_live_fixture",
+      RAZORPAY_KEY_SECRET: "fixture-secret",
+      RAZORPAY_LIVE_MODE: "true",
+      NYKST_LIVE_PAYMENTS_APPROVED: "true",
+      NYKST_GST_CONFIRMED: "true",
+      RAZORPAY_PLAN_ID_MONTHLY: "plan_monthly123456",
+      RAZORPAY_PLAN_ID_ANNUAL: "plan_annual123456",
+    };
+    expect(planRegistry({ ...base, RAZORPAY_KEY_ID: "rzp_test_fixture" }).anyPlanLive).toBe(false);
+    expect(planRegistry({ ...base, RAZORPAY_LIVE_MODE: "false" }).anyPlanLive).toBe(false);
+    expect(planRegistry({ ...base, NYKST_GST_CONFIRMED: "false" }).anyPlanLive).toBe(false);
   });
 
   test("placeholder plan ids are rejected, so a plan with plan_TBD is gated", () => {

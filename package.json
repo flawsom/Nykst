@@ -29,7 +29,8 @@
     "snapshot:self": "bun scripts/snapshot-self.ts",
     "mcp:schema": "bun scripts/export-mcp-schema.ts",
     "check:claims": "bun scripts/check-claims.ts",
-    "watch": "bun scripts/watch.ts"
+    "watch": "bun scripts/watch.ts",
+    "razorpay:plans": "bun scripts/razorpay-plans.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -5,7 +5,10 @@ import {
   githubCookieOptions,
   githubRedirectUri,
   githubUser,
+  GITHUB_RETURN_TO_COOKIE,
   oauthCookieOptions,
+  readCookie,
+  safeGithubReturnTo,
   verifyOauthState,
 } from "@/lib/integrations/github";
 
@@ -37,7 +40,8 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
         try {
           const token = await exchangeGithubCode(code, githubRedirectUri(request));
           await githubUser(token);
-          const headers = new Headers({ Location: "/?github=connected" });
+          const returnTo = safeGithubReturnTo(readCookie(request, GITHUB_RETURN_TO_COOKIE));
+          const headers = new Headers({ Location: returnTo ?? "/?github=connected" });
           headers.append(
             "Set-Cookie",
             `nykst_github_token=${encodeURIComponent(token)}; Path=/; ${githubCookieOptions.join("; ")}`,
@@ -45,6 +49,10 @@ export const Route = createFileRoute("/api/integrations/github/callback")({
           headers.append(
             "Set-Cookie",
             `nykst_github_oauth_state=; Path=/; Max-Age=0; ${oauthCookieOptions.join("; ")}`,
+          );
+          headers.append(
+            "Set-Cookie",
+            `${GITHUB_RETURN_TO_COOKIE}=; Path=/; Max-Age=0; ${oauthCookieOptions.join("; ")}`,
           );
           return new Response(null, { status: 302, headers });
         } catch (error) {

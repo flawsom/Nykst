@@ -38,6 +38,8 @@ import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
 import { Route as ApiAnalysisSelfRouteImport } from './routes/api.analysis.self'
+import { Route as ApiBillingSubscriptionRouteImport } from './routes/api.billing.subscription'
+import { Route as ApiBillingVerifyRouteImport } from './routes/api.billing.verify'
 import { Route as ApiIntegrationsConnectorsRouteImport } from './routes/api.integrations.connectors'
 import { Route as ApiMcpSchemaRouteImport } from './routes/api.mcp.schema'
 import { Route as ApiSubscriptionAdminRouteImport } from './routes/api.subscription.admin'
@@ -207,6 +209,16 @@ const ApiAnalysisSelfRoute = ApiAnalysisSelfRouteImport.update({
   path: '/api/analysis/self',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBillingSubscriptionRoute = ApiBillingSubscriptionRouteImport.update({
+  id: '/api/billing/subscription',
+  path: '/api/billing/subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBillingVerifyRoute = ApiBillingVerifyRouteImport.update({
+  id: '/api/billing/verify',
+  path: '/api/billing/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntegrationsConnectorsRoute =
   ApiIntegrationsConnectorsRouteImport.update({
     id: '/api/integrations/connectors',
@@ -371,6 +383,8 @@ export interface FileRoutesByFullPath {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
+  '/api/billing/subscription': typeof ApiBillingSubscriptionRoute
+  '/api/billing/verify': typeof ApiBillingVerifyRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
@@ -425,6 +439,8 @@ export interface FileRoutesByTo {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
+  '/api/billing/subscription': typeof ApiBillingSubscriptionRoute
+  '/api/billing/verify': typeof ApiBillingVerifyRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
@@ -480,6 +496,8 @@ export interface FileRoutesById {
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
   '/api/analysis/self': typeof ApiAnalysisSelfRoute
+  '/api/billing/subscription': typeof ApiBillingSubscriptionRoute
+  '/api/billing/verify': typeof ApiBillingVerifyRoute
   '/api/integrations/connectors': typeof ApiIntegrationsConnectorsRoute
   '/api/mcp/schema': typeof ApiMcpSchemaRoute
   '/api/subscription/admin': typeof ApiSubscriptionAdminRoute
@@ -536,6 +554,8 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/analysis/self'
+    | '/api/billing/subscription'
+    | '/api/billing/verify'
     | '/api/integrations/connectors'
     | '/api/mcp/schema'
     | '/api/subscription/admin'
@@ -590,6 +610,8 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/analysis/self'
+    | '/api/billing/subscription'
+    | '/api/billing/verify'
     | '/api/integrations/connectors'
     | '/api/mcp/schema'
     | '/api/subscription/admin'
@@ -644,6 +666,8 @@ export interface FileRouteTypes {
     | '/api/ai/key'
     | '/api/ai/test'
     | '/api/analysis/self'
+    | '/api/billing/subscription'
+    | '/api/billing/verify'
     | '/api/integrations/connectors'
     | '/api/mcp/schema'
     | '/api/subscription/admin'
@@ -699,6 +723,8 @@ export interface RootRouteChildren {
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
   ApiAnalysisSelfRoute: typeof ApiAnalysisSelfRoute
+  ApiBillingSubscriptionRoute: typeof ApiBillingSubscriptionRoute
+  ApiBillingVerifyRoute: typeof ApiBillingVerifyRoute
   ApiIntegrationsConnectorsRoute: typeof ApiIntegrationsConnectorsRoute
   ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
   ApiWebhooksRazorpayRoute: typeof ApiWebhooksRazorpayRoute
@@ -927,6 +953,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnalysisSelfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/billing/subscription': {
+      id: '/api/billing/subscription'
+      path: '/api/billing/subscription'
+      fullPath: '/api/billing/subscription'
+      preLoaderRoute: typeof ApiBillingSubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/verify': {
+      id: '/api/billing/verify'
+      path: '/api/billing/verify'
+      fullPath: '/api/billing/verify'
+      preLoaderRoute: typeof ApiBillingVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/connectors': {
       id: '/api/integrations/connectors'
       path: '/api/integrations/connectors'
@@ -1144,6 +1184,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,
   ApiAnalysisSelfRoute: ApiAnalysisSelfRoute,
+  ApiBillingSubscriptionRoute: ApiBillingSubscriptionRoute,
+  ApiBillingVerifyRoute: ApiBillingVerifyRoute,
   ApiIntegrationsConnectorsRoute: ApiIntegrationsConnectorsRoute,
   ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
   ApiWebhooksRazorpayRoute: ApiWebhooksRazorpayRoute,

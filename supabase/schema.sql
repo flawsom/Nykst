@@ -181,7 +181,18 @@ create table if not exists public.nykst_subscriptions (
 
 alter table public.nykst_subscriptions
   add column if not exists plan text not null default 'monthly',
-  add column if not exists active_until timestamptz;
+  add column if not exists active_until timestamptz,
+  add column if not exists provider text not null default 'esewa',
+  add column if not exists razorpay_subscription_id text,
+  add column if not exists razorpay_plan_id text,
+  add column if not exists razorpay_payment_id text,
+  add column if not exists trial_ends_at timestamptz,
+  add column if not exists checkout_started_at timestamptz,
+  add column if not exists cancel_at_period_end boolean not null default false;
+
+create unique index if not exists nykst_subscriptions_razorpay_subscription_id_key
+  on public.nykst_subscriptions (razorpay_subscription_id)
+  where razorpay_subscription_id is not null;
 
 create table if not exists public.nykst_payment_submissions (
   id uuid primary key default gen_random_uuid(),

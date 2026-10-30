@@ -884,6 +884,34 @@ export function readCookie(request: Request, name: string) {
   return value ? decodeURIComponent(value.slice(name.length + 1)) : undefined;
 }
 
+export const GITHUB_RETURN_TO_COOKIE = "nykst_github_return_to";
+function hasControlCharacter(value: string) {
+  for (const character of value) {
+    if (character.charCodeAt(0) < 32) return true;
+  }
+  return false;
+}
+
+/**
+ * Only a same-origin absolute path may survive a GitHub sign-in round trip.
+ * The URL parser catches encoded and scheme-relative variants; the explicit
+ * checks reject backslashes and control characters that browsers may normalize.
+ */
+export function safeGithubReturnTo(value: string | null | undefined): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+  if (value.includes("\\") || hasControlCharacter(value)) return null;
+  try {
+    const decoded = decodeURIComponent(value);
+    if (decoded.startsWith("//") || decoded.includes("\\") || hasControlCharacter(decoded))
+      return null;
+    const url = new URL(value, "https://nykst.unifies.codes");
+    if (url.origin !== "https://nykst.unifies.codes") return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 export function githubToken(request: Request) {
   return readCookie(request, "nykst_github_token");
 }

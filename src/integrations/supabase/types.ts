@@ -512,32 +512,53 @@ export type Database = {
       nykst_subscriptions: {
         Row: {
           active_until: string | null;
+          cancel_at_period_end: boolean;
+          checkout_started_at: string | null;
           created_at: string;
           id: string;
           plan: string;
+          provider: string;
           provider_user_id: string;
           provider_username: string;
+          razorpay_payment_id: string | null;
+          razorpay_plan_id: string | null;
+          razorpay_subscription_id: string | null;
           status: string;
+          trial_ends_at: string | null;
           updated_at: string;
         };
         Insert: {
           active_until?: string | null;
+          cancel_at_period_end?: boolean;
+          checkout_started_at?: string | null;
           created_at?: string;
           id?: string;
           plan?: string;
+          provider?: string;
           provider_user_id: string;
           provider_username: string;
+          razorpay_payment_id?: string | null;
+          razorpay_plan_id?: string | null;
+          razorpay_subscription_id?: string | null;
           status?: string;
+          trial_ends_at?: string | null;
           updated_at?: string;
         };
         Update: {
           active_until?: string | null;
+          cancel_at_period_end?: boolean;
+          checkout_started_at?: string | null;
           created_at?: string;
           id?: string;
           plan?: string;
+          provider?: string;
           provider_user_id?: string;
           provider_username?: string;
+          razorpay_payment_id?: string | null;
+          razorpay_plan_id?: string | null;
+          razorpay_subscription_id?: string | null;
           status?: string;
+          trial_ends_at?: string | null;
           updated_at?: string;
         };
         Relationships: [];

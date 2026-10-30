@@ -127,7 +127,7 @@ export const DATA_MAP: DataMapRow[] = [
     purpose: "P1 core service and legal obligation",
     basis: "Contract and legal obligation for tax records",
     retention: "Invoices and tax records for the legally required period",
-    processors: "Razorpay when live; no live charge in this build",
+    processors: "Razorpay for checkout and card processing when payments are open",
     transfer: "India settlement; international conversion not enabled",
   },
   {
@@ -216,7 +216,11 @@ export const SUB_PROCESSORS = [
     status: "Configured in server storage; contract terms not published",
   },
   { name: "Vercel", purpose: "Hosting and deployment", status: "Configured" },
-  { name: "Razorpay", purpose: "Payments", status: "Not live; no charge is taken" },
+  {
+    name: "Razorpay",
+    purpose: "Payments",
+    status: "Checkout opens only after payment and tax setup is complete",
+  },
 ] as const;
 
 export const DPDP_PHASES = [
