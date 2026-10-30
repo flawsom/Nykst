@@ -220,7 +220,7 @@ function GraphPage() {
         if (target && isSelfRepository(target)) {
           if (await loadSelf()) {
             setNotAnalysedRepo(null);
-            setShowingExample(false);
+            setShowingExample(true);
             setLoadError(null);
             setLastChecked(Date.now());
             setLoading(false);
@@ -862,6 +862,9 @@ function GraphPage() {
                   >
                     Saved map from {savedAt ? savedAt.toLocaleString() : "an unknown date"}
                     {codeRef ? ` · code at ${codeRef.slice(0, 7)}` : ""}
+                    {snapshot.payload.repository?.commit
+                      ? ` · commit ${snapshot.payload.repository.commit.slice(0, 7)}`
+                      : ""}
                     {checkedSecondsAgo !== null &&
                       ` · rechecked ${checkedSecondsAgo < 5 ? "just now" : `${checkedSecondsAgo}s ago`}`}
                   </p>

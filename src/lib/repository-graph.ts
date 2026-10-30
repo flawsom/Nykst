@@ -10,6 +10,8 @@ export type RepositorySnapshot = {
     default_branch?: string;
     description?: string | null;
     html_url?: string;
+    /** Deployed commit stamp when the host exposes one. */
+    commit?: string | null;
   };
   files?: RepoFile[];
   commits?: RepoRecord[];

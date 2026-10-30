@@ -9,6 +9,13 @@ import { indexAnalysis } from "@/lib/analysis/impact";
 import { buildLoopRun } from "@/lib/analysis/loop.server";
 import type { LoopScenarioId } from "@/lib/loop";
 import { selfSnapshot } from "@/lib/analysis/self-snapshot.server";
+import {
+  collectSensitiveNames,
+  redactPublicAnalysis,
+  redactPublicFile,
+  redactPublicSnapshot,
+  redactPublicValue,
+} from "@/lib/analysis/public";
 import { simulateChange } from "@/lib/analysis/simulate";
 import { overlayTelemetry, parseOtlpSpans } from "@/lib/analysis/telemetry";
 import { runAnalysisTool, type AnalysisSnapshot } from "@/lib/analysis/tools";
@@ -94,11 +101,7 @@ export async function getSelfAnalysis(force = false): Promise<RepoAnalysis> {
   return analysis;
 }
 
-async function resolveTargetAnalysis(
-  request: Request,
-  requestedRepo: string | null,
-  force: boolean,
-): Promise<{
+type ResolvedTarget = {
   repository: string;
   analysis: RepoAnalysis;
   snapshotPayload: RepositorySnapshot;
@@ -111,8 +114,16 @@ async function resolveTargetAnalysis(
     edgeCount: number;
     cycleCount: number;
   }>;
-}> {
+};
+
+async function resolveTargetAnalysis(
+  request: Request,
+  requestedRepo: string | null,
+  force: boolean,
+): Promise<ResolvedTarget | null> {
   const token = githubToken(request);
+  const requestedSlug = parseRepoSlug(requestedRepo)?.slug ?? null;
+  if (requestedRepo && !requestedSlug) return null;
   let ingestedRepositories: Array<{
     repository: string;
     branch: string | null;
@@ -123,7 +134,7 @@ async function resolveTargetAnalysis(
     cycleCount: number;
   }> = [];
 
-  if (token) {
+  if (token && requestedSlug && !isSelfRepository(requestedSlug)) {
     try {
       const user = await githubUser(token);
       const workspaces = await listIngestedWorkspaces(String(user.id));
@@ -137,31 +148,34 @@ async function resolveTargetAnalysis(
         cycleCount: w.cycles ?? 0,
       }));
 
-      const slug = parseRepoSlug(requestedRepo)?.slug ?? null;
-      if (slug && !isSelfRepository(slug)) {
-        const row = await latestIngestion(String(user.id), slug);
-        const payload = (row?.payload ?? null) as RepositorySnapshot | null;
-        if (row && payload?.analysis) {
-          return {
-            repository: row.repository_full_name,
-            analysis: payload.analysis,
-            snapshotPayload: payload,
-            ingestedRepositories,
-          };
-        }
+      const row = await latestIngestion(String(user.id), requestedSlug);
+      const payload = (row?.payload ?? null) as RepositorySnapshot | null;
+      if (row && payload?.analysis) {
+        return {
+          repository: row.repository_full_name,
+          analysis: payload.analysis,
+          snapshotPayload: payload,
+          ingestedRepositories,
+        };
       }
     } catch {
-      // Fall back cleanly to self analysis if GitHub token is expired
+      // A requested repository is not allowed to fall back to another project.
     }
   }
 
+  // A named repository must resolve to that repository or fail closed. Only
+  // the Nykst example may use the live workspace fallback.
+  if (requestedSlug && !isSelfRepository(requestedSlug)) return null;
+
   const analysis = await getSelfAnalysis(force);
+  const commit = process.env["VERCEL_GIT_COMMIT_SHA"] ?? process.env["GIT_COMMIT_SHA"] ?? null;
   const snapshotPayload: RepositorySnapshot = {
     repository: {
       full_name: "flawsom/nykst",
       default_branch: "main",
       description: "One map of how this system fits together, built from its real code.",
       html_url: "https://github.com/flawsom/nykst",
+      commit,
     },
     files: analysis.files.map((f) => ({ path: f.path, type: "blob", size: f.loc * 38 })),
     commits: [],
@@ -360,6 +374,15 @@ function buildResponsePayload(
   const briefing = impactBriefing(analysis, snapshotPayload.history, [validTarget], {
     maxItems: 30,
   });
+  const publicExample = isSelfRepository(repository);
+  const sensitive = collectSensitiveNames(analysis);
+  const safeAnalysis = publicExample ? redactPublicAnalysis(analysis) : analysis;
+  const safeSnapshot = publicExample ? redactPublicSnapshot(snapshotPayload) : snapshotPayload;
+  const safeFile = publicExample
+    ? redactPublicFile(index.files.get(validTarget) ?? null)
+    : (index.files.get(validTarget) ?? null);
+  const safeBriefing = publicExample ? redactPublicValue(briefing, sensitive) : briefing;
+  const safeToolOutput = publicExample ? redactPublicValue(toolOutput, sensitive) : toolOutput;
 
   // Architectural Impact Ranking:
   // (directImporters * 3 + transitiveDependents + sqlResources * 4 + isEntrypoint * 5)
@@ -427,15 +450,16 @@ function buildResponsePayload(
 
   return {
     repository,
+    commit: snapshotPayload.repository?.commit ?? null,
     generatedAt: analysis.generatedAt,
     method: analysis.method,
     stats: analysis.stats,
-    snapshotPayload,
-    ingestedRepositories,
+    snapshotPayload: safeSnapshot,
+    ingestedRepositories: publicExample ? [] : ingestedRepositories,
     domains: [...domainMap.values()].sort(
       (a, b) => b.edgesIn + b.edgesOut - (a.edgesIn + a.edgesOut),
     ),
-    services: analysis.services.map((s) => ({
+    services: safeAnalysis.services.map((s) => ({
       id: s.id,
       name: s.name,
       category: s.category,
@@ -444,7 +468,7 @@ function buildResponsePayload(
       packages: s.packages,
       evidence: s.evidence.slice(0, 4),
     })),
-    resources: analysis.resources.map((r) => ({
+    resources: safeAnalysis.resources.map((r) => ({
       id: r.id,
       kind: r.kind,
       name: r.name,
@@ -455,15 +479,15 @@ function buildResponsePayload(
       columns: r.columns ?? [],
       columnDrift: r.columnDrift ?? [],
     })),
-    envVars: analysis.envVars.slice(0, 30),
+    envVars: safeAnalysis.envVars.slice(0, 30),
     cycles: analysis.cycles,
     topHubs,
     selectedTarget: {
       path: validTarget,
-      file: index.files.get(validTarget) ?? null,
-      briefing,
+      file: safeFile,
+      briefing: safeBriefing,
     },
-    toolOutput,
+    toolOutput: safeToolOutput,
   };
 }
 
@@ -479,8 +503,18 @@ export const Route = createFileRoute("/api/analysis/self")({
           const tool = url.searchParams.get("tool")?.trim() || "";
           const query = url.searchParams.get("query")?.trim() || "";
 
-          const { repository, analysis, snapshotPayload, ingestedRepositories } =
-            await resolveTargetAnalysis(request, requestedRepo, force);
+          const resolvedTarget = await resolveTargetAnalysis(request, requestedRepo, force);
+          if (!resolvedTarget) {
+            return json(
+              {
+                error:
+                  "That project is not mapped yet. Try the Nykst example or connect a repository.",
+                code: "not_mapped",
+              },
+              { status: 404 },
+            );
+          }
+          const { repository, analysis, snapshotPayload, ingestedRepositories } = resolvedTarget;
           const index = indexAnalysis(analysis);
 
           const validTarget = index.files.has(target)
@@ -543,8 +577,18 @@ export const Route = createFileRoute("/api/analysis/self")({
           const tool = body.tool?.trim() || "simulate_change";
           const query = body.query?.trim() || "";
 
-          const { repository, analysis, snapshotPayload, ingestedRepositories } =
-            await resolveTargetAnalysis(request, requestedRepo, false);
+          const resolvedTarget = await resolveTargetAnalysis(request, requestedRepo, false);
+          if (!resolvedTarget) {
+            return json(
+              {
+                error:
+                  "That project is not mapped yet. Try the Nykst example or connect a repository.",
+                code: "not_mapped",
+              },
+              { status: 404 },
+            );
+          }
+          const { repository, analysis, snapshotPayload, ingestedRepositories } = resolvedTarget;
           const index = indexAnalysis(analysis);
           const validTarget = index.files.has(target)
             ? target
@@ -583,7 +627,9 @@ export const Route = createFileRoute("/api/analysis/self")({
               repository,
               path: validTarget,
               tool,
-              toolOutput,
+              toolOutput: isSelfRepository(repository)
+                ? redactPublicValue(toolOutput, collectSensitiveNames(analysis))
+                : toolOutput,
             },
             { headers: { "cache-control": "no-store" } },
           );
