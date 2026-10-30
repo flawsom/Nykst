@@ -36,6 +36,73 @@ export function isSelfRepository(repository: string | null | undefined): boolean
   return parseRepoSlug(repository)?.slug.toLowerCase() === SELF_REPOSITORY;
 }
 
+const EVIDENCE_BLOCKED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  ".output",
+  "dist",
+  "coverage",
+  "playwright-report",
+  "test-results",
+  ".vercel",
+  ".tanstack",
+  ".nitro",
+  ".wrangler",
+  ".next",
+  "BUFFY_TASK_OUTPUT",
+]);
+
+const EVIDENCE_BLOCKED_BASENAMES = new Set([
+  ".env",
+  ".npmrc",
+  ".netrc",
+  ".pypirc",
+  "id_rsa",
+  "id_ed25519",
+]);
+
+const EVIDENCE_ALLOWED_BASENAMES = new Set([
+  "Dockerfile",
+  "Makefile",
+  "Procfile",
+  "Gemfile",
+  "Rakefile",
+  "LICENSE",
+  "README",
+  "go.mod",
+  "go.sum",
+]);
+
+const EVIDENCE_ALLOWED_EXTENSION =
+  /\.(?:[cm]?[jt]sx?|py|go|rs|sql|md|json|ya?ml|toml|css|scss|sass|less|html?|txt|proto|graphql|gql|sh|bash|zsh|rb|java|kt|kts|cs|php|swift|scala|dart|ex|exs|erl|hs|lua|r|vue|svelte|astro)$/i;
+
+/**
+ * Source evidence may only read ordinary source and documentation files.
+ * A path is not allowed to escape the workspace, enter a build or dependency
+ * directory, or name a secret, key, environment, or credential file. This is
+ * deliberately an allowlist of extensions, not a denylist of known filenames.
+ */
+export function isSafeEvidencePath(value: string): boolean {
+  const path = value.trim();
+  if (!path || path.length > 300) return false;
+  if (path.startsWith("/") || path.startsWith("~") || path.includes("\\") || path.includes("\0"))
+    return false;
+  if (/(^|\/)\.\.($|\/)/.test(path)) return false;
+  const parts = path.split("/");
+  if (parts.some((part) => !part || part === "." || part.startsWith("."))) return false;
+  if (parts.some((part) => EVIDENCE_BLOCKED_DIRS.has(part))) return false;
+  const base = parts.at(-1) ?? "";
+  if (EVIDENCE_BLOCKED_BASENAMES.has(base)) return false;
+  if (EVIDENCE_ALLOWED_BASENAMES.has(base)) return true;
+  return EVIDENCE_ALLOWED_EXTENSION.test(base);
+}
+
+/** Strip the full file body before returning evidence to a public response. */
+export function withoutContent<T extends { content: string }>(value: T): Omit<T, "content"> {
+  const { content, ...rest } = value;
+  return rest;
+}
+
 /** GitHub blob URL that opens the exact line the user clicked. */
 export function githubBlobUrl({
   repository,

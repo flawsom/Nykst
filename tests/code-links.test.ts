@@ -5,8 +5,10 @@ import {
   describeLine,
   editorFileUrl,
   githubBlobUrl,
+  isSafeEvidencePath,
   isSelfRepository,
   parseRepoSlug,
+  withoutContent,
 } from "../src/lib/code-links";
 
 describe("parseRepoSlug", () => {
@@ -77,5 +79,45 @@ describe("describeLine", () => {
     expect(describeLine("  const rows = await db.from('users').select('id');", 1)).toContain(
       "database resource",
     );
+  });
+});
+
+describe("source evidence path policy", () => {
+  test("accepts ordinary source, tests, SQL and documentation", () => {
+    for (const path of [
+      "src/lib/code-links.ts",
+      "src/routes/[.]well-known.$.ts",
+      "tests/code-links.test.ts",
+      "supabase/migrations/20261030130000_razorpay_subscriptions.sql",
+      "README.md",
+      "Dockerfile",
+    ])
+      expect(isSafeEvidencePath(path)).toBe(true);
+  });
+
+  test("rejects environment, secret, dependency, build and traversal paths", () => {
+    for (const path of [
+      ".env",
+      ".env.local",
+      "src/.env",
+      ".git/config",
+      "node_modules/pkg/index.ts",
+      "dist/assets/app.js",
+      "playwright-report/index.html",
+      "secrets/key.pem",
+      "../outside.ts",
+      "src/../.env",
+      "/etc/passwd",
+      "src\\windows.ts",
+      "id_rsa",
+    ])
+      expect(isSafeEvidencePath(path)).toBe(false);
+  });
+
+  test("never forwards the full file body in a public response", () => {
+    const value = { path: "src/a.ts", content: "secret source", excerpt: "window" };
+    const safe = withoutContent(value);
+    expect(safe).toEqual({ path: "src/a.ts", excerpt: "window" });
+    expect("content" in safe).toBe(false);
   });
 });

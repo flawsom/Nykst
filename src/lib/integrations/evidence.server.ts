@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { join, sep } from "node:path";
 import {
   SELF_REPOSITORY,
   buildCodeExcerpt,
@@ -7,6 +7,7 @@ import {
   editorFileUrl,
   focusLine,
   githubBlobUrl,
+  isSafeEvidencePath,
   isSelfRepository,
   parseRepoSlug,
 } from "@/lib/code-links";
@@ -76,11 +77,16 @@ function scanImports(content: string) {
 }
 
 function localSource(path: string): string | null {
-  if (path.includes("..")) return null;
+  if (!isSafeEvidencePath(path)) return null;
   const absolute = join(process.cwd(), path);
   if (!existsSync(absolute)) return null;
   try {
-    return readFileSync(absolute, "utf8");
+    // Resolve symlinks before reading so a link inside the repository cannot
+    // turn an allowed source path into a read outside the workspace.
+    const root = realpathSync(process.cwd());
+    const resolved = realpathSync(absolute);
+    if (resolved !== root && !resolved.startsWith(`${root}${sep}`)) return null;
+    return readFileSync(resolved, "utf8");
   } catch {
     return null;
   }
@@ -107,7 +113,7 @@ export async function loadCodeEvidence({
   radius?: number;
 }): Promise<CodeEvidence | null> {
   const slug = parseRepoSlug(repository);
-  if (!slug || !path) return null;
+  if (!slug || !path || !isSafeEvidencePath(path)) return null;
   const target = (ref ?? "").trim() || "main";
   const focus = line && line > 0 ? Math.floor(line) : null;
   const self = isSelfRepository(slug.slug);

@@ -97,7 +97,7 @@ export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props
     setLoadingEvidence(true);
     setEvidence(null);
     fetch(
-      `/api/integrations/github/file-evidence?owner=${encodeURIComponent(owner!)}&repo=${encodeURIComponent(repo!)}&path=${encodeURIComponent(filePath)}&branch=${encodeURIComponent(repositorySnapshot?.repository?.default_branch ?? "main")}`,
+      `/api/integrations/github/file-evidence?owner=${encodeURIComponent(owner!)}&repo=${encodeURIComponent(repo!)}&path=${encodeURIComponent(filePath)}&branch=${encodeURIComponent(repositorySnapshot?.repository?.default_branch ?? "main")}&full=1`,
     )
       .then(async (response) => {
         const payload = (await response.json()) as { evidence?: Evidence; error?: string };
@@ -172,7 +172,9 @@ export function NodeInspector({ node, open, onClose, repositorySnapshot }: Props
               {content}
             </pre>
           ) : (
-            unavailable("No file content was returned by GitHub.")
+            unavailable(
+              "Connect GitHub to preview the full file, or open the exact file on GitHub.",
+            )
           )}
         </Card>
         <div className="grid gap-3 sm:grid-cols-2">

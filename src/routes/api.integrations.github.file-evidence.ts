@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { githubError, githubFileEvidence, githubToken, json } from "@/lib/integrations/github";
-import { isSelfRepository, parseRepoSlug } from "@/lib/code-links";
+import {
+  githubError,
+  githubFileEvidence,
+  githubToken,
+  githubUser,
+  json,
+} from "@/lib/integrations/github";
+import {
+  isSafeEvidencePath,
+  isSelfRepository,
+  parseRepoSlug,
+  withoutContent,
+} from "@/lib/code-links";
 import { loadCodeEvidence } from "@/lib/integrations/evidence.server";
 
 function clean(value: string | null, max: number) {
@@ -39,11 +50,33 @@ export const Route = createFileRoute("/api/integrations/github/file-evidence")({
           const radius =
             Number.isFinite(radiusParam) && radiusParam > 0 ? Math.min(radiusParam, 80) : 20;
 
-          if (!slug || !path || path.includes("..")) {
+          if (!slug || !path || path.includes("..") || !isSafeEvidencePath(path)) {
             return json(
-              { error: "A safe GitHub repository and file path are required." },
+              { error: "A safe source or documentation file path is required." },
               { status: 400 },
             );
+          }
+
+          const self = isSelfRepository(slug.slug);
+          if (!token && !self) {
+            return json(
+              { error: "Connect GitHub to read source for this repository." },
+              { status: 401 },
+            );
+          }
+
+          const wantsFull = url.searchParams.get("full") === "1";
+          if (wantsFull && !token) {
+            return json({ error: "Connect GitHub to preview the full file." }, { status: 401 });
+          }
+          if (wantsFull && token) {
+            try {
+              // A cookie is not proof of a working connection. Validate the token
+              // before the self-workspace path can return a full file body.
+              await githubUser(token);
+            } catch {
+              return json({ error: "Connect GitHub to preview the full file." }, { status: 401 });
+            }
           }
 
           const evidence = await loadCodeEvidence({
@@ -65,9 +98,9 @@ export const Route = createFileRoute("/api/integrations/github/file-evidence")({
 
           // The full history dossier costs ~40 API calls, so only build it when the
           // caller actually wants the inspector panel and not a single line jump.
-          const wantsHistory = line === null || url.searchParams.get("full") === "1";
+          const wantsHistory = line === null || wantsFull;
           let history: Partial<Awaited<ReturnType<typeof githubFileEvidence>>> = {};
-          if (wantsHistory && token && !isSelfRepository(slug.slug)) {
+          if (wantsHistory && token && !self) {
             try {
               history = await githubFileEvidence(token, slug.owner, slug.repo, path, ref || "main");
             } catch {
@@ -78,7 +111,7 @@ export const Route = createFileRoute("/api/integrations/github/file-evidence")({
           return json({
             evidence: {
               ...history,
-              ...evidence,
+              ...(wantsFull && token ? evidence : withoutContent(evidence)),
               repository: slug.slug,
               sha: history.sha ?? evidence.sha,
               dependents: history.dependents ?? [],
