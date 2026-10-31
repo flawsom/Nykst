@@ -2,9 +2,26 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileCode2, Files, Layers, ShieldCheck } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/limits")({
-  head: () => ({ meta: [{ title: "Limits · Nykst" }] }),
+  head: () => ({
+    meta: [
+      { title: "Limits · Nykst" },
+      {
+        name: "description",
+        content:
+          "The repository, file and analysis limits Nykst applies, and what the map says when a limit is reached.",
+      },
+      ...shareMeta({
+        title: "Limits · Nykst",
+        description:
+          "The repository, file and analysis limits Nykst applies, and what the map says when a limit is reached.",
+        path: "/limits",
+      }),
+    ],
+    links: [{ rel: "canonical", href: canonicalUrl("/limits") }],
+  }),
   component: LimitsPage,
 });
 

@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700" role="img" aria-labelledby="nykstHeroTitle nykstHeroDescription">
+  <title id="nykstHeroTitle">Nykst: know what your next change will touch</title>
+  <desc id="nykstHeroDescription">A deep forest banner with the Nykst mark, the product promise, four verified product facts, and a system map showing files, services, and database tables connected around one repository.</desc>
+  <defs>
+    <linearGradient id="nykst-hero-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#030906"/>
+      <stop offset="52%" stop-color="#06110C"/>
+      <stop offset="100%" stop-color="#0B1912"/>
+    </linearGradient>
+    <radialGradient id="nykst-hero-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#183328" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#06110C" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#030906" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="nykst-hero-rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#A31C1B" stop-opacity="0"/>
+      <stop offset="18%" stop-color="#A31C1B" stop-opacity="0.9"/>
+      <stop offset="72%" stop-color="#C7B99B" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#C7B99B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="nykst-hero-panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1912"/>
+      <stop offset="100%" stop-color="#171717"/>
+    </linearGradient>
+    <linearGradient id="nykst-hero-edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A31C1B"/>
+      <stop offset="100%" stop-color="#C7B99B"/>
+    </linearGradient>
+    <radialGradient id="nykst-hero-core" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A31C1B" stop-opacity="0.42"/>
+      <stop offset="68%" stop-color="#741514" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#741514" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="nykst-hero-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M80 0H0v80" fill="none" stroke="#183328" stroke-width="1"/>
+    </pattern>
+    <pattern id="nykst-hero-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#C7B99B" opacity="0.22"/>
+    </pattern>
+    <filter id="nykst-hero-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+    <filter id="nykst-hero-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="700" fill="url(#nykst-hero-bg)"/>
+  <rect width="1600" height="700" fill="url(#nykst-hero-grid)" opacity="0.34"/>
+  <rect width="1600" height="700" fill="url(#nykst-hero-dots)" opacity="0.22"/>
+  <ellipse cx="340" cy="70" rx="540" ry="360" fill="url(#nykst-hero-glow)" opacity="0.55"/>
+  <ellipse cx="1330" cy="590" rx="520" ry="360" fill="url(#nykst-hero-glow)" opacity="0.35"/>
+
+  <g opacity="0.5">
+    <path d="M0 582C240 540 378 614 604 566C824 520 1016 574 1230 536C1390 508 1510 530 1600 500" fill="none" stroke="#183328" stroke-width="1"/>
+    <path d="M0 608C252 566 390 640 616 592C836 546 1028 600 1242 562C1402 534 1522 556 1600 526" fill="none" stroke="#183328" stroke-width="1" opacity="0.65"/>
+  </g>
+
+  <rect x="72" y="60" width="1456" height="580" rx="30" fill="#06110C" fill-opacity="0.48" stroke="#183328" stroke-width="1.2"/>
+  <rect x="73" y="61" width="1454" height="1" fill="url(#nykst-hero-rule)" opacity="0.8"/>
+  <g filter="url(#nykst-hero-shadow)">
+    <rect x="908" y="112" width="536" height="476" rx="24" fill="url(#nykst-hero-panel)" stroke="#183328" stroke-width="1.2"/>
+  </g>
+
+  <g transform="translate(112 112)">
+    <rect width="80" height="80" rx="20" fill="#030906" stroke="#183328" stroke-width="1.4"/>
+    <polygon points="40,9 66,23.5 66,56.5 40,71 14,56.5 14,23.5" fill="none" stroke="#C7B99B" stroke-opacity="0.28" stroke-width="1.2"/>
+    <path d="M23,56 L23,24 L57,56 L57,24" fill="none" stroke="#F2EDE3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="23" cy="24" r="4" fill="#030906" stroke="#C7B99B" stroke-width="2"/>
+    <circle cx="57" cy="56" r="4" fill="#030906" stroke="#A31C1B" stroke-width="2.4"/>
+    <circle cx="23" cy="56" r="3" fill="#A31C1B"/>
+    <circle cx="57" cy="24" r="3" fill="#741514"/>
+    <circle cx="40" cy="40" r="3.4" fill="#F2EDE3"/>
+  </g>
+
+  <text x="212" y="146" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" font-weight="700" letter-spacing="12" fill="#F2EDE3">NYKST</text>
+  <text x="214" y="174" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" letter-spacing="3.4" fill="#969B96">SYSTEM INTELLIGENCE</text>
+
+  <text x="112" y="294" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="64" font-weight="600" letter-spacing="-3" fill="#F2EDE3">Know what your</text>
+  <text x="112" y="364" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="64" font-weight="600" letter-spacing="-3" fill="#F2EDE3">next change will touch.</text>
+
+  <rect x="112" y="408" width="62" height="2" rx="1" fill="#A31C1B"/>
+  <text x="190" y="414" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" letter-spacing="2.8" fill="#C7B99B">SOURCE EVIDENCE, NOT A GUESS</text>
+
+  <text x="112" y="462" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" fill="#C9CEC8">One live map of every file, service and database table.</text>
+  <text x="112" y="492" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" fill="#969B96">See the blast radius before the first line changes.</text>
+
+  <g transform="translate(112 540)">
+    <g>
+      <rect width="156" height="58" rx="12" fill="#0B1912" stroke="#183328"/>
+      <text x="16" y="24" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#F2EDE3">278</text>
+      <text x="16" y="43" font-family="'SFMono-Regular', Consolas, monospace" font-size="8.5" letter-spacing="1.6" fill="#969B96">FILES MAPPED</text>
+    </g>
+    <g transform="translate(172 0)">
+      <rect width="156" height="58" rx="12" fill="#0B1912" stroke="#183328"/>
+      <text x="16" y="24" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#F2EDE3">630</text>
+      <text x="16" y="43" font-family="'SFMono-Regular', Consolas, monospace" font-size="8.5" letter-spacing="1.6" fill="#969B96">IMPORT EDGES</text>
+    </g>
+    <g transform="translate(344 0)">
+      <rect width="156" height="58" rx="12" fill="#0B1912" stroke="#183328"/>
+      <text x="16" y="24" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#F2EDE3">11</text>
+      <text x="16" y="43" font-family="'SFMono-Regular', Consolas, monospace" font-size="8.5" letter-spacing="1.6" fill="#969B96">READ-ONLY TOOLS</text>
+    </g>
+    <g transform="translate(516 0)">
+      <rect width="156" height="58" rx="12" fill="#2A0B0B" stroke="#741514"/>
+      <text x="16" y="24" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#F2EDE3">0</text>
+      <text x="16" y="43" font-family="'SFMono-Regular', Consolas, monospace" font-size="8.5" letter-spacing="1.6" fill="#D04440">WRITE SCOPES</text>
+    </g>
+  </g>
+
+  <g transform="translate(1176 350)">
+    <circle r="176" fill="none" stroke="#183328" stroke-width="1" stroke-dasharray="2 12" opacity="0.8"/>
+    <circle r="112" fill="none" stroke="#183328" stroke-width="1" opacity="0.9"/>
+    <circle r="70" fill="url(#nykst-hero-core)"/>
+    <circle r="52" fill="#06110C" stroke="#A31C1B" stroke-width="1.6"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#F2EDE3">NYKST</text>
+    <text x="0" y="14" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace" font-size="7.5" letter-spacing="1.8" fill="#C7B99B">REAL PROJECT MAP</text>
+
+    <path d="M0 0C-70 -90 -160 -110 -232 -92" fill="none" stroke="url(#nykst-hero-edge)" stroke-width="1.4" opacity="0.75"/>
+    <path d="M0 0C64 -96 152 -124 224 -102" fill="none" stroke="#183328" stroke-width="1.4"/>
+    <path d="M0 0C112 -24 198 -12 258 38" fill="none" stroke="#183328" stroke-width="1.4"/>
+    <path d="M0 0C112 54 174 104 188 162" fill="none" stroke="#183328" stroke-width="1.4"/>
+    <path d="M0 0C62 92 18 154 -52 184" fill="none" stroke="#183328" stroke-width="1.4"/>
+    <path d="M0 0C-62 88 -150 132 -224 104" fill="none" stroke="#183328" stroke-width="1.4"/>
+
+    <g transform="translate(-238 -96)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#741514"/>
+      <circle cx="12" cy="0" r="3" fill="#D04440"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">src/lib</text>
+    </g>
+    <g transform="translate(228 -108)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#183328"/>
+      <circle cx="12" cy="0" r="3" fill="#C7B99B"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">src/routes</text>
+    </g>
+    <g transform="translate(268 42)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#183328"/>
+      <circle cx="12" cy="0" r="3" fill="#969B96"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">supabase</text>
+    </g>
+    <g transform="translate(194 170)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#183328"/>
+      <circle cx="12" cy="0" r="3" fill="#969B96"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">GitHub API</text>
+    </g>
+    <g transform="translate(-56 190)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#183328"/>
+      <circle cx="12" cy="0" r="3" fill="#C7B99B"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">tests</text>
+    </g>
+    <g transform="translate(-232 108)">
+      <rect x="-4" y="-16" width="112" height="32" rx="8" fill="#0B1912" stroke="#183328"/>
+      <circle cx="12" cy="0" r="3" fill="#969B96"/>
+      <text x="24" y="4" font-family="'SFMono-Regular', Consolas, monospace" font-size="10" fill="#F2EDE3">packages</text>
+    </g>
+
+    <circle cx="-232" cy="-92" r="4" fill="#D04440"/>
+    <circle cx="224" cy="-102" r="4" fill="#C7B99B"/>
+    <circle cx="258" cy="38" r="4" fill="#969B96"/>
+  </g>
+
+  <text x="936" y="146" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="9" letter-spacing="2.4" fill="#C7B99B">LIVE SYSTEM MAP</text>
+  <text x="936" y="168" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#F2EDE3">Every answer has a file and a line.</text>
+
+  <g transform="translate(936 542)">
+    <circle cx="4" cy="4" r="4" fill="#A31C1B"/>
+    <text x="18" y="8" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="9" letter-spacing="1.6" fill="#969B96">READ-ONLY GITHUB ACCESS</text>
+  </g>
+  <text x="1424" y="654" text-anchor="end" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="9" letter-spacing="2" fill="#969B96">NYKST.UNIFIES.CODES</text>
+
+  <rect x="112" y="640" width="1376" height="1" fill="url(#nykst-hero-rule)" opacity="0.7"/>
+</svg>

@@ -86,7 +86,7 @@ export function NykstBrand({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <NykstMark size={size} className="transition-transform duration-300 group-hover:scale-105" />
       <span className="flex flex-col leading-none">
-        <span className="text-[14px] font-bold tracking-[0.26em] uppercase text-foreground">
+        <span className="font-display text-[14px] font-bold tracking-[0.24em] uppercase text-foreground">
           Nykst
         </span>
         {subtitle && (

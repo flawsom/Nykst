@@ -26,5 +26,5 @@
     <circle cx="30" cy="30" r="3.2" fill="#5eead4"/>
   </g>
   <text x="78" y="37" font-family="Inter, Space Grotesk, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="700" letter-spacing="6" fill="url(#logo-word)">NYKST</text>
-  <text x="80" y="52" font-family="JetBrains Mono, SFMono-Regular, monospace" font-size="9.5" letter-spacing="2.6" fill="#5eead4">GRAPH-RAG ARCHITECTURE</text>
+  <text x="80" y="52" font-family="JetBrains Mono, SFMono-Regular, monospace" font-size="9.5" letter-spacing="2.6" fill="#5eead4">SYSTEM INTELLIGENCE</text>
 </svg>

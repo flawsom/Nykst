@@ -3,9 +3,24 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, GitCommitHorizontal, ShieldCheck } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/changelog")({
-  head: () => ({ meta: [{ title: "Changelog · Nykst" }] }),
+  head: () => ({
+    meta: [
+      { title: "Changelog · Nykst" },
+      {
+        name: "description",
+        content: "What changed in Nykst, written for the people using it.",
+      },
+      ...shareMeta({
+        title: "Changelog · Nykst",
+        description: "What changed in Nykst, written for the people using it.",
+        path: "/changelog",
+      }),
+    ],
+    links: [{ rel: "canonical", href: canonicalUrl("/changelog") }],
+  }),
   component: ChangelogPage,
 });
 
@@ -65,8 +80,9 @@ function ChangelogPage() {
           <Entry date="29 October 2026" title="A simpler way to start">
             <ul className="list-disc space-y-1.5 pl-5">
               <li>
-                The plans page is now a real conversation. Tell us about your codebase and we set
-                your workspace up with you, instead of showing a button that could not complete.
+                The plans page now shows the live monthly and annual terms, including the 7-day
+                trial, the refund window, GST and the checkout state read from the plans API. The
+                weekly plan stays visibly gated until its refund window is decided.
               </li>
               <li>
                 Privacy requests now get a reference straight away, and a person replies within 2

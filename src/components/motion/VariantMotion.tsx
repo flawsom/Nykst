@@ -287,6 +287,10 @@ export function AnimatedCounter({
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(value);
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0]?.isIntersecting || hasAnimated.current) return;
@@ -357,7 +361,6 @@ export function BlurReveal({
       style={{
         transitionDelay: `${delayMs}ms`,
         opacity: visible ? 1 : 0,
-        filter: visible ? "blur(0px)" : "blur(8px)",
         transform: visible ? "translate3d(0, 0, 0)" : "translate3d(0, 18px, 0)",
       }}
     >

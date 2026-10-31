@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import type { LiveSelfAnalysis } from "@/components/graph/LiveGraphRagExplorer";
-import { TiltCard } from "@/components/motion/VariantMotion";
+import { RefreshCw } from "lucide-react";
 
 const W = 780;
 const H = 640;
@@ -9,81 +8,98 @@ const CY = 316;
 const RADIUS_X = 286;
 const RADIUS_Y = 228;
 
+export type LandingMapData = {
+  repository: string;
+  generatedAt?: string;
+  stats: {
+    analyzedFiles: number;
+    internalEdges: number;
+    loc: number;
+  };
+  domains: Array<{
+    domain: string;
+    files: number;
+    loc: number;
+    edgesOut: number;
+    edgesIn: number;
+    sampleFiles: string[];
+  }>;
+};
+
 /**
- * Live interactive map preview rendered from the real analysis of flawsom/nykst (or the
- * connected repository). Zero static or hardcoded fallback arrays.
+ * The hero shows the last compiled map immediately, then swaps to the live
+ * analysis when it arrives. That is real evidence, not a loading illustration,
+ * and the first screen never depends on a slow request to become useful.
  */
 export function LandingGraphPreview({
   className,
-  liveData,
+  data,
+  isLive,
   onSelectDomain,
+  onRetry,
+  retryLabel,
 }: {
   className?: string;
-  liveData?: LiveSelfAnalysis | null;
+  data: LandingMapData;
+  isLive: boolean;
   onSelectDomain?: (sampleFile: string) => void;
+  onRetry?: () => void;
+  retryLabel?: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 90);
+    const timer = window.setTimeout(() => setMounted(true), 80);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const rawDomains = liveData?.domains?.slice(0, 10) ?? [];
-
-  const satellites = rawDomains.map((d, i) => {
-    const angle = (i / Math.max(rawDomains.length, 1)) * Math.PI * 2 - Math.PI / 2;
+  const rawDomains = data.domains.slice(0, 10);
+  const satellites = rawDomains.map((domain, index) => {
+    const angle = (index / Math.max(rawDomains.length, 1)) * Math.PI * 2 - Math.PI / 2;
     return {
-      ...d,
+      ...domain,
       x: CX + Math.cos(angle) * RADIUS_X,
       y: CY + Math.sin(angle) * RADIUS_Y,
     };
   });
-
-  const stats = liveData?.stats;
+  const stats = data.stats;
+  const savedDate = data.generatedAt
+    ? new Date(data.generatedAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
 
   return (
-    <TiltCard maxTilt={4} className={className}>
+    <div className={className}>
       <div
-        className="border-border bg-card/95 relative overflow-hidden rounded-2xl border"
+        className="border-border bg-card relative overflow-hidden rounded-2xl border"
         style={{ boxShadow: "var(--shadow-panel)" }}
       >
-        <div className="border-border/80 flex items-center justify-between border-b px-4 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-red-400/80" />
-            <span className="size-2 rounded-full bg-amber-400/80" />
-            <span className="size-2 rounded-full bg-emerald-400/80" />
-            <span className="text-muted-foreground ml-2 truncate font-mono text-[10px] tracking-wide">
-              nykst://map/{liveData?.repository ?? "reading..."}
+        <div className="border-border/80 flex items-center justify-between gap-3 border-b px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={`size-1.5 shrink-0 rounded-full ${isLive ? "bg-primary animate-pulse" : "bg-muted-foreground"}`}
+            />
+            <span className="text-muted-foreground truncate font-mono text-[10px] tracking-[0.14em] uppercase">
+              {data.repository} · system map
             </span>
           </div>
-          <span className="border-primary/40 bg-primary/15 text-primary flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase">
-            <span className="bg-primary size-1.5 rounded-full animate-pulse" />
-            {stats ? `live map · ${stats.analyzedFiles} files` : "reading the repository…"}
+          <span className="text-muted-foreground shrink-0 font-mono text-[9px] tracking-[0.14em] uppercase">
+            {isLive ? "Live analysis" : savedDate ? `Saved ${savedDate}` : "Saved analysis"}
           </span>
         </div>
 
         <div className="relative">
-          <div className="pointer-events-none absolute inset-0 bg-grid" />
+          <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
           <svg
             viewBox={`0 0 ${W} ${H}`}
             className="relative block h-auto w-full"
             role="img"
-            aria-label="Live Nykst map showing the parts of the project, their file counts, connections and lines of code"
+            aria-label={`Nykst system map of ${data.repository}, showing ${stats.analyzedFiles} files and ${stats.internalEdges} import connections in ${rawDomains.length} areas`}
           >
-            <defs>
-              <radialGradient id="landing-halo">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.34" />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-              </radialGradient>
-              <linearGradient id="landing-edge" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.65" />
-                <stop offset="100%" stopColor="var(--node-domain)" stopOpacity="0.18" />
-              </linearGradient>
-            </defs>
-
-            <circle cx={CX} cy={CY} r={224} fill="url(#landing-halo)" className="animate-halo" />
             <circle
               cx={CX}
               cy={CY}
@@ -91,7 +107,7 @@ export function LandingGraphPreview({
               fill="none"
               stroke="var(--border)"
               strokeDasharray="2 10"
-              strokeOpacity="0.7"
+              strokeOpacity="0.75"
             />
             <circle
               cx={CX}
@@ -100,62 +116,60 @@ export function LandingGraphPreview({
               fill="none"
               stroke="var(--border)"
               strokeDasharray="2 14"
-              strokeOpacity="0.45"
+              strokeOpacity="0.5"
+              className="animate-orbit-pulse"
             />
 
-            {satellites.map((node, i) => {
-              const isHovered = hoveredIdx === i;
+            {satellites.map((node, index) => {
+              const isHovered = hoveredIdx === index;
               const mx = (CX + node.x) / 2;
               const my = (CY + node.y) / 2;
               const dx = node.x - CX;
               const dy = node.y - CY;
-              const len = Math.hypot(dx, dy) || 1;
-              const qx = mx + (-dy / len) * len * 0.14;
-              const qy = my + (dx / len) * len * 0.14;
-              const pathD = mounted
+              const length = Math.hypot(dx, dy) || 1;
+              const qx = mx + (-dy / length) * length * 0.14;
+              const qy = my + (dx / length) * length * 0.14;
+              const path = mounted
                 ? `M ${CX} ${CY} Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${node.x.toFixed(1)} ${node.y.toFixed(1)}`
                 : `M ${CX} ${CY} Q ${CX} ${CY} ${CX} ${CY}`;
               return (
                 <g key={node.domain}>
                   <path
-                    d={pathD}
+                    d={path}
                     fill="none"
-                    stroke={isHovered ? "var(--primary)" : "var(--primary)"}
-                    strokeWidth={isHovered ? 2.4 : 1.4}
-                    strokeOpacity={isHovered ? 1 : 0.55}
-                    strokeDasharray="4 26"
-                    className="animate-edge-pulse pointer-events-none"
-                    style={{ animationDelay: `${(i % 8) * 0.42}s` }}
-                  />
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={isHovered ? "var(--primary)" : "url(#landing-edge)"}
-                    strokeWidth={isHovered ? 2.2 : 1.3}
-                    className="edge-flow transition-all duration-700"
-                    style={{ transitionDelay: `${i * 35}ms` }}
+                    stroke="var(--primary)"
+                    strokeWidth={isHovered ? 1.8 : 1}
+                    strokeOpacity={isHovered ? 0.9 : 0.3}
+                    strokeDasharray={isHovered ? "5 9" : undefined}
+                    className={`pointer-events-none transition-all duration-500 ${isHovered ? "animate-edge-pulse" : ""}`}
                   />
                 </g>
               );
             })}
 
-            {satellites.map((node, i) => {
+            {satellites.map((node, index) => {
               const width = 178;
               const height = 42;
-              const isHovered = hoveredIdx === i;
-              const sampleFile =
-                Array.isArray(node.sampleFiles) && node.sampleFiles[0]
-                  ? node.sampleFiles[0]
-                  : "src/lib/analysis/engine.server.ts";
+              const isHovered = hoveredIdx === index;
+              const sampleFile = node.sampleFiles[0] ?? "";
+              const canOpen = Boolean(sampleFile && onSelectDomain);
               return (
                 <g
                   key={node.domain}
                   transform={`translate(${mounted ? node.x : CX}, ${mounted ? node.y : CY})`}
-                  className="cursor-pointer transition-all duration-700 ease-out"
-                  style={{ transitionDelay: `${i * 35}ms`, opacity: mounted ? 1 : 0 }}
-                  onMouseEnter={() => setHoveredIdx(i)}
+                  className={canOpen ? "cursor-pointer" : undefined}
+                  style={{
+                    transition: "transform 600ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease",
+                    transitionDelay: `${index * 28}ms`,
+                    opacity: mounted ? 1 : 0,
+                    filter:
+                      isHovered && canOpen ? "drop-shadow(0 0 7px var(--primary))" : undefined,
+                  }}
+                  onMouseEnter={() => setHoveredIdx(index)}
                   onMouseLeave={() => setHoveredIdx(null)}
-                  onClick={() => onSelectDomain?.(sampleFile)}
+                  onClick={() => {
+                    if (canOpen) onSelectDomain?.(sampleFile);
+                  }}
                   data-preview-domain={node.domain}
                 >
                   <rect
@@ -163,16 +177,16 @@ export function LandingGraphPreview({
                     y={-height / 2}
                     width={width}
                     height={height}
-                    rx={10}
+                    rx={8}
                     fill="var(--surface)"
-                    stroke={isHovered ? "var(--primary)" : "var(--border)"}
-                    strokeWidth={isHovered ? 1.6 : 1}
+                    stroke={isHovered && canOpen ? "var(--primary)" : "var(--border)"}
+                    strokeWidth={isHovered && canOpen ? 1.4 : 1}
                   />
                   <circle
                     cx={-width / 2 + 14}
                     cy={-3}
-                    r={3.4}
-                    fill={isHovered ? "var(--primary)" : "var(--node-domain)"}
+                    r={3}
+                    fill={isHovered ? "var(--primary)" : "var(--muted-foreground)"}
                   />
                   <text
                     x={-width / 2 + 24}
@@ -200,7 +214,7 @@ export function LandingGraphPreview({
                 r={76}
                 fill="var(--surface)"
                 stroke="var(--primary)"
-                strokeWidth={1.8}
+                strokeWidth={1.5}
               />
               <circle
                 cx={CX}
@@ -208,16 +222,17 @@ export function LandingGraphPreview({
                 r={94}
                 fill="none"
                 stroke="var(--primary)"
-                strokeOpacity={0.28}
+                strokeOpacity={0.25}
                 strokeDasharray="3 8"
+                className="animate-orbit-pulse"
               />
               <text
                 x={CX}
                 y={CY - 14}
                 textAnchor="middle"
-                className="fill-foreground text-[19px] font-bold tracking-tight"
+                className="fill-foreground font-display text-[19px] font-semibold tracking-tight"
               >
-                {liveData?.repository ? liveData.repository.split("/").pop() : "nykst"}
+                {data.repository.split("/").pop()}
               </text>
               <text
                 x={CX}
@@ -225,7 +240,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-primary font-mono text-[8.5px] tracking-[0.24em] uppercase"
               >
-                PROJECT MAP
+                Real project map
               </text>
               <text
                 x={CX}
@@ -233,30 +248,7 @@ export function LandingGraphPreview({
                 textAnchor="middle"
                 className="fill-muted-foreground font-mono text-[8.5px]"
               >
-                {stats
-                  ? `${stats.internalEdges} connections · ${stats.loc.toLocaleString()} lines`
-                  : "loading live topology…"}
-              </text>
-            </g>
-
-            <g transform={`translate(${CX - 112}, ${CY + 116})`}>
-              <rect
-                x={0}
-                y={0}
-                width={224}
-                height={26}
-                rx={13}
-                fill="var(--surface-2)"
-                stroke="var(--primary)"
-                strokeOpacity={0.4}
-              />
-              <text
-                x={112}
-                y={17}
-                textAnchor="middle"
-                className="fill-primary font-mono text-[9px] font-semibold tracking-[0.12em] uppercase"
-              >
-                click any area to see what it connects to
+                {stats.internalEdges} connections · {stats.loc.toLocaleString()} lines
               </text>
             </g>
 
@@ -266,7 +258,9 @@ export function LandingGraphPreview({
               textAnchor="middle"
               className="fill-muted-foreground font-mono text-[9px]"
             >
-              {stats ? "Read from this repository, not a sample" : "Reading this repository"}
+              {isLive
+                ? "Read from this repository in this page load"
+                : "The last compiled map. Live analysis starts when the server answers."}
             </text>
           </svg>
         </div>
@@ -277,17 +271,28 @@ export function LandingGraphPreview({
               <span className="bg-primary inline-block size-1.5 rounded-full" /> Repository root
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> part of the
-              system
+              <span className="bg-node-domain inline-block size-1.5 rounded-full" /> project area
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="bg-node-service inline-block size-1.5 rounded-full" /> services and
+              <span className="bg-node-service inline-block size-1.5 rounded-full" /> service or
               data
             </span>
           </span>
-          <span className="text-primary">files · connections</span>
+          {isLive ? (
+            <span className="text-primary">
+              {stats.analyzedFiles} files · {stats.internalEdges} connections
+            </span>
+          ) : onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-primary inline-flex items-center gap-1.5 hover:underline"
+            >
+              <RefreshCw className="size-3" /> {retryLabel ?? "Refresh live map"}
+            </button>
+          ) : null}
         </div>
       </div>
-    </TiltCard>
+    </div>
   );
 }

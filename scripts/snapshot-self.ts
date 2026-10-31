@@ -16,6 +16,7 @@ import {
   MAX_SOURCE_BYTES,
   wantsContent,
 } from "../src/lib/analysis/engine.server";
+import { domainSummaries } from "../src/lib/analysis/domains";
 
 const IGNORED = new Set([
   ".git",
@@ -88,6 +89,7 @@ writeFileSync(
       resourceCount: analysis.resources.length,
       serviceCount: analysis.services.length,
       generatedAt: analysis.generatedAt,
+      domains: domainSummaries(analysis),
     },
     null,
     2,

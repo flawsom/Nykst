@@ -13,6 +13,7 @@ import {
   TOOLS,
 } from "@/lib/mcp-guides";
 import { cn } from "@/lib/utils";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/mcp")({
   head: () => ({
@@ -23,12 +24,13 @@ export const Route = createFileRoute("/mcp")({
         content:
           "Setup guides for Claude Code, Cursor, VS Code, Codex, Gemini CLI, Windsurf, Cline, Zed and Claude Desktop. Let your AI agent ask Nykst what a change will break before it writes code.",
       },
-      { property: "og:title", content: "Connect Nykst to your AI coding agent" },
-      {
-        property: "og:description",
-        content: "Your agent asks Nykst what a change will break before it writes code.",
-      },
+      ...shareMeta({
+        title: "Connect Nykst to your AI coding agent",
+        description: "Your agent asks Nykst what a change will break before it writes code.",
+        path: "/mcp",
+      }),
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/mcp") }],
   }),
   component: McpGuidePage,
 });
@@ -168,12 +170,12 @@ function McpGuidePage() {
             never writes to them.
           </StepHeading>
           <div className="pl-9">
-            <Link
-              to="/"
+            <a
+              href="/api/integrations/github/start?returnTo=%2Fmcp"
               className="border-border bg-surface hover:bg-surface-2 inline-block rounded-lg border px-4 py-2 text-xs font-semibold transition-colors"
             >
               Connect GitHub and map a repo →
-            </Link>
+            </a>
           </div>
         </section>
 

@@ -28,6 +28,7 @@ import { subscribeToIngestion } from "@/lib/realtime";
 import { isSelfRepository } from "@/lib/code-links";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { NykstBrand } from "@/components/brand/NykstLogo";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
@@ -37,7 +38,13 @@ export const Route = createFileRoute("/intelligence")({
         name: "description",
         content: "Explore system memory, repository evidence, and work with Nykst Memory.",
       },
+      ...shareMeta({
+        title: "Memory · Nykst",
+        description: "Explore system memory, repository evidence, and work with Nykst Memory.",
+        path: "/intelligence",
+      }),
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/intelligence") }],
   }),
   component: IntelligencePage,
 });
@@ -335,7 +342,7 @@ function IntelligencePage() {
             >
               <ArrowLeft className="size-3.5" /> Back to Graph
             </Link>
-            <span className="glow-ring bg-primary block size-2 rounded-full" />
+            <span className="bg-primary block size-2 rounded-full" />
             <span className="text-foreground truncate text-sm font-semibold">Nykst Memory</span>
           </div>
           <span className="text-muted-foreground font-mono text-[10px] sm:text-xs">
@@ -424,7 +431,7 @@ function IntelligencePage() {
           <span className="text-primary font-mono text-xs tracking-widest uppercase">
             System memory & collaborative analysis
           </span>
-          <h1 className="text-gradient mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Memory workspace
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -445,7 +452,7 @@ function IntelligencePage() {
                 className={cn(
                   "min-h-[132px] rounded-xl border p-3 text-left transition-all flex flex-col justify-between sm:min-h-[150px] sm:p-4",
                   isSelected
-                    ? "bg-primary/15 border-primary shadow-md"
+                    ? "bg-primary/15 border-primary"
                     : "border-border bg-card/70 hover:bg-card",
                 )}
               >
@@ -477,7 +484,7 @@ function IntelligencePage() {
         </div>
 
         {/* File Explorer & Memory Dashboard */}
-        <div className="border-border bg-card/90 grid min-h-[480px] grid-cols-1 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur lg:grid-cols-12">
+        <div className="border-border bg-card/90 grid min-h-[480px] grid-cols-1 overflow-hidden rounded-2xl border lg:grid-cols-12">
           {/* Left: Files and Folders list */}
           <div className="border-border bg-surface/30 flex flex-col justify-between border-b p-4 sm:p-5 lg:col-span-4 lg:border-r lg:border-b-0">
             <div>

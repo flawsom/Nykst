@@ -9,11 +9,11 @@ import { MentorPanel } from "@/components/graph/MentorPanel";
 import { NodeInspector } from "@/components/graph/NodeInspector";
 import { BeforeYouAct } from "@/components/graph/BeforeYouAct";
 import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
-import { WebGLFieldCanvas } from "@/components/motion/WebGLFieldCanvas";
 import { ConnectAiTools } from "@/components/graph/ConnectAiTools";
 import { ApiSettingsButton } from "@/components/graph/ApiSettings";
 import { ConnectorsPanel } from "@/components/graph/ConnectorsPanel";
 import { OnboardingTour } from "@/components/graph/OnboardingTour";
+import { TracePathDialog } from "@/components/graph/TracePathDialog";
 import { TreePanel } from "@/components/graph/TreePanel";
 import { canView, useRole } from "@/lib/access";
 import { childKindLabel, childrenOf, kindLabel, type GraphNode } from "@/lib/graph-data";
@@ -23,8 +23,10 @@ import {
   type RepositorySnapshot,
 } from "@/lib/repository-graph";
 import { subscribeToIngestion } from "@/lib/realtime";
+import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 import { NykstBrand } from "@/components/brand/NykstLogo";
-import { Github, List, Loader2, Orbit, Search, X } from "lucide-react";
+import { GitBranch, Github, List, Loader2, Orbit, Search, X } from "lucide-react";
 
 type IngestionSnapshot = {
   repository_full_name: string;
@@ -71,14 +73,13 @@ export const Route = createFileRoute("/graph")({
         content:
           "See your whole project as a map. Start with the parts, open one, and follow it down to the files and database tables a change will touch.",
       },
-      { property: "og:title", content: "System map · Nykst" },
-      {
-        property: "og:description",
-        content: "See your whole project as a map, then open the part a change will touch.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      ...shareMeta({
+        title: "System map · Nykst",
+        description: "See your whole project as a map, then open the part a change will touch.",
+        path: "/graph",
+      }),
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/graph") }],
   }),
   component: GraphPage,
 });
@@ -94,6 +95,7 @@ function GraphPage() {
   const [lastChecked, setLastChecked] = useState<number | null>(null);
   const [polling, setPolling] = useState(true);
   const [beforeYouActOpen, setBeforeYouActOpen] = useState(false);
+  const [traceOpen, setTraceOpen] = useState(false);
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [connectorsOpen, setConnectorsOpen] = useState(false);
   const [connectorMessage, setConnectorMessage] = useState<string | null>(null);
@@ -157,11 +159,15 @@ function GraphPage() {
       }
       const [owner, repo] = repositoryName.split("/");
       if (!owner || !repo) return;
-      const response = await fetch("/api/integrations/github/ingest", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner, repo }),
-      });
+      const response = await fetchWithTimeout(
+        "/api/integrations/github/ingest",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ owner, repo }),
+        },
+        25_000,
+      );
       const payload = (await response.json()) as { error?: string } & RepositorySnapshot;
       if (!response.ok) throw new Error(payload.error ?? "Analysis failed.");
       const { ingestionId: _id, ...rest } = payload as RepositorySnapshot & {
@@ -176,7 +182,7 @@ function GraphPage() {
       setSelected(null);
       setLastChecked(Date.now());
     } catch (error) {
-      setReanalyzeError(error instanceof Error ? error.message : "Analysis failed.");
+      setReanalyzeError(readableRequestError(error, "Analysis failed."));
     } finally {
       setReanalyzing(false);
       setPolling(true);
@@ -185,7 +191,7 @@ function GraphPage() {
 
   /** The live self-indexed AST of this repository, used when no GitHub ingestion is selected. */
   const loadSelf = useCallback(async () => {
-    const selfRes = await fetch("/api/analysis/self", { cache: "no-store" });
+    const selfRes = await fetchWithTimeout("/api/analysis/self", { cache: "no-store" }, 15_000);
     if (!selfRes.ok) return false;
     const selfData = (await selfRes.json()) as {
       repository: string;
@@ -228,9 +234,11 @@ function GraphPage() {
           }
         }
         const query = target ? `?repo=${encodeURIComponent(target)}` : "";
-        const response = await fetch(`/api/integrations/github/latest${query}`, {
-          cache: "no-store",
-        });
+        const response = await fetchWithTimeout(
+          `/api/integrations/github/latest${query}`,
+          { cache: "no-store" },
+          15_000,
+        );
         if (response.ok) {
           const payload = (await response.json()) as {
             ingestion?: IngestionSnapshot | null;
@@ -270,8 +278,8 @@ function GraphPage() {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         setSnapshot(null);
         setLoadError(payload.error ?? `Could not load this map (${response.status}).`);
-      } catch {
-        setLoadError("Network error while loading this map.");
+      } catch (error) {
+        setLoadError(readableRequestError(error, "Network error while loading this map."));
       } finally {
         setLastChecked(Date.now());
         setLoading(false);
@@ -314,11 +322,15 @@ function GraphPage() {
     setAnalysing(true);
     setAnalyseError(null);
     try {
-      const response = await fetch("/api/integrations/github/ingest", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner, repo }),
-      });
+      const response = await fetchWithTimeout(
+        "/api/integrations/github/ingest",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ owner, repo }),
+        },
+        25_000,
+      );
       const payload = (await response.json()) as { error?: string } & RepositorySnapshot;
       if (!response.ok) throw new Error(payload.error ?? "We could not build this map.");
       const { ingestionId: _id, ...rest } = payload as RepositorySnapshot & {
@@ -338,7 +350,7 @@ function GraphPage() {
       setLastChecked(Date.now());
     } catch (error) {
       setAnalyseError(
-        error instanceof Error ? error.message : "We could not build this map. Please try again.",
+        readableRequestError(error, "We could not build this map. Please try again."),
       );
     } finally {
       setAnalysing(false);
@@ -683,13 +695,6 @@ function GraphPage() {
 
   return (
     <main className="bg-background relative flex min-h-screen flex-col overflow-hidden lg:h-screen">
-      <WebGLFieldCanvas
-        fixed={false}
-        accentState={
-          loopVerdict === "breaking" ? "amber" : loopVerdict === "simulating" ? "cyan" : "emerald"
-        }
-        className="absolute inset-0 z-0 opacity-40"
-      />
       <header className="border-border relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
         <div className="flex items-center gap-2.5">
           <Link
@@ -750,6 +755,13 @@ function GraphPage() {
             className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
             Before You Act <span aria-hidden="true">→</span>
+          </button>
+          <button
+            onClick={() => setTraceOpen(true)}
+            className="border-border bg-surface text-foreground hover:bg-surface-2 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            title="Trace the shortest import connection between two files"
+          >
+            <GitBranch className="size-3.5" /> Trace a path
           </button>
           {snapshot && (
             <button
@@ -1208,6 +1220,17 @@ function GraphPage() {
         open={beforeYouActOpen}
         onClose={() => setBeforeYouActOpen(false)}
         onOpenCode={setCodeTarget}
+      />
+      <TracePathDialog
+        open={traceOpen}
+        onClose={() => setTraceOpen(false)}
+        snapshot={snapshot?.payload ?? null}
+        initialPath={selectedFile}
+        onOpenPath={(path) => {
+          const node = findNodeByPath(root, path);
+          if (node) jumpTo(node);
+          setTraceOpen(false);
+        }}
       />
     </main>
   );

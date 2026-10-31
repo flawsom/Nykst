@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Handshake } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
+import { canonicalUrl, organizationLd, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/partnerships")({
   head: () => ({
@@ -12,7 +13,15 @@ export const Route = createFileRoute("/partnerships")({
         content:
           "Work with Nykst on integrations, team deployments, research, or community projects. Tell us what you have in mind.",
       },
+      ...shareMeta({
+        title: "Partnerships · Nykst",
+        description:
+          "Work with Nykst on integrations, team deployments, research, or community projects.",
+        path: "/partnerships",
+      }),
+      { "script:ld+json": organizationLd },
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/partnerships") }],
   }),
   component: PartnershipsPage,
 });

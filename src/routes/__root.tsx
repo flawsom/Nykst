@@ -10,6 +10,13 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import {
+  SITE_DESCRIPTION,
+  organizationLd,
+  shareMeta,
+  softwareApplicationLd,
+  websiteLd,
+} from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -74,13 +81,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Nykst · See what your next change will affect" },
-      {
-        name: "description",
-        content:
-          "One map of your repositories, built from your real code. See every file, service and database table a change will touch before you make it.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "description", content: SITE_DESCRIPTION },
+      { name: "theme-color", content: "#04070B" },
+      ...shareMeta({
+        title: "Nykst · See what your next change will affect",
+        description: SITE_DESCRIPTION,
+        path: "/",
+      }),
+      { "script:ld+json": websiteLd },
+      { "script:ld+json": organizationLd },
+      { "script:ld+json": softwareApplicationLd },
     ],
     links: [
       {
@@ -91,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },

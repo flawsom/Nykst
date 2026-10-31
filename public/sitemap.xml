@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://nykst.unifies.codes/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://nykst.unifies.codes/graph</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nykst.unifies.codes/intelligence</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nykst.unifies.codes/mcp</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nykst.unifies.codes/subscribe</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nykst.unifies.codes/docs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nykst.unifies.codes/guides/read-impact-proof</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nykst.unifies.codes/guides/sql-migration-impact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nykst.unifies.codes/guides/mcp-read-only</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nykst.unifies.codes/status</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nykst.unifies.codes/changelog</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nykst.unifies.codes/limits</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nykst.unifies.codes/privacy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://nykst.unifies.codes/partnerships</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>

@@ -34,6 +34,9 @@ import { Route as ApiMcpTokensRouteImport } from './routes/api.mcp-tokens'
 import { Route as ApiPlansRouteImport } from './routes/api.plans'
 import { Route as ApiPreRegistrationRouteImport } from './routes/api.pre-registration'
 import { Route as ApiSubscriptionRouteImport } from './routes/api.subscription'
+import { Route as GuidesMcpReadOnlyRouteImport } from './routes/guides.mcp-read-only'
+import { Route as GuidesReadImpactProofRouteImport } from './routes/guides.read-impact-proof'
+import { Route as GuidesSqlMigrationImpactRouteImport } from './routes/guides.sql-migration-impact'
 import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 import { Route as ApiAiKeyRouteImport } from './routes/api.ai.key'
 import { Route as ApiAiTestRouteImport } from './routes/api.ai.test'
@@ -189,6 +192,22 @@ const ApiSubscriptionRoute = ApiSubscriptionRouteImport.update({
   path: '/api/subscription',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesMcpReadOnlyRoute = GuidesMcpReadOnlyRouteImport.update({
+  id: '/guides/mcp-read-only',
+  path: '/guides/mcp-read-only',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesReadImpactProofRoute = GuidesReadImpactProofRouteImport.update({
+  id: '/guides/read-impact-proof',
+  path: '/guides/read-impact-proof',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSqlMigrationImpactRoute =
+  GuidesSqlMigrationImpactRouteImport.update({
+    id: '/guides/sql-migration-impact',
+    path: '/guides/sql-migration-impact',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai/chat',
   path: '/api/ai/chat',
@@ -379,6 +398,9 @@ export interface FileRoutesByFullPath {
   '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
+  '/guides/mcp-read-only': typeof GuidesMcpReadOnlyRoute
+  '/guides/read-impact-proof': typeof GuidesReadImpactProofRoute
+  '/guides/sql-migration-impact': typeof GuidesSqlMigrationImpactRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
@@ -435,6 +457,9 @@ export interface FileRoutesByTo {
   '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
+  '/guides/mcp-read-only': typeof GuidesMcpReadOnlyRoute
+  '/guides/read-impact-proof': typeof GuidesReadImpactProofRoute
+  '/guides/sql-migration-impact': typeof GuidesSqlMigrationImpactRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
@@ -492,6 +517,9 @@ export interface FileRoutesById {
   '/api/plans': typeof ApiPlansRoute
   '/api/pre-registration': typeof ApiPreRegistrationRoute
   '/api/subscription': typeof ApiSubscriptionRouteWithChildren
+  '/guides/mcp-read-only': typeof GuidesMcpReadOnlyRoute
+  '/guides/read-impact-proof': typeof GuidesReadImpactProofRoute
+  '/guides/sql-migration-impact': typeof GuidesSqlMigrationImpactRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/ai/key': typeof ApiAiKeyRoute
   '/api/ai/test': typeof ApiAiTestRoute
@@ -550,6 +578,9 @@ export interface FileRouteTypes {
     | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
+    | '/guides/mcp-read-only'
+    | '/guides/read-impact-proof'
+    | '/guides/sql-migration-impact'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
@@ -606,6 +637,9 @@ export interface FileRouteTypes {
     | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
+    | '/guides/mcp-read-only'
+    | '/guides/read-impact-proof'
+    | '/guides/sql-migration-impact'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
@@ -662,6 +696,9 @@ export interface FileRouteTypes {
     | '/api/plans'
     | '/api/pre-registration'
     | '/api/subscription'
+    | '/guides/mcp-read-only'
+    | '/guides/read-impact-proof'
+    | '/guides/sql-migration-impact'
     | '/api/ai/chat'
     | '/api/ai/key'
     | '/api/ai/test'
@@ -719,6 +756,9 @@ export interface RootRouteChildren {
   ApiPlansRoute: typeof ApiPlansRoute
   ApiPreRegistrationRoute: typeof ApiPreRegistrationRoute
   ApiSubscriptionRoute: typeof ApiSubscriptionRouteWithChildren
+  GuidesMcpReadOnlyRoute: typeof GuidesMcpReadOnlyRoute
+  GuidesReadImpactProofRoute: typeof GuidesReadImpactProofRoute
+  GuidesSqlMigrationImpactRoute: typeof GuidesSqlMigrationImpactRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAiKeyRoute: typeof ApiAiKeyRoute
   ApiAiTestRoute: typeof ApiAiTestRoute
@@ -923,6 +963,27 @@ declare module '@tanstack/react-router' {
       path: '/api/subscription'
       fullPath: '/api/subscription'
       preLoaderRoute: typeof ApiSubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/mcp-read-only': {
+      id: '/guides/mcp-read-only'
+      path: '/guides/mcp-read-only'
+      fullPath: '/guides/mcp-read-only'
+      preLoaderRoute: typeof GuidesMcpReadOnlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/read-impact-proof': {
+      id: '/guides/read-impact-proof'
+      path: '/guides/read-impact-proof'
+      fullPath: '/guides/read-impact-proof'
+      preLoaderRoute: typeof GuidesReadImpactProofRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/sql-migration-impact': {
+      id: '/guides/sql-migration-impact'
+      path: '/guides/sql-migration-impact'
+      fullPath: '/guides/sql-migration-impact'
+      preLoaderRoute: typeof GuidesSqlMigrationImpactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai/chat': {
@@ -1180,6 +1241,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlansRoute: ApiPlansRoute,
   ApiPreRegistrationRoute: ApiPreRegistrationRoute,
   ApiSubscriptionRoute: ApiSubscriptionRouteWithChildren,
+  GuidesMcpReadOnlyRoute: GuidesMcpReadOnlyRoute,
+  GuidesReadImpactProofRoute: GuidesReadImpactProofRoute,
+  GuidesSqlMigrationImpactRoute: GuidesSqlMigrationImpactRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiAiKeyRoute: ApiAiKeyRoute,
   ApiAiTestRoute: ApiAiTestRoute,

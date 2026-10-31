@@ -4,6 +4,8 @@ import { ArrowLeft, CheckCircle2, CreditCard, Loader2, Lock } from "lucide-react
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
 import { formatInr, type CheckoutState, type PlanId } from "@/lib/pricing";
+import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/subscribe")({
   head: () => ({
@@ -14,7 +16,14 @@ export const Route = createFileRoute("/subscribe")({
         content:
           "Choose Nykst Pro monthly or annual, start a 7-day trial, or talk to us about your team.",
       },
+      ...shareMeta({
+        title: "Plans and access · Nykst",
+        description:
+          "Choose Nykst Pro monthly or annual, start a 7-day trial, or talk to us about your team.",
+        path: "/subscribe",
+      }),
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/subscribe") }],
   }),
   component: PlansPage,
 });
@@ -117,8 +126,8 @@ function PlansPage() {
 
   const load = useCallback(async () => {
     const [plansResponse, subscriptionResponse] = await Promise.all([
-      fetch("/api/plans", { cache: "no-store" }),
-      fetch("/api/subscription", { cache: "no-store" }),
+      fetchWithTimeout("/api/plans", { cache: "no-store" }, 12_000),
+      fetchWithTimeout("/api/subscription", { cache: "no-store" }, 12_000),
     ]);
     const plansBody = (await plansResponse.json().catch(() => null)) as PublicPricing | null;
     if (!plansResponse.ok || !plansBody) throw new Error("Could not load the plans.");
@@ -138,13 +147,17 @@ function PlansPage() {
     setSubscription(subscriptionBody.subscription);
   }, []);
 
-  useEffect(() => {
+  const retry = useCallback(() => {
+    setLoading(true);
+    setLoadError("");
     void load()
-      .catch((error) =>
-        setLoadError(error instanceof Error ? error.message : "Could not load the plans."),
-      )
+      .catch((error) => setLoadError(readableRequestError(error, "Could not load the plans.")))
       .finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => {
+    retry();
+  }, [retry]);
 
   const startCheckout = async (plan: PublicPlan) => {
     if (checkoutBusy) return;
@@ -301,12 +314,21 @@ function PlansPage() {
           </p>
         )}
         {(checkoutError || loadError) && (
-          <p
+          <div
             role="alert"
             className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200"
           >
-            {checkoutError || loadError}
-          </p>
+            <p>{checkoutError || loadError}</p>
+            {loadError && (
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-2 inline-flex min-h-9 items-center gap-1.5 border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/15"
+              >
+                Try again
+              </button>
+            )}
+          </div>
         )}
 
         {loading ? (

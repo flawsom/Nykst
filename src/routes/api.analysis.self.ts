@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { analyzeRepository, MAX_SOURCE_BYTES, wantsContent } from "@/lib/analysis/engine.server";
 import { impactBriefing } from "@/lib/analysis/context";
+import { domainSummaries } from "@/lib/analysis/domains";
 import { federateRepositories } from "@/lib/analysis/federation";
 import { generateFixPatch } from "@/lib/analysis/fix";
 import { indexAnalysis } from "@/lib/analysis/impact";
@@ -410,44 +411,6 @@ function buildResponsePayload(
     .sort((a, b) => b.rankScore - a.rankScore || b.importers - a.importers || b.loc - a.loc)
     .slice(0, 18);
 
-  const domainMap = new Map<
-    string,
-    {
-      domain: string;
-      files: number;
-      loc: number;
-      edgesOut: number;
-      edgesIn: number;
-      sampleFiles: string[];
-    }
-  >();
-  const domainOf = (p: string) => {
-    const parts = p.split("/");
-    return parts.length > 2 ? `${parts[0]}/${parts[1]}` : (parts[0] ?? "root");
-  };
-
-  for (const file of analysis.files) {
-    const d = domainOf(file.path);
-    const entry = domainMap.get(d) ?? {
-      domain: d,
-      files: 0,
-      loc: 0,
-      edgesOut: 0,
-      edgesIn: 0,
-      sampleFiles: [],
-    };
-    entry.files += 1;
-    entry.loc += file.loc;
-    if (entry.sampleFiles.length < 4) entry.sampleFiles.push(file.path);
-    for (const dep of index.dependencies.get(file.path) ?? []) {
-      if (domainOf(dep.path) !== d) entry.edgesOut += 1;
-    }
-    for (const dep of index.dependents.get(file.path) ?? []) {
-      if (domainOf(dep.path) !== d) entry.edgesIn += 1;
-    }
-    domainMap.set(d, entry);
-  }
-
   return {
     repository,
     commit: snapshotPayload.repository?.commit ?? null,
@@ -456,9 +419,7 @@ function buildResponsePayload(
     stats: analysis.stats,
     snapshotPayload: safeSnapshot,
     ingestedRepositories: publicExample ? [] : ingestedRepositories,
-    domains: [...domainMap.values()].sort(
-      (a, b) => b.edgesIn + b.edgesOut - (a.edgesIn + a.edgesOut),
-    ),
+    domains: domainSummaries(analysis),
     services: safeAnalysis.services.map((s) => ({
       id: s.id,
       name: s.name,

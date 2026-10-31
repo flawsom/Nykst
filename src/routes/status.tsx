@@ -4,9 +4,22 @@ import { ArrowLeft, CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/status")({
-  head: () => ({ meta: [{ title: "Status · Nykst" }] }),
+  head: () => ({
+    meta: [
+      { title: "Status · Nykst" },
+      { name: "description", content: "The current state of the Nykst website, API and database." },
+      ...shareMeta({
+        title: "Status · Nykst",
+        description: "The current state of the Nykst website, API and database.",
+        path: "/status",
+      }),
+    ],
+    links: [{ rel: "canonical", href: canonicalUrl("/status") }],
+  }),
   component: StatusPage,
 });
 
@@ -60,17 +73,21 @@ function StatusRow({ name, detail, state }: { name: string; detail: string; stat
 
 function StatusPage() {
   const [health, setHealth] = useState<Health | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setHealthError(null);
     try {
-      const response = await fetch("/api/health", { cache: "no-store" });
+      const response = await fetchWithTimeout("/api/health", { cache: "no-store" }, 10_000);
       const body = (await response.json().catch(() => null)) as Health | null;
+      if (!response.ok || !body) throw new Error("The health check did not answer.");
       setHealth(body);
-    } catch {
+    } catch (error) {
       setHealth(null);
+      setHealthError(readableRequestError(error, "The health check did not answer."));
     } finally {
       setCheckedAt(new Date().toISOString());
       setLoading(false);
@@ -134,6 +151,22 @@ function StatusPage() {
             <RefreshCw className={loading ? "size-3 animate-spin" : "size-3"} /> Check again
           </button>
         </div>
+
+        {healthError && (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-200"
+          >
+            <p>{healthError} The page is still usable, but the live status is unknown.</p>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="mt-2 min-h-9 border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/15"
+            >
+              Try again
+            </button>
+          </div>
+        )}
 
         <section data-testid="status-health" className="mt-3 space-y-2.5">
           <StatusRow

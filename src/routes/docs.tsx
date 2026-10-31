@@ -3,9 +3,26 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Braces, FileText, Gauge, LockKeyhole, Terminal } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
+import { canonicalUrl, shareMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/docs")({
-  head: () => ({ meta: [{ title: "Docs · Nykst" }] }),
+  head: () => ({
+    meta: [
+      { title: "Docs · Nykst" },
+      {
+        name: "description",
+        content:
+          "How to connect a repository, read the system map, understand change impact, and use Nykst from a coding assistant.",
+      },
+      ...shareMeta({
+        title: "Docs · Nykst",
+        description:
+          "How to connect a repository, read the system map, understand change impact, and use Nykst from a coding assistant.",
+        path: "/docs",
+      }),
+    ],
+    links: [{ rel: "canonical", href: canonicalUrl("/docs") }],
+  }),
   component: DocsPage,
 });
 
@@ -164,6 +181,50 @@ function DocsPage() {
             </a>
           </DocsCard>
         </div>
+
+        <section className="border-border bg-card/70 mt-6 rounded-2xl border p-5">
+          <p className="text-primary font-mono text-[10px] tracking-[0.22em] uppercase">Guides</p>
+          <h2 className="mt-2 text-lg font-semibold">Three proofs you can check yourself</h2>
+          <p className="text-muted-foreground mt-2 max-w-2xl text-[12px] leading-relaxed">
+            Each guide uses the public Nykst example, cites the file and line, and states what the
+            proof does not cover. No account needed.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Link
+              to="/guides/read-impact-proof"
+              className="border-border bg-surface hover:border-primary/40 rounded-xl border p-4 transition-colors"
+            >
+              <span className="text-foreground block text-xs font-semibold">
+                Read a change impact proof
+              </span>
+              <span className="text-muted-foreground mt-1 block text-[11px] leading-relaxed">
+                Importers, runtime dependents, entrypoints and the checks that cover them.
+              </span>
+            </Link>
+            <Link
+              to="/guides/sql-migration-impact"
+              className="border-border bg-surface hover:border-primary/40 rounded-xl border p-4 transition-colors"
+            >
+              <span className="text-foreground block text-xs font-semibold">
+                SQL column and migration impact
+              </span>
+              <span className="text-muted-foreground mt-1 block text-[11px] leading-relaxed">
+                What a static read can prove about a column change, and what it cannot.
+              </span>
+            </Link>
+            <Link
+              to="/guides/mcp-read-only"
+              className="border-border bg-surface hover:border-primary/40 rounded-xl border p-4 transition-colors"
+            >
+              <span className="text-foreground block text-xs font-semibold">
+                Use the read-only MCP tools safely
+              </span>
+              <span className="text-muted-foreground mt-1 block text-[11px] leading-relaxed">
+                Token storage, scope, revocation and the three tools to start with.
+              </span>
+            </Link>
+          </div>
+        </section>
 
         <section className="border-border bg-surface/50 mt-6 rounded-2xl border p-5">
           <h2 className="text-sm font-semibold">Your account, your data and help</h2>

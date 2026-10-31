@@ -4,6 +4,7 @@ import { ArrowLeft, Clock3, LockKeyhole, Mail, ShieldCheck, Trash2, Users } from
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { canonicalUrl, organizationLd, shareMeta } from "@/lib/seo";
 const UPDATED = "29 October 2026";
 
 export const Route = createFileRoute("/privacy")({
@@ -15,7 +16,15 @@ export const Route = createFileRoute("/privacy")({
         content:
           "What Nykst stores, why, how long we keep it, who helps us run the service, and how to ask us to access, correct or delete your data.",
       },
+      ...shareMeta({
+        title: "Privacy · Nykst",
+        description:
+          "What Nykst stores, why, how long we keep it, and how to access, correct or delete your data.",
+        path: "/privacy",
+      }),
+      { "script:ld+json": organizationLd },
     ],
+    links: [{ rel: "canonical", href: canonicalUrl("/privacy") }],
   }),
   component: PrivacyPage,
 });

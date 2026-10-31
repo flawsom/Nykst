@@ -1,14 +1,170 @@
 {
-  "treeFiles": 322,
-  "sourceFiles": 261,
-  "analyzedFiles": 261,
-  "internalEdges": 581,
+  "treeFiles": 342,
+  "sourceFiles": 278,
+  "analyzedFiles": 278,
+  "internalEdges": 630,
   "externalPackages": 54,
   "unresolvedImports": 0,
-  "skippedFiles": 2,
-  "loc": 49641,
-  "durationMs": 979,
+  "skippedFiles": 1,
+  "loc": 51939,
+  "durationMs": 1123,
   "resourceCount": 15,
   "serviceCount": 11,
-  "generatedAt": "2026-10-30T19:20:25.362Z"
+  "generatedAt": "2026-10-31T16:57:45.925Z",
+  "domains": [
+    {
+      "domain": "src/lib",
+      "files": 75,
+      "loc": 17699,
+      "edgesOut": 14,
+      "edgesIn": 327,
+      "sampleFiles": [
+        "src/lib/access.ts",
+        "src/lib/ai-client.ts",
+        "src/lib/ai-platform.server.ts",
+        "src/lib/analysis/catalog.ts"
+      ]
+    },
+    {
+      "domain": "src/routes",
+      "files": 58,
+      "loc": 8729,
+      "edgesOut": 196,
+      "edgesIn": 58,
+      "sampleFiles": [
+        "src/routes/[.]well-known.$.ts",
+        "src/routes/__root.tsx",
+        "src/routes/admin.payments.tsx",
+        "src/routes/api.ai.chat.ts"
+      ]
+    },
+    {
+      "domain": "src/components",
+      "files": 83,
+      "loc": 16055,
+      "edgesOut": 111,
+      "edgesIn": 49,
+      "sampleFiles": [
+        "src/components/brand/NykstLogo.tsx",
+        "src/components/docs/GuideShell.tsx",
+        "src/components/graph/AdvantagesForm.tsx",
+        "src/components/graph/AnalysisPanels.tsx"
+      ]
+    },
+    {
+      "domain": "tests",
+      "files": 35,
+      "loc": 5043,
+      "edgesOut": 68,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "tests/ai-platform.test.ts",
+        "tests/analysis-contracts.test.ts",
+        "tests/analysis-public.test.ts",
+        "tests/analysis-tools.test.ts"
+      ]
+    },
+    {
+      "domain": "src",
+      "files": 4,
+      "loc": 1369,
+      "edgesOut": 63,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "src/routeTree.gen.ts",
+        "src/router.tsx",
+        "src/server.ts",
+        "src/start.ts"
+      ]
+    },
+    {
+      "domain": "src/integrations",
+      "files": 5,
+      "loc": 973,
+      "edgesOut": 0,
+      "edgesIn": 27,
+      "sampleFiles": [
+        "src/integrations/supabase/auth-attacher.ts",
+        "src/integrations/supabase/auth-middleware.ts",
+        "src/integrations/supabase/client.server.ts",
+        "src/integrations/supabase/client.ts"
+      ]
+    },
+    {
+      "domain": "scripts",
+      "files": 8,
+      "loc": 876,
+      "edgesOut": 10,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "scripts/analyze-local.ts",
+        "scripts/capture-screens.mjs",
+        "scripts/check-claims.ts",
+        "scripts/export-mcp-schema.ts"
+      ]
+    },
+    {
+      "domain": "src/hooks",
+      "files": 1,
+      "loc": 15,
+      "edgesOut": 0,
+      "edgesIn": 1,
+      "sampleFiles": [
+        "src/hooks/use-mobile.tsx"
+      ]
+    },
+    {
+      "domain": "bin",
+      "files": 1,
+      "loc": 197,
+      "edgesOut": 0,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "bin/nykst.mjs"
+      ]
+    },
+    {
+      "domain": "e2e",
+      "files": 5,
+      "loc": 881,
+      "edgesOut": 0,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "e2e/graph-navigation.spec.ts",
+        "e2e/graph-workspace.spec.ts",
+        "e2e/mcp-tools.spec.ts",
+        "e2e/routes.spec.ts"
+      ]
+    },
+    {
+      "domain": "eslint.config.js",
+      "files": 1,
+      "loc": 39,
+      "edgesOut": 0,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "eslint.config.js"
+      ]
+    },
+    {
+      "domain": "playwright.config.ts",
+      "files": 1,
+      "loc": 49,
+      "edgesOut": 0,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "playwright.config.ts"
+      ]
+    },
+    {
+      "domain": "vite.config.ts",
+      "files": 1,
+      "loc": 14,
+      "edgesOut": 0,
+      "edgesIn": 0,
+      "sampleFiles": [
+        "vite.config.ts"
+      ]
+    }
+  ]
 }

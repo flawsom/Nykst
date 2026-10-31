@@ -1,21 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
   ArrowRight,
-  Cpu,
   Database,
   RefreshCw,
   Terminal,
   Zap,
-  Sparkles,
   Wrench,
   Radio,
-  Globe,
-  BookOpen,
 } from "lucide-react";
-import { TiltCard, ScrambleText } from "@/components/motion/VariantMotion";
 import { FederationPanel, TraceOverlayPanel } from "@/components/mcp/ToolInsightPanel";
+import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
 import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
 import { TOOLS as MCP_TOOLS } from "@/lib/mcp-guides";
 import { cn } from "@/lib/utils";
@@ -199,12 +195,16 @@ export function LiveGraphRagExplorer({
   onDataUpdate,
   onOpenCode,
   onLoopVerdict,
+  loadError,
+  onRetry,
 }: {
   initialData: LiveSelfAnalysis | null;
   activeRepo?: string | null;
   onDataUpdate?: (data: LiveSelfAnalysis) => void;
   onOpenCode?: (target: CodeTarget) => void;
   onLoopVerdict?: (verdict: "safe" | "breaking" | "simulating") => void;
+  loadError?: string | null;
+  onRetry?: () => void;
 }) {
   const [data, setData] = useState<LiveSelfAnalysis | null>(initialData);
   const [selectedPath, setSelectedPath] = useState("src/lib/integrations/github.ts");
@@ -218,6 +218,7 @@ export function LiveGraphRagExplorer({
   const [mcpResult, setMcpResult] = useState<unknown>(null);
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [loadingMcp, setLoadingMcp] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -231,73 +232,120 @@ export function LiveGraphRagExplorer({
   const inspectFile = async (path: string, forceRefresh = false) => {
     setSelectedPath(path);
     setLoadingTarget(true);
+    setActionError(null);
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `/api/analysis/self?repo=${encodeURIComponent(repoParam)}&path=${encodeURIComponent(path)}${forceRefresh ? "&refresh=1" : ""}`,
+        { cache: "no-store" },
+        15_000,
       );
-      if (res.ok) {
-        const next = (await res.json()) as LiveSelfAnalysis;
-        setData(next);
-        onDataUpdate?.(next);
-      }
+      if (!res.ok) throw new Error(`Could not read that file (${res.status}).`);
+      const next = (await res.json()) as LiveSelfAnalysis;
+      setData(next);
+      onDataUpdate?.(next);
+    } catch (error) {
+      setActionError(readableRequestError(error, "Could not refresh this file."));
     } finally {
       setLoadingTarget(false);
     }
   };
 
-  const runLiveMcpTool = async (toolName: McpToolName, queryOverride?: string) => {
-    setMcpTool(toolName);
-    setLoadingMcp(true);
-    try {
-      const q = queryOverride ?? mcpQuery;
-      if (
-        toolName === "simulate_change" ||
-        toolName === "generate_fix_patch" ||
-        toolName === "run_safe_code_loop"
-      ) {
-        const res = await fetch("/api/analysis/self", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            repo: repoParam,
-            path: selectedPath,
-            tool: toolName,
-            query: q,
-            content: simContent,
-          }),
-        });
-        if (res.ok) {
+  const runLiveMcpTool = useCallback(
+    async (toolName: McpToolName, queryOverride?: string) => {
+      setMcpTool(toolName);
+      setLoadingMcp(true);
+      setActionError(null);
+      try {
+        const q = queryOverride ?? mcpQuery;
+        if (
+          toolName === "simulate_change" ||
+          toolName === "generate_fix_patch" ||
+          toolName === "run_safe_code_loop"
+        ) {
+          const res = await fetchWithTimeout(
+            "/api/analysis/self",
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                repo: repoParam,
+                path: selectedPath,
+                tool: toolName,
+                query: q,
+                content: simContent,
+              }),
+            },
+            15_000,
+          );
+          if (!res.ok) throw new Error(`The tool did not finish (${res.status}).`);
           const payload = (await res.json()) as { toolOutput?: unknown };
           setMcpResult(payload.toolOutput);
+          return;
         }
-        return;
-      }
 
-      const res = await fetch(
-        `/api/analysis/self?repo=${encodeURIComponent(repoParam)}&path=${encodeURIComponent(selectedPath)}&tool=${encodeURIComponent(toolName)}&query=${encodeURIComponent(q)}`,
-      );
-      if (res.ok) {
+        const res = await fetchWithTimeout(
+          `/api/analysis/self?repo=${encodeURIComponent(repoParam)}&path=${encodeURIComponent(selectedPath)}&tool=${encodeURIComponent(toolName)}&query=${encodeURIComponent(q)}`,
+          { cache: "no-store" },
+          15_000,
+        );
+        if (!res.ok) throw new Error(`The tool did not finish (${res.status}).`);
         const next = (await res.json()) as LiveSelfAnalysis;
         setMcpResult(next.toolOutput);
+      } catch (error) {
+        setActionError(readableRequestError(error, "The live tool did not finish."));
+      } finally {
+        setLoadingMcp(false);
       }
-    } finally {
-      setLoadingMcp(false);
-    }
-  };
+    },
+    [mcpQuery, repoParam, selectedPath, simContent],
+  );
 
   useEffect(() => {
     if (activeTab === "mcp" && !mcpResult) {
       void runLiveMcpTool("get_impact");
     }
-  }, [activeTab]);
+  }, [activeTab, mcpResult, runLiveMcpTool]);
 
   if (!data) {
     return (
       <div className="border-border bg-card/70 rounded-3xl border p-8 text-center">
-        <RefreshCw className="text-primary mx-auto size-6 animate-spin" />
-        <p className="text-muted-foreground mt-3 font-mono text-xs uppercase tracking-widest">
-          Reading the repository…
-        </p>
+        {loadError ? (
+          <>
+            <p className="text-sm font-semibold">The live workbench is not available yet.</p>
+            <p className="text-muted-foreground mx-auto mt-2 max-w-md text-xs leading-relaxed">
+              {loadError}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold"
+                >
+                  <RefreshCw className="size-3.5" /> Try the live view again
+                </button>
+              )}
+              <Link
+                to="/graph"
+                className="border-border bg-surface hover:bg-surface-2 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold"
+              >
+                Open the full map <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+            <p className="text-muted-foreground mt-3 text-[10px]">
+              The saved map above is still real evidence from the last compiled repository.
+            </p>
+          </>
+        ) : (
+          <>
+            <RefreshCw className="text-primary mx-auto size-5 animate-spin" />
+            <p className="text-sm font-semibold">Reading the live map</p>
+            <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
+              This usually takes a few seconds. The saved map above is already usable while the
+              server reads the current files.
+            </p>
+          </>
+        )}
       </div>
     );
   }
@@ -329,15 +377,22 @@ export function LiveGraphRagExplorer({
 
   return (
     <div className="space-y-16">
+      {actionError && (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-amber-200"
+        >
+          {actionError}
+        </p>
+      )}
       {/* PART 1: Sticky Scroll-Storytelling Architecture Pipeline */}
       <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
         <div className="lg:sticky lg:top-24 space-y-5">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-primary">
-            <Cpu className="size-3.5" /> A live map of this site
-          </div>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Every change starts somewhere.{" "}
-            <span className="text-gradient">See everything that depends on it.</span>
+          <p className="text-primary font-mono text-[10px] uppercase tracking-[0.22em]">
+            A live map of this site
+          </p>
+          <h2 className="font-display text-3xl leading-[1.08] tracking-tight sm:text-4xl">
+            Every change starts somewhere. See everything that depends on it.
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed sm:text-base">
             Nykst reads the repository, follows every connection between files, links the database
@@ -346,7 +401,7 @@ export function LiveGraphRagExplorer({
           </p>
 
           {/* Active Layer Spotlight Card */}
-          <TiltCard className="border-primary/35 bg-card/90 rounded-2xl border p-5 shadow-2xl">
+          <div className="border-border bg-card/90 rounded-2xl border p-5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-primary font-mono text-[10px] uppercase tracking-[0.24em]">
                 STAGE {ARCHITECTURE_LAYERS[activeLayer]!.step} · ACTIVE SPEC
@@ -361,9 +416,7 @@ export function LiveGraphRagExplorer({
                 Inspect {ARCHITECTURE_LAYERS[activeLayer]!.proofFile.split("/").pop()} →
               </button>
             </div>
-            <h3 className="mt-2 text-lg font-semibold">
-              <ScrambleText text={ARCHITECTURE_LAYERS[activeLayer]!.name} />
-            </h3>
+            <h3 className="mt-2 text-lg font-semibold">{ARCHITECTURE_LAYERS[activeLayer]!.name}</h3>
             <p className="text-primary/80 mt-1 font-mono text-[11px]">
               {ARCHITECTURE_LAYERS[activeLayer]!.metric}
             </p>
@@ -385,12 +438,12 @@ export function LiveGraphRagExplorer({
                 </p>
               </div>
             </div>
-          </TiltCard>
+          </div>
 
           {/* Live Self-Analysis Proof Bar */}
           <div className="border-border bg-surface/70 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 font-mono text-[11px]">
             <span className="flex items-center gap-2">
-              <span className="bg-primary glow-ring size-2 rounded-full" />
+              <span className="bg-primary size-2 rounded-full" />
               <span>
                 Read in <strong>{stats.durationMs}ms</strong> · {stats.analyzedFiles} files ·{" "}
                 {stats.internalEdges} connections
@@ -419,7 +472,7 @@ export function LiveGraphRagExplorer({
                 className={cn(
                   "cursor-pointer rounded-2xl border p-5 transition-all duration-300",
                   active
-                    ? "border-primary/60 bg-primary/10 shadow-lg shadow-primary/10 translate-x-1"
+                    ? "border-primary/60 bg-primary/10 translate-x-1"
                     : "border-border bg-card/60 hover:border-primary/30 hover:bg-card/90",
                 )}
               >
@@ -469,7 +522,7 @@ export function LiveGraphRagExplorer({
       {/* PART 2: Live Interactive AST & Blast-Radius Workbench */}
       <div
         id="live-workbench"
-        className="border-primary/30 bg-card/95 relative overflow-hidden rounded-3xl border p-5 shadow-2xl sm:p-8"
+        className="border-border bg-card relative overflow-hidden rounded-3xl border p-5 sm:p-8"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
@@ -498,7 +551,11 @@ export function LiveGraphRagExplorer({
                   label: `SQL & Services (${resources.length + services.length})`,
                   icon: Database,
                 },
-                { id: "mcp", label: "11-Tool MCP Runner", icon: Terminal },
+                {
+                  id: "mcp",
+                  label: `MCP Runner (${MCP_TOOLS.length} read-only tools)`,
+                  icon: Terminal,
+                },
               ] as const
             ).map((tab) => (
               <button
@@ -541,7 +598,7 @@ export function LiveGraphRagExplorer({
                       className={cn(
                         "w-full rounded-xl border p-3 text-left transition-all",
                         isSelected
-                          ? "border-primary bg-primary/15 shadow-md"
+                          ? "border-primary bg-primary/15"
                           : "border-border bg-surface/70 hover:border-primary/40 hover:bg-surface",
                       )}
                     >

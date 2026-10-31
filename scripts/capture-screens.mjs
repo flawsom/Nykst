@@ -61,6 +61,7 @@ async function startLocalServer() {
 
 const browser = await chromium.launch({
   headless: true,
+  ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
 

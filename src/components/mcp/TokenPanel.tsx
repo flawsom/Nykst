@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { CopyButton } from "./CodeBlock";
 
 type TokenRecord = {
@@ -101,12 +100,12 @@ export function TokenPanel({ onCreated, token }: Props) {
         <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
           Connect GitHub and map a repository first, then come back here to create your token.
         </p>
-        <Link
-          to="/"
+        <a
+          href="/api/integrations/github/start?returnTo=%2Fmcp"
           className="bg-primary text-primary-foreground hover:bg-primary-glow mt-3 inline-block rounded-lg px-4 py-2 text-xs font-semibold"
         >
           Connect GitHub
-        </Link>
+        </a>
       </div>
     );
 

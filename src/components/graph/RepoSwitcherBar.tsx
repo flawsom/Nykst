@@ -255,10 +255,12 @@ export function RepoSwitcherBar({
           <p className="text-muted-foreground font-mono text-[9px] tracking-[0.18em] uppercase">
             Active repository
           </p>
-          <p className="max-w-[42vw] truncate font-mono text-xs font-semibold sm:max-w-[260px]">
+          <p className="max-w-[46vw] truncate font-mono text-xs font-semibold sm:max-w-[260px]">
             {active}
             {active === SELF_REPOSITORY && (
-              <span className="text-primary ml-1.5 text-[10px]">live workspace</span>
+              <span className="text-primary ml-1.5 hidden text-[10px] sm:inline">
+                live workspace
+              </span>
             )}
           </p>
         </div>

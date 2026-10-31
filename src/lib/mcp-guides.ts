@@ -8,7 +8,7 @@
  * commands were also run against a local Nykst endpoint.
  */
 
-export const PRODUCTION_ORIGIN = "https://nykst-software-intellegence.shuzalniraula.workers.dev";
+export const PRODUCTION_ORIGIN = "https://nykst.unifies.codes";
 export const TOKEN_PLACEHOLDER = "YOUR_NYKST_TOKEN";
 
 export type GuideContext = { url: string; token: string };
