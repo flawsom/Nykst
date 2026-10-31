@@ -1233,7 +1233,7 @@ If Nykst saves you from a bad change, a star helps another engineer find it.
 
 [![Star Nykst](https://img.shields.io/badge/STAR-flawsom%2FNykst-A31C1B?style=for-the-badge&logo=github&logoColor=F2EDE3&labelColor=171717)](https://github.com/flawsom/Nykst/stargazers)
 [![Sponsor](https://img.shields.io/badge/SPONSOR-GitHub_Sponsors-C7B99B?style=for-the-badge&logo=githubsponsors&logoColor=171717&labelColor=171717)](https://github.com/sponsors/flawsom)
-[![Buy me a coffee](https://img.shields.io/badge/COFFEE-nykstsoftint-183328?style=for-the-badge&logo=buymeacoffee&logoColor=F2EDE3&labelColor=171717)](https://www.buymeacoffee.com/nykstsoftint)
+[![Buy me a coffee](https://img.shields.io/badge/COFFEE-nykstsoftint-183328?style=for-the-badge&logo=buymeacoffee&logoColor=F2EDE3&labelColor=171717)](https://www.buymeacoffee.com/flawsom)
 [![Email](https://img.shields.io/badge/EMAIL-sibaprasadpanda56%40gmail.com-F2EDE3?style=for-the-badge&logo=gmail&logoColor=171717&labelColor=171717)](mailto:sibaprasadpanda56@gmail.com)
 
 </div>
