@@ -26,6 +26,7 @@ import {
   BlurReveal,
   InfiniteMarquee,
   SplitText,
+  SpotlightBackdrop,
 } from "@/components/motion/VariantMotion";
 import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
 import { canonicalUrl, shareMeta } from "@/lib/seo";
@@ -129,6 +130,7 @@ function Landing() {
   const [contactOpen, setContactOpen] = useState(false);
   const [liveSelf, setLiveSelf] = useState<LiveSelfAnalysis | null>(null);
   const [selfError, setSelfError] = useState<string | null>(null);
+  const [loopAccent, setLoopAccent] = useState<"teal" | "cyan" | "amber">("teal");
 
   const loadSelf = useCallback(async () => {
     setSelfError(null);
@@ -250,6 +252,7 @@ function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-x-clip">
+      <SpotlightBackdrop accentState={loopAccent} />
       <CodeProblemInspector
         target={codeTarget}
         onClose={() => setCodeTarget(null)}
@@ -524,6 +527,11 @@ function Landing() {
             {...(activeRepo ? { activeRepo } : {})}
             onDataUpdate={setLiveSelf}
             onOpenCode={setCodeTarget}
+            onLoopVerdict={(verdict) =>
+              setLoopAccent(
+                verdict === "breaking" ? "amber" : verdict === "simulating" ? "cyan" : "teal",
+              )
+            }
             loadError={selfError}
             onRetry={() => void loadSelf()}
           />

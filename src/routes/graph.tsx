@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
+import { WebGLFieldCanvas } from "@/components/motion/WebGLFieldCanvas";
 import { RepoSwitcherBar } from "@/components/graph/RepoSwitcherBar";
 import { NodeDossier } from "@/components/graph/NodeDossier";
 import { CodeProblemInspector, type CodeTarget } from "@/components/graph/CodeProblemInspector";
@@ -695,6 +696,13 @@ function GraphPage() {
 
   return (
     <main className="bg-background relative flex min-h-screen flex-col overflow-hidden lg:h-screen">
+      <WebGLFieldCanvas
+        fixed={false}
+        accentState={
+          loopVerdict === "breaking" ? "amber" : loopVerdict === "simulating" ? "cyan" : "emerald"
+        }
+        className="absolute inset-0 z-0 opacity-40"
+      />
       <header className="border-border relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-3 sm:px-5 sm:py-3">
         <div className="flex items-center gap-2.5">
           <Link

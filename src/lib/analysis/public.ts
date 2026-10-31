@@ -113,8 +113,12 @@ function publicResourceValue(value: unknown, index: number) {
   return {};
 }
 
-export function redactPublicValue(value: unknown, names: SensitiveNames): unknown {
-  if (Array.isArray(value)) return value.map((item) => redactPublicValue(item, names));
+export function redactPublicValue(
+  value: unknown,
+  names: SensitiveNames,
+  options: { preserveLoopEvidence?: boolean } = {},
+): unknown {
+  if (Array.isArray(value)) return value.map((item) => redactPublicValue(item, names, options));
   if (!value || typeof value !== "object") {
     return typeof value === "string" ? hideSensitiveText(value, names) : value;
   }
@@ -124,8 +128,18 @@ export function redactPublicValue(value: unknown, names: SensitiveNames): unknow
     // Keep the shape the public workbench renders. Hiding a field by deleting
     // it crashes components that expect an array or a string, so sensitive
     // values are replaced with an empty value of the same shape instead.
+    // The safe loop is the exception: its buffer is the proof the visitor came
+    // to inspect, and the example repository is already public. Sensitive names
+    // inside that source are still replaced by hideSensitiveText below.
     if (key === "content") {
-      out["content"] = "";
+      out["content"] =
+        options.preserveLoopEvidence && typeof child === "string"
+          ? hideSensitiveText(child, names)
+          : "";
+      continue;
+    }
+    if (key === "columnDrift" && options.preserveLoopEvidence && Array.isArray(child)) {
+      out["columnDrift"] = child.map((item) => redactPublicValue(item, names, options));
       continue;
     }
     if (key === "contracts" || key === "knowledge") {
@@ -153,7 +167,7 @@ export function redactPublicValue(value: unknown, names: SensitiveNames): unknow
       out["resources"] = child.map((item, index) => publicResourceValue(item, index));
       continue;
     }
-    out[key] = redactPublicValue(child, names);
+    out[key] = redactPublicValue(child, names, options);
   }
   return out;
 }

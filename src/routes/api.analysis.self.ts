@@ -589,7 +589,9 @@ export const Route = createFileRoute("/api/analysis/self")({
               path: validTarget,
               tool,
               toolOutput: isSelfRepository(repository)
-                ? redactPublicValue(toolOutput, collectSensitiveNames(analysis))
+                ? redactPublicValue(toolOutput, collectSensitiveNames(analysis), {
+                    preserveLoopEvidence: tool === "run_loop" || tool === "run_safe_code_loop",
+                  })
                 : toolOutput,
             },
             { headers: { "cache-control": "no-store" } },

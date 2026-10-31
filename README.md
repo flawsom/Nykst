@@ -937,7 +937,7 @@ bunx playwright test          # browser journeys on a built server
 bun run screens               # refresh the README captures
 ```
 
-Latest local run on 31 October 2026: **267 pass, 0 fail, 2,461 assertions across 35 files, 1.80 s**.
+Latest local run on 31 October 2026: **268 pass, 0 fail, 2,466 assertions across 35 files, 2.73 s**.
 
 | Suite | What it proves |
 | :--- | :--- |

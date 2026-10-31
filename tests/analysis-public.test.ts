@@ -173,6 +173,35 @@ describe("public analysis boundary", () => {
     expect((safe as { content?: string }).content).toBe("");
   });
 
+  test("keeps the safe loop's evidence while still hiding sensitive names", () => {
+    const names = collectSensitiveNames(analysis);
+    const safe = redactPublicValue(
+      {
+        stage2: { content: "export const value = 'contact_messages'; // DATABASE_URL" },
+        stage3: {
+          columnDrift: [
+            {
+              table: "contact_messages",
+              column: "email",
+              references: [{ path: "src/a.ts", line: 5 }],
+            },
+          ],
+        },
+      },
+      names,
+      { preserveLoopEvidence: true },
+    ) as {
+      stage2: { content: string };
+      stage3: { columnDrift: { table: string; column: string; references: unknown[] }[] };
+    };
+
+    expect(safe.stage2.content).toContain("export const value");
+    expect(safe.stage2.content).not.toContain("DATABASE_URL");
+    expect(safe.stage2.content).not.toContain("contact_messages");
+    expect(safe.stage3.columnDrift).toHaveLength(1);
+    expect(safe.stage3.columnDrift[0]?.references).toHaveLength(1);
+  });
+
   test("keeps the public workbench shape when it hides contracts and source", () => {
     const names = collectSensitiveNames(analysis);
     const safe = redactPublicValue(

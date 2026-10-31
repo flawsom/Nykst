@@ -17,6 +17,9 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     reducedMotion: "reduce",
+    ...(process.env.CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.CHROMIUM_PATH } }
+      : {}),
   },
   projects: [
     {
