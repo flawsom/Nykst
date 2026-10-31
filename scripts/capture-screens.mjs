@@ -75,6 +75,8 @@ async function capture(viewport, isMobile, shots) {
     hasTouch: isMobile,
     reducedMotion: "reduce",
   });
+  // Screenshots are product surfaces, not first-run onboarding overlays.
+  await context.addInitScript(() => localStorage.setItem("nykst.tour.done", "1"));
   const page = await context.newPage();
 
   for (const [route, file] of shots) {

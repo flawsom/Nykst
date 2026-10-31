@@ -13,21 +13,21 @@ export function NykstMark({ className, size = 28 }: { className?: string; size?:
     >
       <defs>
         <linearGradient id="nykst-mark-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#070d14" />
-          <stop offset="100%" stopColor="#0c1824" />
+          <stop offset="0%" stopColor="#030906" />
+          <stop offset="100%" stopColor="#0b1912" />
         </linearGradient>
         <linearGradient id="nykst-mark-prism" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#5eead4" />
-          <stop offset="52%" stopColor="#2dd4bf" />
-          <stop offset="100%" stopColor="#60a5fa" />
+          <stop offset="0%" stopColor="#f2ede3" />
+          <stop offset="58%" stopColor="#c7b99b" />
+          <stop offset="100%" stopColor="#e1d5bd" />
         </linearGradient>
         <linearGradient id="nykst-mark-edge" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.9" />
+          <stop offset="0%" stopColor="#183328" />
+          <stop offset="100%" stopColor="#a31c1b" stopOpacity="0.9" />
         </linearGradient>
         <radialGradient id="nykst-mark-core" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#5eead4" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#5eead4" stopOpacity="0" />
+          <stop offset="0%" stopColor="#c7b99b" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#c7b99b" stopOpacity="0" />
         </radialGradient>
       </defs>
       <rect
@@ -35,7 +35,7 @@ export function NykstMark({ className, size = 28 }: { className?: string; size?:
         height="64"
         rx="16"
         fill="url(#nykst-mark-bg)"
-        stroke="#1e3242"
+        stroke="#183328"
         strokeWidth="1.8"
       />
       <circle cx="32" cy="32" r="24" fill="url(#nykst-mark-core)" />
@@ -59,16 +59,16 @@ export function NykstMark({ className, size = 28 }: { className?: string; size?:
         y1="32"
         x2="45"
         y2="32"
-        stroke="#60a5fa"
+        stroke="#a31c1b"
         strokeWidth="1.4"
         strokeDasharray="2.5 2.5"
-        opacity="0.85"
+        opacity="0.8"
       />
-      <circle cx="19" cy="20" r="3.6" fill="#070d14" stroke="#5eead4" strokeWidth="2.2" />
-      <circle cx="45" cy="44" r="3.6" fill="#070d14" stroke="#2dd4bf" strokeWidth="2.2" />
-      <circle cx="19" cy="44" r="2.8" fill="#60a5fa" />
-      <circle cx="45" cy="20" r="2.8" fill="#a78bfa" />
-      <circle cx="32" cy="32" r="3.4" fill="#5eead4" />
+      <circle cx="19" cy="20" r="3.6" fill="#030906" stroke="#c7b99b" strokeWidth="2.2" />
+      <circle cx="45" cy="44" r="3.6" fill="#030906" stroke="#a31c1b" strokeWidth="2.2" />
+      <circle cx="19" cy="44" r="2.8" fill="#a31c1b" />
+      <circle cx="45" cy="20" r="2.8" fill="#741514" />
+      <circle cx="32" cy="32" r="3.4" fill="#f2ede3" />
     </svg>
   );
 }
@@ -90,7 +90,7 @@ export function NykstBrand({
           Nykst
         </span>
         {subtitle && (
-          <span className="text-primary/80 mt-1 hidden font-mono text-[9px] tracking-[0.18em] uppercase sm:inline">
+          <span className="text-subtle-foreground mt-1 hidden font-mono text-[9px] tracking-[0.18em] uppercase sm:inline">
             {subtitle}
           </span>
         )}

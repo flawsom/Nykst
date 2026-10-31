@@ -1,23 +1,23 @@
 {
-  "treeFiles": 342,
-  "sourceFiles": 278,
-  "analyzedFiles": 278,
-  "internalEdges": 630,
+  "treeFiles": 346,
+  "sourceFiles": 279,
+  "analyzedFiles": 279,
+  "internalEdges": 642,
   "externalPackages": 54,
   "unresolvedImports": 0,
-  "skippedFiles": 1,
-  "loc": 51939,
-  "durationMs": 1123,
+  "skippedFiles": 3,
+  "loc": 52081,
+  "durationMs": 1071,
   "resourceCount": 15,
   "serviceCount": 11,
-  "generatedAt": "2026-10-31T16:57:45.925Z",
+  "generatedAt": "2026-10-31T20:01:39.689Z",
   "domains": [
     {
       "domain": "src/lib",
       "files": 75,
-      "loc": 17699,
+      "loc": 17714,
       "edgesOut": 14,
-      "edgesIn": 327,
+      "edgesIn": 328,
       "sampleFiles": [
         "src/lib/access.ts",
         "src/lib/ai-client.ts",
@@ -28,8 +28,8 @@
     {
       "domain": "src/routes",
       "files": 58,
-      "loc": 8729,
-      "edgesOut": 196,
+      "loc": 8772,
+      "edgesOut": 202,
       "edgesIn": 58,
       "sampleFiles": [
         "src/routes/[.]well-known.$.ts",
@@ -40,10 +40,10 @@
     },
     {
       "domain": "src/components",
-      "files": 83,
-      "loc": 16055,
-      "edgesOut": 111,
-      "edgesIn": 49,
+      "files": 84,
+      "loc": 16101,
+      "edgesOut": 112,
+      "edgesIn": 55,
       "sampleFiles": [
         "src/components/brand/NykstLogo.tsx",
         "src/components/docs/GuideShell.tsx",
@@ -54,7 +54,7 @@
     {
       "domain": "tests",
       "files": 35,
-      "loc": 5043,
+      "loc": 5076,
       "edgesOut": 68,
       "edgesIn": 0,
       "sampleFiles": [
@@ -93,7 +93,7 @@
     {
       "domain": "scripts",
       "files": 8,
-      "loc": 876,
+      "loc": 878,
       "edgesOut": 10,
       "edgesIn": 0,
       "sampleFiles": [
@@ -149,7 +149,7 @@
     {
       "domain": "playwright.config.ts",
       "files": 1,
-      "loc": 49,
+      "loc": 52,
       "edgesOut": 0,
       "edgesIn": 0,
       "sampleFiles": [

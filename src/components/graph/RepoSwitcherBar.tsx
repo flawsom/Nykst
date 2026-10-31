@@ -218,7 +218,9 @@ export function RepoSwitcherBar({
           <p className="truncate font-mono text-xs font-semibold">{repository.repository}</p>
           <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px]">
             {live ? (
-              <span className="text-primary">Live Workspace</span>
+              <span className="text-foreground inline-flex items-center gap-1.5">
+                <span className="bg-live size-1 rounded-full" /> Live Workspace
+              </span>
             ) : (
               <>
                 <span>{formatWhen(repository.created_at)}</span>
@@ -237,7 +239,7 @@ export function RepoSwitcherBar({
             )}
           </p>
         </div>
-        {isActive && <Check className="text-primary mt-0.5 size-4 shrink-0" />}
+        {isActive && <Check className="text-brand-ivory mt-0.5 size-4 shrink-0" />}
       </button>
     );
   };
@@ -250,7 +252,7 @@ export function RepoSwitcherBar({
       className={cn("relative min-w-0 max-w-full shrink-0", className)}
     >
       <div className="border-border bg-surface/80 flex max-w-full items-center gap-2 rounded-xl border px-2.5 py-1.5">
-        <Layers className="text-primary size-3.5 shrink-0" />
+        <Layers className="text-subtle-foreground size-3.5 shrink-0" />
         <div className="min-w-0">
           <p className="text-muted-foreground font-mono text-[9px] tracking-[0.18em] uppercase">
             Active repository
@@ -258,7 +260,7 @@ export function RepoSwitcherBar({
           <p className="max-w-[46vw] truncate font-mono text-xs font-semibold sm:max-w-[260px]">
             {active}
             {active === SELF_REPOSITORY && (
-              <span className="text-primary ml-1.5 hidden text-[10px] sm:inline">
+              <span className="text-subtle-foreground ml-1.5 hidden text-[10px] sm:inline">
                 live workspace
               </span>
             )}
@@ -281,7 +283,7 @@ export function RepoSwitcherBar({
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-label="Switch repository"
-          className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors sm:px-2.5"
+          className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors sm:px-2.5"
         >
           <span className="hidden sm:inline">Switch repository</span>
           <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
@@ -337,14 +339,14 @@ export function RepoSwitcherBar({
             </div>
 
             {error && (
-              <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-amber-300">
-                <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+              <p className="border-risk/40 bg-risk/10 text-foreground mt-3 flex items-start gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] leading-relaxed">
+                <AlertTriangle className="text-risk mt-0.5 size-3 shrink-0" />
                 {error}
               </p>
             )}
 
             {connectRequired && (
-              <div className="border-primary/25 bg-primary/5 mt-3 rounded-lg border px-3 py-2.5">
+              <div className="border-border bg-surface/60 mt-3 rounded-lg border px-3 py-2.5">
                 <p className="text-xs font-medium">GitHub is not connected yet.</p>
                 <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
                   The live self-indexed workspace stays available. Connect GitHub to switch between

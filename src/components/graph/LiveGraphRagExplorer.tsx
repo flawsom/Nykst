@@ -15,6 +15,7 @@ import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout
 import { SafeCodeLoopEngine } from "@/components/graph/SafeCodeLoopEngine";
 import { TOOLS as MCP_TOOLS } from "@/lib/mcp-guides";
 import { cn } from "@/lib/utils";
+import { SectionLabel } from "@/components/site/SectionLabel";
 import type { CodeTarget } from "@/components/graph/CodeProblemInspector";
 
 export type LiveSelfAnalysis = {
@@ -338,7 +339,7 @@ export function LiveGraphRagExplorer({
           </>
         ) : (
           <>
-            <RefreshCw className="text-primary mx-auto size-5 animate-spin" />
+            <RefreshCw className="text-subtle-foreground mx-auto size-5 animate-spin" />
             <p className="text-sm font-semibold">Reading the live map</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
               This usually takes a few seconds. The saved map above is already usable while the
@@ -352,14 +353,16 @@ export function LiveGraphRagExplorer({
 
   const { selectedTarget, topHubs, resources, services, stats } = data;
   const impact = selectedTarget.briefing.impact;
+  // Impact is a risk scale, not a rainbow. The word carries the level; the
+  // border and tint only add urgency for the two serious cases.
   const levelColor =
     impact.level === "Critical"
-      ? "border-red-500/40 bg-red-500/15 text-red-300"
+      ? "border-risk/50 bg-risk/15 text-foreground"
       : impact.level === "High"
-        ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+        ? "border-risk/30 bg-risk/[0.08] text-foreground"
         : impact.level === "Moderate"
-          ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
-          : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+          ? "border-border bg-surface-2 text-foreground"
+          : "border-border bg-surface text-subtle-foreground";
 
   const ALL_MCP_TOOLS: Array<{ id: McpToolName; label: string; badge?: string }> = [
     { id: "list_repositories", label: "list_repositories()" },
@@ -380,7 +383,7 @@ export function LiveGraphRagExplorer({
       {actionError && (
         <p
           role="alert"
-          className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-amber-200"
+          className="border-risk/40 bg-risk/10 text-foreground rounded-xl border px-4 py-3 text-xs leading-relaxed"
         >
           {actionError}
         </p>
@@ -388,9 +391,7 @@ export function LiveGraphRagExplorer({
       {/* PART 1: Sticky Scroll-Storytelling Architecture Pipeline */}
       <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
         <div className="lg:sticky lg:top-24 space-y-5">
-          <p className="text-primary font-mono text-[10px] uppercase tracking-[0.22em]">
-            A live map of this site
-          </p>
+          <SectionLabel>A live map of this site</SectionLabel>
           <h2 className="font-display text-3xl leading-[1.08] tracking-tight sm:text-4xl">
             Every change starts somewhere. See everything that depends on it.
           </h2>
@@ -403,7 +404,7 @@ export function LiveGraphRagExplorer({
           {/* Active Layer Spotlight Card */}
           <div className="border-border bg-card/90 rounded-2xl border p-5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-primary font-mono text-[10px] uppercase tracking-[0.24em]">
+              <span className="text-subtle-foreground font-mono text-[10px] tracking-[0.24em] uppercase">
                 STAGE {ARCHITECTURE_LAYERS[activeLayer]!.step} · ACTIVE SPEC
               </span>
               <button
@@ -411,27 +412,28 @@ export function LiveGraphRagExplorer({
                   setActiveTab("blast");
                   void inspectFile(ARCHITECTURE_LAYERS[activeLayer]!.proofFile);
                 }}
-                className="text-primary hover:underline font-mono text-[11px] flex items-center gap-1"
+                className="text-foreground flex items-center gap-1 font-mono text-[11px] underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
               >
                 Inspect {ARCHITECTURE_LAYERS[activeLayer]!.proofFile.split("/").pop()} →
               </button>
             </div>
             <h3 className="mt-2 text-lg font-semibold">{ARCHITECTURE_LAYERS[activeLayer]!.name}</h3>
-            <p className="text-primary/80 mt-1 font-mono text-[11px]">
+            <p className="text-subtle-foreground mt-1 font-mono text-[11px]">
               {ARCHITECTURE_LAYERS[activeLayer]!.metric}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-3">
-                <p className="font-mono text-[10px] uppercase tracking-wider text-red-300">
+              <div className="border-risk/30 bg-risk/[0.07] rounded-xl border p-3">
+                <p className="text-foreground font-mono text-[10px] tracking-wider uppercase">
                   ✗ Without Structural Graph
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {ARCHITECTURE_LAYERS[activeLayer]!.naiveFail}
                 </p>
               </div>
-              <div className="border-primary/30 bg-primary/10 rounded-xl border p-3">
-                <p className="text-primary font-mono text-[10px] uppercase tracking-wider">
-                  ✓ Nykst Verified Evidence
+              <div className="border-border bg-surface/70 rounded-xl border p-3">
+                <p className="text-foreground flex items-center gap-2 font-mono text-[10px] tracking-wider uppercase">
+                  <span aria-hidden="true" className="bg-brand-ivory h-px w-3 shrink-0" />
+                  Nykst verified evidence
                 </p>
                 <p className="text-foreground/90 mt-1 text-xs leading-relaxed">
                   {ARCHITECTURE_LAYERS[activeLayer]!.nykstTruth}
@@ -443,7 +445,7 @@ export function LiveGraphRagExplorer({
           {/* Live Self-Analysis Proof Bar */}
           <div className="border-border bg-surface/70 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 font-mono text-[11px]">
             <span className="flex items-center gap-2">
-              <span className="bg-primary size-2 rounded-full" />
+              <span className="bg-brand-ivory size-2 rounded-full" />
               <span>
                 Read in <strong>{stats.durationMs}ms</strong> · {stats.analyzedFiles} files ·{" "}
                 {stats.internalEdges} connections
@@ -452,7 +454,7 @@ export function LiveGraphRagExplorer({
             <button
               onClick={() => void inspectFile(selectedPath, true)}
               disabled={loadingTarget}
-              className="text-primary hover:underline inline-flex items-center gap-1"
+              className="text-foreground inline-flex items-center gap-1 underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
             >
               <RefreshCw className={cn("size-3", loadingTarget && "animate-spin")} />
               Read the code again
@@ -505,7 +507,7 @@ export function LiveGraphRagExplorer({
                         reason: layer.nykstTruth,
                       });
                     }}
-                    className="border-border bg-surface text-muted-foreground hover:border-primary/40 hover:text-primary hidden rounded-md border px-2 py-0.5 font-mono text-[10px] transition-colors sm:inline"
+                    className="border-border bg-surface text-subtle-foreground hover:border-primary/40 hover:text-foreground hidden rounded-md border px-2 py-0.5 font-mono text-[10px] transition-colors sm:inline"
                   >
                     {layer.proofFile}:1
                   </button>
@@ -526,19 +528,21 @@ export function LiveGraphRagExplorer({
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div>
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
+            <div className="text-subtle-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.24em] uppercase">
               <Activity className="size-3.5" /> See what a change would touch
             </div>
             <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
               Inspect{" "}
-              <code className="text-primary font-mono text-base sm:text-lg">{data.repository}</code>{" "}
+              <code className="text-foreground font-mono text-base sm:text-lg">
+                {data.repository}
+              </code>{" "}
               in real time
             </h3>
             <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
               Every node, import line, SQL resource, and MCP tool payload below is computed live by{" "}
               <code className="font-mono text-foreground">analyzeRepository()</code>. Click any{" "}
-              <code className="text-primary font-mono">file:line</code> badge to inspect the exact
-              source code.
+              <code className="text-foreground font-mono">file:line</code> badge to inspect the
+              exact source code.
             </p>
           </div>
 
@@ -584,7 +588,7 @@ export function LiveGraphRagExplorer({
                 <span className="text-muted-foreground font-mono text-[11px] uppercase tracking-wider">
                   Files other code depends on most (click to trace)
                 </span>
-                <span className="text-primary font-mono text-[11px]">
+                <span className="text-foreground font-mono text-[11px]">
                   {topHubs.length} ranked hubs
                 </span>
               </div>
@@ -610,7 +614,7 @@ export function LiveGraphRagExplorer({
                           className={cn(
                             "shrink-0 rounded-full border px-2 py-0.5 font-mono text-[10px]",
                             isSelected
-                              ? "border-primary/50 bg-primary/20 text-primary"
+                              ? "border-primary/60 bg-primary/10 text-foreground"
                               : "border-border bg-card text-muted-foreground",
                           )}
                         >
@@ -624,7 +628,9 @@ export function LiveGraphRagExplorer({
                         {hub.services.length > 0 && (
                           <>
                             <span>·</span>
-                            <span className="text-primary">{hub.services.join(", ")}</span>
+                            <span className="text-subtle-foreground">
+                              {hub.services.join(", ")}
+                            </span>
                           </>
                         )}
                       </div>
@@ -639,7 +645,7 @@ export function LiveGraphRagExplorer({
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
                   <div>
-                    <span className="text-primary font-mono text-[10px] uppercase tracking-[0.2em]">
+                    <span className="text-subtle-foreground font-mono text-[10px] tracking-[0.2em] uppercase">
                       Selected file
                     </span>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -657,7 +663,7 @@ export function LiveGraphRagExplorer({
                             reason: `${selectedTarget.file?.loc ?? 0} lines · ${impact.direct_importers.length} files use it`,
                           })
                         }
-                        className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors"
+                        className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors"
                       >
                         Open source →
                       </button>
@@ -696,7 +702,7 @@ export function LiveGraphRagExplorer({
                     </p>
                   </div>
                   <div className="border-border bg-card/80 rounded-xl border p-3">
-                    <p className="text-primary text-xl font-bold">{impact.entrypoints.length}</p>
+                    <p className="text-foreground text-xl font-bold">{impact.entrypoints.length}</p>
                     <p className="text-muted-foreground font-mono text-[10px] uppercase">
                       Routes & APIs Hit
                     </p>
@@ -735,7 +741,9 @@ export function LiveGraphRagExplorer({
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-foreground font-semibold">{ep.path}</span>
-                            <span className="text-primary text-[10px] uppercase">{ep.role}</span>
+                            <span className="text-subtle-foreground text-[10px] uppercase">
+                              {ep.role}
+                            </span>
                           </div>
                           <p className="text-muted-foreground mt-1 truncate text-[10px]">
                             Chain: {ep.chain.join(" → ")}
@@ -774,7 +782,7 @@ export function LiveGraphRagExplorer({
                         className="border-border bg-card hover:border-primary/50 rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors"
                       >
                         {d.path}
-                        <span className="text-primary">:{d.line}</span>
+                        <span className="text-subtle-foreground">:{d.line}</span>
                       </button>
                     ))}
                   </div>
@@ -804,7 +812,7 @@ export function LiveGraphRagExplorer({
             {/* SQL Tables & RPCs */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-primary font-mono text-[11px] uppercase tracking-wider">
+                <span className="text-subtle-foreground font-mono text-[11px] tracking-wider uppercase">
                   SQL Schema & Data Resources ({resources.length})
                 </span>
                 <span className="text-muted-foreground font-mono text-[10px]">
@@ -819,9 +827,10 @@ export function LiveGraphRagExplorer({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono font-semibold text-foreground">
-                        {res.kind.toUpperCase()}: <span className="text-primary">{res.name}</span>
+                        {res.kind.toUpperCase()}:{" "}
+                        <span className="text-foreground">{res.name}</span>
                       </span>
-                      <span className="border-primary/30 bg-primary/10 text-primary rounded-full border px-2 py-0.5 font-mono text-[10px]">
+                      <span className="border-border text-subtle-foreground rounded-full border px-2 py-0.5 font-mono text-[10px]">
                         {res.usageCount} call sites
                       </span>
                     </div>
@@ -841,7 +850,7 @@ export function LiveGraphRagExplorer({
                                 reason: `Migration defining ${res.kind} ${res.name}`,
                               })
                             }
-                            className="text-primary hover:underline"
+                            className="text-foreground underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
                           >
                             {ddlPath}
                           </button>
@@ -858,7 +867,7 @@ export function LiveGraphRagExplorer({
                       </p>
                     ) : null}
                     {res.columnDrift?.length ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] text-amber-300">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] text-foreground">
                         <span>Contract drift:</span>
                         {res.columnDrift.slice(0, 4).map((finding) => {
                           const first = finding.references[0];
@@ -875,7 +884,7 @@ export function LiveGraphRagExplorer({
                                   reason: finding.message,
                                 })
                               }
-                              className="border-amber-500/40 bg-amber-500/10 hover:border-amber-400 rounded border px-1.5 py-0.5 font-mono transition-colors"
+                              className="border-risk/40 bg-risk/10 hover:border-risk/65 rounded border px-1.5 py-0.5 font-mono transition-colors"
                             >
                               {finding.column}
                               {first ? `:${first.line}` : ""}
@@ -911,7 +920,7 @@ export function LiveGraphRagExplorer({
             {/* External Services & SDK Evidence */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-primary font-mono text-[11px] uppercase tracking-wider">
+                <span className="text-subtle-foreground font-mono text-[11px] tracking-wider uppercase">
                   Detected External Services ({services.length})
                 </span>
                 <span className="text-muted-foreground font-mono text-[10px]">
@@ -936,7 +945,7 @@ export function LiveGraphRagExplorer({
                       </span>
                     </div>
                     {svc.envVars.length > 0 && (
-                      <p className="text-primary/90 mt-1.5 font-mono text-[10px]">
+                      <p className="text-subtle-foreground mt-1.5 font-mono text-[10px]">
                         Env: {svc.envVars.join(", ")}
                       </p>
                     )}
@@ -957,7 +966,11 @@ export function LiveGraphRagExplorer({
                           className="border-border bg-card hover:border-primary/40 rounded-md border px-2 py-0.5 text-left font-mono text-[10px] transition-colors"
                         >
                           <span className="text-foreground">{ev.path}</span>
-                          {ev.line ? <span className="text-primary">:{ev.line}</span> : ""}{" "}
+                          {ev.line ? (
+                            <span className="text-subtle-foreground">:{ev.line}</span>
+                          ) : (
+                            ""
+                          )}{" "}
                           <span className="text-muted-foreground">({ev.reason})</span>
                         </button>
                       ))}
@@ -981,13 +994,13 @@ export function LiveGraphRagExplorer({
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors",
                       mcpTool === t.id
-                        ? "border-primary bg-primary/15 text-primary font-semibold"
+                        ? "border-primary bg-primary/10 text-foreground font-semibold"
                         : "border-border bg-surface text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <span>{t.label}</span>
                     {t.badge && (
-                      <span className="border-primary/30 bg-primary/10 text-primary rounded px-1 py-0.2 text-[9px] uppercase">
+                      <span className="border-border text-subtle-foreground rounded px-1 py-0.2 text-[9px] uppercase">
                         {t.badge}
                       </span>
                     )}
@@ -1021,7 +1034,7 @@ export function LiveGraphRagExplorer({
                 className="border-border bg-surface/70 rounded-xl border p-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-primary font-mono text-[10px] uppercase tracking-wider">
+                  <span className="text-subtle-foreground font-mono text-[10px] tracking-wider uppercase">
                     {mcpTool === "simulate_change"
                       ? `Trying your change in a safe copy of ${selectedPath}. Nothing is written to your project.`
                       : mcpTool === "run_safe_code_loop"
@@ -1032,7 +1045,7 @@ export function LiveGraphRagExplorer({
                     type="button"
                     data-testid="mcp-run-overlay-button"
                     onClick={() => void runLiveMcpTool(mcpTool)}
-                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
+                    className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
                   >
                     Run {mcpTool} →
                   </button>

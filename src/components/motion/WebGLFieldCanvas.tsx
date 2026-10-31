@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
  * Zero-dependency WebGL2 Fluid & Hexagonal AST Lattice Background Canvas.
  *
  * - Renders a smooth GPU curl-noise velocity field in Nykst's signature palette
- *   (#06110f deep obsidian, #0b141b slate, #2DD4BF teal, #5EEAD4 mint cyan, #60A5FA electric blue)
+ *   (#030906 deep forest, #0B1912 panel green, #C7B99B sand, #F2EDE3 ivory, #A31C1B crimson)
  *   that ripples around the cursor (u_mouse, u_velocity, u_time).
  * - Projects an interactive 3D hexagonal AST prism lattice that rotates with mouse
  *   parallax and morphs/zooms with scroll progress (u_scroll).
@@ -35,7 +35,7 @@ uniform vec2 u_velocity;
 uniform float u_time;
 uniform float u_scroll;
 uniform float u_intensity;
-// 0 = verified safe (teal), 0.45 = simulating (cyan), 1 = breaking (amber/coral)
+// 0 = verified safe (sage), 0.45 = simulating (sand), 1 = breaking (crimson)
 uniform float u_accentState;
 
 // Simplex-inspired 2D hash & gradient noise
@@ -97,29 +97,34 @@ void main() {
   float prismMask = exp(-length(p - vec2(0.22 * aspect, 0.08)) * 1.65);
 
   // Nykst signature palette
-  vec3 obsidian = vec3(0.024, 0.067, 0.059);   // #06110f
-  vec3 slate    = vec3(0.043, 0.078, 0.106);   // #0b141b
-  vec3 teal     = vec3(0.176, 0.831, 0.749);   // #2DD4BF
-  vec3 mint     = vec3(0.369, 0.918, 0.831);   // #5EEAD4
-  vec3 electric = vec3(0.376, 0.647, 0.980);   // #60A5FA
+  vec3 obsidian = vec3(0.012, 0.035, 0.024);   // #030906
+  vec3 forest   = vec3(0.043, 0.098, 0.071);   // #0B1912
+  vec3 sand     = vec3(0.780, 0.725, 0.608);   // #C7B99B
+  vec3 ivory    = vec3(0.949, 0.929, 0.890);   // #F2EDE3
+  vec3 crimson  = vec3(0.639, 0.110, 0.106);   // #A31C1B
 
   float ribbon = smoothstep(-0.45, 0.65, flow.x + flow.y * 0.6);
-  vec3 base = mix(obsidian, slate, clamp(uv.y * 0.9 + ribbon * 0.35, 0.0, 1.0));
-  vec3 fluidGlow = mix(teal, electric, clamp(flow.y * 0.5 + 0.5 + u_scroll * 0.3, 0.0, 1.0));
+  vec3 base = mix(obsidian, forest, clamp(uv.y * 0.9 + ribbon * 0.35, 0.0, 1.0));
+  vec3 sage = vec3(0.561, 0.663, 0.604);       // #8FA99A
+  vec3 fluidGlow = mix(ivory, sage, clamp(flow.y * 0.5 + 0.5, 0.0, 1.0));
 
   vec3 color = base;
-  // Three-state ramp: emerald when verified safe, mint cyan while simulating,
-  // coral amber when Stage 4 catches a breaking hidden dependency.
-  vec3 safeGlow = vec3(0.063, 0.725, 0.506);   // #10B981
-  vec3 simulateGlow = mint;                     // #5EEAD4
-  vec3 breakGlow = vec3(0.988, 0.451, 0.239);   // #F87171 / #FBBF24
+  // Three-state ramp: sage when verified safe, sand while simulating, rust
+  // crimson only when Stage 4 catches a breaking hidden dependency.
+  vec3 simulateGlow = sand;                     // #C7B99B
+  vec3 breakGlow = vec3(0.816, 0.267, 0.251);   // #D04440
   float state = clamp(u_accentState, 0.0, 1.0);
   vec3 accent = state < 0.45
-    ? mix(safeGlow, simulateGlow, state / 0.45)
+    ? mix(sage, simulateGlow, state / 0.45)
     : mix(simulateGlow, breakGlow, (state - 0.45) / 0.55);
-  color += accent * wake * 0.22 * u_intensity;
-  color += fluidGlow * (ribbon * 0.12 + wake * 0.22) * u_intensity;
-  color += mix(teal, mint, 0.5) * (hexOuter + hexInner) * prismMask * 0.16 * u_intensity;
+
+  // The field is structure, not a color wash. Sand appears only under direct
+  // pointer movement, crimson only when the loop verdict is breaking.
+  float pointerHint = min(length(u_velocity) * 2.0, 1.0);
+  color += accent * wake * 0.16 * u_intensity;
+  color += sand * wake * pointerHint * 0.035 * u_intensity;
+  color += fluidGlow * (ribbon * 0.035 + wake * 0.07) * u_intensity;
+  color += mix(ivory, sage, 0.7) * (hexOuter + hexInner) * prismMask * 0.1 * u_intensity;
 
   // Subtle film grain inside the shader
   float grain = fract(sin(dot(uv * u_resolution, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
@@ -149,21 +154,21 @@ export function WebGLFieldCanvas({
   className,
   intensity = 1,
   fixed = true,
-  accentState = "teal",
+  accentState = "safe",
 }: {
   className?: string;
   intensity?: number;
   fixed?: boolean;
-  accentState?: "teal" | "emerald" | "cyan" | "amber" | number;
+  accentState?: "safe" | "simulating" | "breaking" | number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fallback, setFallback] = useState(false);
   const accentValue =
     typeof accentState === "number"
       ? Math.min(1, Math.max(0, accentState))
-      : accentState === "amber"
+      : accentState === "breaking"
         ? 1
-        : accentState === "cyan"
+        : accentState === "simulating"
           ? 0.45
           : 0.05;
   const accentRef = useRef(accentValue);
@@ -374,10 +379,10 @@ export function WebGLFieldCanvas({
                 // machine without WebGL2 loses the visual stage feedback.
                 background:
                   accentValue >= 0.75
-                    ? "radial-gradient(circle at 50% 22%, rgba(248, 113, 113, 0.24), rgba(251, 191, 36, 0.08), rgba(6, 17, 15, 0.96) 70%)"
+                    ? "radial-gradient(circle at 50% 22%, rgba(208, 68, 64, 0.18), rgba(163, 28, 27, 0.06), rgba(3, 9, 6, 0.97) 70%)"
                     : accentValue >= 0.3
-                      ? "radial-gradient(circle at 50% 22%, rgba(94, 234, 212, 0.2), rgba(96, 165, 250, 0.08), rgba(6, 17, 15, 0.95) 70%)"
-                      : "radial-gradient(circle at 50% 22%, rgba(16, 185, 129, 0.2), rgba(45, 212, 191, 0.08), rgba(6, 17, 15, 0.95) 70%)",
+                      ? "radial-gradient(circle at 50% 22%, rgba(199, 185, 155, 0.12), rgba(143, 169, 154, 0.05), rgba(3, 9, 6, 0.97) 70%)"
+                      : "radial-gradient(circle at 50% 22%, rgba(143, 169, 154, 0.1), rgba(242, 237, 227, 0.04), rgba(3, 9, 6, 0.97) 70%)",
               }
             : undefined
         }

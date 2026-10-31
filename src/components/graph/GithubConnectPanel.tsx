@@ -170,8 +170,10 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
           onDone={finishMapping}
         />
       )}
-      <div className="mt-6 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-        <p className="text-sm font-medium text-primary">GitHub connected</p>
+      <div className="border-border bg-surface/60 mt-6 space-y-3 rounded-xl border p-4">
+        <p className="text-foreground flex items-center gap-2 text-sm font-medium">
+          <span className="bg-brand-ivory size-1.5 rounded-full" /> GitHub connected
+        </p>
         <p className="text-muted-foreground text-xs">
           {perRepository
             ? "Nykst reads only the repositories you grant it, and never writes to them."
@@ -221,7 +223,7 @@ export function GithubConnectPanel({ connected, onConnect }: Props) {
         {manageUrl && (
           <a
             href={manageUrl}
-            className="border-primary/30 text-primary hover:bg-primary/10 block rounded-lg border px-4 py-2 text-center text-xs font-semibold"
+            className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 block rounded-lg border px-4 py-2 text-center text-xs font-semibold transition-colors"
           >
             {allRepositories.length
               ? "Add or remove repositories on GitHub"

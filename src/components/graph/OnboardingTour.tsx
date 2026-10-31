@@ -52,7 +52,7 @@ export function OnboardingTour() {
         className="border-border bg-card w-full max-w-md rounded-2xl border p-6"
         style={{ boxShadow: "var(--shadow-panel)" }}
       >
-        <div className="text-primary text-[10px] tracking-[0.28em] uppercase">
+        <div className="text-subtle-foreground text-[10px] tracking-[0.28em] uppercase">
           Getting started · {i + 1} / {STEPS.length}
         </div>
         <h2 className="mt-3 text-lg font-semibold tracking-tight">{step.title}</h2>

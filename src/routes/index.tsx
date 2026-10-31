@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, ChevronRight, Github, Mail, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Github, Mail, TriangleAlert, X } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { GithubConnectPanel } from "@/components/graph/GithubConnectPanel";
 import { LandingGraphPreview, type LandingMapData } from "@/components/graph/LandingGraphPreview";
@@ -16,6 +16,7 @@ import { PlansPreview } from "@/components/site/PlansPreview";
 import { LandingFaq } from "@/components/site/LandingFaq";
 import { WorksWith } from "@/components/site/WorksWith";
 import { ConsequenceTable } from "@/components/site/ConsequenceTable";
+import { SectionLabel } from "@/components/site/SectionLabel";
 
 import snapshotStats from "@/lib/analysis/self-snapshot-stats.json";
 import { CONTACT_EMAIL, mailtoHref } from "@/lib/contact";
@@ -130,7 +131,7 @@ function Landing() {
   const [contactOpen, setContactOpen] = useState(false);
   const [liveSelf, setLiveSelf] = useState<LiveSelfAnalysis | null>(null);
   const [selfError, setSelfError] = useState<string | null>(null);
-  const [loopAccent, setLoopAccent] = useState<"teal" | "cyan" | "amber">("teal");
+  const [loopAccent, setLoopAccent] = useState<"safe" | "simulating" | "breaking">("safe");
 
   const loadSelf = useCallback(async () => {
     setSelfError(null);
@@ -279,28 +280,26 @@ function Landing() {
             <button
               onClick={() => setContactOpen(false)}
               aria-label="Close contact panel"
-              className="text-muted-foreground hover:text-foreground absolute top-4 right-4"
+              className="text-subtle-foreground hover:text-foreground absolute top-4 right-4"
             >
               <X className="size-4" />
             </button>
-            <p className="text-primary text-[10px] font-mono tracking-[0.24em] uppercase">
-              Talk to the team
-            </p>
+            <SectionLabel>Talk to the team</SectionLabel>
             <h2 className="mt-2 text-xl font-semibold">Tell us about your system</h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+            <p className="text-body-ink mt-2 text-sm leading-relaxed">
               Running a large monorepo, several organizations, or a private deployment? We will walk
               through your setup personally and tell you what Nykst can see on day one.
             </p>
-            <div className="border-primary/25 bg-primary/5 mt-5 rounded-xl border p-4">
-              <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Contact</p>
+            <div className="border-border bg-surface/60 mt-5 rounded-xl border p-4">
+              <p className="text-subtle-foreground text-[11px] tracking-wide uppercase">Contact</p>
               <a
                 href={mailtoHref("Plans and access")}
-                className="text-primary mt-1 flex items-center gap-2 text-sm font-semibold hover:underline"
+                className="text-foreground mt-1 flex items-center gap-2 text-sm font-semibold underline decoration-primary/60 decoration-1 underline-offset-4 hover:decoration-primary"
               >
                 <Mail className="size-4" /> {CONTACT_EMAIL}
               </a>
             </div>
-            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+            <p className="text-subtle-foreground mt-4 text-xs leading-relaxed">
               Prefer self-serve? The plan registry on the pricing page shows every term before you
               sign in.
             </p>
@@ -339,12 +338,12 @@ function Landing() {
         <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12">
           <div>
             <div
-              className="animate-rise border-border/80 bg-surface/60 text-muted-foreground mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[9px] tracking-[0.16em] uppercase backdrop-blur-sm"
+              className="animate-rise border-border/80 bg-surface/70 text-subtle-foreground mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[9px] tracking-[0.16em] uppercase backdrop-blur-sm"
               style={{ animationDelay: "20ms" }}
             >
               <span className="relative flex size-1.5">
-                <span className="bg-primary animate-live-dot absolute inline-flex size-full rounded-full" />
-                <span className="bg-primary relative inline-flex size-1.5 rounded-full" />
+                <span className="bg-live animate-live-dot absolute inline-flex size-full rounded-full" />
+                <span className="bg-brand-ivory relative inline-flex size-1.5 rounded-full" />
               </span>
               <span>{stats.analyzedFiles} files mapped</span>
               <span className="text-border">/</span>
@@ -353,8 +352,9 @@ function Landing() {
             <h1 className="font-display max-w-[15ch] text-5xl leading-[0.96] font-semibold tracking-[-0.045em] text-foreground sm:text-6xl lg:text-7xl">
               <SplitText text="See what your next change will affect." />
             </h1>
+            <div className="bg-brand-crimson mt-5 h-px w-14" />
             <p
-              className="animate-rise text-muted-foreground mt-6 max-w-xl text-base leading-relaxed"
+              className="animate-rise text-muted-foreground mt-5 max-w-xl text-base leading-relaxed"
               style={{ animationDelay: "110ms" }}
             >
               A change that looks small can reach further than you think. Nykst maps every file,
@@ -368,21 +368,21 @@ function Landing() {
             >
               <a
                 href="/api/integrations/github/start"
-                className="bg-primary text-primary-foreground hover:bg-primary-glow group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold shadow-[0_14px_40px_-18px_var(--primary)] transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_48px_-18px_var(--primary)] sm:w-auto"
+                className="bg-primary text-primary-foreground hover:bg-primary-glow group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold shadow-[0_18px_44px_-30px_var(--primary)] transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_52px_-30px_var(--primary)] sm:w-auto"
               >
                 <Github className="size-4 transition-transform duration-300 group-hover:-rotate-6" />
                 Map my repository
               </a>
               <Link
                 to="/graph"
-                className="border-border bg-surface hover:bg-surface-2 group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-sm font-semibold transition-[background-color,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/40 sm:w-auto"
+                className="border-border bg-transparent hover:bg-surface/70 group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-sm font-semibold transition-[background-color,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/45 sm:w-auto"
               >
                 Explore the live map
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
             <div
-              className="animate-rise text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]"
+              className="animate-rise text-subtle-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]"
               style={{ animationDelay: "220ms" }}
             >
               <span>7-day trial, cancel before day 8</span>
@@ -398,12 +398,12 @@ function Landing() {
             </div>
 
             <ul
-              className="animate-rise text-muted-foreground mt-7 grid gap-2 text-[11px] sm:grid-cols-2"
+              className="animate-rise text-subtle-foreground mt-7 grid gap-2 text-[11px] sm:grid-cols-2"
               style={{ animationDelay: "250ms" }}
             >
               {TRUST.map((item) => (
                 <li key={item} className="flex items-start gap-2">
-                  <span className="bg-primary mt-1.5 size-1 shrink-0 rounded-full" />
+                  <span className="bg-brand-ivory/45 mt-1.5 size-1 shrink-0 rounded-full" />
                   {item}
                 </li>
               ))}
@@ -419,7 +419,7 @@ function Landing() {
               retryLabel={selfError ? "Retry live analysis" : "Refresh live analysis"}
             />
             {selfError && (
-              <p role="status" className="text-muted-foreground mt-2 text-[11px] leading-relaxed">
+              <p role="status" className="text-subtle-foreground mt-2 text-[11px] leading-relaxed">
                 The map above is the last compiled snapshot. The live refresh did not answer:{" "}
                 {selfError}
               </p>
@@ -468,15 +468,15 @@ function Landing() {
               <p className="text-2xl font-semibold tracking-tight">
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} />
               </p>
-              <p className="text-muted-foreground mt-0.5 font-mono text-[10px] tracking-[0.12em] uppercase">
+              <p className="text-subtle-foreground mt-0.5 font-mono text-[10px] tracking-[0.12em] uppercase">
                 {stat.label}
               </p>
             </div>
           ))}
         </div>
-        <p className="text-muted-foreground/80 mt-2.5 font-mono text-[10px]">
+        <p className="text-subtle-foreground mt-2.5 font-mono text-[10px]">
           Every number above is read from{" "}
-          <code className="text-primary">{liveSelf?.repository ?? "flawsom/nykst"}</code>.{" "}
+          <code className="text-foreground">{liveSelf?.repository ?? "flawsom/nykst"}</code>.{" "}
           {liveSelf ? "Live analysis in this page load." : "Last compiled snapshot."} Nothing is
           estimated or filled in.
         </p>
@@ -517,7 +517,7 @@ function Landing() {
             />
             <Link
               to="/graph"
-              className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
+              className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
             >
               Open the full graph <ArrowRight className="size-3.5" />
             </Link>
@@ -529,7 +529,11 @@ function Landing() {
             onOpenCode={setCodeTarget}
             onLoopVerdict={(verdict) =>
               setLoopAccent(
-                verdict === "breaking" ? "amber" : verdict === "simulating" ? "cyan" : "teal",
+                verdict === "breaking"
+                  ? "breaking"
+                  : verdict === "simulating"
+                    ? "simulating"
+                    : "safe",
               )
             }
             loadError={selfError}
@@ -545,9 +549,7 @@ function Landing() {
       >
         <BlurReveal>
           <div className="max-w-3xl">
-            <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-              Primary navigation
-            </p>
+            <SectionLabel>Primary navigation</SectionLabel>
             <h2 className="font-display mt-3 text-3xl leading-[1.08] tracking-tight sm:text-4xl">
               The graph is the navigation, not a visualization.
             </h2>
@@ -561,15 +563,15 @@ function Landing() {
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {LEVELS.map((level, index) => (
               <BlurReveal key={level.title} delayMs={index * 60} className="h-full">
-                <div className="border-border bg-card/75 hover:border-primary/35 hover:bg-surface/80 group h-full rounded-2xl border p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-36px_var(--primary)]">
-                  <div className="flex items-center justify-between border-b border-border/70 pb-3">
-                    <span className="text-muted-foreground group-hover:text-primary font-mono text-[10px] tracking-[0.18em] transition-colors">
+                <div className="border-border bg-card/75 hover:border-primary/35 hover:bg-surface/80 group h-full rounded-2xl border p-5 transition-[transform,border-color,background-color] duration-300 hover:-translate-y-1">
+                  <div className="border-border/70 flex items-center justify-between border-b pb-3">
+                    <span className="text-subtle-foreground group-hover:text-foreground font-mono text-[10px] tracking-[0.18em] transition-colors">
                       LEVEL {level.level}
                     </span>
                   </div>
                   <h3 className="mt-4 text-sm font-semibold tracking-tight">{level.title}</h3>
-                  <p className="text-primary/80 mt-1 text-[11px]">{level.count}</p>
-                  <p className="text-muted-foreground mt-2 text-xs leading-relaxed">{level.copy}</p>
+                  <p className="text-subtle-foreground mt-1 text-[11px]">{level.count}</p>
+                  <p className="text-body-ink mt-2 text-xs leading-relaxed">{level.copy}</p>
                 </div>
               </BlurReveal>
             ))}
@@ -583,13 +585,11 @@ function Landing() {
       <section className="relative z-20 mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
         <BlurReveal>
           <div className="mb-8 max-w-2xl">
-            <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-              What you get
-            </p>
+            <SectionLabel>What you get</SectionLabel>
             <h2 className="font-display mt-3 text-3xl leading-[1.08] tracking-tight sm:text-4xl">
               One system. Three ways to use it.
             </h2>
-            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            <p className="text-body-ink mt-3 text-sm leading-relaxed">
               Start with the consequence of a change, keep the reasoning behind it, and carry both
               into the editor you already use.
             </p>
@@ -599,16 +599,16 @@ function Landing() {
               <BlurReveal key={feature.title} delayMs={index * 70} className="h-full">
                 <Link
                   to={feature.to}
-                  className="border-border bg-card/75 group hover:border-primary/40 hover:bg-surface/80 flex h-full flex-col rounded-2xl border p-6 transition-[transform,border-color,background-color,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-42px_var(--primary)]"
+                  className="border-border bg-card/75 group hover:border-primary/40 hover:bg-surface/80 flex h-full flex-col rounded-2xl border p-6 transition-[transform,border-color,background-color] duration-300 hover:-translate-y-1"
                 >
-                  <span className="text-muted-foreground/60 group-hover:text-primary font-mono text-[10px] tracking-[0.18em] transition-colors">
+                  <span className="text-subtle-foreground group-hover:text-foreground font-mono text-[10px] tracking-[0.18em] transition-colors">
                     0{index + 1}
                   </span>
                   <h3 className="mt-5 text-base font-semibold tracking-tight">{feature.title}</h3>
-                  <p className="text-muted-foreground mt-2 flex-1 text-xs leading-relaxed">
+                  <p className="text-body-ink mt-2 flex-1 text-xs leading-relaxed">
                     {feature.copy}
                   </p>
-                  <span className="text-primary mt-5 inline-flex items-center gap-1.5 text-xs font-semibold">
+                  <span className="text-foreground mt-5 inline-flex items-center gap-1.5 text-xs font-semibold underline decoration-primary/55 decoration-1 underline-offset-4 transition-colors group-hover:decoration-primary">
                     {feature.link}
                     <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
@@ -624,20 +624,18 @@ function Landing() {
         <BlurReveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-                Check the evidence
-              </p>
+              <SectionLabel>Check the evidence</SectionLabel>
               <h2 className="font-display mt-3 text-3xl leading-[1.08] tracking-tight sm:text-4xl">
                 Follow the proof, not the pitch.
               </h2>
-              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+              <p className="text-body-ink mt-3 text-sm leading-relaxed">
                 Three guides use the public Nykst example, cite the file and line, and state what
                 the evidence does not cover. No account needed.
               </p>
             </div>
             <Link
               to="/docs"
-              className="text-primary group inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold hover:underline"
+              className="text-foreground group inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
             >
               All documentation
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -664,13 +662,11 @@ function Landing() {
               <BlurReveal key={guide.to} delayMs={index * 70} className="h-full">
                 <Link
                   to={guide.to}
-                  className="border-border bg-card/75 hover:border-primary/40 hover:bg-surface/80 group flex h-full flex-col rounded-2xl border p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-42px_var(--primary)]"
+                  className="border-border bg-card/75 hover:border-primary/40 hover:bg-surface/80 group flex h-full flex-col rounded-2xl border p-5 transition-[transform,border-color,background-color] duration-300 hover:-translate-y-1"
                 >
                   <h3 className="text-sm font-semibold tracking-tight">{guide.title}</h3>
-                  <p className="text-muted-foreground mt-2 flex-1 text-xs leading-relaxed">
-                    {guide.copy}
-                  </p>
-                  <span className="text-primary mt-4 inline-flex items-center gap-1.5 text-xs font-semibold">
+                  <p className="text-body-ink mt-2 flex-1 text-xs leading-relaxed">{guide.copy}</p>
+                  <span className="text-foreground mt-4 inline-flex items-center gap-1.5 text-xs font-semibold underline decoration-primary/55 decoration-1 underline-offset-4 group-hover:decoration-primary">
                     Read the guide
                     <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
@@ -689,13 +685,11 @@ function Landing() {
         <BlurReveal>
           <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
             <div>
-              <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-                Connect your repository
-              </p>
+              <SectionLabel>Connect your repository</SectionLabel>
               <h2 className="font-display mt-3 text-3xl leading-[1.08] tracking-tight sm:text-4xl">
                 Three minutes to your first map.
               </h2>
-              <p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
+              <p className="text-body-ink mt-4 max-w-lg text-sm leading-relaxed">
                 Nykst reads the repositories you choose and builds the map itself. It never asks you
                 to describe your architecture, and it never writes to your code.
               </p>
@@ -719,12 +713,12 @@ function Landing() {
                   },
                 ].map((item) => (
                   <li key={item.step} className="flex gap-3">
-                    <span className="border-primary/35 bg-primary/10 text-primary mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] font-semibold">
+                    <span className="border-border bg-surface-2 text-foreground mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] font-semibold">
                       {item.step}
                     </span>
                     <div>
                       <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                      <p className="text-subtle-foreground mt-0.5 text-xs leading-relaxed">
                         {item.copy}
                       </p>
                     </div>
@@ -732,28 +726,29 @@ function Landing() {
                 ))}
               </ol>
 
-              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+              <div className="text-subtle-foreground mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px]">
                 <span className="flex items-center gap-1.5">
-                  <span className="bg-primary size-1 rounded-full" /> Never writes to your
+                  <span className="bg-brand-ivory/45 size-1 rounded-full" /> Never writes to your
                   repository
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="bg-primary size-1 rounded-full" /> Disconnect at any time
+                  <span className="bg-brand-ivory/45 size-1 rounded-full" /> Disconnect at any time
                 </span>
               </div>
             </div>
 
             <div className="border-border bg-card/95 rounded-2xl border p-4 sm:p-6">
-              <div className="border-primary/30 bg-secondary/40 rounded-xl border px-4 py-3">
+              <div className="border-border bg-surface-2/70 rounded-xl border px-4 py-3">
                 <span className="block text-sm font-medium">Connect GitHub</span>
-                <span className="text-muted-foreground block text-[11px]">
+                <span className="text-subtle-foreground block text-[11px]">
                   Choose an organization and repository, or explore the example map of this site
                   first.
                 </span>
               </div>
 
               {githubNotice && (
-                <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-300">
+                <p className="border-risk/35 bg-risk/10 text-foreground mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-[12px] leading-relaxed">
+                  <TriangleAlert className="text-risk mt-0.5 size-3.5 shrink-0" />
                   {githubNotice}
                 </p>
               )}
@@ -764,14 +759,14 @@ function Landing() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <span className="block text-sm font-medium">Explore before connecting?</span>
-                    <span className="text-muted-foreground block text-[11px]">
+                    <span className="text-subtle-foreground block text-[11px]">
                       Open the system map or the history view to see a real repository mapped out
                       before you connect your own.
                     </span>
                   </div>
                   <Link
                     to="/graph"
-                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shrink-0 rounded-lg border px-4 py-2 text-center text-xs font-semibold transition-colors"
+                    className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 shrink-0 rounded-lg border px-4 py-2 text-center text-xs font-semibold transition-colors"
                   >
                     Explore the example map →
                   </Link>
@@ -803,21 +798,21 @@ function Landing() {
             <h2 className="font-display text-2xl tracking-tight sm:text-3xl">
               Map your first repository.
             </h2>
-            <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed">
+            <p className="text-body-ink mt-2 max-w-xl text-sm leading-relaxed">
               Tell us about your codebase, or connect GitHub now and see the map of your own code.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
               to="/subscribe"
-              className="bg-primary text-primary-foreground hover:bg-primary-glow group inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_-24px_var(--primary)]"
+              className="bg-primary text-primary-foreground hover:bg-primary-glow group inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-[0_18px_44px_-30px_var(--primary)] transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_52px_-30px_var(--primary)]"
             >
               Start 7-day trial
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link
               to="/graph"
-              className="border-border bg-surface hover:bg-surface-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-[background-color,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/40"
+              className="border-border bg-transparent hover:bg-surface/70 rounded-xl border px-5 py-3 text-sm font-semibold transition-[background-color,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/45"
             >
               Open the live map
             </Link>
@@ -830,15 +825,15 @@ function Landing() {
         <div className="grid gap-10 lg:grid-cols-[1.15fr_1.85fr] lg:gap-16">
           <div>
             <NykstBrand subtitle="software system intelligence" size={28} />
-            <p className="text-muted-foreground mt-4 max-w-xs text-xs leading-relaxed">
+            <p className="text-body-ink mt-4 max-w-xs text-xs leading-relaxed">
               Know the blast radius before you change the code. Built from your real repository,
               with a file and line behind every answer.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="border-primary/25 bg-primary/10 text-primary rounded-full border px-2.5 py-1 font-mono text-[9px] tracking-[0.12em] uppercase">
+              <span className="border-border bg-surface text-subtle-foreground rounded-full border px-2.5 py-1 font-mono text-[9px] tracking-[0.12em] uppercase">
                 Read-only by construction
               </span>
-              <span className="border-border bg-surface text-muted-foreground rounded-full border px-2.5 py-1 font-mono text-[9px] tracking-[0.12em] uppercase">
+              <span className="border-border bg-surface text-subtle-foreground rounded-full border px-2.5 py-1 font-mono text-[9px] tracking-[0.12em] uppercase">
                 No training on your code
               </span>
             </div>
@@ -846,7 +841,7 @@ function Landing() {
               href="https://github.com/flawsom/nykst"
               target="_blank"
               rel="noreferrer"
-              className="text-muted-foreground hover:text-foreground mt-5 inline-flex items-center gap-1.5 text-[11px] transition-colors"
+              className="text-subtle-foreground hover:text-foreground mt-5 inline-flex items-center gap-1.5 text-[11px] transition-colors"
             >
               <Github className="size-3.5" /> Source on GitHub
             </a>
@@ -860,19 +855,19 @@ function Landing() {
               <p className="text-foreground font-mono text-[9px] tracking-[0.18em] uppercase">
                 Product
               </p>
-              <Link to="/graph" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/graph" className="text-subtle-foreground hover:text-foreground block">
                 System map
               </Link>
               <Link
                 to="/intelligence"
-                className="text-muted-foreground hover:text-foreground block"
+                className="text-subtle-foreground hover:text-foreground block"
               >
                 History
               </Link>
-              <Link to="/mcp" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/mcp" className="text-subtle-foreground hover:text-foreground block">
                 Developers
               </Link>
-              <Link to="/subscribe" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/subscribe" className="text-subtle-foreground hover:text-foreground block">
                 Plans
               </Link>
             </div>
@@ -880,16 +875,16 @@ function Landing() {
               <p className="text-foreground font-mono text-[9px] tracking-[0.18em] uppercase">
                 Resources
               </p>
-              <Link to="/docs" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/docs" className="text-subtle-foreground hover:text-foreground block">
                 Docs
               </Link>
-              <Link to="/status" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/status" className="text-subtle-foreground hover:text-foreground block">
                 Status
               </Link>
-              <Link to="/changelog" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/changelog" className="text-subtle-foreground hover:text-foreground block">
                 Changelog
               </Link>
-              <Link to="/limits" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/limits" className="text-subtle-foreground hover:text-foreground block">
                 Limits
               </Link>
             </div>
@@ -899,11 +894,11 @@ function Landing() {
               </p>
               <Link
                 to="/partnerships"
-                className="text-muted-foreground hover:text-foreground block"
+                className="text-subtle-foreground hover:text-foreground block"
               >
                 Partnerships
               </Link>
-              <Link to="/privacy" className="text-muted-foreground hover:text-foreground block">
+              <Link to="/privacy" className="text-subtle-foreground hover:text-foreground block">
                 Privacy
               </Link>
               <button
@@ -923,13 +918,13 @@ function Landing() {
               >
                 {CONTACT_EMAIL}
               </a>
-              <span className="text-muted-foreground block">Read-only GitHub access</span>
-              <span className="text-muted-foreground block">Nothing written back</span>
+              <span className="text-subtle-foreground block">Read-only GitHub access</span>
+              <span className="text-subtle-foreground block">Nothing written back</span>
             </div>
           </nav>
         </div>
 
-        <div className="border-border/70 text-muted-foreground/70 mt-10 flex flex-col gap-3 border-t pt-5 text-[10px] sm:flex-row sm:items-center sm:justify-between">
+        <div className="border-border/70 text-subtle-foreground/70 mt-10 flex flex-col gap-3 border-t pt-5 text-[10px] sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Nykst. Built in India.</p>
           <p className="max-w-2xl leading-relaxed">
             Nykst reads only the repositories you choose and stores a map of how they fit together.

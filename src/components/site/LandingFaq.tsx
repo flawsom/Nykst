@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { SectionLabel } from "@/components/site/SectionLabel";
 
 const QUESTIONS = [
   {
@@ -56,13 +57,11 @@ export function LandingFaq() {
     >
       <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
         <div>
-          <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-            Questions
-          </p>
+          <SectionLabel>Questions</SectionLabel>
           <h2 className="font-display mt-3 max-w-sm text-3xl leading-[1.08] tracking-tight sm:text-4xl">
             The things worth knowing before you connect a repo.
           </h2>
-          <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
+          <p className="text-body-ink mt-4 max-w-sm text-sm leading-relaxed">
             Clear answers about access, evidence, safety and what the map can and cannot see. If
             yours is not here, a person replies within two business days.
           </p>
@@ -73,7 +72,7 @@ export function LandingFaq() {
               <AccordionTrigger className="text-foreground py-5 text-left text-sm font-medium hover:no-underline sm:text-[15px]">
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground max-w-2xl text-xs leading-relaxed sm:text-[13px]">
+              <AccordionContent className="text-subtle-foreground max-w-2xl text-xs leading-relaxed sm:text-[13px]">
                 {item.answer}
               </AccordionContent>
             </AccordionItem>

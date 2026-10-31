@@ -26,7 +26,7 @@ export function ScrollProgress() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-50 h-px">
       <div
-        className="bg-primary h-full origin-left shadow-[0_0_14px_var(--primary)] transition-[width] duration-150 ease-out"
+        className="bg-brand-crimson h-full origin-left shadow-[0_0_14px_var(--brand-crimson)] transition-[width] duration-150 ease-out"
         style={{ width: `${(progress * 100).toFixed(2)}%` }}
       />
     </div>

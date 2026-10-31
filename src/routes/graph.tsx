@@ -27,6 +27,7 @@ import { subscribeToIngestion } from "@/lib/realtime";
 import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
 import { canonicalUrl, shareMeta } from "@/lib/seo";
 import { NykstBrand } from "@/components/brand/NykstLogo";
+import { SectionLabel } from "@/components/site/SectionLabel";
 import { GitBranch, Github, List, Loader2, Orbit, Search, X } from "lucide-react";
 
 type IngestionSnapshot = {
@@ -549,9 +550,7 @@ function GraphPage() {
       return (
         <main className="bg-background flex min-h-screen items-center justify-center px-4">
           <section className="border-border bg-card w-full max-w-xl rounded-2xl border p-7">
-            <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
-              Map of this project
-            </p>
+            <SectionLabel>Map of this project</SectionLabel>
             <h1 className="mt-2 text-2xl font-bold tracking-tight">This is not your project yet</h1>
             <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
               Nykst has no saved map for{" "}
@@ -570,7 +569,7 @@ function GraphPage() {
             {analyseError && (
               <p
                 role="alert"
-                className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-300"
+                className="border-risk/35 bg-risk/10 text-foreground mt-4 rounded-lg border px-3 py-2 text-[11px] leading-relaxed"
               >
                 {analyseError}
               </p>
@@ -585,7 +584,7 @@ function GraphPage() {
               <button
                 onClick={() => void analyzeRepository(notAnalysedRepo)}
                 disabled={analysing}
-                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold disabled:opacity-60"
+                className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold disabled:opacity-60"
               >
                 {analysing && <Loader2 className="size-4 animate-spin" />}
                 {analysing ? "Building the map" : "Analyse this repo"}
@@ -610,9 +609,7 @@ function GraphPage() {
     return (
       <main className="bg-background flex min-h-screen items-center justify-center px-4">
         <section className="border-border bg-card w-full max-w-xl rounded-2xl border p-7">
-          <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
-            Software graph
-          </p>
+          <SectionLabel>Software graph</SectionLabel>
           <h1 className="mt-2 text-2xl font-bold tracking-tight">
             {unauthenticated
               ? "Connect a repository to build your map"
@@ -624,7 +621,7 @@ function GraphPage() {
               : (loadError ?? "The latest map could not be loaded.")}
           </p>
           {loadError && !unauthenticated && (
-            <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 font-mono text-[11px] text-amber-400">
+            <p className="border-risk/35 bg-risk/10 text-foreground mt-3 rounded-lg border px-3 py-2 font-mono text-[11px]">
               {loadError}
             </p>
           )}
@@ -646,7 +643,10 @@ function GraphPage() {
             >
               Retry
             </button>
-            <Link to="/" className="text-primary text-xs underline">
+            <Link
+              to="/"
+              className="text-foreground text-xs underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
+            >
               What Nykst reads
             </Link>
           </div>
@@ -699,7 +699,11 @@ function GraphPage() {
       <WebGLFieldCanvas
         fixed={false}
         accentState={
-          loopVerdict === "breaking" ? "amber" : loopVerdict === "simulating" ? "cyan" : "emerald"
+          loopVerdict === "breaking"
+            ? "breaking"
+            : loopVerdict === "simulating"
+              ? "simulating"
+              : "safe"
         }
         className="absolute inset-0 z-0 opacity-40"
       />
@@ -760,7 +764,7 @@ function GraphPage() {
         <div className="order-2 flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto sm:flex-nowrap sm:gap-3">
           <button
             onClick={() => setBeforeYouActOpen(true)}
-            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
             Before You Act <span aria-hidden="true">→</span>
           </button>
@@ -790,7 +794,7 @@ function GraphPage() {
           <ApiSettingsButton className="shrink-0" />
           <Link
             to="/subscribe"
-            className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
           >
             Plans
           </Link>
@@ -805,18 +809,18 @@ function GraphPage() {
       {showingExample && (
         <div
           role="note"
-          className="border-primary/25 bg-primary/10 relative z-10 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 sm:px-5"
+          className="border-border/80 bg-surface/70 relative z-10 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 sm:px-5"
         >
           <p className="text-[11px] leading-relaxed">
             <span className="font-semibold">You are looking at the Nykst example project.</span>{" "}
-            <span className="text-muted-foreground">
+            <span className="text-subtle-foreground">
               This is our own codebase, shown so you can see what a map looks like. Connect GitHub
               to map yours.
             </span>
           </p>
           <a
             href="/api/integrations/github/start"
-            className="border-primary/40 bg-primary/15 text-primary hover:bg-primary/25 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold"
+            className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold"
           >
             <Github className="size-3.5" /> Connect GitHub
           </a>
@@ -835,7 +839,7 @@ function GraphPage() {
         <section className="flex min-h-[calc(100vh-150px)] min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5 md:min-h-0">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="text-primary text-[10px] tracking-[0.28em] uppercase font-mono">
+              <span className="text-subtle-foreground text-[10px] tracking-[0.28em] uppercase font-mono">
                 {kindLabel[focus.kind]}
                 {selected ? " · selected file" : ""}
               </span>
@@ -878,12 +882,10 @@ function GraphPage() {
           )}
 
           {snapshot && (
-            <div className="border-primary/25 bg-primary/5 mt-4 rounded-xl border px-4 py-3">
+            <div className="border-border bg-surface/55 mt-4 rounded-xl border px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
-                    Map of this project
-                  </p>
+                  <SectionLabel>Map of this project</SectionLabel>
                   <p className="mt-1 text-sm font-semibold">{snapshot.repository_full_name}</p>
                   <p
                     data-testid="graph-freshness"
@@ -903,10 +905,10 @@ function GraphPage() {
                     data-testid="graph-freshness-label"
                     className={`rounded-lg border px-2 py-1 text-[10px] font-semibold tracking-wide uppercase ${
                       freshness === "Stale"
-                        ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                        ? "border-risk/40 bg-risk/10 text-foreground"
                         : freshness === "Updating"
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                          ? "border-live/40 bg-live/10 text-foreground"
+                          : "border-border bg-surface-2 text-foreground"
                     }`}
                   >
                     {freshness}
@@ -914,14 +916,14 @@ function GraphPage() {
                   <button
                     onClick={reanalyze}
                     disabled={reanalyzing}
-                    className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 rounded-lg border px-3 py-1 text-[11px] font-semibold disabled:opacity-60"
+                    className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 rounded-lg border px-3 py-1 text-[11px] font-semibold disabled:opacity-60"
                   >
                     {reanalyzing ? "Re-checking this project…" : "Re-check this project now"}
                   </button>
                 </div>
               </div>
               {freshness === "Stale" && (
-                <p className="mt-2 text-[11px] text-amber-300">
+                <p className="text-subtle-foreground mt-2 text-[11px]">
                   This map was saved more than a day ago, so the code may have changed since. Press
                   Re-check this project now before you trust it.
                 </p>
@@ -932,7 +934,11 @@ function GraphPage() {
                   finishes.
                 </p>
               )}
-              {reanalyzeError && <p className="mt-2 text-[11px] text-red-400">{reanalyzeError}</p>}
+              {reanalyzeError && (
+                <p className="text-foreground border-risk/35 bg-risk/10 mt-2 rounded-lg border px-2.5 py-1.5 text-[11px]">
+                  {reanalyzeError}
+                </p>
+              )}
               {snapshot.payload.analysis ? (
                 <p className="text-muted-foreground mt-2 text-[11px]">
                   {snapshot.payload.analysis.stats.analyzedFiles.toLocaleString("en-US")} files ·{" "}
@@ -941,13 +947,13 @@ function GraphPage() {
                   {snapshot.payload.analysis.resources.length} database tables
                 </p>
               ) : (
-                <p className="mt-2 text-[11px] text-amber-400">
+                <p className="text-subtle-foreground mt-2 text-[11px]">
                   This repository was mapped before the current version, so this view shows folders
                   only. Connect it again to see files and what they depend on.
                 </p>
               )}
               {edgesTotal > edgesStored && (
-                <p data-testid="graph-edge-cap" className="mt-2 text-[11px] text-amber-300">
+                <p data-testid="graph-edge-cap" className="text-subtle-foreground mt-2 text-[11px]">
                   This map stores the first {edgesStored.toLocaleString("en-US")} of{" "}
                   {edgesTotal.toLocaleString("en-US")} links between files. Open proof on a file to
                   see the links that file needs.
@@ -970,7 +976,8 @@ function GraphPage() {
               )}
               {problems.length > 0 && (
                 <div className="border-border/70 mt-3 border-t pt-3">
-                  <p className="text-primary text-[10px] font-mono tracking-[0.2em] uppercase">
+                  <p className="text-subtle-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] uppercase">
+                    <span aria-hidden="true" className="bg-live h-px w-3 shrink-0" />
                     Traceable code problems
                   </p>
                   <div className="mt-2 space-y-1.5">
@@ -1004,8 +1011,8 @@ function GraphPage() {
                 onClick={() => setGraphView("orbit")}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                   graphView === "orbit"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary/10 text-foreground ring-1 ring-primary/55"
+                    : "text-subtle-foreground hover:text-foreground"
                 }`}
               >
                 <Orbit className="size-3" /> Orbit
@@ -1017,8 +1024,8 @@ function GraphPage() {
                 onClick={() => setGraphView("list")}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                   graphView === "list"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary/10 text-foreground ring-1 ring-primary/55"
+                    : "text-subtle-foreground hover:text-foreground"
                 }`}
               >
                 <List className="size-3" /> List
@@ -1097,7 +1104,7 @@ function GraphPage() {
                         data-selected={selected?.id === node.id ? "true" : "false"}
                         aria-current={selected?.id === node.id ? "true" : undefined}
                         onClick={() => drill(node)}
-                        className={`focus-visible:ring-primary/60 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none ${selected?.id === node.id ? "bg-primary/10 ring-primary/40 ring-1" : "hover:bg-surface-2"}`}
+                        className={`flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-ivory)] focus-visible:outline-none ${selected?.id === node.id ? "bg-primary/10 ring-primary/40 ring-1" : "hover:bg-surface-2"}`}
                       >
                         <span className="min-w-0">
                           <span
@@ -1114,7 +1121,7 @@ function GraphPage() {
                           <span className="border-border bg-surface rounded-full border px-2 py-0.5">
                             {kindLabel[node.kind]}
                           </span>
-                          <span className="text-primary">
+                          <span className="text-foreground underline decoration-primary/55 decoration-1 underline-offset-4">
                             {node.expandable ? "Drill in" : "Inspect"}
                           </span>
                         </span>

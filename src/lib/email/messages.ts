@@ -79,7 +79,7 @@ export function composeContactConfirmation(notification: ContactConfirmation) {
     ``,
     `Reply to this email to add anything to the request. Keep the reference above if you follow up another way.`,
     ``,
-    `Nykst · software intelligence for real repositories`,
+    `Nykst · know what your next change will touch`,
     CANONICAL_ORIGIN,
     `Privacy: ${CANONICAL_ORIGIN}/privacy`,
   ].join("\n");
@@ -132,7 +132,7 @@ export function composeGithubSignIn(signIn: GithubSignIn) {
     ``,
     `Nykst never asks for your GitHub password.`,
     ``,
-    `Nykst · software intelligence for real repositories`,
+    `Nykst · know what your next change will touch`,
     CANONICAL_ORIGIN,
     `Privacy: ${CANONICAL_ORIGIN}/privacy`,
   ].join("\n");

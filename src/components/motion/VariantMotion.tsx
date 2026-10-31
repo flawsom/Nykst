@@ -18,10 +18,10 @@ export { WebGLFieldCanvas };
  */
 export function SpotlightBackdrop({
   withWebGL = true,
-  accentState = "teal",
+  accentState = "safe",
 }: {
   withWebGL?: boolean;
-  accentState?: "teal" | "cyan" | "amber";
+  accentState?: "safe" | "simulating" | "breaking";
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -48,7 +48,7 @@ export function SpotlightBackdrop({
             "--spot-x": "50vw",
             "--spot-y": "28vh",
             background:
-              "radial-gradient(620px circle at var(--spot-x) var(--spot-y), color-mix(in oklab, var(--primary) 9%, transparent), transparent 68%)",
+              "radial-gradient(620px circle at var(--spot-x) var(--spot-y), color-mix(in oklab, var(--primary) 6%, transparent), transparent 68%)",
           } as React.CSSProperties
         }
       >
@@ -177,7 +177,7 @@ export function TiltCard({
         className="pointer-events-none absolute inset-0 transition-opacity duration-300"
         style={{
           opacity: style.hovered ? 1 : 0,
-          background: `radial-gradient(360px circle at ${style.glareX.toFixed(1)}% ${style.glareY.toFixed(1)}%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%)`,
+          background: `radial-gradient(360px circle at ${style.glareX.toFixed(1)}% ${style.glareY.toFixed(1)}%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%)`,
         }}
       />
       <div className="relative z-10 h-full">{children}</div>
@@ -424,19 +424,19 @@ export function InfiniteMarquee({
         className,
       )}
     >
-      <div ref={trackRef} className="animate-marquee flex items-center gap-8 px-4">
+      <div ref={trackRef} className="animate-marquee flex items-center px-4">
         {doubled.map((item, idx) => (
-          <div key={`${item.label}-${idx}`} className="flex shrink-0 items-center gap-2.5 text-xs">
-            <span className="bg-primary size-1.5 rounded-full" />
-            <span className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
+          <div
+            key={`${item.label}-${idx}`}
+            className="border-border/80 flex shrink-0 items-center gap-2.5 border-l px-6 text-xs first:border-l-0 first:pl-0"
+          >
+            <span className="text-subtle-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
               {item.label}
             </span>
-            <span className="text-foreground font-mono text-[11px] font-semibold">
-              {item.value}
-            </span>
+            <span className="text-foreground font-mono text-[11px]">{item.value}</span>
             {item.badge && (
-              <span className="border-primary/30 bg-primary/10 text-primary rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase">
-                {item.badge}
+              <span className="text-subtle-foreground/80 font-mono text-[9px] tracking-[0.12em] uppercase">
+                / {item.badge}
               </span>
             )}
           </div>

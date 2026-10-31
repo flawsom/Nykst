@@ -3,7 +3,7 @@ import { ORBIT_PAGE_SIZE, curvedEdgePath, orbitCardSize, radialLayout } from "@/
 import { kindLabel, type GraphNode, type NodeKind } from "@/lib/graph-data";
 
 const kindColor: Record<NodeKind, string> = {
-  org: "var(--primary)",
+  org: "var(--brand-ivory)",
   domain: "var(--node-domain)",
   capability: "var(--node-capability)",
   service: "var(--node-service)",
@@ -11,10 +11,13 @@ const kindColor: Record<NodeKind, string> = {
   file: "var(--node-file)",
 };
 
-/** Edge colors: teal for a direct importer, red for a runtime cycle, amber for focus. */
-const EDGE_IMPORTER = "#2DD4BF";
-const EDGE_CYCLE = "#F87171";
-const EDGE_ACTIVE = "#FBBF24";
+/**
+ * Edges are structure, so they stay support ink. Sand means the user has
+ * selected a path. Bright crimson means the graph found a cycle.
+ */
+const EDGE_IMPORTER = "var(--subtle-foreground)";
+const EDGE_CYCLE = "var(--risk)";
+const EDGE_ACTIVE = "var(--brand-sand)";
 
 interface Props {
   center: GraphNode;
@@ -201,7 +204,7 @@ export function GraphCanvas({
               <path
                 d={edge}
                 fill="none"
-                stroke={active ? EDGE_ACTIVE : "var(--primary)"}
+                stroke={active ? EDGE_ACTIVE : EDGE_IMPORTER}
                 strokeWidth={active ? 2 : 1.4}
                 strokeOpacity={active ? 0.95 : 0.5}
                 strokeLinecap="round"
@@ -245,7 +248,7 @@ export function GraphCanvas({
             x={cx}
             y={cy + 18}
             textAnchor="middle"
-            className="fill-primary text-[11px] tracking-widest uppercase font-mono font-semibold"
+            className="fill-subtle-foreground text-[11px] tracking-widest uppercase font-mono font-semibold"
           >
             {kindLabel[center.kind]}
           </text>
@@ -346,7 +349,7 @@ export function GraphCanvas({
                   x={0}
                   y={3.5}
                   textAnchor="middle"
-                  className="fill-primary text-[10px] font-serif font-bold italic"
+                  className="fill-foreground text-[10px] font-serif font-bold italic"
                 >
                   i
                 </text>

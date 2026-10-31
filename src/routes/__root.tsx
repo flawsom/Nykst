@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Nykst · See what your next change will affect" },
       { name: "description", content: SITE_DESCRIPTION },
-      { name: "theme-color", content: "#04070B" },
+      { name: "theme-color", content: "#06110C" },
       ...shareMeta({
         title: "Nykst · See what your next change will affect",
         description: SITE_DESCRIPTION,

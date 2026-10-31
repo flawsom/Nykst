@@ -75,32 +75,24 @@ export function ContactForm({
         aria-live="polite"
         className={
           result.delivered
-            ? "rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"
-            : "rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5"
+            ? "border-border bg-surface rounded-2xl border p-5"
+            : "border-risk/40 bg-risk/10 rounded-2xl border p-5"
         }
       >
-        <p
-          className={`flex items-center gap-2 text-sm font-semibold ${
-            result.delivered ? "text-emerald-200" : "text-amber-200"
-          }`}
-        >
+        <p className="text-foreground flex items-center gap-2 text-sm font-semibold">
           {result.delivered ? (
-            <CheckCircle2 className="size-4" />
+            <CheckCircle2 className="text-brand-ivory size-4" />
           ) : (
-            <TriangleAlert className="size-4" />
+            <TriangleAlert className="text-risk size-4" />
           )}
           {result.delivered ? "Message received" : "Message saved, team not alerted"}
         </p>
-        <p
-          className={`mt-2 text-sm leading-relaxed ${
-            result.delivered ? "text-emerald-100/90" : "text-amber-100/90"
-          }`}
-        >
+        <p className="text-body-ink mt-2 text-sm leading-relaxed">
           Your reference is <span className="font-mono font-semibold">{result.reference}</span>.{" "}
           {result.message}
         </p>
         {result.confirmationDelivered && (
-          <p className="mt-2 text-xs text-emerald-100/80">A receipt is on its way to {email}.</p>
+          <p className="text-subtle-foreground mt-2 text-xs">A receipt is on its way to {email}.</p>
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <a
@@ -196,11 +188,21 @@ export function ContactForm({
         in the way.
       </p>
       {error && (
-        <p role="alert" aria-live="assertive" className="mt-3 text-xs text-amber-300">
-          {error}{" "}
-          <a className="underline" href={mailtoHref(topic)}>
-            Email {CONTACT_EMAIL} instead
-          </a>
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="border-risk/35 bg-risk/10 text-foreground mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs leading-relaxed"
+        >
+          <TriangleAlert className="text-risk mt-0.5 size-3.5 shrink-0" />
+          <span>
+            {error}{" "}
+            <a
+              className="underline decoration-primary/60 underline-offset-2"
+              href={mailtoHref(topic)}
+            >
+              Email {CONTACT_EMAIL} instead
+            </a>
+          </span>
         </p>
       )}
       <div className="mt-4 flex flex-wrap items-center gap-3">

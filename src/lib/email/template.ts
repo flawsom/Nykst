@@ -73,19 +73,19 @@ export interface EmailLayoutInput {
 }
 
 function paragraph(text: string): string {
-  return `<p style="margin:0 0 16px;color:#b8c7ce;font-size:15px;line-height:1.65;">${escapeHtml(
+  return `<p style="margin:0 0 16px;color:#C9CEC8;font-size:15px;line-height:1.65;">${escapeHtml(
     text,
   )}</p>`;
 }
 
 function detailsTable(details: EmailDetail[]): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #1d3039;border-collapse:collapse;">${details
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #183328;border-collapse:collapse;">${details
     .map(
       (detail) => `<tr>
-  <td width="38%" valign="top" style="padding:12px 16px 12px 0;border-bottom:1px solid #1d3039;color:#7f949e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.5;text-transform:uppercase;">${escapeHtml(
+  <td width="38%" valign="top" style="padding:12px 16px 12px 0;border-bottom:1px solid #183328;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.5;text-transform:uppercase;">${escapeHtml(
     detail.label,
   )}</td>
-  <td valign="top" style="padding:12px 0;border-bottom:1px solid #1d3039;color:#eef5fa;font-family:${
+  <td valign="top" style="padding:12px 0;border-bottom:1px solid #183328;color:#F2EDE3;font-family:${
     detail.mono
       ? "'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace"
       : "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
@@ -98,11 +98,11 @@ function detailsTable(details: EmailDetail[]): string {
 function quoteBlock(quote: { label: string; text: string }): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;border-collapse:collapse;">
   <tr>
-    <td style="padding:15px 18px;background:#08141b;border-left:3px solid #2dd4bf;border-radius:0 8px 8px 0;">
-      <p style="margin:0 0 8px;color:#7f949e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;line-height:1.4;text-transform:uppercase;">${escapeHtml(
+    <td style="padding:15px 18px;background:#06110C;border-left:2px solid #2A4A3C;border-radius:0 8px 8px 0;">
+      <p style="margin:0 0 8px;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;line-height:1.4;text-transform:uppercase;">${escapeHtml(
         quote.label,
       )}</p>
-      <div style="margin:0;color:#dbe7ec;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;">${escapeHtml(
+      <div style="margin:0;color:#E7E2D8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;">${escapeHtml(
         quote.text,
       ).replace(/\n/g, "<br />")}</div>
     </td>
@@ -113,11 +113,11 @@ function quoteBlock(quote: { label: string; text: string }): string {
 function alertBlock(alert: { title: string; body: string }): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;border-collapse:collapse;">
   <tr>
-    <td style="padding:15px 18px;background:#1d170a;border:1px solid #6f531c;border-radius:10px;">
-      <p style="margin:0 0 6px;color:#fbbf24;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;line-height:1.4;">${escapeHtml(
+    <td style="padding:15px 18px;background:#2A0B0B;border:1px solid #741514;border-radius:10px;">
+      <p style="margin:0 0 6px;color:#F2EDE3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;line-height:1.4;">${escapeHtml(
         alert.title,
       )}</p>
-      <p style="margin:0;color:#dccca4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;">${escapeHtml(
+      <p style="margin:0;color:#E7E2D8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;">${escapeHtml(
         alert.body,
       )}</p>
     </td>
@@ -128,10 +128,10 @@ function alertBlock(alert: { title: string; body: string }): string {
 function button(label: string, href: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;border-collapse:separate;">
   <tr>
-    <td align="center" bgcolor="#2dd4bf" style="border-radius:9px;">
+    <td align="center" bgcolor="#C7B99B" style="border-radius:9px;">
       <a href="${escapeHtml(
         safeUrl(href),
-      )}" style="display:inline-block;padding:13px 22px;color:#06110f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.2;text-decoration:none;border-radius:9px;">${escapeHtml(
+      )}" style="display:inline-block;padding:13px 22px;color:#06110C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.2;text-decoration:none;border-radius:9px;">${escapeHtml(
         label,
       )}</a>
     </td>
@@ -151,12 +151,12 @@ export function renderEmail(input: EmailLayoutInput): string {
   const secondary = input.secondary
     ? `<p style="margin:18px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;"><a href="${escapeHtml(
         safeUrl(input.secondary.href),
-      )}" style="color:#5eead4;text-decoration:underline;">${escapeHtml(
+      )}" style="color:#F2EDE3;text-decoration:none;border-bottom:1px solid #C7B99B;padding-bottom:1px;">${escapeHtml(
         input.secondary.label,
       )}</a></p>`
     : "";
   const note = input.note
-    ? `<p style="margin:22px 0 0;color:#7f949e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.65;">${escapeHtml(
+    ? `<p style="margin:22px 0 0;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.65;">${escapeHtml(
         input.note,
       )}</p>`
     : "";
@@ -179,15 +179,15 @@ export function renderEmail(input: EmailLayoutInput): string {
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background:#071016;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;color:#071016;">${escapeHtml(
+<body style="margin:0;padding:0;background:#030906;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;color:#030906;">${escapeHtml(
     input.preheader,
   )}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#071016" style="background:#071016;border-collapse:collapse;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#030906" style="background:#030906;border-collapse:collapse;">
     <tr>
       <td align="center" style="padding:32px 12px;">
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#0d1a22" style="width:600px;max-width:600px;background:#0d1a22;border:1px solid #1d3039;border-radius:16px;border-collapse:separate;overflow:hidden;">
-          <tr><td height="4" bgcolor="#2dd4bf" style="height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B1912" style="width:600px;max-width:600px;background:#0B1912;border:1px solid #183328;border-radius:16px;border-collapse:separate;overflow:hidden;">
+          <tr><td height="4" bgcolor="#A31C1B" style="height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
           <tr>
             <td class="px" style="padding:30px 40px 0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -195,18 +195,18 @@ export function renderEmail(input: EmailLayoutInput): string {
                   <td width="34" valign="middle">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
                       <tr>
-                        <td width="32" height="32" align="center" valign="middle" bgcolor="#2dd4bf" style="width:32px;height:32px;background:#2dd4bf;border-radius:8px;color:#06110f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;line-height:32px;">N</td>
+                        <td width="32" height="32" align="center" valign="middle" bgcolor="#C7B99B" style="width:32px;height:32px;background:#C7B99B;border-radius:8px;color:#06110C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;line-height:32px;">N</td>
                       </tr>
                     </table>
                   </td>
-                  <td valign="middle" style="padding-left:10px;color:#eef5fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;line-height:32px;">NYKST</td>
-                  <td align="right" valign="middle" style="color:#607780;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:9px;letter-spacing:1.4px;line-height:1.4;text-transform:uppercase;">Transactional</td>
+                  <td valign="middle" style="padding-left:10px;color:#F2EDE3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;line-height:32px;">NYKST</td>
+                  <td align="right" valign="middle" style="color:#A8B2A8;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:9px;letter-spacing:1.4px;line-height:1.4;text-transform:uppercase;">Transactional</td>
                 </tr>
               </table>
-              <p style="margin:30px 0 8px;color:#2dd4bf;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:10px;font-weight:700;letter-spacing:2px;line-height:1.4;text-transform:uppercase;">${escapeHtml(
+              <p style="margin:30px 0 8px;padding-left:10px;border-left:2px solid #A31C1B;color:#A8B2A8;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:10px;font-weight:700;letter-spacing:2px;line-height:1.4;text-transform:uppercase;">${escapeHtml(
                 input.kicker,
               )}</p>
-              <h1 class="h1" style="margin:0 0 18px;color:#eef5fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:27px;font-weight:700;letter-spacing:-0.5px;line-height:1.25;">${escapeHtml(
+              <h1 class="h1" style="margin:0 0 18px;color:#F2EDE3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:27px;font-weight:700;letter-spacing:-0.5px;line-height:1.25;">${escapeHtml(
                 input.title,
               )}</h1>
               ${input.intro.map(paragraph).join("")}
@@ -220,17 +220,17 @@ export function renderEmail(input: EmailLayoutInput): string {
           </tr>
           <tr>
             <td class="px" style="padding:28px 40px 32px;">
-              <div style="height:1px;background:#1d3039;line-height:1px;font-size:0;">&nbsp;</div>
-              <p style="margin:22px 0 6px;color:#7f949e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;">${escapeHtml(
+              <div style="height:1px;background:#183328;line-height:1px;font-size:0;">&nbsp;</div>
+              <p style="margin:22px 0 6px;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;">${escapeHtml(
                 input.footerReason,
               )}</p>
-              <p style="margin:0 0 12px;color:#607780;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;line-height:1.6;">Nykst · software intelligence for real repositories · India</p>
-              <p style="margin:0;color:#607780;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;line-height:1.8;">
-                <a href="${escapeHtml(PRIVACY_URL)}" style="color:#7f949e;text-decoration:underline;">Privacy</a>
+              <p style="margin:0 0 12px;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;line-height:1.6;">Nykst · know what your next change will touch · India</p>
+              <p style="margin:0;color:#A8B2A8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:10px;line-height:1.8;">
+                <a href="${escapeHtml(PRIVACY_URL)}" style="color:#A8B2A8;text-decoration:underline;">Privacy</a>
                 &nbsp;·&nbsp;
-                <a href="${escapeHtml(SUPPORT_MAILTO)}" style="color:#7f949e;text-decoration:underline;">Contact</a>
+                <a href="${escapeHtml(SUPPORT_MAILTO)}" style="color:#A8B2A8;text-decoration:underline;">Contact</a>
                 &nbsp;·&nbsp;
-                <a href="${escapeHtml(CANONICAL_ORIGIN)}" style="color:#7f949e;text-decoration:underline;">nykst.unifies.codes</a>
+                <a href="${escapeHtml(CANONICAL_ORIGIN)}" style="color:#A8B2A8;text-decoration:underline;">nykst.unifies.codes</a>
               </p>
             </td>
           </tr>

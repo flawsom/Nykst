@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, CreditCard, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, Loader2, Lock, TriangleAlert } from "lucide-react";
 import { NykstBrand } from "@/components/brand/NykstLogo";
 import { ContactForm } from "@/components/site/ContactForm";
+import { SectionLabel } from "@/components/site/SectionLabel";
 import { formatInr, type CheckoutState, type PlanId } from "@/lib/pricing";
 import { fetchWithTimeout, readableRequestError } from "@/lib/fetch-with-timeout";
 import { canonicalUrl, shareMeta } from "@/lib/seo";
@@ -201,6 +202,7 @@ function PlansPage() {
         subscription_id: body.subscription_id,
         name: "Nykst",
         description: `${plan.label} plan, ${pricing?.trialDays ?? 7}-day trial`,
+        theme: { color: "#A31C1B" },
         handler: async (result: RazorpayHandlerResponse) => {
           completed = true;
           try {
@@ -276,24 +278,22 @@ function PlansPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="max-w-2xl">
-          <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-            Plans and access
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <SectionLabel>Plans and access</SectionLabel>
+          <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             Understand the code before you change it.
           </h1>
-          <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+          <p className="text-body-ink mt-4 text-sm leading-relaxed">
             Start a 7-day Nykst Pro trial on your own repository. Pick monthly or annual, authorize
             the trial with Razorpay, and cancel any time before day 8.
           </p>
         </div>
 
         {isActive && (
-          <div className="mt-7 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4">
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
-              <CheckCircle2 className="size-4" /> Nykst Pro is active
+          <div className="border-border bg-surface mt-7 rounded-2xl border px-5 py-4">
+            <p className="text-foreground flex items-center gap-2 text-sm font-semibold">
+              <CheckCircle2 className="text-brand-ivory size-4" /> Nykst Pro is active
             </p>
-            <p className="mt-1 text-xs text-emerald-100/80">
+            <p className="text-subtle-foreground mt-1 text-xs">
               Your {subscription?.plan} plan is active until{" "}
               {new Date(currentUntil!).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -308,22 +308,26 @@ function PlansPage() {
         {notice && (
           <p
             role="status"
-            className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-200"
+            className="border-border bg-surface text-body-ink mt-6 flex items-start gap-2 rounded-xl border px-4 py-3 text-xs"
           >
-            {notice}
+            <CheckCircle2 className="text-brand-ivory mt-0.5 size-3.5 shrink-0" />
+            <span>{notice}</span>
           </p>
         )}
         {(checkoutError || loadError) && (
           <div
             role="alert"
-            className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200"
+            className="border-risk/40 bg-risk/10 mt-6 rounded-xl border px-4 py-3 text-xs text-foreground"
           >
-            <p>{checkoutError || loadError}</p>
+            <p className="flex items-start gap-2">
+              <TriangleAlert className="text-risk mt-0.5 size-3.5 shrink-0" />
+              <span>{checkoutError || loadError}</span>
+            </p>
             {loadError && (
               <button
                 type="button"
                 onClick={retry}
-                className="mt-2 inline-flex min-h-9 items-center gap-1.5 border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/15"
+                className="border-risk/45 text-foreground hover:bg-risk/15 mt-2 inline-flex min-h-9 items-center gap-1.5 border px-3 py-1.5 text-[11px] font-semibold"
               >
                 Try again
               </button>
@@ -333,49 +337,62 @@ function PlansPage() {
 
         {loading ? (
           <div className="border-border bg-card/60 mt-8 rounded-2xl border border-dashed p-10 text-center">
-            <Loader2 className="text-primary mx-auto size-5 animate-spin" />
-            <p className="text-muted-foreground mt-3 text-xs">Loading plans.</p>
+            <Loader2 className="text-subtle-foreground mx-auto size-5 animate-spin" />
+            <p className="text-subtle-foreground mt-3 text-xs">Loading plans.</p>
           </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {sellable.map((plan) => {
               const live = plan.checkout.state === "live";
               const busy = checkoutBusy === plan.id;
+              const recommended = plan.id === "annual";
+              const actionClass = recommended
+                ? "bg-primary text-primary-foreground hover:bg-primary-glow"
+                : "border-border text-foreground hover:border-primary/45 hover:bg-surface/70 border";
               return (
                 <section
                   key={plan.id}
-                  className="border-border bg-card/70 flex flex-col rounded-2xl border p-5 sm:p-6"
+                  className={`relative flex flex-col rounded-2xl border p-5 sm:p-6 ${
+                    recommended
+                      ? "border-primary/45 bg-primary/[0.035]"
+                      : "border-border bg-card/70"
+                  }`}
                 >
+                  {recommended && (
+                    <span className="bg-primary text-primary-foreground absolute -top-3 left-5 inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[9px] font-bold tracking-[0.12em] uppercase">
+                      Best value
+                    </span>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-primary font-mono text-[10px] tracking-[0.22em] uppercase">
+                      <p className="text-subtle-foreground font-mono text-[10px] tracking-[0.22em] uppercase">
                         {plan.label}
                       </p>
                       <p className="mt-2 text-3xl font-semibold tracking-tight">
                         {formatInr(plan.priceInr)}
-                        <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                        <span className="text-subtle-foreground ml-1.5 text-xs font-normal">
                           {periodLabel(plan.period)}
                         </span>
                       </p>
                     </div>
                     {plan.id === "annual" && (
-                      <span className="border-primary/30 bg-primary/10 text-primary rounded-full border px-2.5 py-1 text-[10px] font-mono">
+                      <span className="border-border text-subtle-foreground rounded-full border px-2.5 py-1 text-[10px] font-mono">
                         SAVE MORE
                       </span>
                     )}
                   </div>
-                  <p className="text-muted-foreground mt-3 text-sm">{plan.summary}</p>
+                  <p className="text-body-ink mt-3 text-sm">{plan.summary}</p>
                   <ul className="mt-4 space-y-2 text-xs">
                     <li className="flex gap-2">
-                      <CheckCircle2 className="text-primary mt-0.5 size-3.5 shrink-0" />
+                      <CheckCircle2 className="text-brand-ivory/70 mt-0.5 size-3.5 shrink-0" />
                       <span>{pricing?.trialCopy ?? "7-day free trial."}</span>
                     </li>
                     <li className="flex gap-2">
-                      <CheckCircle2 className="text-primary mt-0.5 size-3.5 shrink-0" />
+                      <CheckCircle2 className="text-brand-ivory/70 mt-0.5 size-3.5 shrink-0" />
                       <span>{plan.refundCopy}</span>
                     </li>
                     <li className="flex gap-2">
-                      <CheckCircle2 className="text-primary mt-0.5 size-3.5 shrink-0" />
+                      <CheckCircle2 className="text-brand-ivory/70 mt-0.5 size-3.5 shrink-0" />
                       <span>
                         Prices include {pricing?.gstPercent ?? 18}% GST. Nykst never sees your card
                         details.
@@ -391,14 +408,14 @@ function PlansPage() {
                       <button
                         type="button"
                         disabled
-                        className="bg-primary text-primary-foreground inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold opacity-50"
+                        className="border-border bg-surface-2 text-subtle-foreground inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold"
                       >
                         <CreditCard className="size-4" /> Checkout is not open yet
                       </button>
                     ) : signedIn === false ? (
                       <a
                         href="/api/integrations/github/start?returnTo=%2Fsubscribe"
-                        className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${actionClass}`}
                       >
                         <Lock className="size-4" /> Connect GitHub to start
                       </a>
@@ -407,7 +424,7 @@ function PlansPage() {
                         type="button"
                         disabled={busy}
                         onClick={() => void startCheckout(plan)}
-                        className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${actionClass}`}
                       >
                         {busy ? (
                           <Loader2 className="size-4 animate-spin" />
@@ -424,7 +441,7 @@ function PlansPage() {
           </div>
         )}
 
-        <p className="text-muted-foreground mt-4 text-[11px] leading-relaxed">
+        <p className="text-subtle-foreground mt-4 text-[11px] leading-relaxed">
           {pricing?.anyPlanLive
             ? "The trial is free for 7 days. Razorpay authorizes the payment method now and charges on day 8 unless you cancel. Card details are handled by Razorpay, not stored by Nykst."
             : pricing
@@ -443,12 +460,12 @@ function PlansPage() {
                 "Help getting your first repository connected, by a person, not a form reply.",
               ].map((item) => (
                 <li key={item} className="flex gap-2.5">
-                  <CheckCircle2 className="text-primary mt-0.5 size-4 shrink-0" />
+                  <CheckCircle2 className="text-brand-ivory/70 mt-0.5 size-4 shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
+            <p className="text-subtle-foreground mt-6 text-xs leading-relaxed">
               Prefer to talk first? Tell us about your team and the repository you want to map. We
               will answer with a real plan, not a sales sequence.
             </p>

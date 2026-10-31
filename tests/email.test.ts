@@ -37,6 +37,12 @@ describe("transactional email content", () => {
     expect(composed.html).toContain("Open Nykst");
     expect(composed.html).toContain("https://nykst.unifies.codes/privacy");
     expect(composed.html).toContain("This is your receipt");
+    expect(composed.html).toContain("#A31C1B");
+    expect(composed.html).toContain('bgcolor="#C7B99B"');
+    expect(composed.html).toContain("color:#06110C");
+    expect(composed.html).toContain("border-left:2px solid #A31C1B");
+    expect(composed.html).not.toContain("color:#C7B99B");
+    expect(composed.html).toContain("know what your next change will touch");
   });
 
   test("user data is escaped in HTML and remains readable in the text part", () => {

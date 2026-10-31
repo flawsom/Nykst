@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SectionLabel } from "@/components/site/SectionLabel";
 import { askNykstAi } from "@/lib/ai-client";
 import {
   buildCoreModules,
@@ -342,7 +343,7 @@ function IntelligencePage() {
             >
               <ArrowLeft className="size-3.5" /> Back to Graph
             </Link>
-            <span className="bg-primary block size-2 rounded-full" />
+            <span className="bg-brand-ivory block size-2 rounded-full" />
             <span className="text-foreground truncate text-sm font-semibold">Nykst Memory</span>
           </div>
           <span className="text-muted-foreground font-mono text-[10px] sm:text-xs">
@@ -351,9 +352,7 @@ function IntelligencePage() {
         </header>
 
         <section className="mx-auto w-full max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <p className="text-primary font-mono text-[10px] tracking-[0.24em] uppercase">
-            System memory
-          </p>
+          <SectionLabel>System memory</SectionLabel>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">
             Nothing is remembered until a repository is connected.
           </h1>
@@ -369,7 +368,10 @@ function IntelligencePage() {
             >
               Connect GitHub
             </a>
-            <Link to="/graph" className="text-primary text-xs underline">
+            <Link
+              to="/graph"
+              className="text-foreground text-xs underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
+            >
               See what the analysis contains
             </Link>
           </div>
@@ -382,7 +384,7 @@ function IntelligencePage() {
               {MEMORIES.map((memory) => (
                 <div key={memory.id} className="border-border bg-card/70 rounded-xl border p-4">
                   <div className="flex items-center gap-2">
-                    <memory.icon className="text-primary size-4" />
+                    <memory.icon className="text-subtle-foreground size-4" />
                     <p className="text-sm font-medium">{memory.title}</p>
                   </div>
                   <p className="text-muted-foreground mt-0.5 font-mono text-[10px]">
@@ -428,9 +430,7 @@ function IntelligencePage() {
       {/* Main Content */}
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col space-y-5 p-3 sm:space-y-6 sm:p-6">
         <div>
-          <span className="text-primary font-mono text-xs tracking-widest uppercase">
-            System memory & collaborative analysis
-          </span>
+          <SectionLabel>System memory & collaborative analysis</SectionLabel>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Memory workspace
           </h1>
@@ -461,7 +461,7 @@ function IntelligencePage() {
                     <Icon
                       className={cn(
                         "size-4",
-                        isSelected ? "text-primary" : "text-muted-foreground",
+                        isSelected ? "text-foreground" : "text-subtle-foreground",
                       )}
                     />
                     <span className="font-mono text-[10px] text-muted-foreground">
@@ -477,7 +477,9 @@ function IntelligencePage() {
                     {m.title}
                   </h3>
                 </div>
-                <span className="mt-4 font-mono text-[11px] text-primary">Explore →</span>
+                <span className="text-foreground mt-4 font-mono text-[11px] underline decoration-primary/55 decoration-1 underline-offset-4">
+                  Explore →
+                </span>
               </button>
             );
           })}
@@ -492,15 +494,17 @@ function IntelligencePage() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
                   {activeModule.subtitle}
                 </span>
-                <span className="font-mono text-[11px] text-primary">Folders & Files</span>
+                <span className="text-subtle-foreground font-mono text-[11px]">
+                  Folders & Files
+                </span>
               </div>
               <p className="text-muted-foreground text-xs mb-4 leading-relaxed">
                 {activeModule.description}
               </p>
               {repositorySnapshot && (
-                <div className="border-primary/20 bg-primary/5 mb-4 rounded-lg border px-3 py-2 text-[10px] leading-relaxed">
-                  <span className="text-primary font-mono uppercase tracking-wider">
-                    Live GitHub evidence
+                <div className="border-border bg-surface mb-4 rounded-lg border px-3 py-2 text-[10px] leading-relaxed">
+                  <span className="text-foreground flex items-center gap-1.5 font-mono tracking-wider uppercase">
+                    <span className="bg-live size-1.5 rounded-full" /> Live GitHub evidence
                   </span>
                   <span className="text-muted-foreground mt-1 block">
                     {repositorySnapshot.repository?.full_name ?? "Connected repository"} ·{" "}
@@ -521,25 +525,15 @@ function IntelligencePage() {
                       className={cn(
                         "w-full flex items-center justify-between p-3 rounded-xl text-left text-xs transition-all",
                         isSelected
-                          ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                          : "bg-surface/80 border border-border text-foreground hover:bg-surface",
+                          ? "border-primary/55 bg-primary/10 border text-foreground font-medium"
+                          : "border-border bg-surface/80 hover:bg-surface border text-foreground",
                       )}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <FileCode
-                          className={cn(
-                            "size-4 shrink-0",
-                            isSelected ? "text-primary-foreground" : "text-primary",
-                          )}
-                        />
+                        <FileCode className={cn("size-4 shrink-0", "text-foreground")} />
                         <span className="truncate font-mono">{file.name}</span>
                       </div>
-                      <span
-                        className={cn(
-                          "font-mono text-[10px]",
-                          isSelected ? "text-primary-foreground/80" : "text-muted-foreground",
-                        )}
-                      >
+                      <span className={cn("font-mono text-[10px]", "text-subtle-foreground")}>
                         {file.size}
                       </span>
                     </button>
@@ -558,7 +552,7 @@ function IntelligencePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <span className="font-mono text-xs text-primary font-semibold">
+                  <span className="text-foreground font-mono text-xs font-semibold">
                     {activeFile.name}
                   </span>
                   <p className="text-muted-foreground text-xs mt-0.5">{activeFile.summary}</p>
@@ -578,7 +572,7 @@ function IntelligencePage() {
             <div className="border-border bg-surface/60 rounded-xl border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-primary" /> Work with Memory on this file
+                  <Sparkles className="text-brand-ivory size-4" /> Work with Memory on this file
                 </span>
                 <span className="font-mono text-[11px] text-muted-foreground">
                   Instant Codebase QA
@@ -610,7 +604,7 @@ function IntelligencePage() {
                     data-testid="memory-ask-btn"
                     type="submit"
                     disabled={loading || !repositorySnapshot}
-                    className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
+                    className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
                   >
                     {loading ? "Reading the evidence..." : "Ask"}
                   </button>
@@ -627,13 +621,13 @@ function IntelligencePage() {
               {memoryGuide && (
                 <div className="grid gap-3 border-t border-border pt-3 text-[11px] md:grid-cols-3">
                   <div>
-                    <span className="text-primary font-mono uppercase tracking-wider">
+                    <span className="text-subtle-foreground font-mono tracking-wider uppercase">
                       What it does
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">{memoryGuide.does}</p>
                   </div>
                   <div>
-                    <span className="text-primary font-mono uppercase tracking-wider">
+                    <span className="text-subtle-foreground font-mono tracking-wider uppercase">
                       Data source
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">
@@ -641,7 +635,7 @@ function IntelligencePage() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-primary font-mono uppercase tracking-wider">
+                    <span className="text-subtle-foreground font-mono tracking-wider uppercase">
                       Used for
                     </span>
                     <p className="text-muted-foreground mt-1 leading-relaxed">

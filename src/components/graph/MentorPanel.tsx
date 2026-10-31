@@ -619,8 +619,8 @@ export function MentorPanel({
     >
       <div className="border-border border-b px-5 py-4">
         <div className="flex items-center gap-2">
-          <span className="glow-ring bg-primary block size-1.5 rounded-full" />
-          <span className="text-primary text-[10px] tracking-[0.28em] uppercase">
+          <span className="bg-brand-ivory block size-1.5 rounded-full" />
+          <span className="text-subtle-foreground text-[10px] tracking-[0.28em] uppercase">
             {VOICE_LABEL[voice]}
           </span>
         </div>

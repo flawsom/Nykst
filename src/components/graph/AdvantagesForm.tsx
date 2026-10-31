@@ -108,7 +108,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl">
       <div className="bg-background/85 absolute inset-0" onClick={onClose} />
-      <div className="animate-rise border-emerald-500/30 bg-card/95 relative w-full max-w-2xl rounded-2xl border p-8 shadow-2xl">
+      <div className="animate-rise border-brand-crimson/30 bg-card/95 relative w-full max-w-2xl rounded-2xl border p-8 shadow-2xl">
         <button
           onClick={onClose}
           className="text-muted-foreground hover:text-foreground absolute top-6 right-6 transition-colors"
@@ -118,19 +118,19 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
 
         {done ? (
           <div className="py-12 text-center space-y-4">
-            <div className="bg-emerald-500/20 text-emerald-400 mx-auto flex size-14 items-center justify-center rounded-full border border-emerald-500/40">
+            <div className="bg-brand-crimson/15 text-brand-crimson-bright border-brand-crimson/40 mx-auto flex size-14 items-center justify-center rounded-full border">
               <Sparkles className="size-7" />
             </div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Welcome to the Software Revolution
+              Your perspective is recorded.
             </h2>
             <p className="text-muted-foreground mx-auto max-w-md text-sm leading-relaxed">
-              Your insights have been securely recorded. We have locked in your priority access for
-              NYKST.
+              Your feedback is saved with this Nykst workspace. We read every note while shaping the
+              next release.
             </p>
             <button
               onClick={onClose}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white mt-4 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors shadow-md"
+              className="bg-brand-crimson hover:bg-brand-crimson-bright text-brand-ivory mt-4 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors shadow-md"
             >
               Back to Nykst
             </button>
@@ -138,7 +138,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
-              <span className="text-emerald-400 font-mono text-xs uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+              <span className="text-brand-sand font-mono text-xs uppercase tracking-wider flex items-center gap-1.5 font-semibold">
                 <Sparkles className="size-3.5" /> Why teams choose Nykst · Step {step + 1} of{" "}
                 {totalSteps}
               </span>
@@ -148,7 +148,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                     key={i}
                     className={cn(
                       "h-1.5 w-6 rounded-full transition-all",
-                      i <= step ? "bg-emerald-500" : "bg-border",
+                      i <= step ? "bg-brand-crimson" : "bg-border",
                     )}
                   />
                 ))}
@@ -158,7 +158,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
             {!isContactStep && currentReason ? (
               <div className="space-y-4">
                 <div>
-                  <span className="text-emerald-400 text-xs font-mono uppercase tracking-widest font-bold">
+                  <span className="text-brand-sand text-xs font-mono uppercase tracking-widest font-bold">
                     Advantage {step + 1}
                   </span>
                   <h2 className="text-xl font-semibold tracking-tight text-foreground mt-1">
@@ -175,7 +175,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
 
                 {/* Interactive Typing Area */}
                 <div className="space-y-2 pt-2">
-                  <label className="text-xs font-mono uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <label className="text-xs font-mono uppercase tracking-wider text-brand-sand flex items-center gap-1.5">
                     <MessageSquare className="size-3.5" /> What do you think about this? (Share your
                     thoughts)
                   </label>
@@ -184,14 +184,14 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                     placeholder="Type your perspective, thoughts, or engineering reality here..."
                     value={feedback[step] || ""}
                     onChange={(e) => handleFeedbackChange(e.target.value)}
-                    className="border-border bg-surface text-foreground w-full rounded-xl border p-3.5 text-sm outline-none focus:border-emerald-500 font-mono leading-relaxed"
+                    className="border-border bg-surface text-foreground w-full rounded-xl border p-3.5 text-sm outline-none focus:border-brand-sand font-mono leading-relaxed"
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <span className="text-emerald-400 text-xs font-mono uppercase tracking-widest font-bold">
+                  <span className="text-brand-sand text-xs font-mono uppercase tracking-widest font-bold">
                     Final Step
                   </span>
                   <h2 className="text-xl font-semibold tracking-tight text-foreground mt-1">
@@ -212,7 +212,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                       placeholder="alex@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-emerald-500 font-mono"
+                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-brand-sand font-mono"
                       autoFocus
                     />
                   </div>
@@ -225,7 +225,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                       placeholder="linkedin.com/in/yourprofile"
                       value={linkedin}
                       onChange={(e) => setLinkedin(e.target.value)}
-                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-emerald-500 font-mono"
+                      className="border-border bg-surface text-foreground w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-brand-sand font-mono"
                     />
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
               {!isContactStep ? (
                 <button
                   onClick={() => setStep((s) => s + 1)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all shadow-md"
+                  className="bg-brand-crimson hover:bg-brand-crimson-bright text-brand-ivory flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all shadow-md"
                 >
                   Next Reason <ArrowRight className="size-3.5" />
                 </button>
@@ -262,14 +262,14 @@ export function AdvantagesForm({ onClose }: { onClose: () => void }) {
                   disabled={saving || !email.trim() || !email.includes("@")}
                   onClick={submit}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md transition-colors text-white",
+                    "text-brand-ivory flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md transition-colors",
                     email.trim() && email.includes("@")
-                      ? "bg-emerald-600 hover:bg-emerald-500 cursor-pointer"
-                      : "bg-emerald-600/50 cursor-not-allowed",
+                      ? "bg-brand-crimson hover:bg-brand-crimson-bright cursor-pointer"
+                      : "bg-brand-crimson/50 cursor-not-allowed",
                   )}
                 >
                   {saving && <Loader2 className="size-3.5 animate-spin" />}
-                  Complete & Secure Access
+                  Send my perspective
                 </button>
               )}
             </div>

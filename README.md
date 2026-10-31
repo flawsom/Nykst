@@ -765,10 +765,10 @@ curl -s "https://nykst.unifies.codes/api/analysis/self?path=src/lib/integrations
 {
   "repository": "flawsom/nykst",
   "stats": {
-    "sourceFiles": 278,
-    "internalEdges": 630,
+    "sourceFiles": 279,
+    "internalEdges": 642,
     "unresolvedImports": 0,
-    "loc": 51939
+    "loc": 52081
   },
   "target": "src/lib/integrations/github.ts",
   "level": "High"
@@ -892,12 +892,12 @@ bun scripts/analyze-local.ts . \
 
 | Metric | Value | How it is obtained |
 | :--- | :--- | :--- |
-| Analyzed source | **278 files, 51,939 LOC** | `bun run check:claims` |
-| Internal import edges | **630, zero unresolved** | same |
+| Analyzed source | **279 files, 52,081 LOC** | `bun run check:claims` |
+| Internal import edges | **642, zero unresolved** | same |
 | Cycles | **0** | `jq '.cycles \| length' src/lib/analysis/self-snapshot.json` |
 | SQL and data resources | **15** | `jq '.resources \| length'` |
 | External services | **11** | `jq '.services \| length'` |
-| Cold AST compile | **1,123 ms for 278 files** in the committed snapshot, 31 Oct 2026 | `jq .stats.durationMs src/lib/analysis/self-snapshot.json` |
+| Cold AST compile | **1,071 ms for 279 files** in the committed snapshot, 31 Oct 2026 | `jq .stats.durationMs src/lib/analysis/self-snapshot.json` |
 | Incremental patch | **under 15 ms for 500 files**, asserted | `bun test tests/incremental-patch.test.ts` |
 | MCP tools | **11 read-only tools**, asserted | `bun test tests/mcp-contract.test.ts` |
 
@@ -937,7 +937,7 @@ bunx playwright test          # browser journeys on a built server
 bun run screens               # refresh the README captures
 ```
 
-Latest local run on 31 October 2026: **268 pass, 0 fail, 2,466 assertions across 35 files, 2.73 s**.
+Latest local run on 31 October 2026: **268 pass, 0 fail, 2,472 assertions across 35 files, 2.46 s**.
 
 | Suite | What it proves |
 | :--- | :--- |

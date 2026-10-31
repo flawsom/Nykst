@@ -85,7 +85,7 @@ export function ApiSettingsButton({ className }: { className?: string }) {
         <span
           className={cn(
             "ml-1 size-1.5 rounded-full",
-            status.configured ? "bg-primary glow-ring" : "bg-muted-foreground/50",
+            status.configured ? "bg-brand-ivory/80" : "bg-subtle-foreground/50",
           )}
         />
       </button>

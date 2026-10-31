@@ -326,7 +326,7 @@ export function SafeCodeLoopEngine({
     >
       <header className="border-border flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
         <div className="min-w-0">
-          <div className="text-primary flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase">
+          <div className="text-subtle-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase">
             <BrainCircuit className="size-3.5" /> Closed-loop safe-coding engine
           </div>
           <h3 className="mt-1 text-lg font-semibold tracking-tight">
@@ -505,7 +505,7 @@ export function SafeCodeLoopEngine({
                       title={layer.detail || "No records in the analysed history"}
                     >
                       <p className="truncate text-[10px] font-medium">{layer.label}</p>
-                      <p className="text-primary font-mono text-[11px]">{layer.count}</p>
+                      <p className="text-foreground font-mono text-[11px]">{layer.count}</p>
                     </div>
                   ))}
                 </div>
@@ -520,7 +520,7 @@ export function SafeCodeLoopEngine({
                 type="button"
                 data-testid="copy-context-pack-btn"
                 onClick={() => void copyContextPack()}
-                className="border-primary/35 bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
+                className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
               >
                 <Copy className="size-3.5" />
                 {copiedPack ? "Copied context pack" : "Copy bounded agent context pack"}
@@ -528,12 +528,12 @@ export function SafeCodeLoopEngine({
             </div>
             <div
               data-testid="loop-finops-meter"
-              className="border-primary/25 bg-primary/5 mt-4 rounded-xl border p-3.5"
+              className="border-border bg-surface/60 mt-4 rounded-xl border p-3.5"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-[11px] font-semibold">
                   Bounded evidence{" "}
-                  <span className="text-primary">
+                  <span className="text-foreground">
                     {result.stage1.finops.boundedTokens.toLocaleString("en-US")} tokens
                   </span>{" "}
                   <span className="text-muted-foreground">
@@ -544,13 +544,13 @@ export function SafeCodeLoopEngine({
                     {result.stage1.finops.blindTokens.toLocaleString("en-US")} tokens
                   </span>
                 </p>
-                <span className="text-primary font-mono text-sm font-semibold">
+                <span className="text-foreground font-mono text-sm font-semibold">
                   {result.stage1.finops.reductionPct}% reduction
                 </span>
               </div>
               <div className="bg-surface-2 mt-2 h-1.5 overflow-hidden rounded-full">
                 <div
-                  className="from-primary to-primary-glow h-full rounded-full bg-gradient-to-r"
+                  className="from-subtle-foreground to-brand-ivory h-full rounded-full bg-gradient-to-r"
                   style={{ width: `${Math.max(2, 100 - result.stage1.finops.reductionPct)}%` }}
                 />
               </div>
@@ -583,7 +583,7 @@ export function SafeCodeLoopEngine({
                   data-testid="loop-generate-btn"
                   onClick={() => void generate()}
                   disabled={!prompt.trim() || generating}
-                  className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold disabled:opacity-50"
+                  className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold disabled:opacity-50"
                 >
                   {generating ? (
                     <Loader2 className="size-3.5 animate-spin" />
@@ -610,7 +610,7 @@ export function SafeCodeLoopEngine({
               {generated?.code && (
                 <div
                   data-testid="loop-generated-proposal"
-                  className="border-primary/25 bg-primary/5 mt-2 rounded-lg border p-2.5"
+                  className="border-border bg-surface/60 mt-2 rounded-lg border p-2.5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -618,7 +618,7 @@ export function SafeCodeLoopEngine({
                       {generated.fallback && (
                         <span
                           data-testid="loop-fallback-badge"
-                          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[9px] tracking-wide text-amber-200 uppercase"
+                          className="border-border text-subtle-foreground rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-wide uppercase"
                         >
                           Deterministic fallback
                         </span>
@@ -631,7 +631,7 @@ export function SafeCodeLoopEngine({
                         setDraft(generated.code!);
                         void run({ content: generated.code! });
                       }}
-                      className="border-primary/40 bg-primary/15 text-primary rounded border px-2 py-1 text-[10px] font-semibold"
+                      className="border-border text-foreground hover:border-primary/45 rounded border px-2 py-1 text-[10px] font-semibold"
                     >
                       Use generated code → verify
                     </button>
@@ -639,7 +639,7 @@ export function SafeCodeLoopEngine({
                   {generated.fallback && (
                     <p
                       data-testid="loop-fallback-note"
-                      className="mt-1.5 font-mono text-[10px] leading-relaxed text-amber-200/90"
+                      className="text-subtle-foreground mt-1.5 font-mono text-[10px] leading-relaxed"
                     >
                       {generated.fallbackSummary}
                       {generated.providerError
@@ -677,7 +677,7 @@ export function SafeCodeLoopEngine({
                   className={cn(
                     "rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
                     scenario === option.id
-                      ? "border-primary/50 bg-primary/15 text-primary"
+                      ? "border-primary/55 bg-primary/10 text-foreground"
                       : "border-border bg-surface text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -735,7 +735,7 @@ export function SafeCodeLoopEngine({
                   onClick={() =>
                     open(result.path, result.stage2.changedLine, result.stage2.summary)
                   }
-                  className="text-primary ml-1.5 font-mono hover:underline"
+                  className="text-foreground ml-1.5 font-mono underline decoration-primary/55 underline-offset-2 hover:decoration-primary"
                 >
                   line {result.stage2.changedLine}
                 </button>
@@ -1177,10 +1177,10 @@ function Stage({
     <section data-testid={meta.testId} className="relative">
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="border-primary/30 bg-primary/10 text-primary flex size-6 items-center justify-center rounded-lg border font-mono text-[10px]">
+          <span className="border-border bg-surface-2 text-foreground flex size-6 items-center justify-center rounded-lg border font-mono text-[10px]">
             {stage}
           </span>
-          <Icon className="text-primary size-4" />
+          <Icon className="text-subtle-foreground size-4" />
           <div>
             <h4 className="text-sm font-semibold">{meta.title}</h4>
             <p className="text-muted-foreground text-[10px]">{meta.subtitle}</p>
@@ -1190,7 +1190,7 @@ function Stage({
       </div>
       {children}
       {stage < 4 && (
-        <div className="text-primary/40 mt-3 flex items-center gap-1.5 font-mono text-[10px]">
+        <div className="text-subtle-foreground/50 mt-3 flex items-center gap-1.5 font-mono text-[10px]">
           <ArrowRight className="size-3 rotate-90" /> next stage
         </div>
       )}
@@ -1201,7 +1201,7 @@ function Stage({
 function Mini({ label, value }: { label: string; value: number }) {
   return (
     <div className="border-border bg-card rounded-lg border px-2 py-1.5">
-      <p className="text-primary font-mono text-sm font-semibold">{value}</p>
+      <p className="text-foreground font-mono text-sm font-semibold">{value}</p>
       <p className="text-muted-foreground truncate text-[9px] uppercase tracking-wide">{label}</p>
     </div>
   );

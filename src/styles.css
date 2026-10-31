@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Nykst design system: Apple + Vercel + Variant ultra-premium dark aesthetic.
- * All colors are oklch semantic tokens.
+ * Nykst design system: deep forest, charcoal, ivory, warm sand and crimson.
+ * The semantic tokens keep every route on the same identity.
  */
 
 @theme inline {
@@ -29,6 +29,11 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-body-ink: var(--body-ink);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-live: var(--live);
+  --color-risk: var(--risk);
+  --color-tool: var(--tool);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -38,6 +43,13 @@
   --color-ring: var(--ring);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-brand-forest: var(--brand-forest);
+  --color-brand-panel: var(--brand-panel);
+  --color-brand-charcoal: var(--brand-charcoal);
+  --color-brand-ivory: var(--brand-ivory);
+  --color-brand-sand: var(--brand-sand);
+  --color-brand-crimson: var(--brand-crimson);
+  --color-brand-crimson-bright: var(--brand-crimson-bright);
   --color-grid: var(--grid);
   --color-node-domain: var(--node-domain);
   --color-node-capability: var(--node-capability);
@@ -52,43 +64,57 @@
 :root {
   --radius: 1rem;
 
-  --background: oklch(0.125 0.012 250);
-  --foreground: oklch(0.975 0.002 250);
+  --brand-forest: #06110c;
+  --brand-panel: #0b1912;
+  --brand-charcoal: #171717;
+  --brand-ivory: #f2ede3;
+  --brand-sand: #c7b99b;
+  --brand-crimson: #a31c1b;
+  --brand-crimson-bright: #d04440;
 
-  --surface: oklch(0.165 0.014 252);
-  --surface-2: oklch(0.205 0.016 252);
+  --background: var(--brand-forest);
+  --foreground: var(--brand-ivory);
 
-  --card: oklch(0.165 0.014 252 / 0.86);
-  --card-foreground: oklch(0.975 0.002 250);
-  --popover: oklch(0.165 0.014 252 / 0.96);
-  --popover-foreground: oklch(0.975 0.002 250);
+  --surface: var(--brand-panel);
+  --surface-2: var(--brand-charcoal);
 
-  --primary: oklch(0.83 0.145 182);
-  --primary-foreground: oklch(0.125 0.02 250);
-  --primary-glow: oklch(0.89 0.125 175);
+  --card: #0b1912e6;
+  --card-foreground: var(--brand-ivory);
+  --popover: #0b1912f5;
+  --popover-foreground: var(--brand-ivory);
 
-  --secondary: oklch(0.215 0.016 252);
-  --secondary-foreground: oklch(0.955 0.002 250);
+  --primary: var(--brand-sand);
+  --primary-foreground: var(--brand-forest);
+  --primary-glow: #d8caae;
 
-  --muted: oklch(0.215 0.016 252);
-  --muted-foreground: oklch(0.66 0.013 250);
+  --secondary: var(--brand-charcoal);
+  --secondary-foreground: var(--brand-ivory);
 
-  --accent: oklch(0.75 0.14 275);
-  --accent-foreground: oklch(0.13 0.02 250);
+  --muted: #10231b;
+  --body-ink: #d8d4c9;
+  --subtle-foreground: #a8b2a8;
+  --muted-foreground: var(--body-ink);
 
-  --destructive: oklch(0.65 0.2 22);
-  --destructive-foreground: oklch(0.97 0.005 250);
+  --live: var(--brand-crimson);
+  --risk: var(--brand-crimson-bright);
+  --tool: var(--brand-charcoal);
 
-  --border: oklch(0.265 0.016 252);
-  --input: oklch(0.265 0.016 252);
-  --ring: oklch(0.83 0.145 182);
-  --grid: oklch(0.22 0.015 252);
+  --accent: #142a20;
+  --accent-foreground: var(--brand-ivory);
 
-  --node-domain: oklch(0.83 0.145 182);
-  --node-capability: oklch(0.78 0.14 230);
-  --node-service: oklch(0.76 0.14 275);
-  --node-module: oklch(0.81 0.14 325);
-  --node-file: oklch(0.84 0.13 90);
+  --destructive: var(--brand-crimson-bright);
+  --destructive-foreground: var(--brand-ivory);
+
+  --border: #1c3529;
+  --input: #1c3529;
+  --ring: var(--brand-ivory);
+  --grid: #132a20;
+
+  --node-domain: #e6d8c0;
+  --node-capability: #9ab3a4;
+  --node-service: var(--brand-crimson-bright);
+  --node-module: #c9bfa8;
+  --node-file: var(--subtle-foreground);
 
   --shadow-panel: 0 24px 64px -34px oklch(0 0 0 / 0.9), 0 0 0 1px oklch(1 0 0 / 0.04);
 }
@@ -108,12 +134,23 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--primary) 36%, transparent);
-    color: var(--foreground);
+    background: color-mix(in oklab, var(--brand-crimson) 55%, transparent);
+    color: var(--brand-ivory);
   }
 
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(
+        ellipse 100% 62% at 50% -18%,
+        color-mix(in oklab, var(--brand-sand) 5%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse 70% 55% at 82% 8%,
+        color-mix(in oklab, var(--node-capability) 4%, transparent),
+        transparent 68%
+      );
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

@@ -81,13 +81,13 @@ export function LandingGraphPreview({
         <div className="border-border/80 flex items-center justify-between gap-3 border-b px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <span
-              className={`size-1.5 shrink-0 rounded-full ${isLive ? "bg-primary animate-pulse" : "bg-muted-foreground"}`}
+              className={`size-1.5 shrink-0 rounded-full ${isLive ? "bg-live animate-pulse" : "bg-subtle-foreground"}`}
             />
-            <span className="text-muted-foreground truncate font-mono text-[10px] tracking-[0.14em] uppercase">
+            <span className="text-subtle-foreground truncate font-mono text-[10px] tracking-[0.14em] uppercase">
               {data.repository} · system map
             </span>
           </div>
-          <span className="text-muted-foreground shrink-0 font-mono text-[9px] tracking-[0.14em] uppercase">
+          <span className="text-subtle-foreground shrink-0 font-mono text-[9px] tracking-[0.14em] uppercase">
             {isLive ? "Live analysis" : savedDate ? `Saved ${savedDate}` : "Saved analysis"}
           </span>
         </div>
@@ -137,9 +137,9 @@ export function LandingGraphPreview({
                   <path
                     d={path}
                     fill="none"
-                    stroke="var(--primary)"
+                    stroke={isHovered ? "var(--brand-sand)" : "var(--subtle-foreground)"}
                     strokeWidth={isHovered ? 1.8 : 1}
-                    strokeOpacity={isHovered ? 0.9 : 0.3}
+                    strokeOpacity={isHovered ? 0.9 : 0.24}
                     strokeDasharray={isHovered ? "5 9" : undefined}
                     className={`pointer-events-none transition-all duration-500 ${isHovered ? "animate-edge-pulse" : ""}`}
                   />
@@ -179,14 +179,14 @@ export function LandingGraphPreview({
                     height={height}
                     rx={8}
                     fill="var(--surface)"
-                    stroke={isHovered && canOpen ? "var(--primary)" : "var(--border)"}
+                    stroke={isHovered && canOpen ? "var(--brand-sand)" : "var(--border)"}
                     strokeWidth={isHovered && canOpen ? 1.4 : 1}
                   />
                   <circle
                     cx={-width / 2 + 14}
                     cy={-3}
                     r={3}
-                    fill={isHovered ? "var(--primary)" : "var(--muted-foreground)"}
+                    fill={isHovered ? "var(--brand-sand)" : "var(--node-domain)"}
                   />
                   <text
                     x={-width / 2 + 24}
@@ -198,7 +198,7 @@ export function LandingGraphPreview({
                   <text
                     x={-width / 2 + 24}
                     y={12}
-                    className="fill-muted-foreground font-mono text-[8.5px]"
+                    className="fill-subtle-foreground font-mono text-[8.5px]"
                   >
                     {node.files} files · {node.edgesIn + node.edgesOut} connections ·{" "}
                     {node.loc.toLocaleString()} lines
@@ -213,7 +213,7 @@ export function LandingGraphPreview({
                 cy={CY}
                 r={76}
                 fill="var(--surface)"
-                stroke="var(--primary)"
+                stroke="var(--brand-ivory)"
                 strokeWidth={1.5}
               />
               <circle
@@ -221,7 +221,7 @@ export function LandingGraphPreview({
                 cy={CY}
                 r={94}
                 fill="none"
-                stroke="var(--primary)"
+                stroke="var(--brand-ivory)"
                 strokeOpacity={0.25}
                 strokeDasharray="3 8"
                 className="animate-orbit-pulse"
@@ -238,7 +238,7 @@ export function LandingGraphPreview({
                 x={CX}
                 y={CY + 6}
                 textAnchor="middle"
-                className="fill-primary font-mono text-[8.5px] tracking-[0.24em] uppercase"
+                className="fill-subtle-foreground font-mono text-[8.5px] tracking-[0.24em] uppercase"
               >
                 Real project map
               </text>
@@ -246,7 +246,7 @@ export function LandingGraphPreview({
                 x={CX}
                 y={CY + 24}
                 textAnchor="middle"
-                className="fill-muted-foreground font-mono text-[8.5px]"
+                className="fill-subtle-foreground font-mono text-[8.5px]"
               >
                 {stats.internalEdges} connections · {stats.loc.toLocaleString()} lines
               </text>
@@ -256,7 +256,7 @@ export function LandingGraphPreview({
               x={CX}
               y={H - 16}
               textAnchor="middle"
-              className="fill-muted-foreground font-mono text-[9px]"
+              className="fill-subtle-foreground font-mono text-[9px]"
             >
               {isLive
                 ? "Read from this repository in this page load"
@@ -265,10 +265,10 @@ export function LandingGraphPreview({
           </svg>
         </div>
 
-        <div className="border-border/80 text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5 font-mono text-[10px]">
+        <div className="border-border/80 text-subtle-foreground flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5 font-mono text-[10px]">
           <span className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
-              <span className="bg-primary inline-block size-1.5 rounded-full" /> Repository root
+              <span className="bg-brand-ivory inline-block size-1.5 rounded-full" /> Repository root
             </span>
             <span className="flex items-center gap-1.5">
               <span className="bg-node-domain inline-block size-1.5 rounded-full" /> project area
@@ -279,14 +279,14 @@ export function LandingGraphPreview({
             </span>
           </span>
           {isLive ? (
-            <span className="text-primary">
+            <span className="text-foreground">
               {stats.analyzedFiles} files · {stats.internalEdges} connections
             </span>
           ) : onRetry ? (
             <button
               type="button"
               onClick={onRetry}
-              className="text-primary inline-flex items-center gap-1.5 hover:underline"
+              className="text-foreground inline-flex items-center gap-1.5 underline decoration-primary/55 decoration-1 underline-offset-4 hover:decoration-primary"
             >
               <RefreshCw className="size-3" /> {retryLabel ?? "Refresh live map"}
             </button>

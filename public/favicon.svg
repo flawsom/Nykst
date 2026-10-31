@@ -1,35 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Nykst favicon">
   <defs>
     <linearGradient id="nykst-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#070d14"/>
-      <stop offset="100%" stop-color="#0c1824"/>
+      <stop offset="0%" stop-color="#030906"/>
+      <stop offset="100%" stop-color="#0b1912"/>
     </linearGradient>
     <linearGradient id="nykst-prism" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#5eead4"/>
-      <stop offset="52%" stop-color="#2dd4bf"/>
-      <stop offset="100%" stop-color="#60a5fa"/>
+      <stop offset="0%" stop-color="#f2ede3"/>
+      <stop offset="58%" stop-color="#c7b99b"/>
+      <stop offset="100%" stop-color="#e1d5bd"/>
     </linearGradient>
     <linearGradient id="nykst-edge" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.9"/>
+      <stop offset="0%" stop-color="#183328"/>
+      <stop offset="100%" stop-color="#a31c1b" stop-opacity="0.9"/>
     </linearGradient>
     <radialGradient id="nykst-core" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#5eead4" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#c7b99b" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#c7b99b" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="url(#nykst-bg)" stroke="#1e3242" stroke-width="1.5"/>
+  <rect width="64" height="64" rx="16" fill="url(#nykst-bg)" stroke="#183328" stroke-width="1.5"/>
   <circle cx="32" cy="32" r="24" fill="url(#nykst-core)"/>
-  <!-- Outer hexagonal architectural topology -->
   <polygon points="32,8 52,19.5 52,44.5 32,56 12,44.5 12,19.5" fill="none" stroke="url(#nykst-edge)" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- Graph-RAG AST traversal vectors forming the Nykst 'N' -->
   <path d="M19,44 L19,20 L45,44 L45,20" fill="none" stroke="url(#nykst-prism)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Cross-domain blast radius vector -->
-  <line x1="19" y1="32" x2="45" y2="32" stroke="#60a5fa" stroke-width="1.4" stroke-dasharray="2.5 2.5" opacity="0.8"/>
-  <!-- Architectural AST nodes -->
-  <circle cx="19" cy="20" r="3.6" fill="#070d14" stroke="#5eead4" stroke-width="2.2"/>
-  <circle cx="45" cy="44" r="3.6" fill="#070d14" stroke="#2dd4bf" stroke-width="2.2"/>
-  <circle cx="19" cy="44" r="2.8" fill="#60a5fa"/>
-  <circle cx="45" cy="20" r="2.8" fill="#a78bfa"/>
-  <circle cx="32" cy="32" r="3.4" fill="#5eead4"/>
+  <line x1="19" y1="32" x2="45" y2="32" stroke="#a31c1b" stroke-width="1.4" stroke-dasharray="2.5 2.5" opacity="0.8"/>
+  <circle cx="19" cy="20" r="3.6" fill="#030906" stroke="#c7b99b" stroke-width="2.2"/>
+  <circle cx="45" cy="44" r="3.6" fill="#030906" stroke="#a31c1b" stroke-width="2.2"/>
+  <circle cx="19" cy="44" r="2.8" fill="#a31c1b"/>
+  <circle cx="45" cy="20" r="2.8" fill="#741514"/>
+  <circle cx="32" cy="32" r="3.4" fill="#f2ede3"/>
 </svg>

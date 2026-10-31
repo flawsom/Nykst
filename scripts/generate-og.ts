@@ -29,8 +29,8 @@ const html = `<!doctype html>
   * { box-sizing: border-box; }
   html, body { margin: 0; width: 1200px; height: 630px; }
   body {
-    background: #0b0d10;
-    color: #f5f7f8;
+    background: #06110c;
+    color: #f2ede3;
     font-family: "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
@@ -41,48 +41,48 @@ const html = `<!doctype html>
     height: 630px;
     padding: 46px 54px 40px;
     background-image:
-      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+      linear-gradient(to right, rgba(199,185,155,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(199,185,155,0.05) 1px, transparent 1px);
     background-size: 48px 48px;
   }
   .frame::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 78% 45%, rgba(45, 212, 191, 0.09), transparent 46%);
+    background: radial-gradient(circle at 78% 45%, rgba(163, 28, 27, 0.14), transparent 46%);
     pointer-events: none;
   }
   .top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
   .brand { display: flex; align-items: center; gap: 13px; }
   .word { font-size: 17px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; }
-  .tag { font-family: monospace; font-size: 10px; letter-spacing: 0.2em; color: #8b969c; text-transform: uppercase; }
+  .tag { font-family: monospace; font-size: 10px; letter-spacing: 0.2em; color: #a8b2a8; text-transform: uppercase; }
   .main { position: relative; z-index: 1; display: grid; grid-template-columns: 1.12fr 0.88fr; gap: 54px; margin-top: 62px; }
-  .eyebrow { font-family: monospace; font-size: 11px; letter-spacing: 0.24em; color: #5eead4; text-transform: uppercase; }
+  .eyebrow { display: inline-block; padding-left: 10px; border-left: 2px solid #a31c1b; font-family: monospace; font-size: 11px; letter-spacing: 0.24em; color: #a8b2a8; text-transform: uppercase; }
   h1 { margin: 15px 0 0; font-size: 58px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 700; max-width: 630px; }
-  .lede { margin: 22px 0 0; font-size: 18px; line-height: 1.5; color: #a8b1b6; max-width: 560px; }
-  .meta { margin-top: 35px; display: flex; align-items: center; gap: 12px; font-family: monospace; font-size: 11px; color: #7e898f; letter-spacing: 0.03em; }
-  .dot { width: 6px; height: 6px; border-radius: 99px; background: #2dd4bf; }
+  .lede { margin: 22px 0 0; font-size: 18px; line-height: 1.5; color: #d8d4c9; max-width: 560px; }
+  .meta { margin-top: 35px; display: flex; align-items: center; gap: 12px; font-family: monospace; font-size: 11px; color: #a8b2a8; letter-spacing: 0.03em; }
+  .dot { width: 6px; height: 6px; border-radius: 99px; background: #a31c1b; }
   .panel {
     position: relative;
     align-self: end;
-    border: 1px solid #293137;
+    border: 1px solid #183328;
     border-radius: 16px;
-    background: rgba(17, 21, 24, 0.94);
+    background: rgba(11, 25, 18, 0.94);
     padding: 22px 22px 18px;
     box-shadow: 0 28px 80px -30px rgba(0,0,0,0.85);
   }
-  .panel-head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 1px solid #232a2f; }
-  .panel-title { font-family: monospace; font-size: 10px; letter-spacing: 0.18em; color: #5eead4; text-transform: uppercase; }
-  .panel-sub { font-family: monospace; font-size: 9px; color: #778289; }
-  .row { padding: 13px 0 12px; border-bottom: 1px solid #1e2529; }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 1px solid #183328; }
+  .panel-title { font-family: monospace; font-size: 10px; letter-spacing: 0.18em; color: #a8b2a8; text-transform: uppercase; }
+  .panel-sub { font-family: monospace; font-size: 9px; color: #a8b2a8; }
+  .row { padding: 13px 0 12px; border-bottom: 1px solid #183328; }
   .row:last-child { border-bottom: 0; padding-bottom: 4px; }
   .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .path { font-family: monospace; font-size: 12px; color: #e7ecee; letter-spacing: -0.01em; }
-  .count { font-family: monospace; font-size: 10px; color: #8b969c; white-space: nowrap; }
-  .track { height: 3px; margin-top: 8px; background: #20272b; border-radius: 99px; overflow: hidden; }
-  .fill { height: 100%; background: #2dd4bf; border-radius: 99px; }
-  .foot { position: absolute; z-index: 1; left: 54px; right: 54px; bottom: 30px; display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #242b30; font-family: monospace; font-size: 10px; letter-spacing: 0.06em; color: #7e898f; }
-  .foot b { color: #cfd7da; font-weight: 500; }
+  .path { font-family: monospace; font-size: 12px; color: #f2ede3; letter-spacing: -0.01em; }
+  .count { font-family: monospace; font-size: 10px; color: #a8b2a8; white-space: nowrap; }
+  .track { height: 3px; margin-top: 8px; background: #10231b; border-radius: 99px; overflow: hidden; }
+  .fill { height: 100%; background: #8fa99a; border-radius: 99px; }
+  .foot { position: absolute; z-index: 1; left: 54px; right: 54px; bottom: 30px; display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #183328; font-family: monospace; font-size: 10px; letter-spacing: 0.06em; color: #a8b2a8; }
+  .foot b { color: #f2ede3; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -90,12 +90,12 @@ const html = `<!doctype html>
     <div class="top">
       <div class="brand">
         <svg width="38" height="38" viewBox="0 0 64 64" aria-hidden="true">
-          <rect width="64" height="64" rx="14" fill="#0c1824" stroke="#1e3242" stroke-width="1.8"/>
-          <path d="M19,44 L19,20 L45,44 L45,20" fill="none" stroke="#2dd4bf" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="19" cy="20" r="3.2" fill="#5eead4"/>
-          <circle cx="45" cy="44" r="3.2" fill="#60a5fa"/>
-          <circle cx="19" cy="44" r="2.4" fill="#60a5fa"/>
-          <circle cx="45" cy="20" r="2.4" fill="#a78bfa"/>
+          <rect width="64" height="64" rx="14" fill="#030906" stroke="#183328" stroke-width="1.8"/>
+          <path d="M19,44 L19,20 L45,44 L45,20" fill="none" stroke="#f2ede3" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="19" cy="20" r="3.2" fill="#c7b99b"/>
+          <circle cx="45" cy="44" r="3.2" fill="#a31c1b"/>
+          <circle cx="19" cy="44" r="2.4" fill="#a31c1b"/>
+          <circle cx="45" cy="20" r="2.4" fill="#741514"/>
         </svg>
         <span class="word">Nykst</span>
       </div>

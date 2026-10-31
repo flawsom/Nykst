@@ -14,6 +14,7 @@ import {
 } from "@/lib/mcp-guides";
 import { cn } from "@/lib/utils";
 import { canonicalUrl, shareMeta } from "@/lib/seo";
+import { SectionLabel } from "@/components/site/SectionLabel";
 
 export const Route = createFileRoute("/mcp")({
   head: () => ({
@@ -46,7 +47,7 @@ function StepHeading({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="border-primary/40 bg-primary/10 text-primary mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold">
+      <span className="border-border bg-surface-2 text-foreground mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold">
         {n}
       </span>
       <div>
@@ -150,9 +151,7 @@ function McpGuidePage() {
       </header>
 
       <div className="mx-auto w-full max-w-3xl px-4 pt-12 pb-24 sm:px-6 sm:pt-16">
-        <p className="text-primary font-mono text-[10px] tracking-[0.28em] uppercase">
-          Developer setup
-        </p>
+        <SectionLabel>Developer setup</SectionLabel>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           Use Nykst inside your AI coding agent
         </h1>
@@ -209,8 +208,8 @@ function McpGuidePage() {
                   className={cn(
                     "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                     item.id === guide.id
-                      ? "border-primary/50 bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground hover:bg-surface",
+                      ? "border-primary/55 bg-primary/10 text-foreground"
+                      : "border-border text-subtle-foreground hover:text-foreground hover:bg-surface",
                   )}
                 >
                   {item.name}
@@ -225,7 +224,7 @@ function McpGuidePage() {
               </div>
 
               {!token && (
-                <p className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-300">
+                <p className="border-border bg-surface text-subtle-foreground rounded-lg border px-3 py-2 text-xs leading-relaxed">
                   The snippets below use {TOKEN_PLACEHOLDER}. Create a token in step 2 and they fill
                   in automatically.
                 </p>
@@ -248,7 +247,7 @@ function McpGuidePage() {
               ))}
 
               <p className="text-sm">
-                <span className="text-primary font-semibold">Check it worked: </span>
+                <span className="text-foreground font-semibold">Check it worked: </span>
                 <span className="text-muted-foreground">{guide.verify}</span>
               </p>
               {guide.caveat && (
@@ -270,7 +269,7 @@ function McpGuidePage() {
             <a
               href="/api/mcp/schema"
               data-testid="mcp-schema-link"
-              className="text-primary font-mono underline underline-offset-2"
+              className="text-foreground font-mono underline decoration-primary/55 underline-offset-2 hover:decoration-primary"
             >
               /api/mcp/schema
             </a>
@@ -290,7 +289,7 @@ function McpGuidePage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                       <div className="flex flex-wrap items-baseline gap-2">
-                        <code className="text-primary font-mono text-[13px] font-semibold">
+                        <code className="text-foreground font-mono text-[13px] font-semibold">
                           {tool.name}
                         </code>
                         <span className="text-muted-foreground text-[11px]">“{tool.example}”</span>
@@ -302,8 +301,8 @@ function McpGuidePage() {
                         className={cn(
                           "rounded-lg border px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors",
                           isSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20",
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border text-foreground hover:border-primary/45 hover:bg-surface/70",
                         )}
                       >
                         Run {tool.name}
@@ -319,11 +318,11 @@ function McpGuidePage() {
 
             <div
               data-testid="mcp-live-playground"
-              className="border-primary/30 bg-card/90 space-y-3 rounded-2xl border p-4 shadow-xl"
+              className="border-border bg-card/90 space-y-3 rounded-2xl border p-4 shadow-xl"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-primary font-mono text-[10px] tracking-[0.2em] uppercase">
+                  <span className="text-subtle-foreground font-mono text-[10px] tracking-[0.2em] uppercase">
                     Try a tool · {activeTool}
                   </span>
                   <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
@@ -370,7 +369,7 @@ function McpGuidePage() {
                   className="border-border bg-surface/80 space-y-2 rounded-xl border p-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-primary font-mono text-[10px] tracking-wider uppercase">
+                    <span className="text-subtle-foreground font-mono text-[10px] tracking-wider uppercase">
                       {activeTool === "simulate_change"
                         ? `Trying your change in a safe copy of ${targetPath}. Nothing is written to your project.`
                         : activeTool === "run_safe_code_loop"
@@ -381,7 +380,7 @@ function McpGuidePage() {
                       type="button"
                       data-testid="mcp-page-run-overlay"
                       onClick={() => void executeLiveTool(activeTool)}
-                      className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
+                      className="border-border text-foreground hover:border-primary/45 hover:bg-surface/70 rounded-md border px-2.5 py-1 font-mono text-[10px] font-semibold"
                     >
                       Run the check →
                     </button>

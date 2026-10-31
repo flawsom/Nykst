@@ -50,26 +50,26 @@ export function LandingHeader() {
               <a
                 key={item.label}
                 href={item.href}
-                className="text-muted-foreground hover:text-foreground hover:bg-surface group relative rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+                className="text-subtle-foreground hover:text-foreground hover:bg-surface group relative rounded-lg px-3 py-2 text-xs font-medium transition-colors"
               >
                 {item.label}
-                <span className="bg-primary absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+                <span className="bg-live absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
               </a>
             ) : (
               <Link
                 key={item.label}
                 to={item.to}
-                className="text-muted-foreground hover:text-foreground hover:bg-surface group relative rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+                className="text-subtle-foreground hover:text-foreground hover:bg-surface group relative rounded-lg px-3 py-2 text-xs font-medium transition-colors"
               >
                 {item.label}
-                <span className="bg-primary absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+                <span className="bg-live absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
               </Link>
             ),
           )}
           <ApiSettingsButton />
           <Link
             to="/subscribe"
-            className="bg-primary text-primary-foreground hover:bg-primary-glow group ml-2 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-16px_var(--primary)]"
+            className="border-border text-foreground hover:border-primary/50 hover:bg-surface/70 group ml-2 inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-[background-color,border-color] duration-300"
           >
             Start trial
             <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -79,7 +79,7 @@ export function LandingHeader() {
         <div className="flex items-center gap-2 lg:hidden">
           <Link
             to="/subscribe"
-            className="bg-primary text-primary-foreground hover:bg-primary-glow inline-flex h-11 items-center gap-1.5 rounded-lg px-3.5 text-[11px] font-semibold transition-colors"
+            className="border-border text-foreground hover:border-primary/50 hover:bg-surface/70 inline-flex h-11 items-center gap-1.5 rounded-lg border px-3.5 text-[11px] font-semibold transition-colors"
           >
             Start trial
           </Link>
