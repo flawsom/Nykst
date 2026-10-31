@@ -37,16 +37,16 @@ const SAVED_DOMAINS = (snapshotStats as { domains?: LandingMapData["domains"] })
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nykst · See what your next change will affect" },
+      { title: "Nykst: code change impact analysis before you edit" },
       {
         name: "description",
         content:
-          "Connect your repositories and get one map of how your system fits together. See every file, service and database table a change will touch before you make it.",
+          "Nykst maps your repository's files, imports, routes, services and database tables, then shows the exact blast radius of a code change before you make it.",
       },
       ...shareMeta({
-        title: "Nykst · See what your next change will affect",
+        title: "Nykst: see what your next code change will affect",
         description:
-          "One map of your system, built from your real code. See what a change will touch before you make it.",
+          "One live map built from real source. See every file, route, table and test a change will touch before you edit.",
         path: "/",
       }),
     ],

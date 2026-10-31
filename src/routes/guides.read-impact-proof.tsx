@@ -4,7 +4,7 @@ import { articleLd, canonicalUrl, shareMeta } from "@/lib/seo";
 
 const TITLE = "How to read a change impact proof";
 const DESCRIPTION =
-  "A practical guide to reading what Nykst says a change will touch: the item, its importers, its runtime dependents, the entrypoints it reaches, and the checks that cover it.";
+  "Read what Nykst says a change will touch: direct importers, runtime dependents, entrypoints and the checks that cover it, each tied to a file and line.";
 const PATH = "/guides/read-impact-proof";
 const PUBLISHED = "2026-10-31";
 

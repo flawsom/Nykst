@@ -34,14 +34,16 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
     meta: [
-      { title: "Memory · Nykst" },
+      { title: "Nykst system memory: decisions, incidents and conventions" },
       {
         name: "description",
-        content: "Explore system memory, repository evidence, and work with Nykst Memory.",
+        content:
+          "Keep the reasons behind the code: architecture decisions, past incidents, team conventions and the evidence that connects them to real files.",
       },
       ...shareMeta({
-        title: "Memory · Nykst",
-        description: "Explore system memory, repository evidence, and work with Nykst Memory.",
+        title: "Nykst system memory: keep the reasons behind the code",
+        description:
+          "Architecture decisions, past incidents and team conventions stay attached to the files and systems they explain.",
         path: "/intelligence",
       }),
     ],

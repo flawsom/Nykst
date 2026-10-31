@@ -7,16 +7,16 @@ import { canonicalUrl, organizationLd, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/partnerships")({
   head: () => ({
     meta: [
-      { title: "Partnerships · Nykst" },
+      { title: "Nykst partnerships: integrations, teams and research" },
       {
         name: "description",
         content:
-          "Work with Nykst on integrations, team deployments, research, or community projects. Tell us what you have in mind.",
+          "Work with Nykst on an integration, a team deployment, a security review or a research project. Tell us what you need and a person will reply.",
       },
       ...shareMeta({
-        title: "Partnerships · Nykst",
+        title: "Nykst partnerships: integrations, teams and research",
         description:
-          "Work with Nykst on integrations, team deployments, research, or community projects.",
+          "Work with Nykst on an integration, a team deployment, a security review or a research project.",
         path: "/partnerships",
       }),
       { "script:ld+json": organizationLd },

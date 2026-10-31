@@ -69,15 +69,16 @@ function chainToPath(node: GraphNode, path: string, trail: string[] = []): strin
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
-      { title: "System map · Nykst" },
+      { title: "Nykst system map: explore a live code dependency graph" },
       {
         name: "description",
         content:
-          "See your whole project as a map. Start with the parts, open one, and follow it down to the files and database tables a change will touch.",
+          "Open a repository as an interactive system map. Trace imports from organisation to file, then see the routes, tables and tests a change will reach.",
       },
       ...shareMeta({
-        title: "System map · Nykst",
-        description: "See your whole project as a map, then open the part a change will touch.",
+        title: "Nykst system map: see the code a change will reach",
+        description:
+          "Explore a repository as a live map of files, services and database tables. Every connection comes with a file and line.",
         path: "/graph",
       }),
     ],
@@ -512,6 +513,20 @@ function GraphPage() {
   if (loading && !snapshot) {
     return (
       <main aria-busy="true" className="bg-background min-h-screen">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-6 sm:px-6 sm:pt-12">
+          <SectionLabel>Live system map</SectionLabel>
+          <h1 className="font-display mt-3 max-w-3xl text-3xl leading-[1.08] tracking-tight sm:text-4xl">
+            Your repository, mapped before your next change.
+          </h1>
+          <p className="text-body-ink mt-4 max-w-2xl text-sm leading-relaxed">
+            Nykst reads the real files and imports in a repository, then shows the areas, external
+            services and database tables a change will reach.
+          </p>
+          <p className="text-subtle-foreground mt-2 max-w-2xl text-xs leading-relaxed">
+            A saved map is loading now. Every connection is cited to a file and line, and nothing is
+            filled in from a sample.
+          </p>
+        </div>
         <p role="status" className="sr-only">
           Loading this map. Reading the files, then linking them.
         </p>

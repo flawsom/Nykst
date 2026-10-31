@@ -80,11 +80,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nykst · See what your next change will affect" },
+      { title: "Nykst: code change impact analysis before you edit" },
       { name: "description", content: SITE_DESCRIPTION },
       { name: "theme-color", content: "#06110C" },
       ...shareMeta({
-        title: "Nykst · See what your next change will affect",
+        title: "Nykst: see what your next code change will affect",
         description: SITE_DESCRIPTION,
         path: "/",
       }),

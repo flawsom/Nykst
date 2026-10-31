@@ -1,15 +1,29 @@
+# Search engines
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+# AI search crawlers used for answer and citation surfaces
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# Social previews
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
+# Everything else follows the same rules. Training crawlers such as GPTBot,
+# ClaudeBot, Google-Extended and CCBot are not blocked by this file.
 User-agent: *
 Allow: /
 

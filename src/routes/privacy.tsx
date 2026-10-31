@@ -10,16 +10,16 @@ const UPDATED = "29 October 2026";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy · Nykst" },
+      { title: "Nykst privacy: what we read, store and never train on" },
       {
         name: "description",
         content:
-          "What Nykst stores, why, how long we keep it, who helps us run the service, and how to ask us to access, correct or delete your data.",
+          "What Nykst reads, stores and keeps, who helps run the service, how long data is retained, and how to request access, correction or deletion.",
       },
       ...shareMeta({
-        title: "Privacy · Nykst",
+        title: "Nykst privacy: what we read, store and never train on",
         description:
-          "What Nykst stores, why, how long we keep it, and how to access, correct or delete your data.",
+          "What Nykst reads, stores and keeps, who helps run the service, and how to access, correct or delete your data.",
         path: "/privacy",
       }),
       { "script:ld+json": organizationLd },

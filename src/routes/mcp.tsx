@@ -19,11 +19,11 @@ import { SectionLabel } from "@/components/site/SectionLabel";
 export const Route = createFileRoute("/mcp")({
   head: () => ({
     meta: [
-      { title: "Connect Nykst to your AI coding agent · MCP guide" },
+      { title: "Nykst MCP: connect your coding agent to a live system map" },
       {
         name: "description",
         content:
-          "Setup guides for Claude Code, Cursor, VS Code, Codex, Gemini CLI, Windsurf, Cline, Zed and Claude Desktop. Let your AI agent ask Nykst what a change will break before it writes code.",
+          "Connect Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, Cline or Zed to 11 read-only MCP tools that answer what a change will break.",
       },
       ...shareMeta({
         title: "Connect Nykst to your AI coding agent",

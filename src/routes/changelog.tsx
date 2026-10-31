@@ -8,14 +8,16 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/changelog")({
   head: () => ({
     meta: [
-      { title: "Changelog · Nykst" },
+      { title: "Nykst changelog: product updates and release notes" },
       {
         name: "description",
-        content: "What changed in Nykst, written for the people using it.",
+        content:
+          "Every meaningful change to Nykst, written for the people using it: new analysis coverage, reliability work and product decisions.",
       },
       ...shareMeta({
-        title: "Changelog · Nykst",
-        description: "What changed in Nykst, written for the people using it.",
+        title: "Nykst changelog: product updates and release notes",
+        description:
+          "New analysis coverage, reliability work and product decisions, written for the people using Nykst.",
         path: "/changelog",
       }),
     ],

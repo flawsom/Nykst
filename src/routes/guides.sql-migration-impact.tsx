@@ -4,7 +4,7 @@ import { articleLd, canonicalUrl, shareMeta } from "@/lib/seo";
 
 const TITLE = "How SQL column and migration impact works";
 const DESCRIPTION =
-  "What Nykst can prove about a database change from migration files and literal client calls, what it cannot prove, and how to review the result before running it.";
+  "What Nykst can prove about a SQL change from migrations and literal client calls, what it cannot prove, and how to review the result before running it.";
 const PATH = "/guides/sql-migration-impact";
 const PUBLISHED = "2026-10-31";
 

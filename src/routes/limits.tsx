@@ -7,16 +7,16 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/limits")({
   head: () => ({
     meta: [
-      { title: "Limits · Nykst" },
+      { title: "Nykst limits: repository size, files and coverage" },
       {
         name: "description",
         content:
-          "The repository, file and analysis limits Nykst applies, and what the map says when a limit is reached.",
+          "The repository and file limits Nykst applies, which languages and contracts it reads, and what the map says when it cannot see something.",
       },
       ...shareMeta({
-        title: "Limits · Nykst",
+        title: "Nykst limits: repository size, files and coverage",
         description:
-          "The repository, file and analysis limits Nykst applies, and what the map says when a limit is reached.",
+          "The repository and file limits Nykst applies, what the map reads, and what it says when a limit is reached.",
         path: "/limits",
       }),
     ],

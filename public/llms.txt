@@ -1,0 +1,31 @@
+# Nykst
+
+> Nykst maps a software repository and shows what a code change will affect before it is made. It reads real files and imports, follows SQL migrations, OpenAPI operations and gRPC methods, and puts a file and line behind every answer. GitHub access is read-only.
+
+Nykst is a web application for developers and teams. Connect GitHub, choose a repository, and build a six-level map from organization to file. The same evidence is available to coding assistants through eleven read-only MCP tools.
+
+## Product
+
+- [Live system map](https://nykst.unifies.codes/graph): Open a repository as a map of files, services, database tables and the routes a change will reach.
+- [System memory](https://nykst.unifies.codes/intelligence): Keep architecture decisions, incidents and team conventions attached to the code they explain.
+- [Plans and access](https://nykst.unifies.codes/subscribe): Start a 7-day trial. Monthly and annual pricing include 18% GST.
+- [Docs](https://nykst.unifies.codes/docs): Connect a repository, read the map and set up a coding assistant.
+
+## Guides
+
+- [How to read a change impact proof](https://nykst.unifies.codes/guides/read-impact-proof): Importers, runtime dependents, entrypoints and covering checks.
+- [How SQL column and migration impact works](https://nykst.unifies.codes/guides/sql-migration-impact): What static migration analysis can prove and what it cannot.
+- [How to use the read-only MCP tools safely](https://nykst.unifies.codes/guides/mcp-read-only): Token scope, read-only guarantees and revocation.
+- [Connect an MCP client](https://nykst.unifies.codes/mcp): Setup for Claude Code, Cursor, VS Code, Codex, Windsurf, Gemini CLI, Cline and Zed.
+
+## Trust and limits
+
+- [Privacy](https://nykst.unifies.codes/privacy): What Nykst reads, stores and retains. Nykst does not train on connected code.
+- [Limits](https://nykst.unifies.codes/limits): Repository size, file size, language and contract coverage.
+- [Status](https://nykst.unifies.codes/status): Website, API, billing setup and database health.
+- [Source](https://github.com/flawsom/nykst): Public GitHub repository.
+
+## For agents
+
+- [MCP tool schema](https://nykst.unifies.codes/api/mcp/schema): Public JSON schema for eleven read-only tools.
+- [Health endpoint](https://nykst.unifies.codes/api/health): Current service and configuration status.

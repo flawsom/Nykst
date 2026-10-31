@@ -11,16 +11,16 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/subscribe")({
   head: () => ({
     meta: [
-      { title: "Plans and access · Nykst" },
+      { title: "Nykst plans: monthly, annual and a 7-day trial" },
       {
         name: "description",
         content:
-          "Choose Nykst Pro monthly or annual, start a 7-day trial, or talk to us about your team.",
+          "Start a 7-day Nykst Pro trial. INR 699 monthly or INR 4,999 annual, including 18% GST. Authorize with Razorpay and cancel before day 8.",
       },
       ...shareMeta({
-        title: "Plans and access · Nykst",
+        title: "Nykst plans: monthly, annual and a 7-day trial",
         description:
-          "Choose Nykst Pro monthly or annual, start a 7-day trial, or talk to us about your team.",
+          "Start a 7-day Nykst Pro trial on your own repository. INR 699 monthly or INR 4,999 annual, including 18% GST.",
         path: "/subscribe",
       }),
     ],

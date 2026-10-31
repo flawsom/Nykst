@@ -8,16 +8,16 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/docs")({
   head: () => ({
     meta: [
-      { title: "Docs · Nykst" },
+      { title: "Nykst docs: connect a repo, read the map, use MCP" },
       {
         name: "description",
         content:
-          "How to connect a repository, read the system map, understand change impact, and use Nykst from a coding assistant.",
+          "Learn how to connect a repository, read the system map, understand change impact, and use Nykst from Claude Code, Cursor, VS Code and other MCP clients.",
       },
       ...shareMeta({
-        title: "Docs · Nykst",
+        title: "Nykst docs: from repository to a map you can trust",
         description:
-          "How to connect a repository, read the system map, understand change impact, and use Nykst from a coding assistant.",
+          "Connect a repository, read the system map, understand change impact, and use Nykst from your coding assistant.",
         path: "/docs",
       }),
     ],

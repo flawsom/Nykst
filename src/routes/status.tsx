@@ -10,11 +10,15 @@ import { canonicalUrl, shareMeta } from "@/lib/seo";
 export const Route = createFileRoute("/status")({
   head: () => ({
     meta: [
-      { title: "Status · Nykst" },
-      { name: "description", content: "The current state of the Nykst website, API and database." },
+      { title: "Nykst status: website, API and database health" },
+      {
+        name: "description",
+        content:
+          "Live health for the Nykst website, MCP API, billing setup and database. Check the current state before you connect a repository.",
+      },
       ...shareMeta({
-        title: "Status · Nykst",
-        description: "The current state of the Nykst website, API and database.",
+        title: "Nykst status: website, API and database health",
+        description: "Live health for the Nykst website, MCP API, billing setup and database.",
         path: "/status",
       }),
     ],

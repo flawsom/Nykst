@@ -1,9 +1,4 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { ChevronDown } from "lucide-react";
 import { SectionLabel } from "@/components/site/SectionLabel";
 
 const QUESTIONS = [
@@ -66,18 +61,27 @@ export function LandingFaq() {
             yours is not here, a person replies within two business days.
           </p>
         </div>
-        <Accordion type="single" collapsible className="w-full">
+        <div className="w-full">
           {QUESTIONS.map((item, index) => (
-            <AccordionItem key={item.question} value={`faq-${index}`} className="border-border/70">
-              <AccordionTrigger className="text-foreground py-5 text-left text-sm font-medium hover:no-underline sm:text-[15px]">
-                {item.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-subtle-foreground max-w-2xl text-xs leading-relaxed sm:text-[13px]">
+            <details
+              key={item.question}
+              name="nykst-faq"
+              open={index === 0}
+              className="group border-border/70 border-b"
+            >
+              <summary className="text-foreground flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-sm font-medium transition-colors hover:text-primary sm:text-[15px] [&::-webkit-details-marker]:hidden">
+                <span>{item.question}</span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="text-muted-foreground size-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
+                />
+              </summary>
+              <div className="text-subtle-foreground max-w-2xl pb-4 text-xs leading-relaxed sm:text-[13px]">
                 {item.answer}
-              </AccordionContent>
-            </AccordionItem>
+              </div>
+            </details>
           ))}
-        </Accordion>
+        </div>
       </div>
     </section>
   );
